@@ -5,6 +5,7 @@
     <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>aspnet-FralseTech.Web-aae8c5b4-db2c-41a3-964b-30121302da6e</UserSecretsId>
   </PropertyGroup>
 
 </Project>

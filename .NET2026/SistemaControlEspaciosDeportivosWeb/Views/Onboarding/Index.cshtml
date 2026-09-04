@@ -1,4 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.OnboardingDashboardViewModel
+@* Firma: FRANCO LARA - 03/09/2026 | Sustituye las superficies azul petroleo de la guia en modo oscuro por la paleta antracita administrativa. *@
 @{
     ViewData["Title"] = "Guia de configuracion";
 }
@@ -151,27 +152,27 @@
         }
 
         html[data-theme="dark"] .sc-onboarding-logo {
-            background: linear-gradient(180deg, rgba(24, 34, 54, 0.96) 0%, rgba(14, 22, 38, 0.98) 100%);
-            border-color: rgba(88, 116, 158, 0.34);
+            background: var(--sc-admin-card-bg);
+            border-color: var(--sc-admin-border);
         }
 
         html[data-theme="dark"] .sc-activacion-meta > div {
-            background: linear-gradient(180deg, rgba(23, 34, 55, 0.96) 0%, rgba(13, 22, 38, 0.98) 100%);
-            border-color: rgba(88, 116, 158, 0.34);
+            background: var(--sc-admin-card-bg);
+            border-color: var(--sc-admin-border);
         }
 
         html[data-theme="dark"] .sc-activacion-meta span {
-            color: #9fb0ca;
+            color: var(--sc-admin-muted);
         }
 
         html[data-theme="dark"] .sc-activacion-meta strong {
-            color: #f4f8ff;
+            color: var(--sc-admin-text);
         }
 
         html[data-theme="dark"] .sc-activacion-table thead th {
-            color: #dbe7ff;
-            background: rgba(23, 33, 54, 0.94);
-            border-bottom-color: rgba(88, 116, 158, 0.34);
+            color: var(--sc-admin-text);
+            background: var(--sc-admin-control-bg);
+            border-bottom-color: var(--sc-admin-border-soft);
         }
     </style>
 }

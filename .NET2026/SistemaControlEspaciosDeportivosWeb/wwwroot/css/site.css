@@ -183,6 +183,30 @@ body {
   background-clip: padding-box;
 }
 
+/* Firma: FRANCO LARA - 03/09/2026 | Agrupa y unifica los paneles con modo oscuro antracita y textura deportiva; corrige el contraste de botones y limita el hover de filas para no interferir con el calendario de reservas. */
+.sc-admin-nav-section-title {
+  margin: 0.9rem 0.55rem 0.35rem;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.sc-admin-nav-section-title::after {
+  content: "";
+  display: block;
+  height: 1px;
+  margin-top: 0.45rem;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.24), transparent);
+}
+
+body.sc-business-admin-theme-shell .page-header .sc-negocio-ref-card:has(.sc-negocio-ref-card-head .bi-building),
+body.sc-business-admin-theme-shell .sc-admin-topbar .sc-dash-negocio-card--focus {
+  display: none !important;
+}
+
 .sc-admin-brand {
   display: grid;
   justify-items: center;
@@ -3653,6 +3677,7 @@ html[data-theme="dark"] .form-check-input:checked {
 
 /* Firma: FRANCO LARA - 20/07/2026 | Presenta los planes comerciales del portal con jerarquia, detalle expandible y respuesta movil. */
 /* Firma: FRANCO LARA - 21/07/2026 | Mantiene visibles los beneficios completos de Prueba, Esencial y Pro y estructura los documentos legales con indice, contacto y pie institucional. */
+/* Firma: FRANCO LARA - 01/09/2026 | Ordena los limites de los planes, traslada al panel del complejo la identidad verde del sistema administrativo y presenta encabezados amplios para todos los listados en ambos temas. */
 .home-pricing-section {
   margin-top: 2rem;
   padding-top: 1.75rem;
@@ -3718,8 +3743,9 @@ html[data-theme="dark"] .form-check-input:checked {
 .home-plan-button--professional { background: #0d3b66; }
 .home-plan-button--faq { grid-column: 2; grid-row: 2; border: 1px solid #2563eb; background: #fff; color: #1d4ed8; }
 .home-plan-button--faq:hover, .home-plan-button--faq:focus { background: #eff6ff; color: #1d4ed8; }
-.home-plan-limits { display: grid; gap: .55rem; margin: 1rem 0; padding: 0; list-style: none; color: #294665; font-size: .9rem; }
-.home-plan-limits i { width: 1.35rem; color: #16803c; }
+.home-plan-limits { display: grid; gap: .62rem; margin: 1rem 0; padding: 0; list-style: none; color: #294665; font-size: .9rem; }
+.home-plan-limits li { display: grid; grid-template-columns: 1.6rem minmax(0, 1fr); align-items: start; column-gap: .55rem; min-width: 0; line-height: 1.4; }
+.home-plan-limits i { display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; margin-top: -.12rem; border: 1px solid rgba(22, 128, 60, .16); border-radius: .45rem; background: rgba(22, 128, 60, .08); color: #16803c; font-size: .82rem; }
 .home-plan-includes { margin: auto 0 0; padding: .8rem 0 0 1.05rem; border-top: 1px solid #e2e8f0; color: #3f5677; font-size: .88rem; }
 .home-plan-includes li + li { margin-top: .35rem; }
 .home-platform-legal { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .65rem 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #d8e5f5; color: #54708f; font-size: .84rem; text-align: center; }
@@ -3757,6 +3783,7 @@ html[data-theme="dark"] .home-plan-card { border-color: var(--sc-border-soft); b
 html[data-theme="dark"] .home-plan-card--professional { border-color: #3b82f6; background: linear-gradient(180deg, #13213a 0%, #0f1b2e 100%); }
 html[data-theme="dark"] .home-plan-price { color: #7dd3fc; }
 html[data-theme="dark"] .home-plan-price small { color: #9fb0ca; }
+html[data-theme="dark"] .home-plan-limits i { border-color: rgba(74, 222, 128, .24); background: rgba(22, 163, 74, .14); color: #86efac; }
 html[data-theme="dark"] .home-plan-includes { border-color: var(--sc-border-soft); }
 html[data-theme="dark"] .home-platform-legal { border-color: var(--sc-border-soft); color: #9fb0ca; }
 html[data-theme="dark"] .legal-page { background: #07111f; }
@@ -8096,6 +8123,1246 @@ html[data-theme="dark"] .sc-suscripcion-info-copy strong {
 
   .sc-report-print-badge {
     text-align: left;
+  }
+}
+
+/* Paneles administrativos: identidad trasladada desde SistemaAdministrativoWeb. */
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) {
+  --sc-admin-page-bg: #F4F7F6;
+  --sc-admin-card-bg: #FFFFFF;
+  --sc-admin-sidebar-bg: #075C45;
+  --sc-admin-header-start: #076149;
+  --sc-admin-header-end: #0A8060;
+  --sc-admin-menu-active: #0B9B70;
+  --sc-admin-accent: #12A878;
+  --sc-admin-primary: #2563EB;
+  --sc-admin-on-color: #FFFFFF;
+  --sc-admin-text: #17212B;
+  --sc-admin-muted: #637381;
+  --sc-admin-border: #D7E2DE;
+  --sc-admin-mesh-line: rgba(255, 255, 255, .05);
+  --sc-admin-heading-bg: linear-gradient(90deg, var(--sc-admin-header-start) 0%, var(--sc-admin-header-end) 100%);
+  --sc-admin-primary-hover: color-mix(in srgb, var(--sc-admin-primary) 84%, black);
+  --sc-admin-active-soft: color-mix(in srgb, var(--sc-admin-accent) 14%, transparent);
+  --sc-admin-table-head-bg: color-mix(in srgb, var(--sc-admin-page-bg) 78%, var(--sc-admin-card-bg));
+  --sc-admin-sidebar-soft: color-mix(in srgb, white 8%, transparent);
+  --sc-admin-sidebar-border: color-mix(in srgb, white 20%, transparent);
+  --sc-sidebar-bg: var(--sc-admin-sidebar-bg);
+  --sc-business-heading-bg: var(--sc-admin-heading-bg);
+  --sc-body-bg: var(--sc-admin-page-bg);
+  --sc-body-color: var(--sc-admin-text);
+  --sc-surface: var(--sc-admin-card-bg);
+  --sc-border-soft: var(--sc-admin-border);
+  --sc-input-bg: var(--sc-admin-card-bg);
+  --sc-input-border: var(--sc-admin-border);
+  --sc-theme-card-bg: rgba(255, 255, 255, .08);
+  --sc-theme-card-border: var(--sc-admin-sidebar-border);
+  --sc-theme-track-bg: rgba(255, 255, 255, .12);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-shell {
+  background:
+    radial-gradient(circle at 86% -12%, rgba(31, 169, 113, .11), transparent 34%),
+    var(--sc-body-bg);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-sidebar {
+  background: var(--sc-sidebar-bg);
+  border-right-color: rgba(156, 224, 201, .2);
+  box-shadow: 18px 0 42px rgba(8, 42, 33, .24);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(204, 243, 229, .34);
+  background-clip: padding-box;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-homecard,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-welcome,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-brand,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-nav-group,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-notify-btn,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-session-box {
+  border-color: rgba(181, 235, 218, .2);
+  background: rgba(255, 255, 255, .07);
+  box-shadow: none;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-welcome {
+  background: linear-gradient(145deg, rgba(47, 163, 122, .24), rgba(16, 51, 42, .2));
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-homecard i,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-welcome small,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-theme-copy span,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-notify-item-time {
+  color: rgba(206, 243, 230, .82);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-brand-logo {
+  background: linear-gradient(140deg, #158360, #2bc58a);
+  box-shadow: 0 12px 24px rgba(9, 57, 42, .36);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-brand-logo-img,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-session-logo-img {
+  border-color: rgba(191, 241, 223, .56);
+  box-shadow: 0 12px 24px rgba(9, 57, 42, .24);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-nav-group-toggle {
+  color: #eefaf6;
+  background: rgba(37, 115, 88, .3);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-navlink {
+  color: rgba(245, 248, 255, .92);
+  border-color: rgba(255, 255, 255, .05);
+  background: rgba(255, 255, 255, .04);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-navlink i,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-navlink span {
+  color: rgba(240, 252, 248, .92);
+  text-shadow: none;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-navlink:hover {
+  color: #fff;
+  border-color: rgba(183, 237, 220, .38);
+  background: linear-gradient(135deg, rgba(55, 170, 127, .32), rgba(22, 98, 74, .22));
+  transform: translateX(2px);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-navlink.active {
+  color: #fff;
+  border-color: rgba(219, 249, 239, .54);
+  background: linear-gradient(138deg, rgba(21, 131, 96, .96), rgba(43, 197, 138, .76));
+  box-shadow: 0 12px 22px rgba(9, 57, 42, .26);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-navlink.active::before {
+  background: linear-gradient(180deg, #a7f3d0, #ecfdf5);
+  box-shadow: 0 0 14px rgba(167, 243, 208, .42);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-notify-btn:hover,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-session-box .btn:hover {
+  border-color: rgba(160, 234, 205, .62);
+  background: rgba(51, 168, 124, .22);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-context-help {
+  display: flex;
+  width: fit-content;
+  margin-left: auto;
+  border-color: rgba(113, 135, 168, .26);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .98) 0%, rgba(244, 248, 255, .96) 100%);
+  color: #12376c !important;
+  box-shadow: 0 14px 28px rgba(14, 40, 86, .08);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-context-help:hover,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-context-help:focus {
+  color: #0c2c59 !important;
+  border-color: rgba(61, 114, 202, .36);
+  filter: none;
+  transform: translateY(-1px);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.sc-admin-topbar, .page-header, .page-header-card) {
+  color: #fff;
+  border-color: rgba(115, 196, 167, .18);
+  background: var(--sc-business-heading-bg);
+  box-shadow: 0 22px 55px rgba(16, 43, 82, .1);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.sc-admin-topbar-head h1, .sc-admin-topbar-head p, .page-header h1, .page-header .h4, .page-header .page-title, .page-header .page-subtitle) {
+  color: #fff;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-topbar {
+  border-radius: 1.35rem;
+  background: var(--sc-business-heading-bg);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-shell .section-title {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  margin-top: .25rem !important;
+  padding: .65rem .9rem;
+  border: 1px solid rgba(115, 196, 167, .2);
+  border-radius: .9rem;
+  background: var(--sc-business-heading-bg) !important;
+  color: #fff !important;
+  font-size: .9rem;
+  box-shadow: 0 12px 24px rgba(14, 72, 53, .12);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-shell .section-title i {
+  color: #d1fae5 !important;
+}
+
+/* Los listados usan una cabecera de seccion amplia, sin el tratamiento de titulo tipo chip. */
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .table-card > .section-title {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  width: 100%;
+  margin: 0 0 .8rem;
+  min-height: 4.8rem;
+  padding: 1.05rem 1.3rem;
+  border: 0;
+  border-radius: .72rem .72rem .45rem .45rem;
+  background: var(--sc-business-heading-bg) !important;
+  color: #fff !important;
+  font-size: clamp(1.28rem, 1.4vw, 1.55rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: none;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .table-card > .section-title i {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  margin-right: 0 !important;
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: .78rem;
+  background: rgba(255, 255, 255, .1);
+  color: #d1fae5 !important;
+  font-size: 1.05rem;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.sc-reservas-list-card, .sc-pendientes-card, .sc-bloqueos-card) > .sc-reservas-list-head {
+  margin-bottom: .8rem;
+  min-height: 5.4rem;
+  padding: 1.05rem 1.3rem;
+  border-radius: .72rem .72rem .45rem .45rem;
+  background: var(--sc-business-heading-bg);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.sc-reservas-list-card, .sc-pendientes-card, .sc-bloqueos-card) > .sc-reservas-list-head .section-title {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+  color: #fff !important;
+  font-size: clamp(1.28rem, 1.4vw, 1.55rem);
+  line-height: 1.1;
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: none;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.sc-reservas-list-card, .sc-pendientes-card, .sc-bloqueos-card) > .sc-reservas-list-head .section-title i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  margin-right: .35rem !important;
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: .78rem;
+  background: rgba(255, 255, 255, .1);
+  color: #d1fae5 !important;
+  font-size: 1.05rem;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.sc-reservas-list-card, .sc-pendientes-card, .sc-bloqueos-card) > .sc-reservas-list-head p {
+  color: rgba(235, 255, 247, .84) !important;
+}
+
+/* Firma: FRANCO LARA - 02/09/2026 | Unifica cabeceras de listados y ventanas en verde para Admin y Super Admin, simplifica KPI sin iconos, armoniza notificaciones y limpia los selectores de estado. */
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.modal-header, .sc-modal-header) {
+  border-bottom-color: rgba(209, 250, 229, .18) !important;
+  background: var(--sc-business-heading-bg) !important;
+  color: #fff !important;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.modal-header, .sc-modal-header) :is(.modal-title, .sc-modal-title, .sc-modal-subtitle) {
+  color: #fff !important;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.modal-header, .sc-modal-header) .btn-close {
+  border: 1px solid rgba(255, 255, 255, .18);
+  background-color: rgba(255, 255, 255, .12);
+  filter: invert(1) grayscale(1) brightness(200%);
+  opacity: .92;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-notify-head {
+  border-bottom-color: rgba(209, 250, 229, .18);
+  background: var(--sc-business-heading-bg);
+  color: #fff;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-notify-head :is(strong, small) {
+  color: #fff;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.kpi-card, .sc-kpi-card, .sc-dash-kpi-card, .sc-kpi-item, .sc-reservas-metric) {
+  padding-right: .8rem !important;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.kpi-card, .sc-kpi-card, .sc-dash-kpi-card, .sc-kpi-item, .sc-reservas-metric)::after,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.kpi-card, .sc-kpi-card, .sc-dash-kpi-card, .sc-kpi-item, .sc-reservas-metric) .kpi-context-icon,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.kpi-card, .sc-kpi-card, .sc-dash-kpi-card, .sc-kpi-item, .sc-reservas-metric) .sc-kpi-icon,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .kpi-card-label > i {
+  display: none !important;
+  content: none !important;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-estado-check {
+  position: relative;
+  cursor: pointer;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-estado-check input[type='checkbox'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-estado-check:has(input[type='checkbox']:checked) {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, .14);
+  color: #166534;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-estado-check:focus-within {
+  outline: 2px solid rgba(37, 99, 235, .58);
+  outline-offset: 2px;
+}
+
+html[data-theme='dark'] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-estado-check:has(input[type='checkbox']:checked) {
+  border-color: rgba(52, 211, 153, .65);
+  background: rgba(16, 185, 129, .18);
+  color: #d1fae5;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .table-card table thead th {
+  padding: .78rem .85rem;
+  vertical-align: middle;
+  border-bottom-color: rgba(145, 164, 189, .22);
+  background: #f5f8fe;
+  color: #13233f;
+  font-size: .8rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: .05em;
+  text-align: left !important;
+  text-transform: uppercase;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .table-card table thead th:last-child {
+  text-align: right !important;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .table-card table thead th .sc-col-header {
+  display: block;
+  width: auto;
+  line-height: inherit;
+  text-align: inherit;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .table-card table thead th .sc-col-header i {
+  display: none;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .table-card table thead th .sc-col-header small {
+  display: inline;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+
+body.sc-platform-admin-theme-shell .table-card > .table-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem 1rem;
+  min-height: 4.2rem;
+  padding: .85rem 1.05rem;
+  border-bottom: 1px solid rgba(115, 196, 167, .22);
+  background: var(--sc-business-heading-bg);
+}
+
+body.sc-platform-admin-theme-shell .table-card > .table-card-header .platform-card-title {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+  color: #fff !important;
+  font-size: 1.05rem;
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: none;
+}
+
+body.sc-platform-admin-theme-shell .table-card > .table-card-header .platform-card-icon {
+  border-color: rgba(255, 255, 255, .2);
+  background: rgba(255, 255, 255, .1);
+  color: #d1fae5;
+}
+
+body.sc-platform-admin-theme-shell .table-card > .table-card-header :is(.platform-card-title-text, .form-label, .text-muted) {
+  color: #fff !important;
+}
+
+body.sc-platform-admin-theme-shell .table-card > .table-card-header .badge {
+  border-color: rgba(255, 255, 255, .26) !important;
+  background: rgba(255, 255, 255, .12) !important;
+  color: #fff !important;
+}
+
+body.sc-platform-admin-theme-shell .sc-kpi-card {
+  border-top-color: #2bc58a;
+}
+
+body.sc-platform-admin-theme-shell .table-card {
+  border-top-color: #2bc58a;
+}
+
+body.sc-platform-admin-theme-shell .platform-module-btn {
+  border-color: rgba(39, 140, 105, .26);
+  color: #155e49;
+}
+
+body.sc-platform-admin-theme-shell .platform-module-icon {
+  border-color: rgba(39, 140, 105, .26);
+  background: rgba(43, 197, 138, .1);
+  color: #167759;
+}
+
+body.sc-platform-admin-theme-shell .platform-module-btn:hover,
+body.sc-platform-admin-theme-shell .platform-module-btn-active {
+  border-color: #167759;
+  background: linear-gradient(135deg, #167759 0%, #278c69 100%);
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(14, 72, 53, .18);
+}
+
+body.sc-platform-admin-theme-shell .platform-module-btn:hover :is(.platform-module-icon, .platform-module-text small),
+body.sc-platform-admin-theme-shell .platform-module-btn-active :is(.platform-module-icon, .platform-module-text small) {
+  color: #fff;
+}
+
+body.sc-platform-admin-theme-shell .platform-module-btn:hover .platform-module-icon,
+body.sc-platform-admin-theme-shell .platform-module-btn-active .platform-module-icon {
+  border-color: rgba(255, 255, 255, .24);
+  background: rgba(255, 255, 255, .12);
+}
+
+html[data-theme="dark"] body.sc-platform-admin-theme-shell .platform-module-btn:hover,
+html[data-theme="dark"] body.sc-platform-admin-theme-shell .platform-module-btn-active {
+  border-color: #2bc58a;
+  background: linear-gradient(135deg, #145646 0%, #167759 100%);
+  color: #fff;
+}
+
+html[data-theme="dark"] body.sc-platform-admin-theme-shell .platform-module-btn:hover :is(.platform-module-icon, .platform-module-text small),
+html[data-theme="dark"] body.sc-platform-admin-theme-shell .platform-module-btn-active :is(.platform-module-icon, .platform-module-text small) {
+  color: #fff;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-negocio-card--focus,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-topbar .sc-negocio-ref-card,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .admin-page-frame .page-header .sc-negocio-ref-card {
+  border-color: rgba(219, 249, 239, .36) !important;
+  background: rgba(8, 38, 31, .32) !important;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-negocio-card-focus-avatar,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-topbar .sc-negocio-ref-card-head i,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .admin-page-frame .page-header .sc-negocio-ref-card-head i {
+  border-color: rgba(219, 249, 239, .58) !important;
+  background: linear-gradient(145deg, rgba(21, 131, 96, .82), rgba(43, 197, 138, .68)) !important;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-filter-card,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-kpi-card,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-panel,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-action-link {
+  border-color: rgba(145, 164, 189, .24);
+  box-shadow: 0 18px 40px rgba(14, 40, 86, .08);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-panel {
+  overflow: hidden;
+  padding: 0 !important;
+  border-top: 0;
+  border-radius: 1.05rem;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-panel-head {
+  padding: .75rem 1rem;
+  border-bottom: 1px solid rgba(115, 196, 167, .22);
+  background: var(--sc-business-heading-bg);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-panel-head h3 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #fff !important;
+  font-size: .92rem;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-panel-head h3 i {
+  color: #d1fae5 !important;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-panel-head p {
+  margin: .22rem 0 0;
+  color: rgba(235, 255, 247, .84) !important;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-panel > :not(.sc-dash-panel-head) {
+  margin-left: .95rem;
+  margin-right: .95rem;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-panel > :last-child {
+  margin-bottom: .95rem;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-panel > .table-responsive {
+  width: calc(100% - 1.9rem);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-kpi-card::before {
+  background: linear-gradient(90deg, #145646 0%, #2bc58a 100%);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-progress > span,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-line-fill,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-mini-progress > span {
+  background: linear-gradient(90deg, #158360 0%, #2bc58a 100%);
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) {
+  --sc-admin-page-bg: #0B1412;
+  --sc-admin-card-bg: #111E1B;
+  --sc-admin-control-bg: #0D1917;
+  --sc-admin-hover-bg: #152723;
+  --sc-admin-sidebar-bg: #063B2E;
+  --sc-admin-header-start: #064E3B;
+  --sc-admin-header-end: #087A5B;
+  --sc-admin-menu-active: #0B8F68;
+  --sc-admin-accent: #20C997;
+  --sc-admin-primary: #2563EB;
+  --sc-admin-text: #F4F7F6;
+  --sc-admin-muted: #A7B8B2;
+  --sc-admin-border: #29413A;
+  --sc-admin-border-soft: #1D302B;
+  --sc-admin-active-soft: var(--sc-admin-hover-bg);
+  --sc-admin-table-head-bg: var(--sc-admin-control-bg);
+  --sc-border-soft: var(--sc-admin-border-soft);
+  --sc-input-bg: var(--sc-admin-control-bg);
+  --sc-input-border: var(--sc-admin-border);
+  --sc-theme-track-bg: rgba(255, 255, 255, .08);
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-shell {
+  background:
+    radial-gradient(circle at 86% -12%, rgba(31, 169, 113, .09), transparent 30%),
+    var(--sc-body-bg);
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.sc-admin-homecard, .sc-admin-welcome, .sc-admin-brand, .sc-admin-nav-group, .sc-admin-notify-btn, .sc-admin-session-box) {
+  border-color: rgba(181, 235, 218, .18);
+  background: rgba(255, 255, 255, .07);
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-welcome {
+  background: linear-gradient(145deg, rgba(47, 163, 122, .24), rgba(16, 51, 42, .2));
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-nav-group-toggle {
+  color: #eefaf6;
+  background: rgba(37, 115, 88, .3);
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-navlink {
+  border-color: rgba(255, 255, 255, .05);
+  background: rgba(255, 255, 255, .04);
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-navlink:hover {
+  border-color: rgba(183, 237, 220, .38);
+  background: linear-gradient(135deg, rgba(55, 170, 127, .32), rgba(22, 98, 74, .22));
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-navlink.active {
+  border-color: rgba(219, 249, 239, .54);
+  background: linear-gradient(138deg, rgba(21, 131, 96, .96), rgba(43, 197, 138, .76));
+  box-shadow: 0 12px 22px rgba(9, 57, 42, .26);
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-context-help {
+  color: var(--sc-admin-text) !important;
+  border-color: var(--sc-admin-border);
+  background: var(--sc-admin-card-bg);
+  box-shadow: 0 18px 36px color-mix(in srgb, var(--sc-admin-page-bg) 76%, transparent);
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.sc-admin-topbar, .page-header, .page-header-card),
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-panel-head {
+  color: #fff;
+  border-color: rgba(115, 196, 167, .2);
+  background: var(--sc-business-heading-bg);
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-panel {
+  border-color: var(--sc-admin-border);
+  background: var(--sc-admin-card-bg);
+  box-shadow: 0 18px 40px color-mix(in srgb, var(--sc-admin-page-bg) 76%, transparent);
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .table-card table thead th {
+  border-bottom-color: var(--sc-admin-border-soft);
+  background: var(--sc-admin-control-bg);
+  color: var(--sc-admin-text);
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-action-link,
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-filter-card,
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-kpi-card {
+  border-color: var(--sc-admin-border);
+  background: var(--sc-admin-card-bg);
+  box-shadow: 0 18px 40px color-mix(in srgb, var(--sc-admin-page-bg) 76%, transparent);
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-action-link:hover {
+  color: var(--sc-admin-text);
+  border-color: var(--sc-admin-primary);
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-kpi-value {
+  color: var(--sc-admin-text);
+  text-shadow: none;
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-kpi-label,
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-kpi-foot {
+  color: var(--sc-admin-muted);
+}
+
+/* Paleta administrativa unificada. Esta capa conserva el mecanismo data-theme existente. */
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) {
+  background: var(--sc-admin-page-bg);
+  color: var(--sc-admin-text);
+  color-scheme: light;
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) {
+  color-scheme: dark;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-shell,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-main {
+  background: var(--sc-admin-page-bg);
+  color: var(--sc-admin-text);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-sidebar {
+  border-right-color: var(--sc-admin-sidebar-border);
+  background-color: var(--sc-admin-sidebar-bg);
+  background-image:
+    linear-gradient(45deg, var(--sc-admin-mesh-line) 1px, transparent 1px),
+    linear-gradient(-45deg, var(--sc-admin-mesh-line) 1px, transparent 1px);
+  background-size: 24px 24px;
+  box-shadow: 18px 0 42px color-mix(in srgb, var(--sc-admin-sidebar-bg) 34%, transparent);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(
+  .sc-admin-homecard,
+  .sc-admin-welcome,
+  .sc-admin-brand,
+  .sc-admin-nav-group,
+  .sc-admin-notify-btn,
+  .sc-admin-session-box,
+  .sc-admin-theme-card
+) {
+  border-color: var(--sc-admin-sidebar-border);
+  background: var(--sc-admin-sidebar-soft);
+  color: var(--sc-admin-on-color);
+  box-shadow: none;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-nav-group-toggle {
+  border-color: var(--sc-admin-sidebar-border);
+  background: color-mix(in srgb, var(--sc-admin-header-end) 54%, transparent);
+  color: var(--sc-admin-on-color);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-navlink {
+  border-color: transparent;
+  background: var(--sc-admin-sidebar-soft);
+  color: var(--sc-admin-on-color);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-navlink :is(i, span) {
+  color: inherit;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-navlink:hover,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-navlink:focus-visible {
+  border-color: color-mix(in srgb, var(--sc-admin-accent) 62%, transparent);
+  background: color-mix(in srgb, var(--sc-admin-menu-active) 58%, transparent);
+  color: var(--sc-admin-on-color);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-navlink.active {
+  border-color: var(--sc-admin-accent);
+  background: var(--sc-admin-menu-active);
+  color: var(--sc-admin-on-color);
+  box-shadow: 0 12px 22px color-mix(in srgb, var(--sc-admin-menu-active) 34%, transparent);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-navlink.active::before {
+  background: var(--sc-admin-accent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--sc-admin-accent) 44%, transparent);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(
+  .sc-admin-topbar,
+  .page-header,
+  .page-header-card,
+  .sc-dash-topbar,
+  .sc-dash-shell .section-title,
+  .table-card > .section-title,
+  .sc-reservas-list-head,
+  .sc-dash-panel-head,
+  .table-card > .table-card-header,
+  .sc-calendar-filter-head,
+  .modal-header,
+  .sc-modal-header,
+  .sc-admin-notify-head
+) {
+  border-color: color-mix(in srgb, var(--sc-admin-accent) 42%, transparent) !important;
+  background-color: var(--sc-admin-header-start) !important;
+  background-image:
+    linear-gradient(45deg, var(--sc-admin-mesh-line) 1px, transparent 1px),
+    linear-gradient(-45deg, var(--sc-admin-mesh-line) 1px, transparent 1px),
+    var(--sc-admin-heading-bg) !important;
+  background-size: 24px 24px, 24px 24px, auto !important;
+  color: var(--sc-admin-on-color) !important;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(
+  .sc-admin-topbar,
+  .page-header,
+  .page-header-card,
+  .sc-dash-shell .section-title,
+  .sc-dash-panel-head,
+  .table-card > .table-card-header,
+  .modal-header,
+  .sc-modal-header,
+  .sc-admin-notify-head
+) :is(h1, h2, h3, h4, h5, h6, p, small, strong, span, i, .page-title, .page-subtitle, .modal-title, .sc-modal-title, .sc-modal-subtitle, .text-muted) {
+  color: var(--sc-admin-on-color) !important;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(
+  .content-card,
+  .card,
+  .accordion-item,
+  .list-group-item,
+  .filter-card,
+  .table-card,
+  .sc-form-card,
+  .sc-form-section,
+  .sc-form-actions,
+  .empty-state,
+  .sc-listado-filtro-form,
+  .sc-maestros-nav-card,
+  .sc-maestro-form,
+  .sc-maestro-panel-search,
+  .sc-dash-filter-card,
+  .sc-dash-kpi-card,
+  .sc-dash-panel,
+  .sc-dash-action-link,
+  .kpi-card,
+  .sc-kpi-card,
+  .sc-kpi-item,
+  .sc-reservas-metric,
+  .sc-report-snapshot-card,
+  .sc-calendar-filter,
+  .sc-reservas-list-card,
+  .sc-pendientes-card,
+  .sc-bloqueos-card,
+  .modal-content,
+  .dropdown-menu,
+  .platform-negocio-card,
+  .platform-negocio-detail-panel
+) {
+  border-color: var(--sc-admin-border) !important;
+  background: var(--sc-admin-card-bg) !important;
+  color: var(--sc-admin-text);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .modal-content {
+  --bs-modal-bg: var(--sc-admin-card-bg);
+  --bs-modal-color: var(--sc-admin-text);
+  --bs-modal-border-color: var(--sc-admin-border);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .dropdown-menu {
+  --bs-dropdown-bg: var(--sc-admin-card-bg);
+  --bs-dropdown-color: var(--sc-admin-text);
+  --bs-dropdown-border-color: var(--sc-admin-border);
+  --bs-dropdown-link-color: var(--sc-admin-text);
+  --bs-dropdown-link-hover-bg: var(--sc-admin-active-soft);
+  --bs-dropdown-link-hover-color: var(--sc-admin-text);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(
+  .content-card,
+  .filter-card,
+  .table-card,
+  .sc-form-card,
+  .sc-form-section,
+  .sc-dash-panel,
+  .kpi-card,
+  .sc-kpi-card,
+  .modal-content
+) :is(h1, h2, h3, h4, h5, h6, strong) {
+  color: var(--sc-admin-text);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(
+  .page-subtitle,
+  .text-muted,
+  .form-text,
+  .sc-dash-kpi-label,
+  .sc-dash-kpi-foot,
+  .platform-negocio-label,
+  .platform-negocio-metric-line
+) {
+  color: var(--sc-admin-muted) !important;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(
+  .form-control,
+  .form-select,
+  .input-group-text,
+  .page-link,
+  .dropdown-item,
+  .sc-check-chip,
+  .sc-day-chip,
+  .sc-maestro-tab,
+  .sc-report-tab
+) {
+  border-color: var(--sc-admin-border);
+  background: var(--sc-input-bg);
+  color: var(--sc-admin-text);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .form-select option {
+  background: var(--sc-input-bg);
+  color: var(--sc-admin-text);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.form-control, .form-select)::placeholder {
+  color: var(--sc-admin-muted);
+  opacity: .78;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.form-control, .form-select, .btn, .page-link):focus,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.form-control, .form-select, .btn, .page-link):focus-visible {
+  border-color: var(--sc-admin-accent) !important;
+  box-shadow: 0 0 0 .2rem color-mix(in srgb, var(--sc-admin-accent) 22%, transparent) !important;
+  outline: 0;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(
+  .sc-check-chip:has(input:checked),
+  .sc-day-chip:has(input:checked),
+  .sc-estado-check:has(input:checked),
+  .sc-maestro-tab.is-active,
+  .sc-report-tab.is-active,
+  .nav-link.active,
+  .page-link.active,
+  .page-item.active .page-link
+) {
+  border-color: var(--sc-admin-accent) !important;
+  background-color: var(--sc-admin-active-soft) !important;
+  color: var(--sc-admin-text) !important;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.btn-primary, .btn-grabar, .btn-accion-filtro) {
+  border-color: var(--sc-admin-primary) !important;
+  background: var(--sc-admin-primary) !important;
+  color: var(--sc-admin-on-color) !important;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.btn-primary, .btn-grabar, .btn-accion-filtro):hover,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.btn-primary, .btn-grabar, .btn-accion-filtro):focus-visible {
+  border-color: var(--sc-admin-primary-hover) !important;
+  background: var(--sc-admin-primary-hover) !important;
+  color: var(--sc-admin-on-color) !important;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .btn-outline-primary:not(.btn-accion-filtro) {
+  border-color: var(--sc-admin-primary) !important;
+  color: var(--sc-admin-primary) !important;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .btn-outline-primary:not(.btn-accion-filtro):hover,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .btn-outline-primary:not(.btn-accion-filtro):focus-visible,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .btn-outline-primary:not(.btn-accion-filtro).active {
+  border-color: var(--sc-admin-primary) !important;
+  background: var(--sc-admin-primary) !important;
+  color: var(--sc-admin-on-color) !important;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.btn, .form-control, .form-select):disabled,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.btn, .form-control, .form-select).disabled {
+  cursor: not-allowed;
+  opacity: .58;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .table {
+  --bs-table-bg: var(--sc-admin-card-bg);
+  --bs-table-color: var(--sc-admin-text);
+  --bs-table-border-color: var(--sc-admin-border);
+  --bs-table-striped-bg: color-mix(in srgb, var(--sc-admin-page-bg) 72%, var(--sc-admin-card-bg));
+  --bs-table-hover-bg: color-mix(in srgb, var(--sc-admin-accent) 8%, var(--sc-admin-card-bg));
+  color: var(--sc-admin-text);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .table-card table thead th {
+  border-bottom-color: var(--sc-admin-border-soft, var(--sc-admin-border));
+  background: var(--sc-admin-table-head-bg);
+  color: var(--sc-admin-text);
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .table {
+  --bs-table-striped-bg: var(--sc-admin-control-bg);
+  --bs-table-hover-bg: var(--sc-admin-hover-bg);
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(
+  .dropdown-item:hover,
+  .dropdown-item:focus,
+  .page-link:hover,
+  .sc-check-chip:hover,
+  .sc-day-chip:hover,
+  .sc-maestro-tab:hover,
+  .sc-report-tab:hover,
+  .table tbody tr:hover > td
+) {
+  background: var(--sc-admin-hover-bg) !important;
+  color: var(--sc-admin-text) !important;
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(
+  .modal-footer,
+  .card-footer,
+  .platform-negocio-form-actions
+) {
+  border-color: var(--sc-admin-border-soft) !important;
+  background: var(--sc-admin-card-bg) !important;
+}
+
+/* Cierre de cascada del modo oscuro: elimina superficies azul petroleo heredadas. */
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .admin-page-frame {
+  background: transparent !important;
+  color: var(--sc-admin-text);
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(
+  .workspace-loading-box,
+  .offcanvas,
+  .sc-check-list,
+  .sc-calendar-legend-card,
+  .sc-report-snapshot-card,
+  .sc-report-tower-wrap,
+  .sc-report-total-strip,
+  .admin-faq-sidebar,
+  .admin-faq-content,
+  .admin-faq-item,
+  .admin-faq-item .accordion-body,
+  .sc-suscripcion-info-card,
+  .sc-photo-summary,
+  .sc-photo-table-wrap,
+  .sc-sede-highlight,
+  .sc-list-mini-card,
+  .sc-id-chip
+) {
+  border-color: var(--sc-admin-border) !important;
+  background: var(--sc-admin-card-bg) !important;
+  color: var(--sc-admin-text) !important;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-main :is(
+  .kpi-card,
+  .sc-kpi-card,
+  .sc-dash-kpi-card,
+  .sc-kpi-item,
+  .sc-reservas-metric,
+  .filter-card,
+  .table-card,
+  .content-card,
+  .sc-form-card,
+  .sc-form-section,
+  .sc-dash-panel,
+  .sc-calendar-legend-card
+) {
+  border-color: var(--sc-admin-border) !important;
+  background: var(--sc-admin-card-bg) !important;
+  color: var(--sc-admin-text) !important;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-main :is(
+  .kpi-card:hover,
+  .sc-kpi-card:hover,
+  .sc-dash-kpi-card:hover,
+  .sc-kpi-item:hover,
+  .sc-reservas-metric:hover,
+  .sc-list-mini-card:hover,
+  .sc-page-link:hover,
+  .admin-faq-tab:hover
+) {
+  border-color: var(--sc-admin-accent) !important;
+  background: var(--sc-admin-hover-bg) !important;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-main :is(
+  .form-control,
+  .form-select,
+  textarea,
+  input:not([type="checkbox"]):not([type="radio"]),
+  .form-control.bg-light,
+  .sc-maestro-panel-search,
+  .sc-page-link,
+  .form-check-input,
+  .badge.bg-light,
+  .bg-light.text-dark.border
+) {
+  border-color: var(--sc-admin-border) !important;
+  background: var(--sc-admin-control-bg) !important;
+  color: var(--sc-admin-text) !important;
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-main :is(
+  .content-card .section-title,
+  .filter-card .section-title,
+  .sc-maestro-panel-header .section-title,
+  .sc-form-title
+) {
+  border-color: var(--sc-admin-border-soft) !important;
+  background: transparent !important;
+  color: var(--sc-admin-text) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-main :is(
+  .table-card .table-card-title,
+  .platform-card-title,
+  .sc-dash-panel-head h3
+) {
+  border-color: transparent !important;
+  background: transparent !important;
+  color: var(--sc-admin-on-color) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-main :is(
+  .sc-dash-progress,
+  .sc-dash-bar-track,
+  .sc-dash-line-track,
+  .sc-dash-health-item,
+  .sc-report-snapshot-emphasis,
+  .sc-report-snapshot-metrics > div,
+  .sc-report-total-strip > div,
+  .sc-report-snapshot-progress,
+  .sc-report-tower-track,
+  .sc-list-code,
+  .sc-espacio-code
+) {
+  border-color: var(--sc-admin-border-soft) !important;
+  background: var(--sc-admin-control-bg) !important;
+  color: var(--sc-admin-text) !important;
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-main :is(
+  .sc-check-list-item:hover,
+  .sc-check-list-item:has(input:checked),
+  .sc-maestro-tab:hover,
+  .sc-report-tab:hover,
+  .sc-action-btn:hover,
+  .sc-maestro-table tbody tr:hover,
+  .admin-faq-item .accordion-button:not(.collapsed)
+) {
+  border-color: var(--sc-admin-accent) !important;
+  background: var(--sc-admin-hover-bg) !important;
+  color: var(--sc-admin-text) !important;
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .admin-faq-item .accordion-button {
+  border-color: var(--sc-admin-border-soft) !important;
+  background: var(--sc-admin-control-bg) !important;
+  color: var(--sc-admin-text) !important;
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.btn-outline-secondary, .sc-page-link) {
+  border-color: var(--sc-admin-border) !important;
+  background: var(--sc-admin-control-bg) !important;
+  color: var(--sc-admin-text) !important;
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.btn-outline-secondary, .sc-page-link):hover,
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.btn-outline-secondary, .sc-page-link):focus-visible {
+  border-color: var(--sc-admin-accent) !important;
+  background: var(--sc-admin-hover-bg) !important;
+  color: var(--sc-admin-text) !important;
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-page-link.is-active {
+  border-color: var(--sc-admin-primary) !important;
+  background: var(--sc-admin-primary) !important;
+  color: var(--sc-admin-on-color) !important;
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-photo-upload-section .sc-photo-table-wrap :is(table, thead th, tbody tr, tbody td) {
+  border-color: var(--sc-admin-border-soft) !important;
+  background: var(--sc-admin-control-bg) !important;
+  color: var(--sc-admin-text) !important;
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) #reservaModal :is(
+  .sc-reserva-form-section,
+  .sc-reserva-policy,
+  .sc-reserva-resumen
+) {
+  border-color: var(--sc-admin-border) !important;
+  background: var(--sc-admin-card-bg) !important;
+  color: var(--sc-admin-text) !important;
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) #reservaModal :is(
+  .sc-reserva-form-section-icon,
+  .sc-reserva-resumen > div
+) {
+  border-color: var(--sc-admin-border-soft) !important;
+  background: var(--sc-admin-control-bg) !important;
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(
+  .workspace-loading-box small,
+  .sc-report-tab-text small,
+  .sc-report-section-intro,
+  .sc-report-snapshot-kicker,
+  .sc-report-snapshot-emphasis > span,
+  .sc-report-snapshot-metrics span,
+  .sc-report-tower-meta span,
+  .sc-report-total-strip span,
+  .sc-suscripcion-info-copy small,
+  .sc-suscripcion-info-copy span,
+  .sc-dash-bar-col small,
+  .sc-dash-health-item span
+) {
+  color: var(--sc-admin-muted) !important;
+}
+
+html[data-theme="dark"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(
+  .workspace-loading-box strong,
+  .sc-report-snapshot-head h3,
+  .sc-report-snapshot-emphasis > strong,
+  .sc-report-snapshot-metrics strong,
+  .sc-report-tower-value,
+  .sc-report-tower-meta strong,
+  .sc-report-total-strip strong,
+  .sc-suscripcion-info-copy strong,
+  .sc-dash-health-item strong
+) {
+  color: var(--sc-admin-text) !important;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.sc-kpi-card, .table-card, .sc-dash-kpi-card, .kpi-card) {
+  border-top-color: var(--sc-admin-accent);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-kpi-card::before,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-progress > span,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-line-fill,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-dash-mini-progress > span {
+  background: linear-gradient(90deg, var(--sc-admin-header-end) 0%, var(--sc-admin-accent) 100%);
+}
+
+body.sc-platform-admin-theme-shell :is(.platform-module-btn, .platform-negocio-tab) {
+  border-color: color-mix(in srgb, var(--sc-admin-accent) 32%, var(--sc-admin-border));
+  color: var(--sc-admin-text);
+}
+
+body.sc-platform-admin-theme-shell :is(.platform-module-icon, .platform-negocio-avatar) {
+  border-color: color-mix(in srgb, var(--sc-admin-accent) 46%, transparent);
+  background: var(--sc-admin-heading-bg);
+  color: var(--sc-admin-on-color);
+}
+
+body.sc-platform-admin-theme-shell :is(.platform-module-btn:hover, .platform-module-btn-active, .platform-negocio-tab:hover, .platform-negocio-tab:focus-visible) {
+  border-color: var(--sc-admin-accent);
+  background: var(--sc-admin-active-soft);
+  color: var(--sc-admin-text);
+  box-shadow: none;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.modal-footer, .platform-negocio-form-actions) {
+  border-top-color: var(--sc-admin-border) !important;
+  background: var(--sc-admin-card-bg) !important;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .modal-header .btn-close,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-modal-header .btn-close {
+  border-color: color-mix(in srgb, white 22%, transparent);
+  background-color: color-mix(in srgb, white 12%, transparent);
+}
+
+@media (max-width: 991.98px) {
+  body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-admin-sidebar {
+    box-shadow: 0 16px 34px rgba(8, 42, 33, .24);
+  }
+}
+
+@media (max-width: 767.98px) {
+  body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .table-card > .section-title {
+    min-height: 4.15rem;
+    padding: .9rem 1rem;
+    font-size: 1.18rem;
+  }
+
+  body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.sc-reservas-list-card, .sc-pendientes-card, .sc-bloqueos-card) > .sc-reservas-list-head {
+    min-height: auto;
+    padding: .9rem 1rem;
+  }
+
+  body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.sc-reservas-list-card, .sc-pendientes-card, .sc-bloqueos-card) > .sc-reservas-list-head .section-title {
+    font-size: 1.18rem;
   }
 }
 

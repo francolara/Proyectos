@@ -1,4 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservasIndexViewModel
+@* Firma: FRANCO LARA - 01/09/2026 | Presenta los listados de reservas con titulos operativos y directos. *@
 @{
     ViewData["Title"] = "Reservas";
     var sedeSeleccionadaTexto = Model.SedesFiltro.FirstOrDefault(x => x.Value == Model.SedeId?.ToString())?.Text ?? "Seleccione sede";
@@ -211,7 +212,7 @@
     <section class="table-card sc-pendientes-card mb-4" id="panelPendientesDia">
         <div class="sc-reservas-list-head">
             <div>
-                <h2 class="section-title"><i class="bi bi-hourglass-split me-1"></i>Pendiente de confirmar por dia</h2>
+                <h2 class="section-title"><i class="bi bi-hourglass-split me-1"></i>Reservas pendientes de confirmacion</h2>
                 <p class="mb-0 text-muted small">Muestra las reservas en estado pendiente para la fecha seleccionada. Haz clic para abrir el detalle en el pop-up.</p>
             </div>
             <div class="sc-disponibilidad-date-filter">
@@ -228,7 +229,7 @@
     <section class="table-card sc-reservas-list-card mb-3">
         <div class="sc-reservas-list-head">
             <div>
-                <h2 class="section-title"><i class="bi bi-list-check me-1"></i>Listado general de reservas</h2>
+                <h2 class="section-title"><i class="bi bi-calendar-check me-1"></i>Reservas registradas</h2>
                 <p class="mb-0 text-muted small">Consulta con filtro independiente de rango y estados multiples.</p>
             </div>
             <div class="sc-reservas-metrics">
@@ -496,7 +497,7 @@ else
     <section class="table-card sc-reservas-list-card mb-3">
         <div class="sc-reservas-list-head">
             <div>
-                <h2 class="section-title"><i class="bi bi-list-check me-1"></i>Listado general de reservas</h2>
+                <h2 class="section-title"><i class="bi bi-calendar-check me-1"></i>Reservas registradas</h2>
                 <p class="mb-0 text-muted small">Consulta con filtro independiente de rango y estados multiples.</p>
             </div>
             <div class="sc-reservas-metrics">

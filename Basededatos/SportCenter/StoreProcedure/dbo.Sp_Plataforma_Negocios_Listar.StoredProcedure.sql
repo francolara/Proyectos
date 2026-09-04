@@ -5,6 +5,7 @@
 -- Firma:         20/04/2026 | Agrega filtro comercial y paginacion backend con total de registros para panel superadmin.
 -- Firma:         FRANCO LARA - 18/06/2026 | Expone TipoPlan para administrar capacidad comercial Basico/Full desde plataforma.
 -- Firma:         FRANCO LARA - 21/07/2026 | Expone el plan comercial vigente y la fecha de registro para los reportes HTML del Super Admin.
+-- Firma:         FRANCO LARA - 01/09/2026 | Agrega filtros separados para servicios suspendidos y complejos dados de baja.
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.Sp_Plataforma_Negocios_Listar
     @Buscar NVARCHAR(200) = NULL,
@@ -31,9 +32,11 @@ BEGIN
         WHERE (@Buscar IS NULL OR n.NombreComercial LIKE N'%' + @Buscar + N'%')
           AND (
                 @EstadoContratoNorm = N'todos'
-                OR (@EstadoContratoNorm = N'con-contrato' AND COALESCE(ns.EsPrueba, 0) = 0 AND ns.TipoCobro IS NOT NULL AND ns.FechaFinPlan IS NOT NULL)
-                OR (@EstadoContratoNorm = N'sin-contrato' AND NOT (COALESCE(ns.EsPrueba, 0) = 0 AND ns.TipoCobro IS NOT NULL AND ns.FechaFinPlan IS NOT NULL))
-                OR (@EstadoContratoNorm = N'prueba-por-vencer' AND COALESCE(ns.EsPrueba, 0) = 1 AND ns.FechaFinPrueba IS NOT NULL AND ns.FechaFinPrueba >= @Hoy AND ns.FechaFinPrueba <= DATEADD(DAY, 7, @Hoy))
+                OR (@EstadoContratoNorm = N'con-contrato' AND n.Activo = 1 AND COALESCE(ns.EstadoSuscripcion, 0) = 2 AND COALESCE(ns.EsPrueba, 0) = 0 AND ns.TipoCobro IS NOT NULL AND ns.FechaFinPlan IS NOT NULL)
+                OR (@EstadoContratoNorm = N'sin-contrato' AND n.Activo = 1 AND COALESCE(ns.EstadoSuscripcion, 0) <> 4 AND NOT (COALESCE(ns.EsPrueba, 0) = 0 AND ns.TipoCobro IS NOT NULL AND ns.FechaFinPlan IS NOT NULL))
+                OR (@EstadoContratoNorm = N'prueba-por-vencer' AND n.Activo = 1 AND COALESCE(ns.EstadoSuscripcion, 0) = 1 AND COALESCE(ns.EsPrueba, 0) = 1 AND ns.FechaFinPrueba IS NOT NULL AND ns.FechaFinPrueba >= @Hoy AND ns.FechaFinPrueba <= DATEADD(DAY, 7, @Hoy))
+                OR (@EstadoContratoNorm = N'suspendidos' AND n.Activo = 1 AND COALESCE(ns.EstadoSuscripcion, 0) = 4)
+                OR (@EstadoContratoNorm = N'dados-de-baja' AND n.Activo = 0)
               );
 
         SELECT
@@ -60,9 +63,11 @@ BEGIN
         WHERE (@Buscar IS NULL OR n.NombreComercial LIKE N'%' + @Buscar + N'%')
           AND (
                 @EstadoContratoNorm = N'todos'
-                OR (@EstadoContratoNorm = N'con-contrato' AND COALESCE(ns.EsPrueba, 0) = 0 AND ns.TipoCobro IS NOT NULL AND ns.FechaFinPlan IS NOT NULL)
-                OR (@EstadoContratoNorm = N'sin-contrato' AND NOT (COALESCE(ns.EsPrueba, 0) = 0 AND ns.TipoCobro IS NOT NULL AND ns.FechaFinPlan IS NOT NULL))
-                OR (@EstadoContratoNorm = N'prueba-por-vencer' AND COALESCE(ns.EsPrueba, 0) = 1 AND ns.FechaFinPrueba IS NOT NULL AND ns.FechaFinPrueba >= @Hoy AND ns.FechaFinPrueba <= DATEADD(DAY, 7, @Hoy))
+                OR (@EstadoContratoNorm = N'con-contrato' AND n.Activo = 1 AND COALESCE(ns.EstadoSuscripcion, 0) = 2 AND COALESCE(ns.EsPrueba, 0) = 0 AND ns.TipoCobro IS NOT NULL AND ns.FechaFinPlan IS NOT NULL)
+                OR (@EstadoContratoNorm = N'sin-contrato' AND n.Activo = 1 AND COALESCE(ns.EstadoSuscripcion, 0) <> 4 AND NOT (COALESCE(ns.EsPrueba, 0) = 0 AND ns.TipoCobro IS NOT NULL AND ns.FechaFinPlan IS NOT NULL))
+                OR (@EstadoContratoNorm = N'prueba-por-vencer' AND n.Activo = 1 AND COALESCE(ns.EstadoSuscripcion, 0) = 1 AND COALESCE(ns.EsPrueba, 0) = 1 AND ns.FechaFinPrueba IS NOT NULL AND ns.FechaFinPrueba >= @Hoy AND ns.FechaFinPrueba <= DATEADD(DAY, 7, @Hoy))
+                OR (@EstadoContratoNorm = N'suspendidos' AND n.Activo = 1 AND COALESCE(ns.EstadoSuscripcion, 0) = 4)
+                OR (@EstadoContratoNorm = N'dados-de-baja' AND n.Activo = 0)
               )
         ORDER BY n.NombreComercial, n.Id
         OFFSET ((@Pagina - 1) * @TamanoPagina) ROWS

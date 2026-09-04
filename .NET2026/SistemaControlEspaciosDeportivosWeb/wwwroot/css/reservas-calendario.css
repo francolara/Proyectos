@@ -800,6 +800,11 @@
   border: 1px solid #c4b5fd !important;
 }
 
+/* Firma: FRANCO LARA - 02/09/2026 | Elimina el marcador gris interno de los estados y conserva el color semantico en el contorno completo de cada opcion. */
+.sc-calendar-legend-list .sc-legend-pill > i {
+  display: none;
+}
+
 /* Firma: Codex - 09/07/2026 | Ajusta modo oscuro de Filtro operativo de reservas y Estado de reservas para mantener contraste, fondos y pills coherentes. */
 html[data-theme="dark"] .sc-calendar-filter-card {
   border-color: rgba(58, 132, 98, 0.4) !important;

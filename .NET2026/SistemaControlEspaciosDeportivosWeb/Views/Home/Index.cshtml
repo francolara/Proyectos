@@ -5,6 +5,7 @@
 @using System
 @* Firma: FRANCO LARA - 20/07/2026 | Agrega planes comerciales publicos, limites visibles y accesos de registro para complejos deportivos. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Renombra los planes, muestra sus beneficios, ubica preguntas frecuentes debajo de la tarjeta Esencial y reorganiza el pie público. *@
+@* Firma: FRANCO LARA - 02/09/2026 | Actualiza el mensaje prellenado de la burbuja de WhatsApp para solicitar información de afiliación y gestión de reservas. *@
 
 @{
     ViewData["Title"] = "Portal deportivo";
@@ -17,6 +18,23 @@
     if (string.IsNullOrWhiteSpace(ctaClubUrl) || ctaClubUrl.Equals("/Home/SoftwareClubes", StringComparison.OrdinalIgnoreCase))
     {
         ctaClubUrl = "/Identity/Account/Register?TipoRegistro=club";
+    }
+    var whatsappAfiliacionUrl = Model.PortalConfig.SiguenosWhatsappUrl ?? string.Empty;
+    const string whatsappAfiliacionMensaje = "Buenas, quisiera información sobre la plataforma La Zona Deportiva, cómo afiliar mi negocio y gestionar reservas en su plataforma.";
+    if (Uri.TryCreate(whatsappAfiliacionUrl, UriKind.Absolute, out var whatsappUri))
+    {
+        var whatsappParametros = whatsappUri.Query
+            .TrimStart('?')
+            .Split('&', StringSplitOptions.RemoveEmptyEntries)
+            .Where(parametro => !parametro.StartsWith("text=", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        whatsappParametros.Add($"text={Uri.EscapeDataString(whatsappAfiliacionMensaje)}");
+
+        var whatsappUriBuilder = new UriBuilder(whatsappUri)
+        {
+            Query = string.Join("&", whatsappParametros)
+        };
+        whatsappAfiliacionUrl = whatsappUriBuilder.Uri.AbsoluteUri;
     }
     var heroLcpDesktopUrl = banners.Count > 0
         ? (SistemaControlEspaciosDeportivosWeb.Services.SedeImagenUrlHelper.NormalizarUrlPublica(
@@ -813,9 +831,9 @@
     </div>
 </section>
 
-@if (!string.IsNullOrWhiteSpace(Model.PortalConfig.SiguenosWhatsappUrl))
+@if (!string.IsNullOrWhiteSpace(whatsappAfiliacionUrl))
 {
-    <a href="@Model.PortalConfig.SiguenosWhatsappUrl"
+    <a href="@whatsappAfiliacionUrl"
        target="_blank"
        rel="noopener noreferrer"
        class="home-whatsapp-float"

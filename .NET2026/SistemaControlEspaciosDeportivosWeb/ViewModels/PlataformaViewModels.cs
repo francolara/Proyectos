@@ -13,6 +13,8 @@ public class PlataformaIndexViewModel
     public int NegociosConContrato { get; set; }
     public int NegociosEnPrueba { get; set; }
     public int NegociosVencidos { get; set; }
+    public int NegociosSuspendidos { get; set; }
+    public int NegociosDadosBaja { get; set; }
     public int TotalSolicitudesPendientes { get; set; }
     public int TotalSolicitudesAprobadas { get; set; }
     public int TotalSolicitudesRechazadas { get; set; }

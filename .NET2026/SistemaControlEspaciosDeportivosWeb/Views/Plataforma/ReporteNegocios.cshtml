@@ -3,17 +3,22 @@
 @{
     Layout = null;
     var hoy = DateTime.Today;
-    var enPrueba = Model.Negocios.Count(x => x.EsPrueba && (!x.FechaFinPrueba.HasValue || x.FechaFinPrueba.Value.Date >= hoy));
-    var conContrato = Model.Negocios.Count(x => !x.EsPrueba && x.EstadoSuscripcion > 0 && x.FechaFinPlan.HasValue && x.FechaFinPlan.Value.Date >= hoy);
-    var vencidos = Math.Max(0, Model.Negocios.Count - enPrueba - conContrato);
+    var enPrueba = Model.Negocios.Count(x => x.Activo && x.EstadoSuscripcion == 1 && x.EsPrueba && (!x.FechaFinPrueba.HasValue || x.FechaFinPrueba.Value.Date >= hoy));
+    var conContrato = Model.Negocios.Count(x => x.Activo && !x.EsPrueba && x.EstadoSuscripcion == 2 && x.FechaFinPlan.HasValue && x.FechaFinPlan.Value.Date >= hoy);
+    var suspendidos = Model.Negocios.Count(x => x.Activo && x.EstadoSuscripcion == 4);
+    var dadosBaja = Model.Negocios.Count(x => !x.Activo);
+    var vencidos = Math.Max(0, Model.Negocios.Count(x => x.Activo) - enPrueba - conContrato - suspendidos);
     var filtroTexto = Model.EstadoContrato switch
     {
         "con-contrato" => "Con contrato",
         "sin-contrato" => "Sin contrato",
         "prueba-por-vencer" => "Prueba por vencer",
+        "suspendidos" => "Suspendidos",
+        "dados-de-baja" => "Dados de baja",
         _ => "Todos"
     };
 }
+@* Firma: FRANCO LARA - 01/09/2026 | Separa vigentes, suspendidos, vencidos y dados de baja en indicadores y filtros del reporte. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Reporte HTML imprimible consolidado de complejos, contratos, planes y límites operativos. *@
 <!doctype html>
 <html lang="es">
@@ -48,6 +53,8 @@
                 <article class="metric green"><span>Con contrato vigente</span><strong>@conContrato</strong><small>Vigencia al @hoy.ToString("dd/MM/yyyy")</small></article>
                 <article class="metric amber"><span>En prueba</span><strong>@enPrueba</strong><small>Periodos de evaluación vigentes</small></article>
                 <article class="metric red"><span>Vencidos / sin vigencia</span><strong>@vencidos</strong><small>Requieren revisión comercial</small></article>
+                <article class="metric amber"><span>Suspendidos</span><strong>@suspendidos</strong><small>Servicio pausado manualmente</small></article>
+                <article class="metric red"><span>Dados de baja</span><strong>@dadosBaja</strong><small>Acceso completamente bloqueado</small></article>
             </section>
 
             <header class="section-heading"><div><span class="section-kicker">Detalle consolidado</span><h2>Estado comercial y capacidad operativa</h2></div><p>@Model.Negocios.Count registro(s)</p></header>

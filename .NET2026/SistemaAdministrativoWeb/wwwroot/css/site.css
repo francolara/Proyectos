@@ -535,13 +535,16 @@ html[data-theme="dark"] .report-filter-switch {
   }
 }
 
+/* Firma: FRANCO LARA - 03/09/2026 | Traslada la identidad verde y el modo oscuro antracita de La Zona Deportiva al panel contable, incluidos encabezados, modales, controles, estados y textura de malla. */
 :root {
   --app-navy: #0f2342;
   --app-navy-2: #17386a;
-  --app-emerald: #145646;
-  --app-emerald-2: #1e7761;
-  --app-accent: #0d6efd;
-  --app-accent-2: #2f8cff;
+  --app-emerald: #076149;
+  --app-emerald-2: #0a8060;
+  --app-active-green: #0b9b70;
+  --app-green-accent: #12a878;
+  --app-accent: #2563eb;
+  --app-accent-2: #3b82f6;
   --app-ink: #122033;
   --app-muted: #607089;
   --app-line: rgba(145, 164, 189, 0.24);
@@ -562,30 +565,39 @@ html[data-theme="dark"] .report-filter-switch {
   --app-theme-track-bg: rgba(255, 255, 255, 0.12);
   --app-theme-thumb-bg: linear-gradient(135deg, #ffffff 0%, #dceeff 100%);
   --app-admin-heading-bg:
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.1), transparent 36%),
-    linear-gradient(105deg, #0f6047 0%, #167759 52%, #278c69 100%);
+    linear-gradient(45deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, #076149 0%, #0a8060 100%);
 }
 
 html[data-theme="dark"] {
-  --app-ink: #ecf3ff;
-  --app-muted: #9eb0ca;
-  --app-line: rgba(104, 122, 158, 0.28);
-  --app-surface: rgba(16, 24, 39, 0.9);
+  --app-ink: #f4f7f6;
+  --app-muted: #a7b8b2;
+  --app-line: #29413a;
+  --app-line-soft: #1d302b;
+  --app-surface: #111e1b;
+  --app-surface-hover: #152723;
   --app-shadow: 0 24px 56px rgba(0, 0, 0, 0.34);
-  --app-body-color: #ecf3ff;
-  --app-body-background:
-    radial-gradient(circle at top left, rgba(47, 140, 255, 0.16), transparent 24%),
-    linear-gradient(180deg, #07111f 0%, #0d1728 52%, #121c31 100%);
-  --app-public-header-bg: rgba(10, 16, 29, 0.9);
-  --app-public-border: rgba(100, 124, 165, 0.18);
-  --app-panel-soft: linear-gradient(180deg, rgba(20, 29, 48, 0.94) 0%, rgba(13, 20, 35, 0.98) 100%);
-  --app-input-bg: rgba(13, 20, 35, 0.92);
-  --app-input-border: rgba(93, 117, 158, 0.34);
-  --app-report-bg: rgba(10, 16, 29, 0.96);
+  --app-body-color: #f4f7f6;
+  --app-body-background: #0b1412;
+  --app-public-header-bg: #111e1b;
+  --app-public-border: #1d302b;
+  --app-panel-soft: #111e1b;
+  --app-input-bg: #0d1917;
+  --app-input-border: #29413a;
+  --app-report-bg: #111e1b;
   --app-theme-card-bg: rgba(4, 11, 19, 0.28);
   --app-theme-card-border: rgba(151, 221, 197, 0.18);
   --app-theme-track-bg: rgba(255, 255, 255, 0.08);
   --app-theme-thumb-bg: linear-gradient(135deg, #7bc8ff 0%, #e8f4ff 100%);
+  --app-emerald: #064e3b;
+  --app-emerald-2: #087a5b;
+  --app-active-green: #0b8f68;
+  --app-green-accent: #20c997;
+  --app-admin-heading-bg:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, #064e3b 0%, #087a5b 100%);
 }
 
 @media (min-width: 768px) {
@@ -625,13 +637,13 @@ body {
 
 .btn-primary {
   border: 0;
-  background: linear-gradient(135deg, var(--app-navy) 0%, var(--app-accent) 58%, var(--app-accent-2) 100%);
+  background: linear-gradient(135deg, #1d4ed8 0%, var(--app-accent) 58%, var(--app-accent-2) 100%);
   box-shadow: 0 14px 30px rgba(13, 89, 198, 0.22);
 }
 
 .btn-primary:hover,
 .btn-primary:focus {
-  background: linear-gradient(135deg, #0d2344 0%, #0b63f1 58%, #2893ff 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #2563eb 58%, #3b82f6 100%);
   box-shadow: 0 18px 34px rgba(13, 89, 198, 0.28);
 }
 
@@ -2107,9 +2119,12 @@ a.nubecont-contact-item:focus-visible {
   flex-direction: column;
   gap: 1rem;
   padding: 1.4rem 1rem 1rem;
-  background:
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.12), transparent 22%),
-    linear-gradient(180deg, #10332a 0%, var(--app-emerald) 56%, var(--app-emerald-2) 100%);
+  background-color: #075c45;
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(180deg, #075c45 0%, #076149 58%, #0a8060 100%);
+  background-size: 24px 24px, 24px 24px, auto;
   color: #f4f8ff;
   border-right: 1px solid rgba(156, 224, 201, 0.2);
   box-shadow: 18px 0 42px rgba(8, 42, 33, 0.24);
@@ -2119,7 +2134,7 @@ a.nubecont-contact-item:focus-visible {
 }
 
 .app-sidebar-platform {
-  background: linear-gradient(180deg, #102c24 0%, #174439 100%);
+  background-color: #075c45;
 }
 
 .app-sidebar-theme-card {
@@ -2377,7 +2392,7 @@ html[data-theme="dark"] .app-theme-toggle-thumb {
 
 .app-sidebar-link.active {
   color: #fff;
-  background: linear-gradient(138deg, rgba(21, 131, 96, 0.96), rgba(43, 197, 138, 0.76));
+  background: var(--app-active-green);
   border-color: rgba(219, 249, 239, 0.54);
   box-shadow: 0 12px 22px rgba(9, 57, 42, 0.26);
 }
@@ -2475,6 +2490,7 @@ html[data-theme="dark"] .app-theme-toggle-thumb {
   padding: 1rem 1.7rem;
   color: #fff;
   background: var(--app-admin-heading-bg);
+  background-size: 24px 24px, 24px 24px, auto;
 }
 
 .workspace-window-head-emerald {
@@ -2487,6 +2503,7 @@ html[data-theme="dark"] .app-theme-toggle-thumb {
   padding-left: 4.4rem;
   border-bottom: 1px solid rgba(90, 211, 163, 0.34);
   background: var(--app-admin-heading-bg);
+  background-size: 24px 24px, 24px 24px, auto;
 }
 
 .workspace-section-head::before,
@@ -5990,6 +6007,315 @@ html[data-theme="dark"] .navbar-light .navbar-brand,
 html[data-theme="dark"] .btn-link.nav-link,
 html[data-theme="dark"] .text-dark {
   color: var(--app-ink) !important;
+}
+
+/* Identidad visual compartida con La Zona Deportiva: encabezados verdes y malla discreta. */
+.dashboard-hero,
+.app-section-head,
+.table-panel-head,
+.workspace-modal-header,
+.platform-modal-header,
+.modal-content > .modal-header {
+  color: #fff;
+  background: var(--app-admin-heading-bg) !important;
+  background-size: 24px 24px, 24px 24px, auto;
+}
+
+.workspace-modal-header,
+.platform-modal-header,
+.modal-content > .modal-header {
+  border-bottom-color: color-mix(in srgb, var(--app-green-accent) 42%, transparent);
+}
+
+.workspace-modal-header h1,
+.workspace-modal-header h2,
+.workspace-modal-header h3,
+.workspace-modal-header h4,
+.workspace-modal-header h5,
+.platform-modal-header h1,
+.platform-modal-header h2,
+.platform-modal-header h3,
+.platform-modal-header h4,
+.platform-modal-header h5,
+.modal-content > .modal-header .modal-title,
+.modal-content > .modal-header p {
+  color: #fff;
+}
+
+.modal-content > .modal-header .btn-close {
+  filter: invert(1) grayscale(1) brightness(2);
+}
+
+html[data-theme="dark"] .app-sidebar {
+  background-color: #063b2e;
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(180deg, #063b2e 0%, #064e3b 58%, #087a5b 100%);
+  background-size: 24px 24px, 24px 24px, auto;
+}
+
+html[data-theme="dark"] .app-sidebar-link.active {
+  background: var(--app-active-green);
+  border-color: color-mix(in srgb, var(--app-green-accent) 62%, transparent);
+  box-shadow: 0 12px 22px rgba(3, 38, 28, 0.34);
+}
+
+html[data-theme="dark"] .app-sidebar-link:hover,
+html[data-theme="dark"] .app-sidebar-company-link:hover,
+html[data-theme="dark"] .app-sidebar-company-link:focus-visible {
+  background: color-mix(in srgb, var(--app-active-green) 28%, transparent);
+  border-color: color-mix(in srgb, var(--app-green-accent) 42%, transparent);
+}
+
+html[data-theme="dark"] .workspace-window,
+html[data-theme="dark"] .workspace-section,
+html[data-theme="dark"] .table-panel,
+html[data-theme="dark"] .workspace-filter-card,
+html[data-theme="dark"] .workspace-period-card,
+html[data-theme="dark"] .workspace-period-control,
+html[data-theme="dark"] .workspace-report-sheet,
+html[data-theme="dark"] .dashboard-status-card,
+html[data-theme="dark"] .dashboard-metric-card,
+html[data-theme="dark"] .dashboard-indicator-card,
+html[data-theme="dark"] .dashboard-donut-legend-item,
+html[data-theme="dark"] .subscription-info-card,
+html[data-theme="dark"] .subscription-support-card,
+html[data-theme="dark"] .help-search-row,
+html[data-theme="dark"] .help-category-button,
+html[data-theme="dark"] .help-module-tab,
+html[data-theme="dark"] .help-accordion-item,
+html[data-theme="dark"] .permission-tab,
+html[data-theme="dark"] .permission-toolbar,
+html[data-theme="dark"] .permission-company-selector,
+html[data-theme="dark"] .permission-group,
+html[data-theme="dark"] .permission-save-footer,
+html[data-theme="dark"] .platform-account-card,
+html[data-theme="dark"] .platform-form-card,
+html[data-theme="dark"] .platform-history-item,
+html[data-theme="dark"] .auth-manual-captcha,
+html[data-theme="dark"] .workspace-balance-card,
+html[data-theme="dark"] .workspace-tab-card,
+html[data-theme="dark"] .workspace-operation-tabs,
+html[data-theme="dark"] .app-date-picker-panel,
+html[data-theme="dark"] .report-ledger-account-block,
+html[data-theme="dark"] .report-ledger-summary,
+html[data-theme="dark"] .dashboard-analytics-card,
+html[data-theme="dark"] .dashboard-donut-center,
+html[data-theme="dark"] .dashboard-bar-column,
+html[data-theme="dark"] .subscription-support-section,
+html[data-theme="dark"] .help-context-banner,
+html[data-theme="dark"] .auth-club-box,
+html[data-theme="dark"] .auth-mini-switch,
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .accordion-item,
+html[data-theme="dark"] .list-group-item {
+  color: var(--app-ink);
+  border-color: var(--app-line);
+  background: var(--app-surface);
+}
+
+html[data-theme="dark"] .workspace-window-body,
+html[data-theme="dark"] .workspace-modal-content,
+html[data-theme="dark"] .workspace-modal-body,
+html[data-theme="dark"] .workspace-modal-footer,
+html[data-theme="dark"] .platform-modal-content,
+html[data-theme="dark"] .platform-modal-body,
+html[data-theme="dark"] .modal-content,
+html[data-theme="dark"] .modal-body,
+html[data-theme="dark"] .modal-footer,
+html[data-theme="dark"] .app-date-picker-footer,
+html[data-theme="dark"] .offcanvas,
+html[data-theme="dark"] .offcanvas-body {
+  color: var(--app-ink);
+  border-color: var(--app-line-soft);
+  background: var(--app-surface);
+}
+
+html[data-theme="dark"] .form-control,
+html[data-theme="dark"] .form-select,
+html[data-theme="dark"] .input-group-text,
+html[data-theme="dark"] .dropdown-menu,
+html[data-theme="dark"] .app-date-picker-control,
+html[data-theme="dark"] .app-date-picker-trigger,
+html[data-theme="dark"] .app-date-picker-nav,
+html[data-theme="dark"] .workspace-total-input,
+html[data-theme="dark"] .workspace-operation-tab,
+html[data-theme="dark"] .workspace-check,
+html[data-theme="dark"] .auth-manual-captcha-code {
+  color: var(--app-ink);
+  border-color: var(--app-line);
+  background: var(--app-input-bg) !important;
+}
+
+html[data-theme="dark"] .form-control:hover,
+html[data-theme="dark"] .form-select:hover,
+html[data-theme="dark"] .dropdown-item:hover,
+html[data-theme="dark"] .dropdown-item:focus,
+html[data-theme="dark"] .workspace-operation-tab:hover,
+html[data-theme="dark"] .workspace-check:hover,
+html[data-theme="dark"] .workspace-tab-card:hover,
+html[data-theme="dark"] .help-category-button:hover,
+html[data-theme="dark"] .help-category-button:focus,
+html[data-theme="dark"] .help-module-tab:hover,
+html[data-theme="dark"] .help-module-tab:focus,
+html[data-theme="dark"] .subscription-support-card:hover,
+html[data-theme="dark"] .subscription-support-card:focus-visible {
+  color: var(--app-ink);
+  border-color: var(--app-green-accent);
+  background: var(--app-surface-hover) !important;
+}
+
+html[data-theme="dark"] .form-control:focus,
+html[data-theme="dark"] .form-select:focus,
+html[data-theme="dark"] .form-check-input:focus,
+html[data-theme="dark"] .btn:focus-visible {
+  border-color: var(--app-green-accent);
+  box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--app-green-accent) 24%, transparent);
+}
+
+html[data-theme="dark"] .form-control::placeholder,
+html[data-theme="dark"] .text-muted,
+html[data-theme="dark"] .workspace-tab-copy small,
+html[data-theme="dark"] .workspace-operation-copy small,
+html[data-theme="dark"] .platform-modal-header p {
+  color: var(--app-muted) !important;
+}
+
+html[data-theme="dark"] .table,
+html[data-theme="dark"] .app-table,
+html[data-theme="dark"] .workspace-table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--app-ink);
+  --bs-table-border-color: var(--app-line-soft);
+  --bs-table-striped-bg: color-mix(in srgb, var(--app-surface-hover) 58%, transparent);
+  --bs-table-hover-bg: var(--app-surface-hover);
+  color: var(--app-ink);
+}
+
+html[data-theme="dark"] .table thead th,
+html[data-theme="dark"] .app-table thead th,
+html[data-theme="dark"] .workspace-table thead th,
+html[data-theme="dark"] .report-ledger-table thead th,
+html[data-theme="dark"] .balance-a4-table thead th,
+html[data-theme="dark"] .report-ledger-account-header {
+  color: var(--app-ink);
+  border-color: var(--app-line);
+  background: var(--app-input-bg);
+}
+
+html[data-theme="dark"] .table > :not(caption) > * > *,
+html[data-theme="dark"] .app-table > :not(caption) > * > *,
+html[data-theme="dark"] .workspace-table > :not(caption) > * > * {
+  color: var(--app-ink);
+  border-color: var(--app-line-soft);
+}
+
+html[data-theme="dark"] .report-ledger-total-row td,
+html[data-theme="dark"] .balance-a4-total-row td,
+html[data-theme="dark"] .report-ledger-highlight-row td,
+html[data-theme="dark"] .balance-a4-subtotal-row td,
+html[data-theme="dark"] .workspace-lookup-table tbody tr.is-selected > td,
+html[data-theme="dark"] .permission-group > summary,
+html[data-theme="dark"] .permission-tab.is-active {
+  color: var(--app-ink);
+  border-color: var(--app-line);
+  background: var(--app-surface-hover);
+}
+
+html[data-theme="dark"] .btn-outline-secondary {
+  color: var(--app-ink);
+  border-color: var(--app-line);
+  background: var(--app-input-bg);
+}
+
+html[data-theme="dark"] .btn-outline-secondary:hover,
+html[data-theme="dark"] .btn-outline-secondary:focus {
+  color: #fff;
+  border-color: var(--app-green-accent);
+  background: var(--app-surface-hover);
+}
+
+html[data-theme="dark"] :disabled,
+html[data-theme="dark"] .disabled,
+html[data-theme="dark"] [aria-disabled="true"] {
+  border-color: var(--app-line-soft);
+}
+
+/* Neutraliza superficies azul petroleo definidas dentro de vistas especializadas. */
+html[data-theme="dark"] .workspace-application-card,
+html[data-theme="dark"] .workspace-transfer-card,
+html[data-theme="dark"] .workspace-application-stat,
+html[data-theme="dark"] .workspace-transfer-stat,
+html[data-theme="dark"] .workspace-toggle-card,
+html[data-theme="dark"] .ple-disclosure-toggle,
+html[data-theme="dark"] .analysis-advanced-toggle,
+html[data-theme="dark"] .bank-meta-card,
+html[data-theme="dark"] .voucher-meta-card,
+html[data-theme="dark"] .voucher-note-box,
+html[data-theme="dark"] .voucher-glosa-box {
+  color: var(--app-ink) !important;
+  border-color: var(--app-line) !important;
+  background: var(--app-surface) !important;
+}
+
+html[data-theme="dark"] .workspace-toggle-card:hover,
+html[data-theme="dark"] .ple-disclosure-toggle:hover,
+html[data-theme="dark"] .analysis-advanced-toggle:hover {
+  border-color: var(--app-green-accent) !important;
+  background: var(--app-surface-hover) !important;
+}
+
+html[data-theme="dark"] .workspace-application-stat span,
+html[data-theme="dark"] .workspace-application-stat small,
+html[data-theme="dark"] .workspace-persona-note,
+html[data-theme="dark"] .workspace-transfer-stat span,
+html[data-theme="dark"] .workspace-transfer-stat small,
+html[data-theme="dark"] .workspace-toggle-card-text,
+html[data-theme="dark"] .ple-disclosure-copy small,
+html[data-theme="dark"] .bank-header span,
+html[data-theme="dark"] .bank-meta-card span,
+html[data-theme="dark"] .bank-table .bank-op-cell div,
+html[data-theme="dark"] .voucher-header span,
+html[data-theme="dark"] .voucher-meta-card span,
+html[data-theme="dark"] .voucher-table .voucher-account div,
+html[data-theme="dark"] .voucher-table .voucher-doc div,
+html[data-theme="dark"] .voucher-note-box span,
+html[data-theme="dark"] .voucher-glosa-box span {
+  color: var(--app-muted) !important;
+}
+
+html[data-theme="dark"] .workspace-application-stat strong,
+html[data-theme="dark"] .workspace-transfer-stat strong,
+html[data-theme="dark"] .workspace-toggle-card-title,
+html[data-theme="dark"] .ple-disclosure-copy strong,
+html[data-theme="dark"] .bank-title,
+html[data-theme="dark"] .bank-meta-card strong,
+html[data-theme="dark"] .bank-table .bank-op-cell strong,
+html[data-theme="dark"] .voucher-title,
+html[data-theme="dark"] .voucher-meta-card strong,
+html[data-theme="dark"] .voucher-table .voucher-account strong,
+html[data-theme="dark"] .voucher-table .voucher-doc strong {
+  color: var(--app-ink) !important;
+}
+
+html[data-theme="dark"] .workspace-toggle-input:checked + .workspace-toggle-card,
+html[data-theme="dark"] .ple-disclosure-input:checked + .ple-disclosure-toggle,
+html[data-theme="dark"] .analysis-advanced-input:checked + .analysis-advanced-toggle {
+  border-color: color-mix(in srgb, var(--app-green-accent) 58%, transparent) !important;
+  background: color-mix(in srgb, var(--app-emerald) 76%, var(--app-surface)) !important;
+}
+
+html[data-theme="dark"] .workspace-toggle-pill-track,
+html[data-theme="dark"] .ple-disclosure-switch,
+html[data-theme="dark"] .analysis-advanced-switch {
+  background: var(--app-line) !important;
+}
+
+html[data-theme="dark"] .bank-header,
+html[data-theme="dark"] .voucher-header {
+  border-color: var(--app-line-soft) !important;
+  background: var(--app-surface-hover) !important;
 }
 
 .balance-a4-header > div:first-child span {

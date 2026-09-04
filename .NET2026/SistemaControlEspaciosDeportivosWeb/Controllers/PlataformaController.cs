@@ -54,6 +54,8 @@ public class PlataformaController(
     public async Task<IActionResult> Index()
     {
         ViewData["PlatformShell"] = true;
+        ViewData["SuspensionesAutomaticas"] = await spService.PlataformaSuspenderSuscripcionesVencidasAsync(
+            User.Identity?.Name ?? "owner-platform");
 
         var banners = await spService.BannersAdminListarAsync(null);
         var anuncios = await spService.PopupPromocionesAdminListarAsync(null);
@@ -63,13 +65,16 @@ public class PlataformaController(
         var (_, totalReferencialesGeneral) = await spService.HomeReferencialesExternosListarAdminAsync(null, null, null, null, 1, 1, null);
         var totalReferencialesInactivos = Math.Max(0, totalReferencialesGeneral - totalReferencialesActivos);
         var hoy = DateTime.UtcNow.Date;
-        var negociosEnPrueba = negocios.Count(x => x.EsPrueba && (x.FechaFinPrueba is null || x.FechaFinPrueba.Value.Date >= hoy));
+        var negociosEnPrueba = negocios.Count(x => x.Activo && x.EstadoSuscripcion == 1 && x.EsPrueba && (x.FechaFinPrueba is null || x.FechaFinPrueba.Value.Date >= hoy));
         var negociosConContrato = negocios.Count(x =>
+            x.Activo &&
             !x.EsPrueba &&
             x.FechaFinPlan.HasValue &&
             x.FechaFinPlan.Value.Date >= hoy &&
-            x.EstadoSuscripcion > 0);
-        var negociosVencidos = Math.Max(0, negocios.Count - negociosEnPrueba - negociosConContrato);
+            x.EstadoSuscripcion == 2);
+        var negociosSuspendidos = negocios.Count(x => x.Activo && x.EstadoSuscripcion == 4);
+        var negociosDadosBaja = negocios.Count(x => !x.Activo);
+        var negociosVencidos = Math.Max(0, negocios.Count(x => x.Activo) - negociosEnPrueba - negociosConContrato - negociosSuspendidos);
         var anunciosVigentesHoy = anuncios.Count(a =>
             a.Activo &&
             (!a.FechaInicio.HasValue || a.FechaInicio.Value <= DateOnly.FromDateTime(hoy)) &&
@@ -85,6 +90,8 @@ public class PlataformaController(
             NegociosConContrato = negociosConContrato,
             NegociosEnPrueba = negociosEnPrueba,
             NegociosVencidos = negociosVencidos,
+            NegociosSuspendidos = negociosSuspendidos,
+            NegociosDadosBaja = negociosDadosBaja,
             TotalSolicitudesPendientes = totalPendientes,
             TotalSolicitudesAprobadas = totalAprobados,
             TotalSolicitudesRechazadas = totalRechazados,
@@ -115,7 +122,7 @@ public class PlataformaController(
                 "Detalle de negocios con contrato activo",
                 ["Negocio", "Estado", "Vigencia", "Correo", "Telefono", "Accion"],
                 negociosDashboard
-                    .Where(n => !n.EsPrueba && n.FechaFinPlan.HasValue && n.FechaFinPlan.Value.Date >= hoy && n.EstadoSuscripcion > 0)
+                    .Where(n => !n.EsPrueba && n.FechaFinPlan.HasValue && n.FechaFinPlan.Value.Date >= hoy && n.EstadoSuscripcion == 2)
                     .Take(20)
                     .Select(n => new[]
                     {
@@ -130,7 +137,7 @@ public class PlataformaController(
                 "Detalle de negocios en prueba",
                 ["Negocio", "Inicio prueba", "Fin prueba", "Correo", "Telefono", "Accion"],
                 negociosDashboard
-                    .Where(n => n.EsPrueba && (n.FechaFinPrueba is null || n.FechaFinPrueba.Value.Date >= hoy))
+                    .Where(n => n.EstadoSuscripcion == 1 && n.EsPrueba && (n.FechaFinPrueba is null || n.FechaFinPrueba.Value.Date >= hoy))
                     .Take(20)
                     .Select(n => new[]
                     {
@@ -145,7 +152,7 @@ public class PlataformaController(
                 "Detalle de negocios vencidos",
                 ["Negocio", "Estado", "Ultima vigencia", "Correo", "Telefono", "Accion"],
                 negociosDashboard
-                    .Where(n => n.EsPrueba ? (n.FechaFinPrueba.HasValue && n.FechaFinPrueba.Value.Date < hoy) : (!n.FechaFinPlan.HasValue || n.FechaFinPlan.Value.Date < hoy))
+                    .Where(n => n.EstadoSuscripcion != 4 && (n.EsPrueba ? (n.FechaFinPrueba.HasValue && n.FechaFinPrueba.Value.Date < hoy) : (!n.FechaFinPlan.HasValue || n.FechaFinPlan.Value.Date < hoy)))
                     .Take(20)
                     .Select(n => new[]
                     {
@@ -155,6 +162,33 @@ public class PlataformaController(
                         FormatearCeldaTexto(n.CorreoContacto),
                         FormatearCeldaTexto(n.TelefonoContacto),
                         BuildReminderButtonHtml(n.NegocioId, "vencido")
+                    })),
+            "negocios-suspendido" => await BuildDetallePayloadAsync(
+                "Detalle de servicios suspendidos",
+                ["Negocio", "Estado", "Vigencia conservada", "Correo", "Telefono"],
+                negociosDashboard
+                    .Where(n => n.Activo && n.EstadoSuscripcion == 4)
+                    .Take(20)
+                    .Select(n => new[]
+                    {
+                        n.NombreComercial,
+                        n.EstadoSuscripcionNombre,
+                        $"{(n.EsPrueba ? n.FechaInicioPrueba : n.FechaInicioPlan):dd/MM/yyyy} - {(n.EsPrueba ? n.FechaFinPrueba : n.FechaFinPlan):dd/MM/yyyy}",
+                        FormatearCeldaTexto(n.CorreoContacto),
+                        FormatearCeldaTexto(n.TelefonoContacto)
+                    })),
+            "negocios-baja" => await BuildDetallePayloadAsync(
+                "Detalle de complejos dados de baja",
+                ["Negocio", "Estado", "Correo", "Telefono"],
+                negociosDashboard
+                    .Where(n => !n.Activo)
+                    .Take(20)
+                    .Select(n => new[]
+                    {
+                        n.NombreComercial,
+                        "Baja definitiva",
+                        FormatearCeldaTexto(n.CorreoContacto),
+                        FormatearCeldaTexto(n.TelefonoContacto)
                     })),
             "solicitudes-pendiente" => await BuildDetallePayloadAsync(
                 "Detalle de solicitudes pendientes",
@@ -263,6 +297,8 @@ public class PlataformaController(
     public async Task<IActionResult> Negocios(string? buscar = null, string? estadoContrato = null, int pagina = 1)
     {
         ViewData["PlatformShell"] = true;
+        ViewData["SuspensionesAutomaticas"] = await spService.PlataformaSuspenderSuscripcionesVencidasAsync(
+            User.Identity?.Name ?? "owner-platform");
         const int tamanoPagina = 20;
         var estadoContratoNormalizado = NormalizarEstadoContrato(estadoContrato);
         var paginaActual = pagina < 1 ? 1 : pagina;
@@ -347,8 +383,10 @@ public class PlataformaController(
         var (_, totalReferencialesActivos) = await spService.HomeReferencialesExternosListarAdminAsync(null, null, null, null, 1, 1, true);
         var (_, totalReferencialesGeneral) = await spService.HomeReferencialesExternosListarAdminAsync(null, null, null, null, 1, 1, null);
         var hoy = DateTime.UtcNow.Date;
-        var negociosEnPrueba = negocios.Count(x => x.EsPrueba && (x.FechaFinPrueba is null || x.FechaFinPrueba.Value.Date >= hoy));
-        var negociosConContrato = negocios.Count(x => !x.EsPrueba && x.FechaFinPlan.HasValue && x.FechaFinPlan.Value.Date >= hoy && x.EstadoSuscripcion > 0);
+        var negociosEnPrueba = negocios.Count(x => x.Activo && x.EstadoSuscripcion == 1 && x.EsPrueba && (x.FechaFinPrueba is null || x.FechaFinPrueba.Value.Date >= hoy));
+        var negociosConContrato = negocios.Count(x => x.Activo && !x.EsPrueba && x.FechaFinPlan.HasValue && x.FechaFinPlan.Value.Date >= hoy && x.EstadoSuscripcion == 2);
+        var negociosSuspendidos = negocios.Count(x => x.Activo && x.EstadoSuscripcion == 4);
+        var negociosDadosBaja = negocios.Count(x => !x.Activo);
         var anunciosVigentesHoy = anuncios.Count(a => a.Activo
             && (!a.FechaInicio.HasValue || a.FechaInicio.Value <= DateOnly.FromDateTime(hoy))
             && (!a.FechaFin.HasValue || a.FechaFin.Value >= DateOnly.FromDateTime(hoy)));
@@ -364,7 +402,9 @@ public class PlataformaController(
                 TotalNegocios = negocios.Count,
                 NegociosConContrato = negociosConContrato,
                 NegociosEnPrueba = negociosEnPrueba,
-                NegociosVencidos = Math.Max(0, negocios.Count - negociosEnPrueba - negociosConContrato),
+                NegociosVencidos = Math.Max(0, negocios.Count(x => x.Activo) - negociosEnPrueba - negociosConContrato - negociosSuspendidos),
+                NegociosSuspendidos = negociosSuspendidos,
+                NegociosDadosBaja = negociosDadosBaja,
                 TotalSolicitudesPendientes = totalPendientes,
                 TotalSolicitudesAprobadas = totalAprobados,
                 TotalSolicitudesRechazadas = totalRechazados,
@@ -814,6 +854,108 @@ public class PlataformaController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SuspenderServicioNegocio(int negocioId, string motivo, string? observacion = null, string? buscar = null, string? estadoContrato = null, int pagina = 1)
+    {
+        ViewData["PlatformShell"] = true;
+        var motivosPermitidos = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "FALTA_PAGO",
+            "SOLICITUD_CLIENTE",
+            "INCUMPLIMIENTO",
+            "MANTENIMIENTO_ADMINISTRATIVO",
+            "OTRO"
+        };
+        var motivoNormalizado = (motivo ?? string.Empty).Trim().ToUpperInvariant();
+        if (!motivosPermitidos.Contains(motivoNormalizado))
+        {
+            TempData["PortalWebError"] = "Selecciona un motivo valido para suspender el servicio.";
+            return RedirectToAction(nameof(Negocios), new { buscar, estadoContrato, pagina });
+        }
+
+        var ok = await spService.PlataformaNegocioSuspenderServicioAsync(
+            negocioId,
+            motivoNormalizado,
+            observacion,
+            User.Identity?.Name ?? "owner-platform");
+
+        TempData[ok ? "PortalWebOk" : "PortalWebError"] = ok
+            ? "Servicio suspendido correctamente. El complejo conserva su informacion y vigencia comercial."
+            : "No se pudo suspender el servicio. Verifica que la prueba o el contrato se encuentren activos.";
+
+        return RedirectToAction(nameof(Negocios), new { buscar, estadoContrato, pagina });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReactivarServicioNegocio(int negocioId, string? observacion = null, string? buscar = null, string? estadoContrato = null, int pagina = 1)
+    {
+        ViewData["PlatformShell"] = true;
+        var ok = await spService.PlataformaNegocioReactivarServicioAsync(
+            negocioId,
+            observacion,
+            User.Identity?.Name ?? "owner-platform");
+
+        TempData[ok ? "PortalWebOk" : "PortalWebError"] = ok
+            ? "Servicio reactivado correctamente."
+            : "No se pudo reactivar el servicio. Si la vigencia ya vencio, extiende la prueba o asigna un nuevo contrato.";
+
+        return RedirectToAction(nameof(Negocios), new { buscar, estadoContrato, pagina });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DarBajaNegocio(int negocioId, string motivo, string? observacion, string? confirmacionNombre, string? buscar = null, string? estadoContrato = null, int pagina = 1)
+    {
+        ViewData["PlatformShell"] = true;
+        var motivosPermitidos = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "CIERRE_COMPLEJO",
+            "SOLICITUD_DEFINITIVA_CLIENTE",
+            "INCUMPLIMIENTO_GRAVE",
+            "CUENTA_DUPLICADA",
+            "MIGRACION_CUENTA",
+            "OTRO"
+        };
+        var motivoNormalizado = (motivo ?? string.Empty).Trim().ToUpperInvariant();
+        if (!motivosPermitidos.Contains(motivoNormalizado) || string.IsNullOrWhiteSpace(confirmacionNombre))
+        {
+            TempData["PortalWebError"] = "Selecciona un motivo y escribe el nombre del complejo para confirmar la baja.";
+            return RedirectToAction(nameof(Negocios), new { buscar, estadoContrato, pagina });
+        }
+
+        var ok = await spService.PlataformaNegocioDarBajaAsync(
+            negocioId,
+            motivoNormalizado,
+            observacion,
+            confirmacionNombre,
+            User.Identity?.Name ?? "owner-platform");
+
+        TempData[ok ? "PortalWebOk" : "PortalWebError"] = ok
+            ? "Complejo deportivo dado de baja. Se conservaron todos sus datos e historial."
+            : "No se pudo dar de baja el complejo. Verifica que el nombre de confirmacion coincida exactamente.";
+
+        return RedirectToAction(nameof(Negocios), new { buscar, estadoContrato, pagina });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReactivarComplejoNegocio(int negocioId, string? observacion = null, string? buscar = null, string? estadoContrato = null, int pagina = 1)
+    {
+        ViewData["PlatformShell"] = true;
+        var ok = await spService.PlataformaNegocioReactivarComplejoAsync(
+            negocioId,
+            observacion,
+            User.Identity?.Name ?? "owner-platform");
+
+        TempData[ok ? "PortalWebOk" : "PortalWebError"] = ok
+            ? "Complejo deportivo reactivado. Su servicio permanece suspendido hasta validar la vigencia comercial."
+            : "No se pudo reactivar el complejo deportivo.";
+
+        return RedirectToAction(nameof(Negocios), new { buscar, estadoContrato, pagina });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> CambiarPlanNegocio(int negocioId, string tipoCobro, DateOnly fechaDesde, DateOnly fechaHasta, int diasGracia = 5, string? observacion = null, string? buscar = null, string? estadoContrato = null, int pagina = 1)
     {
         ViewData["PlatformShell"] = true;
@@ -1026,6 +1168,8 @@ public class PlataformaController(
             "con-contrato" => "con-contrato",
             "sin-contrato" => "sin-contrato",
             "prueba-por-vencer" => "prueba-por-vencer",
+            "suspendidos" => "suspendidos",
+            "dados-de-baja" => "dados-de-baja",
             _ => "todos"
         };
     }

@@ -1,5 +1,10 @@
 var builder = WebApplication.CreateBuilder(args);
 
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddUserSecrets<Program>(optional: true, reloadOnChange: true);
+}
+
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();

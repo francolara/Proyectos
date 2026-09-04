@@ -518,6 +518,104 @@ END";
         }
     }
 
+    public async Task<bool> PlataformaNegocioSuspenderServicioAsync(int negocioId, string motivo, string? observacion, string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_NegociosSuscripcion_Suspender", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@Motivo", motivo.Trim(), SqlDbType.NVarChar);
+            AddParam(cmd, "@Observacion", string.IsNullOrWhiteSpace(observacion) ? null : observacion.Trim(), SqlDbType.NVarChar);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<bool> PlataformaNegocioReactivarServicioAsync(int negocioId, string? observacion, string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_NegociosSuscripcion_Reactivar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@Observacion", string.IsNullOrWhiteSpace(observacion) ? null : observacion.Trim(), SqlDbType.NVarChar);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<int> PlataformaSuspenderSuscripcionesVencidasAsync(string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_NegociosSuscripcion_SuspenderVencidas", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            var cantidadParam = cmd.Parameters.Add("@CantidadSuspendida", SqlDbType.Int);
+            cantidadParam.Direction = ParameterDirection.Output;
+            await cmd.ExecuteNonQueryAsync();
+            return cantidadParam.Value is int cantidad ? cantidad : 0;
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    public async Task<bool> PlataformaNegocioDarBajaAsync(int negocioId, string motivo, string? observacion, string confirmacionNombre, string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Plataforma_Negocio_DarBaja", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@Motivo", motivo.Trim(), SqlDbType.NVarChar);
+            AddParam(cmd, "@Observacion", string.IsNullOrWhiteSpace(observacion) ? null : observacion.Trim(), SqlDbType.NVarChar);
+            AddParam(cmd, "@ConfirmacionNombre", confirmacionNombre.Trim(), SqlDbType.NVarChar);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<bool> PlataformaNegocioReactivarComplejoAsync(int negocioId, string? observacion, string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Plataforma_Negocio_Reactivar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@Observacion", string.IsNullOrWhiteSpace(observacion) ? null : observacion.Trim(), SqlDbType.NVarChar);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public async Task<bool> PlataformaNegocioCambiarPlanAsync(int negocioId, string tipoCobro, DateOnly fechaDesde, DateOnly fechaHasta, int diasGracia, string? observacion, string usuario)
     {
         try
@@ -590,6 +688,11 @@ END";
                 "CAMBIO_PLAN" => "Cambio de plan",
                 "GRACIA_MANUAL" => "Gracia manual",
                 "FINALIZACION" => "Finalizacion",
+                "SUSPENSION" => "Suspension de servicio",
+                "SUSPENSION_AUTOMATICA" => "Suspension automatica por vencimiento",
+                "REACTIVACION" => "Reactivacion de servicio",
+                "BAJA_COMPLEJO" => "Baja definitiva del complejo",
+                "REACTIVACION_COMPLEJO" => "Reactivacion del complejo",
                 _ => item.TipoMovimiento
             };
 

@@ -225,6 +225,11 @@ public interface ISportCenterStoredProcedureService
     Task<bool> PlataformaNegocioExtenderPruebaAsync(int negocioId, int diasExtra, string? observacion, string usuario);
     Task<bool> PlataformaNegocioAplicarGraciaManualAsync(int negocioId, int diasExtra, string? observacion, string usuario);
     Task<bool> PlataformaNegocioCambiarPlanAsync(int negocioId, string tipoCobro, DateOnly fechaDesde, DateOnly fechaHasta, int diasGracia, string? observacion, string usuario);
+    Task<bool> PlataformaNegocioSuspenderServicioAsync(int negocioId, string motivo, string? observacion, string usuario);
+    Task<bool> PlataformaNegocioReactivarServicioAsync(int negocioId, string? observacion, string usuario);
+    Task<int> PlataformaSuspenderSuscripcionesVencidasAsync(string usuario);
+    Task<bool> PlataformaNegocioDarBajaAsync(int negocioId, string motivo, string? observacion, string confirmacionNombre, string usuario);
+    Task<bool> PlataformaNegocioReactivarComplejoAsync(int negocioId, string? observacion, string usuario);
     Task<List<PlataformaNegocioSuscripcionMovimientoViewModel>> PlataformaNegocioHistorialComercialAsync(int negocioId, int top = 8);
     Task<bool> PlataformaNegocioRegistrarPagoSuscripcionAsync(int negocioId, string tipoPago, string estadoPago, decimal monto, string moneda, DateTime fechaPago, DateOnly? fechaVencimiento, string? operacionNumero, string? entidadFinanciera, string? referenciaExterna, string? observacion, string? accionAplicacion, bool aplicarAlConfirmar, string? tipoCobroObjetivo, string? planComercialObjetivo, int? sedesPermitidasObjetivo, int? espaciosPermitidosObjetivo, int? usuariosPermitidosObjetivo, DateOnly? fechaInicioPlanObjetivo, int? diasGraciaObjetivo, string usuario);
     Task<(List<PlataformaNegocioSuscripcionPagoViewModel> Pagos, int CantidadPagos, decimal MontoTotalPagado, DateTime? UltimaFechaPago, decimal? UltimoMonto, string? UltimoTipoPago)> PlataformaNegocioPagosSuscripcionAsync(int negocioId, int top = 8);

@@ -1,11 +1,15 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaIndexViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaIndexViewModel
 @{
     ViewData["Title"] = "Plataforma";
     @* Firma: FRANCO LARA - 09/05/2026 | Ajuste de etiquetas en Super Admin para reemplazar Club/Negocio por Complejo deportivo. *@
     @* Firma: FRANCO LARA - 21/07/2026 | Corrige el dashboard global en modo oscuro y agrega su reporte HTML imprimible. *@
-    var negociosData = new[] { Model.NegociosConContrato, Model.NegociosEnPrueba, Model.NegociosVencidos };
+    @* Firma: FRANCO LARA - 01/09/2026 | Separa suspendidos, vencidos y dados de baja; notifica suspensiones automaticas del Super Admin. *@
+    @* Firma: FRANCO LARA - 02/09/2026 | Rediseña los graficos de estados y solicitudes con la composicion visual del sistema administrativo. *@
+    @* Firma: FRANCO LARA - 03/09/2026 | Integra el dashboard global a la paleta compartida y sustituye los fondos azul petroleo del modo oscuro por superficies antracita con matiz verde. *@
+    var negociosData = new[] { Model.NegociosConContrato, Model.NegociosEnPrueba, Model.NegociosVencidos, Model.NegociosSuspendidos, Model.NegociosDadosBaja };
     var negociosMax = Math.Max(1, negociosData.Max());
-    var solicitudesTotal = Math.Max(1, Model.TotalSolicitudesPendientes + Model.TotalSolicitudesAprobadas + Model.TotalSolicitudesRechazadas);
+    var solicitudesCantidad = Model.TotalSolicitudesPendientes + Model.TotalSolicitudesAprobadas + Model.TotalSolicitudesRechazadas;
+    var solicitudesTotal = Math.Max(1, solicitudesCantidad);
     var pctPendientes = Math.Round((Model.TotalSolicitudesPendientes * 100m) / solicitudesTotal, 1);
     var pctAprobadas = Math.Round((Model.TotalSolicitudesAprobadas * 100m) / solicitudesTotal, 1);
     var pctRechazadas = Math.Max(0m, 100m - pctPendientes - pctAprobadas);
@@ -30,6 +34,14 @@
     </div>
 </div>
 
+@if (ViewData["SuspensionesAutomaticas"] is int suspensionesAutomaticas && suspensionesAutomaticas > 0)
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-pause-circle me-1"></i>
+        Se suspendieron automaticamente <strong>@suspensionesAutomaticas</strong> complejo(s) cuya prueba o contrato ya vencieron.
+    </div>
+}
+
 <section class="sc-dash-kpis mb-3">
     <article class="sc-kpi-card">
         <div class="sc-kpi-label">Complejo deportivo totales</div>
@@ -39,7 +51,7 @@
     <article class="sc-kpi-card">
         <div class="sc-kpi-label">Complejo deportivo en prueba</div>
         <div class="sc-kpi-value">@Model.NegociosEnPrueba</div>
-        <div class="sc-kpi-foot">Vencidos: @Model.NegociosVencidos</div>
+        <div class="sc-kpi-foot">Vencidos: @Model.NegociosVencidos · Suspendidos: @Model.NegociosSuspendidos · Bajas: @Model.NegociosDadosBaja</div>
     </article>
     <article class="sc-kpi-card">
         <div class="sc-kpi-label">Solicitudes pendientes</div>
@@ -58,6 +70,7 @@
         <article class="table-card h-100">
             <div class="table-card-header d-flex justify-content-between align-items-center">
                 <h2 class="table-card-title mb-0 platform-card-title"><span class="platform-card-icon"><i class="bi bi-bar-chart-line"></i></span><span class="platform-card-title-text">Estado de complejo deportivo</span></h2>
+                <p class="platform-chart-copy">Distribucion actual de complejos por estado del servicio.</p>
             </div>
             <div class="p-3">
                 <div class="platform-bars">
@@ -71,7 +84,7 @@
                             <div class="platform-bar-label">Contrato</div>
                             <div class="platform-bar-subtitle">Plan activo</div>
                         </div>
-                        <div class="platform-bar-value">@negociosData[0]</div>
+                        <div class="platform-bar-value"><strong>@negociosData[0]</strong><span>complejo(s)</span></div>
                     </button>
                     <button type="button" class="platform-bar-item platform-click" data-bloque="negocios-prueba">
                         <div class="platform-bar-track">
@@ -82,7 +95,7 @@
                             <div class="platform-bar-label">Prueba</div>
                             <div class="platform-bar-subtitle">Periodo demo</div>
                         </div>
-                        <div class="platform-bar-value">@negociosData[1]</div>
+                        <div class="platform-bar-value"><strong>@negociosData[1]</strong><span>complejo(s)</span></div>
                     </button>
                     <button type="button" class="platform-bar-item platform-click" data-bloque="negocios-vencido">
                         <div class="platform-bar-track">
@@ -93,7 +106,29 @@
                             <div class="platform-bar-label">Vencido</div>
                             <div class="platform-bar-subtitle">Reactivacion</div>
                         </div>
-                        <div class="platform-bar-value">@negociosData[2]</div>
+                        <div class="platform-bar-value"><strong>@negociosData[2]</strong><span>complejo(s)</span></div>
+                    </button>
+                    <button type="button" class="platform-bar-item platform-click" data-bloque="negocios-suspendido">
+                        <div class="platform-bar-track">
+                            <div class="platform-bar-fill bg-warning" style="height:@Math.Max(8, (int)Math.Round(negociosData[3] * 100d / negociosMax))%"></div>
+                        </div>
+                        <div class="platform-bar-meta">
+                            <span class="platform-bar-icon"><i class="bi bi-pause-circle"></i></span>
+                            <div class="platform-bar-label">Suspendido</div>
+                            <div class="platform-bar-subtitle">Servicio pausado</div>
+                        </div>
+                        <div class="platform-bar-value"><strong>@negociosData[3]</strong><span>complejo(s)</span></div>
+                    </button>
+                    <button type="button" class="platform-bar-item platform-click" data-bloque="negocios-baja">
+                        <div class="platform-bar-track">
+                            <div class="platform-bar-fill bg-dark" style="height:@Math.Max(8, (int)Math.Round(negociosData[4] * 100d / negociosMax))%"></div>
+                        </div>
+                        <div class="platform-bar-meta">
+                            <span class="platform-bar-icon"><i class="bi bi-building-x"></i></span>
+                            <div class="platform-bar-label">Baja</div>
+                            <div class="platform-bar-subtitle">Cierre definitivo</div>
+                        </div>
+                        <div class="platform-bar-value"><strong>@negociosData[4]</strong><span>complejo(s)</span></div>
                     </button>
                 </div>
             </div>
@@ -103,18 +138,34 @@
         <article class="table-card h-100">
             <div class="table-card-header d-flex justify-content-between align-items-center">
                 <h2 class="table-card-title mb-0 platform-card-title"><span class="platform-card-icon"><i class="bi bi-pie-chart"></i></span><span class="platform-card-title-text">Solicitudes de alta</span></h2>
+                <p class="platform-chart-copy">Participacion de solicitudes segun su resultado.</p>
             </div>
             <div class="p-3">
-                <div class="platform-donut-wrap">
-                    <div class="platform-donut"
-                         style="background:conic-gradient(#0d6efd 0% @pctPendientes%, #198754 @pctPendientes% @(pctPendientes + pctAprobadas)%, #dc3545 @(pctPendientes + pctAprobadas)% 100%);">
-                        <div class="platform-donut-center">@solicitudesTotal</div>
+                <div class="platform-donut-layout">
+                    <div class="platform-donut-wrap">
+                        <div class="platform-donut"
+                             style="background:conic-gradient(var(--sc-admin-primary) 0% @pctPendientes%, var(--sc-admin-accent) @pctPendientes% @(pctPendientes + pctAprobadas)%, #ef5350 @(pctPendientes + pctAprobadas)% 100%);">
+                            <div class="platform-donut-center">
+                                <span>Total</span>
+                                <strong>@solicitudesCantidad</strong>
+                                <small>solicitudes</small>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="platform-legend">
-                    <button type="button" class="platform-legend-btn platform-click" data-bloque="solicitudes-pendiente"><i class="bi bi-square-fill text-primary"></i> Pendientes: @Model.TotalSolicitudesPendientes (@pctPendientes%)</button>
-                    <button type="button" class="platform-legend-btn platform-click" data-bloque="solicitudes-aprobada"><i class="bi bi-square-fill text-success"></i> Aprobadas: @Model.TotalSolicitudesAprobadas (@pctAprobadas%)</button>
-                    <button type="button" class="platform-legend-btn platform-click" data-bloque="solicitudes-rechazada"><i class="bi bi-square-fill text-danger"></i> Rechazadas: @Model.TotalSolicitudesRechazadas (@pctRechazadas%)</button>
+                    <div class="platform-legend platform-legend--chart">
+                        <button type="button" class="platform-legend-btn platform-click" data-bloque="solicitudes-pendiente">
+                            <span class="platform-legend-series"><i class="bi bi-circle-fill text-primary"></i><span><strong>Pendientes</strong><small>En espera de revision.</small></span></span>
+                            <span class="platform-legend-value"><strong>@Model.TotalSolicitudesPendientes</strong><small>@pctPendientes%</small></span>
+                        </button>
+                        <button type="button" class="platform-legend-btn platform-click" data-bloque="solicitudes-aprobada">
+                            <span class="platform-legend-series"><i class="bi bi-circle-fill text-success"></i><span><strong>Aprobadas</strong><small>Complejos habilitados.</small></span></span>
+                            <span class="platform-legend-value"><strong>@Model.TotalSolicitudesAprobadas</strong><small>@pctAprobadas%</small></span>
+                        </button>
+                        <button type="button" class="platform-legend-btn platform-click" data-bloque="solicitudes-rechazada">
+                            <span class="platform-legend-series"><i class="bi bi-circle-fill text-danger"></i><span><strong>Rechazadas</strong><small>Solicitudes no aprobadas.</small></span></span>
+                            <span class="platform-legend-value"><strong>@Model.TotalSolicitudesRechazadas</strong><small>@pctRechazadas%</small></span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </article>
@@ -283,111 +334,186 @@
         margin-top: .2rem;
     }
 
+    .platform-chart-copy {
+        max-width: 22rem;
+        margin: 0;
+        color: rgba(235, 255, 247, .84);
+        font-size: .78rem;
+        line-height: 1.35;
+        text-align: right;
+    }
+
     .platform-bars {
-        display: flex;
-        gap: 1rem;
-        min-height: 220px;
-        align-items: end;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: .75rem;
+        align-items: stretch;
     }
 
     .platform-bar-item {
-        flex: 1;
-        min-width: 90px;
+        display: grid;
+        grid-template-areas:
+            "value"
+            "track"
+            "meta";
+        grid-template-rows: auto 178px auto;
+        gap: .65rem;
+        min-width: 0;
+        padding: 0;
         border: 0;
-        background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
-        border: 1px solid #d9e5fa;
-        border-radius: .85rem;
-        text-align: left;
-        padding: .65rem;
+        background: transparent;
+        color: #13233f;
+        text-align: center;
     }
 
     .platform-bar-track {
-        border-radius: .85rem;
-        background: #e7edf7;
-        height: 175px;
-        padding: .35rem;
+        grid-area: track;
         display: flex;
         align-items: end;
+        height: 178px;
+        padding: .18rem;
+        overflow: hidden;
+        border: 1px solid #d7e2f1;
+        border-radius: .95rem;
+        background: linear-gradient(180deg, #eef4fc 0%, #e5edf8 100%);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .74);
+        transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
     }
 
     .platform-bar-fill {
         width: 100%;
-        border-radius: .6rem;
+        min-height: .35rem;
+        border-radius: .75rem;
         transition: height .35s ease;
     }
 
+    .platform-bar-fill.bg-primary {
+        background: linear-gradient(180deg, #3b91f7 0%, #1767da 100%) !important;
+    }
+
+    .platform-bar-fill.bg-info {
+        background: linear-gradient(180deg, var(--sc-admin-accent) 0%, var(--sc-admin-header-end) 100%) !important;
+    }
+
+    .platform-bar-fill.bg-danger {
+        background: linear-gradient(180deg, #fb7185 0%, #dc3545 100%) !important;
+    }
+
+    .platform-bar-fill.bg-warning {
+        background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%) !important;
+    }
+
+    .platform-bar-fill.bg-dark {
+        background: linear-gradient(180deg, #64748b 0%, #263445 100%) !important;
+    }
+
     .platform-bar-label {
-        margin-top: .25rem;
-        font-size: .82rem;
+        font-size: .84rem;
         color: #1d2b45;
-        font-weight: 700;
+        font-weight: 800;
         letter-spacing: .01em;
     }
 
     .platform-bar-subtitle {
+        margin-top: .12rem;
         font-size: .72rem;
         color: #6b7a96;
         letter-spacing: .01em;
     }
 
     .platform-bar-meta {
-        margin-top: .45rem;
+        grid-area: meta;
         display: flex;
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
         gap: .05rem;
     }
 
     .platform-bar-icon {
-        width: 1.35rem;
-        height: 1.35rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: .45rem;
-        background: #eef4ff;
-        border: 1px solid #c7d9ff;
-        color: #2459bd;
-        font-size: .75rem;
+        display: none;
     }
 
     .platform-bar-value {
-        margin-top: .5rem;
-        font-size: 1.05rem;
-        font-weight: 700;
+        grid-area: value;
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        gap: .28rem;
+        min-height: 1.45rem;
         color: #0b1f44;
+    }
+
+    .platform-bar-value strong {
+        font-size: 1rem;
+        font-weight: 900;
+    }
+
+    .platform-bar-value span {
+        color: #6b7a96;
+        font-size: .7rem;
+        font-weight: 700;
+    }
+
+    .platform-donut-layout {
+        display: grid;
+        grid-template-columns: minmax(190px, .72fr) minmax(260px, 1.28fr);
+        align-items: center;
+        gap: 1.2rem;
+        min-height: 244px;
     }
 
     .platform-donut-wrap {
         display: flex;
         justify-content: center;
-        margin-bottom: .85rem;
     }
 
     .platform-donut {
-        width: 170px;
-        height: 170px;
+        width: 190px;
+        height: 190px;
         border-radius: 50%;
         position: relative;
+        box-shadow: 0 18px 36px rgba(23, 71, 130, .12);
     }
 
     .platform-donut::after {
         content: "";
         position: absolute;
-        inset: 22px;
+        inset: 31px;
         border-radius: 50%;
-        background: #f8fbff;
+        background: #fff;
+        box-shadow: 0 0 0 1px rgba(145, 164, 189, .12);
     }
 
     .platform-donut-center {
         position: absolute;
         inset: 0;
-        display: grid;
-        place-items: center;
-        font-size: 1.2rem;
-        font-weight: 700;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         color: #0b1f44;
         z-index: 1;
+    }
+
+    .platform-donut-center span {
+        color: #64748b;
+        font-size: .65rem;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .platform-donut-center strong {
+        margin-top: .15rem;
+        font-size: 1.7rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .platform-donut-center small {
+        margin-top: .35rem;
+        color: #64748b;
+        font-size: .7rem;
     }
 
     .platform-legend {
@@ -434,12 +560,14 @@
     }
 
     .platform-click:hover .platform-bar-track {
-        box-shadow: inset 0 0 0 2px #b8d1ff;
+        border-color: var(--sc-admin-accent);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sc-admin-accent) 16%, transparent), 0 12px 24px color-mix(in srgb, var(--sc-admin-header-start) 10%, transparent);
+        transform: translateY(-2px);
     }
 
     .platform-click:hover.platform-bar-item {
-        border-color: #9fc0f9;
-        box-shadow: 0 8px 18px rgba(21, 84, 183, .10);
+        border-color: transparent;
+        box-shadow: none;
     }
 
     .platform-legend-btn {
@@ -448,6 +576,66 @@
         color: inherit;
         text-align: left;
         padding: 0;
+    }
+
+    .platform-legend--chart {
+        gap: .65rem;
+    }
+
+    .platform-legend--chart .platform-legend-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .9rem;
+        width: 100%;
+        padding: .72rem .82rem;
+        border: 1px solid #dbe5f2;
+        border-radius: .85rem;
+        background: linear-gradient(180deg, #fbfdff 0%, #f4f7fc 100%);
+        transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+
+    .platform-legend--chart .platform-legend-btn:hover {
+        border-color: color-mix(in srgb, var(--sc-admin-accent) 58%, var(--sc-admin-border));
+        box-shadow: 0 10px 22px color-mix(in srgb, var(--sc-admin-header-start) 10%, transparent);
+        transform: translateY(-1px);
+    }
+
+    .platform-legend-series {
+        display: flex;
+        align-items: center;
+        gap: .65rem;
+        min-width: 0;
+    }
+
+    .platform-legend-series > i {
+        flex: 0 0 auto;
+        font-size: .68rem;
+    }
+
+    .platform-legend-series > span,
+    .platform-legend-value {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .platform-legend-series strong,
+    .platform-legend-value strong {
+        color: #13233f;
+        font-size: .82rem;
+        font-weight: 800;
+    }
+
+    .platform-legend-series small,
+    .platform-legend-value small {
+        margin-top: .08rem;
+        color: #718096;
+        font-size: .68rem;
+    }
+
+    .platform-legend-value {
+        flex: 0 0 auto;
+        align-items: flex-end;
     }
 
     .platform-inline-link {
@@ -534,98 +722,208 @@
     html[data-theme="dark"] .sc-kpi-label,
     html[data-theme="dark"] .platform-bar-label,
     html[data-theme="dark"] .platform-bar-value {
-        color: #f4f8ff;
+        color: var(--sc-admin-text);
     }
 
     html[data-theme="dark"] .sc-kpi-foot,
-    html[data-theme="dark"] .platform-bar-subtitle {
-        color: #b5c4d9;
+    html[data-theme="dark"] .platform-bar-subtitle,
+    html[data-theme="dark"] .platform-bar-value span {
+        color: var(--sc-admin-muted);
     }
 
     html[data-theme="dark"] .platform-bar-item {
-        background: linear-gradient(180deg, #17263c 0%, #111d30 100%);
-        border-color: #344a68;
-        color: #f4f8ff;
+        background: transparent;
+        border-color: transparent;
+        color: var(--sc-admin-text);
     }
 
     html[data-theme="dark"] .platform-bar-track {
-        background: #24364f;
-        box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .08);
+        border-color: var(--sc-admin-border);
+        background: var(--sc-admin-control-bg);
+        box-shadow: inset 0 1px 0 color-mix(in srgb, var(--sc-admin-text) 6%, transparent);
     }
 
     html[data-theme="dark"] .platform-bar-icon {
-        background: #1c3353;
-        border-color: #41658f;
-        color: #9ac5ff;
+        background: var(--sc-admin-hover-bg);
+        border-color: var(--sc-admin-border);
+        color: var(--sc-admin-accent);
     }
 
     html[data-theme="dark"] .platform-click:hover .platform-bar-track {
-        box-shadow: inset 0 0 0 2px #4f78ad;
+        border-color: var(--sc-admin-accent);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sc-admin-accent) 18%, transparent), 0 14px 26px color-mix(in srgb, var(--sc-admin-page-bg) 72%, transparent);
     }
 
     html[data-theme="dark"] .platform-click:hover.platform-bar-item {
-        background: linear-gradient(180deg, #1a2e49 0%, #14243a 100%);
-        border-color: #5c86bb;
-        box-shadow: 0 10px 24px rgba(0, 0, 0, .28);
+        background: transparent;
+        border-color: transparent;
+        box-shadow: none;
     }
 
     html[data-theme="dark"] .platform-donut::after {
-        background: #111d30;
-        box-shadow: 0 0 0 1px rgba(148, 163, 184, .08);
+        background: var(--sc-admin-card-bg);
+        box-shadow: 0 0 0 1px var(--sc-admin-border-soft);
     }
 
     html[data-theme="dark"] .platform-donut-center {
-        color: #f8fbff;
+        color: var(--sc-admin-text);
+    }
+
+    html[data-theme="dark"] .platform-donut-center span,
+    html[data-theme="dark"] .platform-donut-center small {
+        color: var(--sc-admin-muted);
+    }
+
+    html[data-theme="dark"] .platform-legend--chart .platform-legend-btn {
+        border-color: var(--sc-admin-border);
+        background: var(--sc-admin-card-bg);
+    }
+
+    html[data-theme="dark"] .platform-legend--chart .platform-legend-btn:hover {
+        border-color: var(--sc-admin-accent);
+        box-shadow: 0 12px 24px color-mix(in srgb, var(--sc-admin-page-bg) 76%, transparent);
+    }
+
+    html[data-theme="dark"] .platform-legend-series strong,
+    html[data-theme="dark"] .platform-legend-value strong {
+        color: var(--sc-admin-text);
+    }
+
+    html[data-theme="dark"] .platform-legend-series small,
+    html[data-theme="dark"] .platform-legend-value small {
+        color: var(--sc-admin-muted);
     }
 
     html[data-theme="dark"] .platform-legend,
     html[data-theme="dark"] #detalle-body,
     html[data-theme="dark"] #detalle-body .text-muted {
-        color: #c5d2e5 !important;
+        color: var(--sc-admin-muted) !important;
     }
 
     html[data-theme="dark"] .platform-inline-link {
-        color: #7dd3fc;
+        color: var(--sc-admin-primary);
     }
 
     html[data-theme="dark"] .platform-progress-block .progress,
     html[data-theme="dark"] .table-card > .p-3 > .progress {
-        background-color: #263951;
+        background-color: var(--sc-admin-control-bg);
     }
 
     html[data-theme="dark"] .platform-module-btn {
-        background: linear-gradient(180deg, #17263c 0%, #111d30 100%);
-        border-color: #344a68;
-        color: #eaf2ff;
+        background: var(--sc-admin-card-bg);
+        border-color: var(--sc-admin-border);
+        color: var(--sc-admin-text);
     }
 
     html[data-theme="dark"] .platform-module-icon {
-        background: #1c3353;
-        border-color: #41658f;
-        color: #9ac5ff;
+        background: var(--sc-admin-hover-bg);
+        border-color: var(--sc-admin-border);
+        color: var(--sc-admin-accent);
     }
 
     html[data-theme="dark"] .platform-module-text strong {
-        color: #f4f8ff;
+        color: var(--sc-admin-text);
     }
 
     html[data-theme="dark"] .platform-module-text small {
-        color: #b5c4d9;
+        color: var(--sc-admin-muted);
     }
 
     html[data-theme="dark"] .platform-module-btn:hover {
-        background: linear-gradient(180deg, #1a2e49 0%, #14243a 100%);
-        border-color: #5c86bb;
-        box-shadow: 0 10px 24px rgba(0, 0, 0, .28);
-        color: #ffffff;
+        background: var(--sc-admin-hover-bg);
+        border-color: var(--sc-admin-accent);
+        box-shadow: 0 10px 24px color-mix(in srgb, var(--sc-admin-page-bg) 78%, transparent);
+        color: var(--sc-admin-text);
     }
 
     html[data-theme="dark"] .platform-bar-item:focus-visible,
     html[data-theme="dark"] .platform-legend-btn:focus-visible,
     html[data-theme="dark"] .platform-inline-link:focus-visible,
     html[data-theme="dark"] .platform-module-btn:focus-visible {
-        outline: 2px solid #60a5fa;
+        outline: 2px solid var(--sc-admin-accent);
         outline-offset: 3px;
+    }
+
+    body.sc-platform-admin-theme-shell :is(.platform-bar-item, .platform-legend-btn, .platform-module-btn) {
+        border-color: var(--sc-admin-border);
+        background: var(--sc-admin-card-bg);
+        color: var(--sc-admin-text);
+        box-shadow: none;
+    }
+
+    body.sc-platform-admin-theme-shell :is(.platform-bar-label, .platform-bar-value, .platform-card-title-text, .platform-module-text strong, .platform-donut-center strong) {
+        color: var(--sc-admin-text);
+    }
+
+    body.sc-platform-admin-theme-shell :is(.platform-chart-copy, .platform-bar-subtitle, .platform-bar-value span, .platform-legend-series small, .platform-legend-value small, .platform-module-text small, .platform-donut-center span, .platform-donut-center small) {
+        color: var(--sc-admin-muted);
+    }
+
+    body.sc-platform-admin-theme-shell :is(.platform-bar-track, .platform-donut::after, .platform-progress-block .progress, .table-card > .p-3 > .progress) {
+        border-color: var(--sc-admin-border);
+        background: var(--sc-admin-page-bg);
+    }
+
+    body.sc-platform-admin-theme-shell .platform-donut-center {
+        background: var(--sc-admin-card-bg);
+        box-shadow: 0 0 0 1px var(--sc-admin-border);
+    }
+
+    body.sc-platform-admin-theme-shell :is(.platform-bar-icon, .platform-card-icon, .platform-module-icon) {
+        border-color: color-mix(in srgb, var(--sc-admin-accent) 42%, var(--sc-admin-border));
+        background: var(--sc-admin-active-soft);
+        color: var(--sc-admin-accent);
+    }
+
+    body.sc-platform-admin-theme-shell :is(.platform-click:hover .platform-bar-track, .platform-click:hover.platform-bar-item, .platform-legend--chart .platform-legend-btn:hover, .platform-module-btn:hover) {
+        border-color: var(--sc-admin-accent);
+        box-shadow: 0 10px 22px color-mix(in srgb, var(--sc-admin-accent) 12%, transparent);
+    }
+
+    body.sc-platform-admin-theme-shell .platform-module-btn-active {
+        border-color: var(--sc-admin-primary);
+        background: var(--sc-admin-primary);
+        color: var(--sc-admin-on-color);
+    }
+
+    body.sc-platform-admin-theme-shell :is(.platform-bar-item, .platform-legend-btn, .platform-inline-link, .platform-module-btn):focus-visible {
+        outline: 2px solid var(--sc-admin-accent);
+        outline-offset: 2px;
+    }
+
+    @@media (max-width: 767.98px) {
+        .platform-chart-copy {
+            max-width: none;
+            text-align: left;
+        }
+
+        .platform-bars {
+            grid-template-columns: repeat(5, minmax(118px, 1fr));
+            overflow-x: auto;
+            padding-bottom: .4rem;
+        }
+
+        .platform-bar-item {
+            grid-template-rows: auto 150px auto;
+        }
+
+        .platform-bar-track {
+            height: 150px;
+        }
+
+        .platform-donut-layout {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .platform-donut {
+            width: 174px;
+            height: 174px;
+        }
+
+        .platform-donut::after {
+            inset: 28px;
+        }
     }
 </style>
 

@@ -1,4 +1,5 @@
 @model FralseTech.Web.ViewModels.LandingPageViewModel
+@* Firma: FRANCO LARA - 03/09/2026 | Carga desde Cloudflare el logo, la imagen principal y los banners de productos. *@
 @{
     ViewData["Title"] = Model.PageTitle;
     ViewData["MetaDescription"] = Model.MetaDescription;
@@ -11,7 +12,7 @@
         <div class="section-container">
             <div class="hero-banner reveal">
                 <img class="hero-banner__image"
-                     src="@Url.Content("~/images/oficina.png")"
+                     src="@Model.HeroImageUrl"
                      alt="Oficina tecnológica de FRALSE TECH"
                      width="1664"
                      height="944"
@@ -121,31 +122,41 @@
                                 <a class="btn btn-tertiary" href="@product.SecondaryActionUrl" target="_blank" rel="noreferrer">@product.SecondaryActionText</a>
                             </div>
                         </div>
-                        <div class="product-mockup" aria-hidden="true">
-                            <div class="product-mockup__caption">
-                                <span>FRALSE TECH / @((index + 1).ToString("00"))</span>
-                                <strong>@product.Name</strong>
-                            </div>
-                            <div class="product-mockup__screen">
-                                <div class="product-mockup__topbar">
-                                    <span></span><span></span><span></span>
+                        <figure class="product-mockup product-mockup--image">
+                            <div class="product-mockup__fallback" aria-hidden="true">
+                                <div class="product-mockup__caption">
+                                    <span>FRALSE TECH / @((index + 1).ToString("00"))</span>
+                                    <strong>@product.Name</strong>
                                 </div>
-                                @foreach (var line in product.MockupLines)
-                                {
-                                    <div class="product-mockup__row">
-                                        <span>@line.Label</span>
-                                        <strong>@line.Value</strong>
+                                <div class="product-mockup__screen">
+                                    <div class="product-mockup__topbar">
+                                        <span></span><span></span><span></span>
                                     </div>
-                                }
-                                <div class="product-mockup__chart">
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
+                                    @foreach (var line in product.MockupLines)
+                                    {
+                                        <div class="product-mockup__row">
+                                            <span>@line.Label</span>
+                                            <strong>@line.Value</strong>
+                                        </div>
+                                    }
+                                    <div class="product-mockup__chart">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                    <div class="product-mockup__signal"><span></span></div>
                                 </div>
-                                <div class="product-mockup__signal"><span></span></div>
                             </div>
-                        </div>
+                            <img class="product-mockup__image"
+                                 src="@product.ImageUrl"
+                                 alt="@product.ImageAlt"
+                                 width="1200"
+                                 height="900"
+                                 loading="lazy"
+                                 decoding="async"
+                                 onerror="this.hidden=true" />
+                        </figure>
                     </article>
                 }
             </div>

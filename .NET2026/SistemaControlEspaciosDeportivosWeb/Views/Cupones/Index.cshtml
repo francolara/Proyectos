@@ -1,4 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.CuponesIndexViewModel
+@* Firma: FRANCO LARA - 01/09/2026 | Presenta el listado con un titulo operativo y directo. *@
 @{
     ViewData["Title"] = "Cupones";
     var totalCuponesVista = Model.Cupones.Count;
@@ -74,7 +75,7 @@
     </section>
 
     <section class="table-card">
-        <h2 class="section-title"><i class="bi bi-list-ul me-1"></i>Listado de cupones</h2>
+        <h2 class="section-title"><i class="bi bi-ticket-perforated me-1"></i>Cupones registrados</h2>
         @if (!Model.Cupones.Any())
         {
             <div class="empty-state"><i class="bi bi-info-circle"></i><span>No hay cupones para el filtro seleccionado.</span></div>

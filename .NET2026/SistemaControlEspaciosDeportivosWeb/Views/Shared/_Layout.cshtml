@@ -332,7 +332,8 @@
         }
     }
 }
-<body class="d-flex flex-column min-vh-100 @(adminThemeEnabled ? "sc-admin-theme-shell" : "sc-public-theme-shell")">
+@* Firma: FRANCO LARA - 01/09/2026 | Distingue el panel administrativo del complejo para aplicar la identidad visual verde sin alterar el panel Super Admin. *@
+<body class="d-flex flex-column min-vh-100 @(adminThemeEnabled ? "sc-admin-theme-shell" : "sc-public-theme-shell") @(adminShell ? "sc-business-admin-theme-shell" : platformShell ? "sc-platform-admin-theme-shell" : string.Empty)">
     @if (!adminShell && !platformShell)
     {
         <header>
@@ -451,11 +452,33 @@
 
                 <nav class="sc-admin-nav" id="scAdminNavAccordion">
                     @{
-                        var seccionOperacionAbierta = currentController is "PANEL" or "ONBOARDING" or "MAESTROS" or "SEDES" or "ESPACIOS" or "RESERVAS" or "PAGOS" or "COMPROBANTES";
+                        var seccionOperacionAbierta = currentController is "ONBOARDING" or "MAESTROS" or "SEDES" or "ESPACIOS" or "RESERVAS" or "PAGOS" or "COMPROBANTES";
                         var seccionComercialAbierta = currentController is "CLIENTES" or "PROMOCIONES" or "CUPONES" or "REPORTES";
-                        var seccionSistemaAbierta = currentController is "USUARIOS" or "CONFIGURACION" or "AYUDA" or "MISUSCRIPCION";
+                        var seccionGeneralAbierta = currentController is "PANEL" or "USUARIOS" or "CONFIGURACION" or "AYUDA" or "MISUSCRIPCION";
                     }
                     @* Firma: FRANCO LARA - 01/06/2026 | Menú lateral agrupado por secciones colapsables sin alterar rutas ni reglas de permiso. *@
+                    <div class="sc-admin-nav-group">
+                        <button class="sc-admin-nav-group-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#scNavGeneral" aria-expanded="@(seccionGeneralAbierta ? "true" : "false")" aria-controls="scNavGeneral">
+                            <span><i class="bi bi-grid me-1"></i>General</span>
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                        <div class="collapse @(seccionGeneralAbierta ? "show" : null)" id="scNavGeneral">
+                            <div class="sc-admin-nav-group-body">
+                                <a class="@menuClass("Panel")" href="@menuUrl("Panel")"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
+                                @if (!bloquearModulosPorSuscripcion)
+                                {
+                                    <a class="@menuClass("Usuarios")" href="@menuUrl("Usuarios")"><i class="bi bi-person-gear"></i><span>Usuarios</span></a>
+                                    <a class="@menuClass("Configuracion")" href="@menuUrl("Configuracion")"><i class="bi bi-sliders2-vertical"></i><span>Configuracion</span></a>
+                                }
+                                <a class="@menuClass("MiSuscripcion")" href="@menuUrl("MiSuscripcion")"><i class="bi bi-credit-card-2-front"></i><span>Mi suscripcion</span></a>
+                                @if (!bloquearModulosPorSuscripcion)
+                                {
+                                    <a class="@menuClass("Ayuda")" href="@menuUrl("Ayuda")"><i class="bi bi-life-preserver"></i><span>Ayuda</span></a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="sc-admin-nav-group">
                         <button class="sc-admin-nav-group-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#scNavOperacion" aria-expanded="@(seccionOperacionAbierta ? "true" : "false")" aria-controls="scNavOperacion">
                             <span><i class="bi bi-grid-3x3-gap me-1"></i>Operacion</span>
@@ -463,7 +486,6 @@
                         </button>
                         <div class="collapse @(seccionOperacionAbierta ? "show" : null)" id="scNavOperacion">
                             <div class="sc-admin-nav-group-body">
-                                <a class="@menuClass("Panel")" href="@menuUrl("Panel")"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
                                 <a class="@menuClass("Onboarding")" href="@menuUrl("Onboarding")"><i class="bi bi-signpost-split"></i><span>Guia de configuracion</span></a>
                                 @if (!bloquearModulosPorSuscripcion)
                                 {
@@ -496,23 +518,6 @@
                         </div>
                     </div>
 
-                    <div class="sc-admin-nav-group">
-                        <button class="sc-admin-nav-group-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#scNavSistema" aria-expanded="@(seccionSistemaAbierta ? "true" : "false")" aria-controls="scNavSistema">
-                            <span><i class="bi bi-gear me-1"></i>Sistema</span>
-                            <i class="bi bi-chevron-down"></i>
-                        </button>
-                        <div class="collapse @(seccionSistemaAbierta ? "show" : null)" id="scNavSistema">
-                            <div class="sc-admin-nav-group-body">
-                                @if (!bloquearModulosPorSuscripcion)
-                                {
-                                    <a class="@menuClass("Usuarios")" href="@menuUrl("Usuarios")"><i class="bi bi-person-gear"></i><span>Usuarios</span></a>
-                                    <a class="@menuClass("Configuracion")" href="@menuUrl("Configuracion")"><i class="bi bi-sliders2-vertical"></i><span>Configuracion</span></a>
-                                    <a class="@menuClass("Ayuda")" href="@menuUrl("Ayuda")"><i class="bi bi-life-preserver"></i><span>Ayuda</span></a>
-                                }
-                                <a class="@menuClass("MiSuscripcion")" href="@menuUrl("MiSuscripcion")"><i class="bi bi-credit-card-2-front"></i><span>Mi suscripcion</span></a>
-                            </div>
-                        </div>
-                    </div>
                 </nav>
 
                 <div class="sc-admin-session-box">
@@ -623,15 +628,20 @@
                     </button>
                 </section>
 
+                @* Firma: FRANCO LARA - 03/09/2026 | Reorganiza los menus: Super Admin en Dashboard, ADMINISTRACION WEB y ADMINISTRACION NEGOCIOS; Admin Negocio con GENERAL primero, Dashboard como primera opcion y Ayuda despues de Mi suscripcion, conservando permisos. *@
                 <nav class="sc-admin-nav">
-                    <a class="@menuClassAction("Plataforma", "Index")" href="@Url.Action("Index", "Plataforma")"><i class="bi bi-window-sidebar"></i><span>Dashboard global</span></a>
-                    <a class="@menuClass("Banners")" href="@Url.Action("Index", "Banners")"><i class="bi bi-images"></i><span>Banners web</span></a>
-                    <a class="@menuClassAction("Plataforma", "PortalWeb")" href="@Url.Action("PortalWeb", "Plataforma")"><i class="bi bi-sliders2"></i><span>Portal web</span></a>
-                    <a class="@menuClassAction("Plataforma", "ClubesPendientes")" href="@Url.Action("ClubesPendientes", "Plataforma")"><i class="bi bi-person-check"></i><span>Altas de complejos deportivos</span></a>
-                    <a class="@menuClassAction("Plataforma", "Negocios")" href="@Url.Action("Negocios", "Plataforma")"><i class="bi bi-buildings"></i><span>Complejo deportivo</span></a>
+                    <a class="@menuClassAction("Plataforma", "Index")" href="@Url.Action("Index", "Plataforma")"><i class="bi bi-window-sidebar"></i><span>Dashboard</span></a>
+
+                    <div class="sc-admin-nav-section-title">ADMINISTRACION WEB</div>
+                    <a class="@menuClassAction("Plataforma", "PortalWeb")" href="@Url.Action("PortalWeb", "Plataforma")"><i class="bi bi-sliders2"></i><span>Portal Web</span></a>
+                    <a class="@menuClass("Banners")" href="@Url.Action("Index", "Banners")"><i class="bi bi-images"></i><span>Banner Web</span></a>
                     <a class="@menuClass("BoletinesAdmin")" href="@Url.Action("Index", "BoletinesAdmin")"><i class="bi bi-postcard"></i><span>Boletines deportivos</span></a>
-                    <a class="@menuClassAction("Plataforma", "ReferencialesExternos")" href="@Url.Action("ReferencialesExternos", "Plataforma")"><i class="bi bi-binoculars"></i><span>Referenciales externos</span></a>
                     <a class="@menuClass("Anuncios")" href="@Url.Action("Index", "Anuncios")"><i class="bi bi-megaphone"></i><span>Anuncios</span></a>
+                    <a class="@menuClassAction("Plataforma", "ReferencialesExternos")" href="@Url.Action("ReferencialesExternos", "Plataforma")"><i class="bi bi-binoculars"></i><span>Referencia Externa</span></a>
+
+                    <div class="sc-admin-nav-section-title">ADMINISTRACION NEGOCIOS</div>
+                    <a class="@menuClassAction("Plataforma", "ClubesPendientes")" href="@Url.Action("ClubesPendientes", "Plataforma")"><i class="bi bi-person-check"></i><span>Altas de complejos deportivos</span></a>
+                    <a class="@menuClassAction("Plataforma", "Negocios")" href="@Url.Action("Negocios", "Plataforma")"><i class="bi bi-buildings"></i><span>Complejos deportivos</span></a>
                 </nav>
 
                 <div class="sc-admin-session-box">

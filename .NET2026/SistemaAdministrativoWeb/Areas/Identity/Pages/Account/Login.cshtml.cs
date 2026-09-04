@@ -30,6 +30,7 @@ public class LoginModel(
     ILogger<LoginModel> logger) : PageModel
 {
     // Firma: FRANCO LARA - 31/08/2026 | Agrega recuperacion y reenvio mediante Brevo y diferencia visualmente los avisos de entrega fallida.
+    // Firma: FRANCO LARA - 02/09/2026 | Aplica 30 minutos a la sesion normal y 2 dias a Recordarme sin perder bloqueo, segundo factor, captcha ni redireccion por empresa.
     private const string LoginFailuresSessionKey = "Auth:LoginFailures";
     private const string ResendAttemptsSessionKey = "Auth:ResendConfirmationAttempts";
     private const string LoginCaptchaScope = "LOGIN";
@@ -133,6 +134,17 @@ public class LoginModel(
 
         if (result.Succeeded)
         {
+            var authenticationProperties = new AuthenticationProperties
+            {
+                IsPersistent = Input.RememberMe,
+                AllowRefresh = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.Add(
+                    Input.RememberMe
+                        ? TimeSpan.FromDays(2)
+                        : TimeSpan.FromMinutes(30))
+            };
+            await signInManager.SignInAsync(authenticatedUser, authenticationProperties);
+
             RegistrarDebug($"POST login | SUCCESS | UserId={authenticatedUser.Id}");
             ReiniciarContador(LoginFailuresSessionKey);
             currentCompanyAccessor.LimpiarEmpresa();

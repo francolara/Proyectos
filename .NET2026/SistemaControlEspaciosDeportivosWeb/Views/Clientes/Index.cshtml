@@ -1,4 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ClientesIndexViewModel
+@* Firma: FRANCO LARA - 01/09/2026 | Presenta el listado con un titulo operativo y directo. *@
 @{
     ViewData["Title"] = "Clientes";
     var totalClientes = Model.TotalActivos + Model.TotalInactivos;
@@ -105,7 +106,7 @@
     </section>
 
     <section class="table-card">
-        <h2 class="section-title"><i class="bi bi-list-ul me-1"></i>Listado detallado de clientes</h2>
+        <h2 class="section-title"><i class="bi bi-people me-1"></i>Clientes registrados</h2>
         @if (!Model.Clientes.Any())
         {
             <div class="empty-state">

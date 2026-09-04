@@ -1,4 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PromocionesIndexViewModel
+@* Firma: FRANCO LARA - 01/09/2026 | Presenta el listado con un titulo operativo y directo. *@
 @{
     ViewData["Title"] = "Promociones";
     var totalPromocionesVista = Model.Promociones.Count;
@@ -158,7 +159,7 @@
     </section>
 
     <section class="table-card">
-        <h2 class="section-title"><i class="bi bi-list-ul me-1"></i>Listado detallado de promociones</h2>
+        <h2 class="section-title"><i class="bi bi-tags me-1"></i>Promociones registradas</h2>
         @if (!Model.Promociones.Any())
         {
             <div class="empty-state">

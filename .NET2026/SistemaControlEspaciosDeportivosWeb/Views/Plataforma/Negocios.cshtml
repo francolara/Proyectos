@@ -6,10 +6,12 @@
 @* Firma: FRANCO LARA - 10/06/2026 | Agrega conciliacion de cobros comerciales con acciones diferidas y reorganiza la gestion comercial del super admin con resumen por negocio y modales por accion. *@
 @* Firma: FRANCO LARA - 20/07/2026 | Corrige el contraste del historial comercial y de los pies de los modales de limites, contratos y cobros en modo oscuro. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Muestra el plan comercial vigente, permite aplicarlo con sus limites al guardar cada cobro y agrega reportes HTML imprimibles por complejo y consolidado. *@
+@* Firma: FRANCO LARA - 01/09/2026 | Integra suspension manual/automatica, baja logica definitiva y reactivaciones auditadas del complejo y su servicio. *@
+@* Firma: FRANCO LARA - 03/09/2026 | Rediseña el listado como resumen por complejo, concentra sus opciones en un detalle horizontal y adopta la paleta administrativa compartida. *@
 <div class="page-header-card mb-3">
     <div class="page-header-main">
         <h1 class="page-title">Complejos deportivos registrados</h1>
-        <p class="page-subtitle">Administra limites operativos por complejo deportivo: sedes, espacios y usuarios permitidos.</p>
+        <p class="page-subtitle">Administra el servicio, la suscripcion y los limites operativos de cada complejo deportivo.</p>
     </div>
 </div>
 
@@ -21,10 +23,17 @@
 {
     <div class="alert alert-danger">@err</div>
 }
+@if (ViewData["SuspensionesAutomaticas"] is int suspensionesAutomaticas && suspensionesAutomaticas > 0)
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-pause-circle me-1"></i>
+        Se suspendieron automaticamente <strong>@suspensionesAutomaticas</strong> complejo(s) cuya prueba o contrato ya vencieron.
+    </div>
+}
 
 <style>
     .platform-negocio-action-btn {
-        min-width: 140px;
+        min-width: 0;
     }
 
     .platform-negocio-summary-badges {
@@ -43,8 +52,8 @@
         padding-top: .85rem;
         padding-bottom: .2rem;
         margin-top: 1rem;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, #ffffff 28%);
-        border-top: 1px solid rgba(148, 163, 184, 0.22);
+        background: color-mix(in srgb, var(--sc-admin-card-bg) 92%, transparent);
+        border-top: 1px solid var(--sc-admin-border);
         backdrop-filter: blur(10px);
     }
 
@@ -55,30 +64,214 @@
     }
 
     html[data-theme="dark"] .platform-negocio-modal .modal-body {
-        background: #0b1220;
-        color: #e5eefc;
+        background: var(--sc-admin-card-bg);
+        color: var(--sc-admin-text);
     }
 
     html[data-theme="dark"] .platform-negocio-modal .modal-footer,
     html[data-theme="dark"] .platform-negocio-modal .platform-negocio-form-actions {
-        background: linear-gradient(180deg, rgba(11, 18, 32, 0.92) 0%, #0b1220 28%);
-        border-color: rgba(96, 119, 156, 0.38);
+        background: color-mix(in srgb, var(--sc-admin-card-bg) 92%, transparent);
+        border-color: var(--sc-admin-border);
     }
 
     html[data-theme="dark"] .platform-negocio-modal .bg-light-subtle,
     html[data-theme="dark"] .platform-negocio-modal .js-mov-item,
     html[data-theme="dark"] .platform-negocio-modal .js-cobro-item {
-        background-color: #111c2f !important;
-        color: #e5eefc;
+        background-color: var(--sc-admin-card-bg) !important;
+        color: var(--sc-admin-text);
     }
 
     html[data-theme="dark"] .platform-negocio-modal .border {
-        border-color: rgba(96, 119, 156, 0.38) !important;
+        border-color: var(--sc-admin-border) !important;
     }
 
     html[data-theme="dark"] .platform-negocio-modal .text-bg-light {
-        background-color: #1e293b !important;
-        color: #e5eefc !important;
+        background-color: color-mix(in srgb, var(--sc-admin-card-bg) 86%, var(--sc-admin-page-bg)) !important;
+        color: var(--sc-admin-text) !important;
+    }
+
+    .platform-negocio-stack {
+        display: grid;
+        gap: .85rem;
+        padding: 1rem;
+    }
+
+    .platform-negocio-card {
+        overflow: hidden;
+        border: 1px solid var(--sc-admin-border);
+        border-radius: 1rem;
+        background: var(--sc-admin-card-bg);
+        transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+
+    .platform-negocio-card:hover {
+        border-color: color-mix(in srgb, var(--sc-admin-primary) 34%, var(--sc-admin-border));
+        box-shadow: 0 .7rem 1.8rem color-mix(in srgb, var(--sc-admin-text) 8%, transparent);
+        transform: translateY(-1px);
+    }
+
+    .platform-negocio-summary {
+        display: grid;
+        grid-template-columns: minmax(230px, 1.15fr) minmax(210px, .9fr) minmax(280px, 1.25fr) auto;
+        gap: 1.25rem;
+        align-items: center;
+        padding: 1rem 1.1rem;
+    }
+
+    .platform-negocio-name {
+        display: flex;
+        gap: .75rem;
+        align-items: flex-start;
+    }
+
+    .platform-negocio-avatar {
+        display: grid;
+        flex: 0 0 2.35rem;
+        width: 2.35rem;
+        height: 2.35rem;
+        place-items: center;
+        border-radius: .7rem;
+        color: var(--sc-admin-on-color);
+        background: var(--sc-admin-heading-bg);
+    }
+
+    .platform-negocio-label {
+        display: block;
+        margin-bottom: .32rem;
+        color: var(--sc-admin-muted);
+        font-size: .68rem;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .platform-negocio-metric-line {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .4rem .85rem;
+        color: var(--sc-admin-muted);
+        font-size: .78rem;
+    }
+
+    .platform-negocio-detail-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        white-space: nowrap;
+    }
+
+    .platform-negocio-detail-toggle .bi-chevron-down {
+        transition: transform .2s ease;
+    }
+
+    .platform-negocio-detail-toggle:not(.collapsed) .bi-chevron-down {
+        transform: rotate(180deg);
+    }
+
+    .platform-negocio-detail-toggle.collapsed .platform-negocio-detail-label-expanded,
+    .platform-negocio-detail-toggle:not(.collapsed) .platform-negocio-detail-label-collapsed {
+        display: none;
+    }
+
+    .platform-negocio-detail-panel {
+        border-top: 1px solid var(--sc-admin-border);
+        background: color-mix(in srgb, var(--sc-admin-page-bg) 74%, var(--sc-admin-card-bg));
+    }
+
+    .platform-negocio-tabs {
+        display: flex;
+        gap: .35rem;
+        overflow-x: auto;
+        padding: .8rem 1rem;
+        scrollbar-width: thin;
+    }
+
+    .platform-negocio-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: .42rem;
+        flex: 0 0 auto;
+        padding: .55rem .82rem;
+        border: 0;
+        border-radius: .65rem;
+        color: var(--sc-admin-text);
+        background: transparent;
+        font-size: .8rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: color .18s ease, background-color .18s ease, transform .18s ease;
+    }
+
+    .platform-negocio-tab:hover,
+    .platform-negocio-tab:focus-visible {
+        color: var(--sc-admin-primary);
+        background: color-mix(in srgb, var(--sc-admin-primary) 10%, transparent);
+        transform: translateY(-1px);
+    }
+
+    .platform-negocio-tab-danger {
+        color: #b42318;
+    }
+
+    .platform-negocio-modal-host {
+        display: none;
+    }
+
+    html[data-theme="dark"] .platform-negocio-card {
+        border-color: var(--sc-admin-border);
+        background: var(--sc-admin-card-bg);
+    }
+
+    html[data-theme="dark"] .platform-negocio-label,
+    html[data-theme="dark"] .platform-negocio-metric-line {
+        color: var(--sc-admin-muted);
+    }
+
+    html[data-theme="dark"] .platform-negocio-detail-panel {
+        border-color: var(--sc-admin-border);
+        background: color-mix(in srgb, var(--sc-admin-page-bg) 72%, var(--sc-admin-card-bg));
+    }
+
+    html[data-theme="dark"] .platform-negocio-tab {
+        color: var(--sc-admin-text);
+    }
+
+    html[data-theme="dark"] .platform-negocio-tab:hover,
+    html[data-theme="dark"] .platform-negocio-tab:focus-visible {
+        color: var(--sc-admin-on-color);
+        background: color-mix(in srgb, var(--sc-admin-primary) 28%, transparent);
+    }
+
+    html[data-theme="dark"] .platform-negocio-tab-danger {
+        color: #fda4af;
+    }
+
+    @@media (max-width: 1200px) {
+        .platform-negocio-summary {
+            grid-template-columns: minmax(220px, 1fr) minmax(210px, .9fr) minmax(250px, 1fr);
+        }
+
+        .platform-negocio-summary-action {
+            grid-column: 1 / -1;
+            justify-self: end;
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .platform-negocio-summary {
+            grid-template-columns: 1fr;
+            gap: .9rem;
+        }
+
+        .platform-negocio-summary-action {
+            grid-column: auto;
+            justify-self: stretch;
+        }
+
+        .platform-negocio-detail-toggle {
+            justify-content: center;
+            width: 100%;
+        }
     }
 </style>
 
@@ -95,6 +288,8 @@
                 <option value="con-contrato" selected="@(Model.EstadoContrato == "con-contrato" ? "selected" : null)">Con contrato</option>
                 <option value="sin-contrato" selected="@(Model.EstadoContrato == "sin-contrato" ? "selected" : null)">Sin contrato</option>
                 <option value="prueba-por-vencer" selected="@(Model.EstadoContrato == "prueba-por-vencer" ? "selected" : null)">Prueba por vencer</option>
+                <option value="suspendidos" selected="@(Model.EstadoContrato == "suspendidos" ? "selected" : null)">Suspendidos</option>
+                <option value="dados-de-baja" selected="@(Model.EstadoContrato == "dados-de-baja" ? "selected" : null)">Dados de baja</option>
             </select>
         </div>
         <div class="col-md-3 col-lg-2 d-grid">
@@ -121,58 +316,23 @@
         <h2 class="table-card-title platform-card-title"><span class="platform-card-icon"><i class="bi bi-diagram-3"></i></span><span class="platform-card-title-text">Complejos deportivos listados</span></h2>
         <span class="badge text-bg-light border">Pagina @Model.Pagina de @Model.TotalPaginas</span>
     </div>
-    <div class="table-responsive">
-        <table class="table table-sm align-middle mb-0">
-            <thead>
-                <tr>
-                    <th>
-                        <span class="sc-col-header">
-                            <i class="bi bi-buildings"></i>
-                            <small>Complejo deportivo</small>
-                        </span>
-                    </th>
-                    <th>
-                        <span class="sc-col-header">
-                            <i class="bi bi-activity"></i>
-                            <small>Estado</small>
-                        </span>
-                    </th>
-                    <th class="text-center">
-                        <span class="sc-col-header">
-                            <i class="bi bi-sliders2"></i>
-                            <small>Limites</small>
-                        </span>
-                    </th>
-                    <th>
-                        <span class="sc-col-header">
-                            <i class="bi bi-journal-check"></i>
-                            <small>Suscripcion</small>
-                        </span>
-                    </th>
-                    <th class="text-end">
-                        <span class="sc-col-header">
-                            <i class="bi bi-tools"></i>
-                            <small>Accion</small>
-                        </span>
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (Model.Negocios.Count == 0)
-                {
-                    <tr>
-                        <td colspan="5" class="text-center text-muted py-4">No se encontraron complejos deportivos.</td>
-                    </tr>
-                }
-                else
-                {
-                    foreach (var item in Model.Negocios)
-                    {
+    <div class="platform-negocio-stack">
+        @if (Model.Negocios.Count == 0)
+        {
+            <div class="text-center text-muted py-4">No se encontraron complejos deportivos.</div>
+        }
+        else
+        {
+            foreach (var item in Model.Negocios)
+            {
                         var modalLimitesId = $"limitesNegocioModal{item.NegocioId}";
+                        var modalServicioId = $"servicioNegocioModal{item.NegocioId}";
                         var modalContratoId = $"contratoNegocioModal{item.NegocioId}";
                         var modalCobroId = $"cobroNegocioModal{item.NegocioId}";
                         var modalGestionId = $"gestionComercialModal{item.NegocioId}";
-                        var tieneContratoActivo = !item.EsPrueba
+                        var detalleNegocioId = $"detalleNegocio{item.NegocioId}";
+                        var tieneContratoActivo = item.EstadoSuscripcion == 2
+                            && !item.EsPrueba
                             && !string.IsNullOrWhiteSpace(item.TipoCobro)
                             && item.FechaFinPlan.HasValue;
                         var contratoEnGracia = tieneContratoActivo
@@ -183,7 +343,9 @@
                         var fechaInicioObjetivoDefault = item.FechaFinPlan.HasValue && item.FechaFinPlan.Value.Date >= DateTime.Today.Date
                             ? DateOnly.FromDateTime(item.FechaFinPlan.Value.Date)
                             : DateOnly.FromDateTime(DateTime.Today);
-                        var pruebaPorVencer = item.EsPrueba
+                        var pruebaPorVencer = item.Activo
+                            && item.EstadoSuscripcion == 1
+                            && item.EsPrueba
                             && item.FechaFinPrueba.HasValue
                             && item.FechaFinPrueba.Value.Date >= DateTime.Today.Date
                             && item.FechaFinPrueba.Value.Date <= DateTime.Today.AddDays(7).Date;
@@ -191,32 +353,24 @@
                         var totalPagosPendientes = item.HistorialCobros.Count(p => p.EstadoPago == "PENDIENTE");
                         var totalPagosAplicados = item.HistorialCobros.Count(p => p.AplicadoSuscripcion);
                         var totalPagosNoAplicados = item.HistorialCobros.Count(p => p.AplicarAlConfirmar && !p.AplicadoSuscripcion);
-                        <tr>
-                            <td>
-                                <strong>@item.NombreComercial</strong>
-                                <div class="text-muted small">ID: @item.NegocioId</div>
-                            </td>
-                            <td>
-                                @if (item.Activo)
-                                {
-                                    <span class="badge text-bg-success">Activo</span>
-                                }
-                                else
-                                {
-                                    <span class="badge text-bg-secondary">Inactivo</span>
-                                }
-                            </td>
-                            <td>
-                                <div class="d-flex flex-wrap justify-content-center gap-2">
-                                    <span class="badge text-bg-primary">Plan: @SistemaControlEspaciosDeportivosWeb.Services.PlanComercialCatalog.Obtener(item.PlanComercial).Nombre</span>
-                                    <span class="badge text-bg-light border">Sedes: @item.SedesPermitidas</span>
-                                    <span class="badge text-bg-light border">Espacios: @item.EspaciosPermitidos</span>
-                                    <span class="badge text-bg-light border">Usuarios: @item.UsuariosPermitidos</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex flex-wrap gap-1 mb-2">
-                                    <span class="badge text-bg-@(item.EstadoSuscripcion is 1 or 2 ? "success" : item.EstadoSuscripcion == 3 ? "danger" : "secondary")">@item.EstadoSuscripcionNombre</span>
+                        <article class="platform-negocio-card">
+                            <div class="platform-negocio-summary">
+                                <section class="platform-negocio-name">
+                                    <span class="platform-negocio-avatar" aria-hidden="true"><i class="bi bi-buildings"></i></span>
+                                    <div>
+                                        <span class="platform-negocio-label">Complejo deportivo</span>
+                                        <strong>@item.NombreComercial</strong>
+                                        <div class="text-muted small">ID @item.NegocioId</div>
+                                        <div class="d-flex flex-wrap gap-1 mt-2">
+                                            @if (item.Activo)
+                                            {
+                                                <span class="badge text-bg-success">Activo</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge text-bg-dark">Baja definitiva</span>
+                                            }
+                                    <span class="badge text-bg-@(item.EstadoSuscripcion is 1 or 2 ? "success" : item.EstadoSuscripcion == 3 ? "danger" : item.EstadoSuscripcion == 4 ? "warning text-dark" : "secondary")">@item.EstadoSuscripcionNombre</span>
                                     @if (pruebaPorVencer)
                                     {
                                         <span class="badge text-bg-warning text-dark">Prueba por vencer</span>
@@ -229,55 +383,240 @@
                                     {
                                         <span class="badge text-bg-info">Contrato activo</span>
                                     }
-                                </div>
+                                        </div>
+                                    </div>
+                                </section>
 
-                                @if (item.EsPrueba && item.FechaFinPrueba.HasValue)
-                                {
-                                    <div class="small text-muted">Prueba hasta: @item.FechaFinPrueba.Value.ToString("dd/MM/yyyy")</div>
-                                }
-                                else if (!item.EsPrueba && item.FechaFinPlan.HasValue)
-                                {
-                                    <div class="small text-muted">@SistemaControlEspaciosDeportivosWeb.Services.PlanComercialCatalog.Obtener(item.PlanComercial).Nombre · @item.TipoCobro | @item.FechaInicioPlan?.ToString("dd/MM/yyyy") - @item.FechaFinPlan?.ToString("dd/MM/yyyy")</div>
-                                    <div class="small text-muted">Gracia: @item.DiasGracia dias | hasta @item.FechaFinGracia?.ToString("dd/MM/yyyy")</div>
-                                }
-                                else if (!item.EsPrueba)
-                                {
-                                    <div class="small text-muted">Sin contrato activo.</div>
-                                }
+                                <section>
+                                    <span class="platform-negocio-label">Capacidad del plan</span>
+                                    <strong>@SistemaControlEspaciosDeportivosWeb.Services.PlanComercialCatalog.Obtener(item.PlanComercial).Nombre</strong>
+                                    <div class="platform-negocio-metric-line mt-2">
+                                        <span><i class="bi bi-geo-alt me-1"></i>@item.SedesPermitidas sedes</span>
+                                        <span><i class="bi bi-grid me-1"></i>@item.EspaciosPermitidos espacios</span>
+                                        <span><i class="bi bi-people me-1"></i>@item.UsuariosPermitidos usuarios</span>
+                                    </div>
+                                </section>
 
-                                <div class="d-flex flex-wrap gap-2 mt-2">
-                                    <span class="badge text-bg-light border">Cobrado: S/ @item.MontoTotalCobrado.ToString("0.00")</span>
-                                    <span class="badge text-bg-light border">Cobros: @item.CantidadCobrosRegistrados</span>
-                                    <span class="badge text-bg-light border">Mov.: @item.HistorialComercial.Count</span>
+                                <section>
+                                    <span class="platform-negocio-label">Suscripcion y actividad</span>
+                                    @if (item.EsPrueba && item.FechaFinPrueba.HasValue)
+                                    {
+                                        <div class="small">Prueba hasta @item.FechaFinPrueba.Value.ToString("dd/MM/yyyy")</div>
+                                    }
+                                    else if (!item.EsPrueba && item.FechaFinPlan.HasValue)
+                                    {
+                                        <div class="small">@item.TipoCobro · @item.FechaInicioPlan?.ToString("dd/MM/yyyy") al @item.FechaFinPlan?.ToString("dd/MM/yyyy")</div>
+                                        <div class="small text-muted">Gracia: @item.DiasGracia dias · hasta @item.FechaFinGracia?.ToString("dd/MM/yyyy")</div>
+                                    }
+                                    else
+                                    {
+                                        <div class="small text-muted">Sin contrato activo.</div>
+                                    }
+                                    <div class="platform-negocio-metric-line mt-2">
+                                        <span>Cobrado: <strong>S/ @item.MontoTotalCobrado.ToString("0.00")</strong></span>
+                                        <span>Cobros: <strong>@item.CantidadCobrosRegistrados</strong></span>
+                                        <span>Movimientos: <strong>@item.HistorialComercial.Count</strong></span>
+                                    </div>
+                                </section>
+
+                                <section class="platform-negocio-summary-action">
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-primary platform-negocio-detail-toggle collapsed"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#@detalleNegocioId"
+                                            aria-expanded="false"
+                                            aria-controls="@detalleNegocioId">
+                                        <span class="platform-negocio-detail-label-collapsed">Ver detalle</span>
+                                        <span class="platform-negocio-detail-label-expanded">Ocultar detalle</span>
+                                        <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                                    </button>
+                                </section>
+                            </div>
+
+                            <div class="collapse platform-negocio-detail-panel" id="@detalleNegocioId">
+                                <div class="platform-negocio-tabs" role="toolbar" aria-label="Opciones de @item.NombreComercial">
+                                    <button type="button" class="platform-negocio-tab platform-negocio-tab-danger" data-bs-toggle="modal" data-bs-target="#@modalServicioId">
+                                        <i class="bi bi-power"></i><span>@(!item.Activo ? "Reactivar complejo" : item.EstadoSuscripcion == 4 ? "Reactivar servicio" : "Servicio")</span>
+                                    </button>
+                                    @if (item.Activo)
+                                    {
+                                        <button type="button" class="platform-negocio-tab" data-bs-toggle="modal" data-bs-target="#@modalLimitesId"><i class="bi bi-sliders2"></i><span>Limites</span></button>
+                                        <button type="button" class="platform-negocio-tab" data-bs-toggle="modal" data-bs-target="#@modalContratoId"><i class="bi bi-journal-check"></i><span>Contrato</span></button>
+                                        <button type="button" class="platform-negocio-tab" data-bs-toggle="modal" data-bs-target="#@modalCobroId"><i class="bi bi-cash-coin"></i><span>Cobros</span></button>
+                                    }
+                                    <button type="button" class="platform-negocio-tab" data-bs-toggle="modal" data-bs-target="#@modalGestionId"><i class="bi bi-clock-history"></i><span>Historial</span></button>
+                                    <a asp-action="ReporteNegocio" asp-route-negocioId="@item.NegocioId" target="_blank" rel="noopener" class="platform-negocio-tab"><i class="bi bi-printer"></i><span>Reporte</span></a>
                                 </div>
-                            </td>
-                            <td class="text-end">
-                                <div class="d-flex flex-column align-items-end gap-2">
-                                    <button type="button" class="btn btn-sm btn-primary btn-grabar platform-negocio-action-btn" data-bs-toggle="modal" data-bs-target="#@modalLimitesId">
-                                        <i class="bi bi-sliders2 me-1"></i>Limites
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-primary btn-grabar platform-negocio-action-btn" data-bs-toggle="modal" data-bs-target="#@modalContratoId">
-                                        <i class="bi bi-journal-check me-1"></i>Contrato
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-primary btn-grabar platform-negocio-action-btn" data-bs-toggle="modal" data-bs-target="#@modalCobroId">
-                                        <i class="bi bi-cash-coin me-1"></i>Cobros
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-primary btn-grabar platform-negocio-action-btn" data-bs-toggle="modal" data-bs-target="#@modalGestionId">
-                                        <i class="bi bi-collection me-1"></i>Historial
-                                    </button>
-                                    <a asp-action="ReporteNegocio"
-                                       asp-route-negocioId="@item.NegocioId"
-                                       target="_blank"
-                                       rel="noopener"
-                                       class="btn btn-sm btn-outline-primary platform-negocio-action-btn">
-                                        <i class="bi bi-printer me-1"></i>Reporte
-                                    </a>
-                                    <span class="text-muted small">ID @item.NegocioId</span>
+                            </div>
+                        </article>
+                        <div class="platform-negocio-modal-host">
+                        <div class="modal fade platform-negocio-modal" id="@modalServicioId" tabindex="-1" aria-labelledby="@(modalServicioId)Label" aria-hidden="true">
+                            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                <div class="modal-content sc-modal-content">
+                                    <div class="modal-header sc-modal-header">
+                                        <div class="sc-modal-title-wrap">
+                                            <h5 class="modal-title sc-modal-title" id="@(modalServicioId)Label">Gestion del servicio</h5>
+                                            <p class="sc-modal-subtitle">Suspende o reactiva la operacion de @item.NombreComercial sin eliminar su informacion.</p>
+                                        </div>
+                                        <button type="button" class="btn-close sc-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                    </div>
+                                    <div class="modal-body sc-modal-body">
+                                        <div class="border rounded-3 p-3 mb-3 bg-light-subtle">
+                                            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                                <strong>Estado actual:</strong>
+                                                @if (!item.Activo)
+                                                {
+                                                    <span class="badge text-bg-dark">Baja definitiva</span>
+                                                }
+                                                <span class="badge text-bg-@(item.EstadoSuscripcion == 4 ? "warning text-dark" : item.EstadoSuscripcion is 1 or 2 ? "success" : "secondary")">@item.EstadoSuscripcionNombre</span>
+                                                <span class="badge text-bg-light border">@(item.EsPrueba ? "Prueba" : SistemaControlEspaciosDeportivosWeb.Services.PlanComercialCatalog.Obtener(item.PlanComercial).Nombre)</span>
+                                            </div>
+                                            @if (!item.Activo)
+                                            {
+                                                <p class="small text-muted mb-0">La baja bloquea completamente el acceso y la visibilidad publica, pero conserva todos los datos e historial.</p>
+                                            }
+                                            else
+                                            {
+                                                <p class="small text-muted mb-0">Al suspender, el complejo deja de aparecer en el portal publico y solo conserva acceso a Dashboard y Mi suscripcion. Sus datos, plan y vigencia se mantienen.</p>
+                                            }
+                                        </div>
+
+                                        @if (!item.Activo)
+                                        {
+                                            var ultimaBaja = item.HistorialComercial
+                                                .Where(x => string.Equals(x.TipoMovimiento, "BAJA_COMPLEJO", StringComparison.OrdinalIgnoreCase))
+                                                .OrderByDescending(x => x.FechaCreacion)
+                                                .FirstOrDefault();
+                                            <div class="alert alert-danger">
+                                                <strong>El complejo se encuentra dado de baja.</strong>
+                                                @if (ultimaBaja is not null)
+                                                {
+                                                    <div class="small mt-1">@ultimaBaja.FechaCreacion.ToString("dd/MM/yyyy HH:mm") · @ultimaBaja.Observacion</div>
+                                                }
+                                            </div>
+                                            <form asp-action="ReactivarComplejoNegocio" method="post" class="row g-3" onsubmit="return confirm('Se reactivara el complejo, pero su servicio permanecera suspendido. Deseas continuar?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="negocioId" value="@item.NegocioId" />
+                                                <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                                <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
+                                                <input type="hidden" name="pagina" value="@Model.Pagina" />
+                                                <div class="col-12">
+                                                    <label class="form-label">Observacion de reactivacion</label>
+                                                    <textarea name="observacion" maxlength="500" rows="3" class="form-control" placeholder="Motivo o autorizacion para recuperar el complejo"></textarea>
+                                                </div>
+                                                <div class="col-12 platform-negocio-form-actions">
+                                                    <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-success btn-grabar"><i class="bi bi-building-check me-1"></i>Reactivar complejo</button>
+                                                </div>
+                                            </form>
+                                        }
+                                        else if (item.EstadoSuscripcion == 4)
+                                        {
+                                            var ultimaSuspension = item.HistorialComercial
+                                                .Where(x => x.TipoMovimiento.StartsWith("SUSPENSION", StringComparison.OrdinalIgnoreCase))
+                                                .OrderByDescending(x => x.FechaCreacion)
+                                                .FirstOrDefault();
+                                            @if (ultimaSuspension is not null)
+                                            {
+                                                <div class="alert alert-warning">
+                                                    <div><strong>Suspension:</strong> @ultimaSuspension.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</div>
+                                                    <div class="small">@ultimaSuspension.Observacion</div>
+                                                </div>
+                                            }
+                                            <form asp-action="ReactivarServicioNegocio" method="post" class="row g-3" onsubmit="return confirm('Se reactivara el servicio del complejo deportivo. Deseas continuar?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="negocioId" value="@item.NegocioId" />
+                                                <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                                <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
+                                                <input type="hidden" name="pagina" value="@Model.Pagina" />
+                                                <div class="col-12">
+                                                    <label class="form-label">Observacion de reactivacion</label>
+                                                    <textarea name="observacion" maxlength="500" rows="3" class="form-control" placeholder="Detalle opcional de la reactivacion"></textarea>
+                                                </div>
+                                                <div class="col-12 platform-negocio-form-actions">
+                                                    <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-success btn-grabar"><i class="bi bi-play-circle me-1"></i>Reactivar servicio</button>
+                                                </div>
+                                            </form>
+                                        }
+                                        else if (item.EstadoSuscripcion is 1 or 2)
+                                        {
+                                            <form asp-action="SuspenderServicioNegocio" method="post" class="row g-3" onsubmit="return confirm('El complejo dejara de operar y de mostrarse publicamente. Deseas suspender el servicio?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="negocioId" value="@item.NegocioId" />
+                                                <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                                <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
+                                                <input type="hidden" name="pagina" value="@Model.Pagina" />
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Motivo de suspension</label>
+                                                    <select name="motivo" class="form-select" required>
+                                                        <option value="">Seleccionar motivo</option>
+                                                        <option value="FALTA_PAGO">Falta de pago</option>
+                                                        <option value="SOLICITUD_CLIENTE">Solicitud del cliente</option>
+                                                        <option value="INCUMPLIMIENTO">Incumplimiento</option>
+                                                        <option value="MANTENIMIENTO_ADMINISTRATIVO">Mantenimiento administrativo</option>
+                                                        <option value="OTRO">Otro</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label">Observacion</label>
+                                                    <textarea name="observacion" maxlength="500" rows="3" class="form-control" placeholder="Detalle de la suspension"></textarea>
+                                                </div>
+                                                <div class="col-12 platform-negocio-form-actions">
+                                                    <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-danger"><i class="bi bi-pause-circle me-1"></i>Suspender servicio</button>
+                                                </div>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <div class="alert alert-info mb-0">Este complejo no tiene una prueba o contrato activo para suspender. Primero debes regularizar su vigencia desde Gestion de contrato.</div>
+                                        }
+
+                                        @if (item.Activo)
+                                        {
+                                            <hr class="my-4" />
+                                            <div class="border border-danger rounded-3 p-3">
+                                                <h6 class="text-danger"><i class="bi bi-building-x me-1"></i>Dar de baja definitivamente</h6>
+                                                <p class="small text-muted">Bloquea completamente el complejo y todos sus usuarios. Los datos e historial no se eliminan.</p>
+                                                <form asp-action="DarBajaNegocio" method="post" class="row g-3" onsubmit="return confirm('Esta accion bloqueara completamente el complejo deportivo. Deseas continuar?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="negocioId" value="@item.NegocioId" />
+                                                    <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                                    <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
+                                                    <input type="hidden" name="pagina" value="@Model.Pagina" />
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Motivo de baja</label>
+                                                        <select name="motivo" class="form-select" required>
+                                                            <option value="">Seleccionar motivo</option>
+                                                            <option value="CIERRE_COMPLEJO">Cierre del complejo</option>
+                                                            <option value="SOLICITUD_DEFINITIVA_CLIENTE">Solicitud definitiva del cliente</option>
+                                                            <option value="INCUMPLIMIENTO_GRAVE">Incumplimiento grave</option>
+                                                            <option value="CUENTA_DUPLICADA">Cuenta duplicada</option>
+                                                            <option value="MIGRACION_CUENTA">Migracion a otra cuenta</option>
+                                                            <option value="OTRO">Otro</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label class="form-label">Observacion</label>
+                                                        <textarea name="observacion" maxlength="500" rows="3" class="form-control" placeholder="Detalle de la baja"></textarea>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label class="form-label">Escribe <strong>@item.NombreComercial</strong> para confirmar</label>
+                                                        <input type="text" name="confirmacionNombre" class="form-control" autocomplete="off" required />
+                                                    </div>
+                                                    <div class="col-12 platform-negocio-form-actions">
+                                                        <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
+                                                        <button type="submit" class="btn btn-danger"><i class="bi bi-building-x me-1"></i>Dar de baja</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        }
+                                    </div>
                                 </div>
-                            </td>
-                        </tr>
-                        <tr class="d-none">
-                            <td colspan="5">
+                            </div>
+                        </div>
+
                         <div class="modal fade platform-negocio-modal" id="@modalLimitesId" tabindex="-1" aria-labelledby="@(modalLimitesId)Label" aria-hidden="true">
                             <div class="modal-dialog modal-lg modal-dialog-scrollable">
                                 <div class="modal-content sc-modal-content">
@@ -377,14 +716,6 @@
                                                                 <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
                                                                 <input type="hidden" name="pagina" value="@Model.Pagina" />
                                                                 <button type="submit" class="btn btn-primary btn-grabar w-100">Renovar suscripcion</button>
-                                                            </form>
-                                                            <form asp-action="FinalizarContratoNegocio" method="post" onsubmit="return confirm('Se dara fin al contrato actual del complejo deportivo. Deseas continuar?');">
-                                                                @Html.AntiForgeryToken()
-                                                                <input type="hidden" name="negocioId" value="@item.NegocioId" />
-                                                                <input type="hidden" name="buscar" value="@Model.Buscar" />
-                                                                <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
-                                                                <input type="hidden" name="pagina" value="@Model.Pagina" />
-                                                                <button type="submit" class="btn btn-outline-secondary btn-cancelar w-100">Dar fin al contrato</button>
                                                             </form>
                                                         </div>
                                                     </div>
@@ -963,12 +1294,9 @@
                                         </div>
                                     </div>
                                 </div>
-                            </td>
-                        </tr>
-                    }
-                }
-            </tbody>
-        </table>
+                        </div>
+            }
+        }
     </div>
     @if (Model.TotalPaginas > 1)
     {

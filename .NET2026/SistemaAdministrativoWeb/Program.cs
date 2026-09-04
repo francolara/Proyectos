@@ -97,6 +97,19 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
+// Firma: FRANCO LARA - 02/09/2026 | Configura una sesion autenticada de 30 minutos con renovacion por actividad y persistencia de 2 dias al seleccionar Recordarme; protege ademas la cookie de sesion de empresa.
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Identity/Account/Login";
+    options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+    options.SlidingExpiration = true;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.IsEssential = true;
+});
+
 var googleClientId = (builder.Configuration["Authentication:Google:ClientId"] ?? string.Empty).Trim();
 var googleClientSecret = (builder.Configuration["Authentication:Google:ClientSecret"] ?? string.Empty).Trim();
 if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(googleClientSecret))
@@ -128,8 +141,10 @@ builder.Services.AddScoped<IAccountEmailService, AccountEmailService>();
 builder.Services.AddSession(options =>
 {
     options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Lax;
     options.Cookie.IsEssential = true;
-    options.IdleTimeout = TimeSpan.FromHours(8);
+    options.IdleTimeout = TimeSpan.FromMinutes(20);
 });
 
 builder.Services.AddScoped<IDbConnectionFactory, SqlConnectionFactory>();

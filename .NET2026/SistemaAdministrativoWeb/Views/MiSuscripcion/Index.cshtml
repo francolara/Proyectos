@@ -2,6 +2,7 @@
 @* Firma: FRANCO LARA - 08/07/2026 | Agrega la vista Mi suscripcion al panel contable con resumen de vigencia, limites operativos y contexto de cuenta administradora. *@
 @* Firma: FRANCO LARA - 25/07/2026 | Mantiene un ancho de lectura controlado, simplifica las tarjetas y muestra visualmente el plan y estado efectivo, incluyendo alertas de gracia o bloqueo por vencimiento. *@
 @* Firma: FRANCO LARA - 31/07/2026 | Adopta el patron global reutilizable de titulos y subtitulos, centra los KPI, agrega iconos a los datos de la cuenta e incorpora los canales de soporte. *@
+@* Firma: FRANCO LARA - 03/09/2026 | Actualiza el correo visible y el enlace del canal de soporte comercial. *@
 @{
     ViewData["Title"] = "Mi suscripción";
     ViewData["AdminShell"] = true;
@@ -155,11 +156,11 @@
             })" />
 
         <div class="subscription-support-grid">
-            <a class="subscription-support-card" href="mailto:soporte@fralsetech.com">
+            <a class="subscription-support-card" href="mailto:contacto@fralsetech.com">
                 <span class="subscription-contact-icon" aria-hidden="true"><i class="bi bi-envelope"></i></span>
                 <span class="subscription-contact-copy">
                     <span class="subscription-info-label">Correo</span>
-                    <strong>soporte@fralsetech.com</strong>
+                    <strong>contacto@fralsetech.com</strong>
                     <small>Canal principal para consultas, ampliaciones y soporte operativo.</small>
                 </span>
             </a>

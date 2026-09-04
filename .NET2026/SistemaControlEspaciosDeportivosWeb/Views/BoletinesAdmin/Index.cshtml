@@ -1,6 +1,7 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.BoletinesDeportivosAdminIndexViewModel
 @{
     ViewData["Title"] = "Boletines deportivos";
+    @* Firma: FRANCO LARA - 03/09/2026 | Integra boletines a la paleta compartida y sustituye los fondos azul petroleo del modo oscuro por superficies antracita con matiz verde. *@
     var esEdicion = Model.Form.IdBoletin.HasValue;
 }
 
@@ -424,6 +425,7 @@
     }
 </section>
 
+@* Firma: FRANCO LARA - 02/09/2026 | Corrige el modo oscuro del modulo Super Admin de boletines en resumen, filtros, formulario, tarjetas, estados, acciones y paginacion. *@
 @section Styles{
     <style>
         .boletines-admin-summary {
@@ -457,9 +459,9 @@
             text-transform: uppercase;
         }
         .boletines-admin-summary-card.is-blue { border-top: 4px solid #2563eb; }
-        .boletines-admin-summary-card.is-green { border-top: 4px solid #16a34a; }
+        .boletines-admin-summary-card.is-green { border-top: 4px solid var(--sc-admin-accent); }
         .boletines-admin-summary-card.is-slate { border-top: 4px solid #64748b; }
-        .boletines-admin-summary-card.is-cyan { border-top: 4px solid #0891b2; }
+        .boletines-admin-summary-card.is-cyan { border-top: 4px solid var(--sc-admin-header-end); }
         .boletines-admin-summary-card.is-purple { border-top: 4px solid #7c3aed; }
         .boletin-admin-preview {
             max-width: 260px;
@@ -529,9 +531,9 @@
             border: 1px solid transparent;
         }
         .boletin-admin-status.is-active {
-            color: #0e9f6e;
-            background: #ecfdf3;
-            border-color: #b7f0d3;
+            color: var(--sc-admin-header-end);
+            background: color-mix(in srgb, var(--sc-admin-accent) 10%, var(--sc-admin-card-bg));
+            border-color: color-mix(in srgb, var(--sc-admin-accent) 34%, var(--sc-admin-border));
         }
         .boletin-admin-status.is-inactive {
             color: #64748b;
@@ -626,9 +628,9 @@
             border-color: #f6b1b1;
         }
         .boletin-admin-action.is-success {
-            color: #15803d;
-            background: linear-gradient(180deg, #f0fdf4, #dcfce7);
-            border-color: #9fe3b2;
+            color: var(--sc-admin-header-end);
+            background: color-mix(in srgb, var(--sc-admin-accent) 10%, var(--sc-admin-card-bg));
+            border-color: color-mix(in srgb, var(--sc-admin-accent) 40%, var(--sc-admin-border));
         }
         .boletines-admin-pagination {
             border-top: 1px solid #dbe5f4;
@@ -667,6 +669,160 @@
         .boletines-admin-page-link.is-disabled {
             pointer-events: none;
             opacity: .45;
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletines-admin-summary-card {
+            border-color: var(--sc-admin-border);
+            background: var(--sc-admin-card-bg);
+            box-shadow: 0 16px 30px color-mix(in srgb, var(--sc-admin-page-bg) 72%, transparent);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletines-admin-summary-card strong {
+            color: var(--sc-admin-text);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletines-admin-summary-card small,
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletines-admin-summary-label {
+            color: var(--sc-admin-muted);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletines-admin-summary ~ .table-card {
+            border-color: var(--sc-admin-border);
+            background: var(--sc-admin-card-bg);
+            box-shadow: 0 18px 34px color-mix(in srgb, var(--sc-admin-page-bg) 68%, transparent);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletines-admin-summary ~ .table-card :is(.form-label, .form-check-label) {
+            color: var(--sc-admin-text);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletines-admin-summary ~ .table-card :is(.form-control, .form-select) {
+            border-color: var(--sc-admin-border);
+            background-color: var(--sc-admin-control-bg);
+            color: var(--sc-admin-text);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletines-admin-summary ~ .table-card .form-control:focus,
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletines-admin-summary ~ .table-card .form-select:focus {
+            border-color: var(--sc-admin-accent);
+            box-shadow: 0 0 0 .2rem color-mix(in srgb, var(--sc-admin-accent) 14%, transparent);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletines-admin-summary ~ .table-card .form-control[readonly] {
+            background-color: var(--sc-admin-control-bg);
+            color: var(--sc-admin-muted);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletines-admin-summary ~ .table-card :is(.text-muted, small.text-muted) {
+            color: var(--sc-admin-muted) !important;
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletin-admin-card {
+            border-color: var(--sc-admin-border);
+            background: var(--sc-admin-card-bg);
+            box-shadow: 0 16px 28px color-mix(in srgb, var(--sc-admin-page-bg) 70%, transparent);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletin-admin-card-media {
+            border: 1px solid var(--sc-admin-border);
+            background: var(--sc-admin-control-bg);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletin-admin-card-head strong,
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletin-admin-detail-box strong {
+            color: var(--sc-admin-text);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletin-admin-date,
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletin-admin-detail-label,
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletin-admin-detail-box small,
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletin-admin-author {
+            color: var(--sc-admin-muted);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletin-admin-detail-box {
+            border-color: var(--sc-admin-border-soft);
+            background: var(--sc-admin-control-bg);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletin-admin-comment {
+            color: var(--sc-admin-muted);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletin-admin-status.is-active {
+            border-color: color-mix(in srgb, var(--sc-admin-accent) 48%, transparent);
+            background: color-mix(in srgb, var(--sc-admin-accent) 14%, transparent);
+            color: var(--sc-admin-accent);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletin-admin-status.is-inactive {
+            border-color: var(--sc-admin-border-soft);
+            background: var(--sc-admin-hover-bg);
+            color: var(--sc-admin-muted);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletin-admin-action.is-view {
+            border-color: rgba(96, 165, 250, .44);
+            background: rgba(30, 64, 175, .18);
+            color: #bfdbfe;
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletin-admin-action.is-danger {
+            border-color: rgba(248, 113, 113, .48);
+            background: rgba(127, 29, 29, .22);
+            color: #fecaca;
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletin-admin-action.is-success {
+            border-color: color-mix(in srgb, var(--sc-admin-accent) 44%, transparent);
+            background: color-mix(in srgb, var(--sc-admin-header-start) 24%, transparent);
+            color: var(--sc-admin-accent);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletines-admin-pagination {
+            border-top-color: var(--sc-admin-border-soft);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletines-admin-page-link {
+            border-color: var(--sc-admin-border);
+            background: var(--sc-admin-control-bg);
+            color: var(--sc-admin-primary);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletines-admin-page-link:hover {
+            border-color: color-mix(in srgb, var(--sc-admin-accent) 54%, transparent);
+            background: var(--sc-admin-hover-bg);
+            color: var(--sc-admin-text);
+        }
+        html[data-theme="dark"] body.sc-platform-admin-theme-shell .boletines-admin-page-link.is-active {
+            border-color: var(--sc-admin-accent);
+            background: var(--sc-admin-menu-active);
+            color: var(--sc-admin-on-color);
+            box-shadow: 0 8px 18px color-mix(in srgb, var(--sc-admin-menu-active) 22%, transparent);
+        }
+        body.sc-platform-admin-theme-shell .boletines-admin-summary-card,
+        body.sc-platform-admin-theme-shell .boletines-admin-summary ~ .table-card,
+        body.sc-platform-admin-theme-shell .boletin-admin-card,
+        body.sc-platform-admin-theme-shell .boletin-admin-detail-box {
+            border-color: var(--sc-admin-border);
+            background: var(--sc-admin-card-bg);
+            color: var(--sc-admin-text);
+        }
+        body.sc-platform-admin-theme-shell .boletines-admin-summary-card strong,
+        body.sc-platform-admin-theme-shell .boletin-admin-card-head strong,
+        body.sc-platform-admin-theme-shell .boletin-admin-detail-box strong {
+            color: var(--sc-admin-text);
+        }
+        body.sc-platform-admin-theme-shell :is(
+            .boletines-admin-summary-card small,
+            .boletines-admin-summary-label,
+            .boletin-admin-date,
+            .boletin-admin-detail-label,
+            .boletin-admin-detail-box small,
+            .boletin-admin-author,
+            .boletin-admin-comment
+        ) {
+            color: var(--sc-admin-muted);
+        }
+        body.sc-platform-admin-theme-shell .boletin-admin-card-media {
+            border: 1px solid var(--sc-admin-border);
+            background: var(--sc-admin-page-bg);
+        }
+        body.sc-platform-admin-theme-shell .boletines-admin-pagination {
+            border-top-color: var(--sc-admin-border);
+        }
+        body.sc-platform-admin-theme-shell .boletines-admin-page-link {
+            border-color: var(--sc-admin-border);
+            background: var(--sc-admin-card-bg);
+            color: var(--sc-admin-primary);
+        }
+        body.sc-platform-admin-theme-shell .boletines-admin-page-link:hover,
+        body.sc-platform-admin-theme-shell .boletines-admin-page-link:focus-visible {
+            border-color: var(--sc-admin-accent);
+            background: var(--sc-admin-active-soft);
+            color: var(--sc-admin-text);
+        }
+        body.sc-platform-admin-theme-shell .boletines-admin-page-link.is-active {
+            border-color: var(--sc-admin-primary);
+            background: var(--sc-admin-primary);
+            color: var(--sc-admin-on-color);
         }
         @@media (max-width: 767px) {
             .boletin-admin-card {

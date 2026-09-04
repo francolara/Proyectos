@@ -6,6 +6,7 @@
     var totalReferenciales = resumen.TotalReferencialesActivos + resumen.TotalReferencialesInactivos;
 }
 @* Firma: FRANCO LARA - 21/07/2026 | Reporte HTML imprimible del dashboard global del Super Admin. *@
+@* Firma: FRANCO LARA - 01/09/2026 | Separa servicios suspendidos, complejos vencidos y bajas definitivas en el reporte global. *@
 <!doctype html>
 <html lang="es">
 <head>
@@ -39,6 +40,8 @@
                 <article class="metric green"><span>Contratos vigentes</span><strong>@resumen.NegociosConContrato</strong><small>Planes activos</small></article>
                 <article class="metric amber"><span>Complejos en prueba</span><strong>@resumen.NegociosEnPrueba</strong><small>Periodos demo vigentes</small></article>
                 <article class="metric red"><span>Complejos vencidos</span><strong>@resumen.NegociosVencidos</strong><small>Requieren reactivación</small></article>
+                <article class="metric amber"><span>Servicios suspendidos</span><strong>@resumen.NegociosSuspendidos</strong><small>Pausa administrativa</small></article>
+                <article class="metric red"><span>Dados de baja</span><strong>@resumen.NegociosDadosBaja</strong><small>Acceso completamente bloqueado</small></article>
             </section>
 
             <header class="section-heading"><div><span class="section-kicker">Gestión comercial</span><h2>Estado de complejos deportivos</h2></div><p>@resumen.TotalNegocios complejos registrados</p></header>
@@ -48,6 +51,8 @@
                     <tr><td class="strong">Contrato vigente</td><td class="text-end">@resumen.NegociosConContrato</td><td class="text-end">@((resumen.TotalNegocios > 0 ? resumen.NegociosConContrato * 100m / resumen.TotalNegocios : 0m).ToString("N1"))%</td><td>Complejos con suscripción comercial activa.</td></tr>
                     <tr><td class="strong">Periodo de prueba</td><td class="text-end">@resumen.NegociosEnPrueba</td><td class="text-end">@((resumen.TotalNegocios > 0 ? resumen.NegociosEnPrueba * 100m / resumen.TotalNegocios : 0m).ToString("N1"))%</td><td>Complejos en evaluación de la plataforma.</td></tr>
                     <tr><td class="strong">Vencido</td><td class="text-end">@resumen.NegociosVencidos</td><td class="text-end">@((resumen.TotalNegocios > 0 ? resumen.NegociosVencidos * 100m / resumen.TotalNegocios : 0m).ToString("N1"))%</td><td>Complejos sin vigencia comercial actual.</td></tr>
+                    <tr><td class="strong">Suspendido</td><td class="text-end">@resumen.NegociosSuspendidos</td><td class="text-end">@((resumen.TotalNegocios > 0 ? resumen.NegociosSuspendidos * 100m / resumen.TotalNegocios : 0m).ToString("N1"))%</td><td>Complejos pausados manualmente por el Super Admin.</td></tr>
+                    <tr><td class="strong">Baja definitiva</td><td class="text-end">@resumen.NegociosDadosBaja</td><td class="text-end">@((resumen.TotalNegocios > 0 ? resumen.NegociosDadosBaja * 100m / resumen.TotalNegocios : 0m).ToString("N1"))%</td><td>Complejos sin acceso operativo, conservados para auditoría.</td></tr>
                 </tbody>
             </table>
 

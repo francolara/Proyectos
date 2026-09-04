@@ -1,4 +1,6 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobantesIndexViewModel
+@* Firma: FRANCO LARA - 01/09/2026 | Presenta el listado con un titulo operativo y directo. *@
+@* Firma: FRANCO LARA - 03/09/2026 | Sustituye las superficies azul petroleo del modo oscuro por la paleta antracita administrativa. *@
 @{
     ViewData["Title"] = "Comprobantes";
     var totalComprobantes = Model.TotalRegistros;
@@ -150,7 +152,7 @@
     </section>
 
     <section class="table-card">
-        <h2 class="section-title"><i class="bi bi-list-ul me-1"></i>Listado general de comprobantes</h2>
+        <h2 class="section-title"><i class="bi bi-receipt me-1"></i>Comprobantes emitidos</h2>
         @if (!Model.Comprobantes.Any())
         {
             <div class="empty-state">
@@ -337,16 +339,16 @@
     body.dark-mode .comprobante-meta-item,
     body.dark-mode .comprobante-referencia,
     body.dark-mode .comprobante-total-registros {
-        border-color: #2d4f7a !important;
-        background: #132641 !important;
-        color: #e8f1ff !important;
+        border-color: var(--sc-admin-border) !important;
+        background: var(--sc-admin-control-bg) !important;
+        color: var(--sc-admin-text) !important;
     }
     html[data-theme="dark"] .comprobante-meta-item small,
     body.dark-mode .comprobante-meta-item small {
-        color: #9db7d8;
+        color: var(--sc-admin-muted);
     }
     html[data-theme="dark"] .comprobante-meta-item div,
     body.dark-mode .comprobante-meta-item div {
-        color: #e8f1ff;
+        color: var(--sc-admin-text);
     }
 </style>

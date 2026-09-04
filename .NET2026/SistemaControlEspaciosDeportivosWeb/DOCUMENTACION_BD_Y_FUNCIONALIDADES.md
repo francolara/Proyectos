@@ -515,7 +515,7 @@
 
 ### 23_Suscripcion_Bloqueo_Operacion.sql
 - Reglas de bloqueo:
-  - auto cambia a `Vencida` cuando la prueba o plan supera su fecha fin.
+  - el panel Super Admin cambia automaticamente a `Suspendida` una prueba vencida o un contrato que supero su fecha de gracia.
   - bloquea acceso a modulos cuando estado de suscripcion es `Vencida` o `Suspendida`.
 - SP actualizados:
   - `Sp_Seguridad_ObtenerContextoModulo`
@@ -544,6 +544,17 @@
   - `Negocios` incorpora `TipoPlan` con valores `Basico` y `Full`.
   - `Sp_Plataforma_Negocios_Listar` y `Sp_Plataforma_Negocios_ActualizarLimites` exponen y permiten mantener `TipoPlan` junto a los limites operativos.
   - En plan `Basico` se restringen `Promociones`, `Cupones` y `Comprobantes`; la ruta dirige al negocio a migrar desde `Mi suscripcion`.
+- Actualizacion 01/09/2026:
+  - `Sp_NegociosSuscripcion_Suspender` cambia una prueba o contrato activo al estado `4 = Suspendida` sin borrar el plan, tipo de cobro, limites ni fechas de vigencia.
+  - `Sp_NegociosSuscripcion_Reactivar` restaura el estado `1 = Prueba` o `2 = Contrato` cuando la vigencia conservada aun es valida.
+  - `Sp_NegociosSuscripcion_SuspenderVencidas` valida masivamente las vigencias al ingresar al dashboard o al listado de complejos del Super Admin.
+  - Las pruebas cuya fecha final paso y los contratos cuyo periodo de gracia termino cambian automaticamente a `4 = Suspendida`.
+  - La validacion tambien migra registros antiguos en estado `3 = Vencida` cuando conservan una fecha de prueba o contrato identificable.
+  - Ambos procedimientos registran `SUSPENSION` o `REACTIVACION` en `NegociosSuscripcionMovimiento`, incluyendo motivo, observacion, usuario y fotografia comercial.
+  - La suspension mantiene disponibles solamente `Dashboard` y `Mi suscripcion`; el complejo deja de aparecer en el portal publico y no puede operar los demas modulos.
+  - Si la prueba o contrato vencieron durante la suspension, primero debe extenderse o asignarse una nueva vigencia antes de reactivar.
+  - `Plataforma/Negocios` incorpora el filtro `Suspendidos` y una accion `Servicio` para suspender o reactivar de forma reversible.
+  - Los indicadores y reportes del Super Admin separan los complejos suspendidos de los vencidos.
 
 ### 24_Sedes_Horario_NoLaborable.sql
 - Tablas:
@@ -1618,3 +1629,30 @@
 - El boton independiente `Limites` continua permitiendo ajustes operativos posteriores sin generar un cobro adicional.
 - Los procedimientos afectados son `Sp_NegociosSuscripcionPago_Registrar`, `Sp_Plataforma_Negocios_Listar`, `Sp_NegociosSuscripcionMovimiento_ListarPorNegocio` y `Sp_NegociosSuscripcionPago_ListarPorNegocio`.
 - `Sp_Plataforma_Negocios_Listar` expone además `Negocios.FechaRegistro` para los reportes HTML individual y consolidado del Super Admin.
+
+## Actualizacion 01/09/2026 - Suspension reversible del servicio
+- Nuevos procedimientos:
+  - `dbo.Sp_NegociosSuscripcion_Suspender`.
+  - `dbo.Sp_NegociosSuscripcion_Reactivar`.
+  - `dbo.Sp_NegociosSuscripcion_SuspenderVencidas`.
+- La suspension se habilita para complejos en prueba o con contrato activo y exige un motivo comercial.
+- La informacion de suscripcion se conserva para que la operacion pueda reanudarse sin reconstruir el plan.
+- Los movimientos `SUSPENSION` y `REACTIVACION` quedan disponibles en el historial comercial del complejo.
+- El movimiento `SUSPENSION_AUTOMATICA` identifica los complejos suspendidos por vencimiento durante la validacion del Super Admin.
+- La validacion automatica se ejecuta al abrir `Plataforma/Index` o `Plataforma/Negocios`, considera la fecha de gracia del contrato y no duplica movimientos en accesos posteriores.
+- Se retira del panel la antigua accion `Dar fin al contrato`, porque eliminaba la vigencia y no permitia una reactivacion reversible.
+- El listado, dashboard y reportes distinguen los estados vigentes, vencidos y suspendidos.
+
+## Actualizacion 01/09/2026 - Baja logica definitiva de complejos
+- Nuevos procedimientos:
+  - `dbo.Sp_Plataforma_Negocio_DarBaja`.
+  - `dbo.Sp_Plataforma_Negocio_Reactivar`.
+- La baja cambia `dbo.Negocios.Activo` a `0` y mantiene `NegociosSuscripcion.EstadoSuscripcion = 4` sin eliminar usuarios, sedes, reservas, pagos, comprobantes ni configuracion.
+- El procedimiento exige motivo y la confirmacion escrita del nombre comercial del complejo.
+- Los motivos admitidos desde la web son cierre del complejo, solicitud definitiva, incumplimiento grave, cuenta duplicada, migracion u otro.
+- La baja registra `BAJA_COMPLEJO` en `NegociosSuscripcionMovimiento` con usuario, fecha, observacion y fotografia comercial.
+- `dbo.Sp_Plataforma_Negocio_Reactivar` cambia `Negocios.Activo` a `1`, registra `REACTIVACION_COMPLEJO` y conserva la suscripcion suspendida hasta validar su vigencia.
+- Los usuarios asociados no se eliminan ni desactivan individualmente; los procedimientos de seguridad existentes bloquean su acceso mientras `Negocios.Activo = 0`.
+- El portal publico ya exige `Negocios.Activo = 1`, por lo que la baja retira inmediatamente las sedes y espacios del complejo.
+- `Plataforma/Negocios` incorpora el filtro `Dados de baja`, confirmacion reforzada, reactivacion y acceso al historial.
+- El dashboard y los reportes separan las bajas definitivas de suspensiones y vencimientos.

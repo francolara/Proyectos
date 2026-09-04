@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 
 namespace FralseTech.Web.ViewModels;
 
@@ -13,6 +14,7 @@ public sealed class LandingPageViewModel
     public string Country { get; init; } = string.Empty;
     public string LogoPath { get; init; } = string.Empty;
     public string HeaderTagline { get; init; } = string.Empty;
+    public string HeroImageUrl { get; init; } = string.Empty;
     public string HeroTitle { get; init; } = string.Empty;
     public string HeroDescription { get; init; } = string.Empty;
     public string HeroPrimaryActionText { get; init; } = string.Empty;
@@ -58,6 +60,8 @@ public sealed class ProductCard
     public string SecondaryActionText { get; init; } = string.Empty;
     public string SecondaryActionUrl { get; init; } = string.Empty;
     public string AccentClass { get; init; } = string.Empty;
+    public string ImageUrl { get; init; } = string.Empty;
+    public string ImageAlt { get; init; } = string.Empty;
     public IReadOnlyList<string> Features { get; init; } = [];
     public IReadOnlyList<ProductMockupLine> MockupLines { get; init; } = [];
 }
@@ -70,7 +74,7 @@ public static class FralseTechSiteContent
     private const string CommercialName = "FRALSE TECH";
     private const string LegalName = "FRALSE TECH S.A.C.";
     private const string Country = "Perú";
-    private const string LogoPath = "~/images/logo-fralse-tech.png";
+    private const string LogoFallbackPath = "~/images/logo-fralse-tech.png";
     private const string Email = "contacto@fralsetech.com";
     private const string WhatsAppNumber = "+51 937528701";
     private const string WhatsAppDigits = "51937528701";
@@ -82,24 +86,45 @@ public static class FralseTechSiteContent
     private const string WhatsAppMessage = "Hola, deseo recibir información sobre las soluciones de FRALSE TECH.";
     private const string DemoSubject = "Solicitud de demostración";
     private const string ContactSubject = "Consulta desde fralsetech.com";
+    private const string PublicBaseUrlKey = "FRALSECONT_SedeImagenStorage:PublicBaseUrl";
+    private const string BucketNameKey = "FRALSECONT_SedeImagenStorage:BucketName";
+    private const string AssetVersionKey = "SedeImagenStorage:AssetVersion";
+    private const string LogoImagePath = "Logo/LogoFralseTechSF.webp";
+    private const string HeroImagePath = "Banner/oficinaFralseTech.webp";
+    private const string FralseContImagePath = "Banner/bannerfralsecont.webp";
+    private const string LaZonaDeportivaImagePath = "Banner/bannerlazona.webp";
 
-    public static LandingPageViewModel BuildLandingPage()
+    public static LandingPageViewModel BuildLandingPage(IConfiguration configuration)
     {
+        ArgumentNullException.ThrowIfNull(configuration);
+
         var whatsappUrl = BuildWhatsAppUrl(WhatsAppMessage);
         var mailToUrl = BuildMailToUrl(ContactSubject);
         var currentYear = DateTime.UtcNow.Year;
+        var cloudflareLogoUrl = BuildPublicAssetUrl(configuration, LogoImagePath);
+        var logoPath = string.IsNullOrWhiteSpace(cloudflareLogoUrl) ? LogoFallbackPath : cloudflareLogoUrl;
+        var structuredDataLogoUrl = string.IsNullOrWhiteSpace(cloudflareLogoUrl)
+            ? $"{SiteUrl}/images/logo-fralse-tech.png"
+            : cloudflareLogoUrl;
+        var cloudflareHeroImageUrl = BuildPublicAssetUrl(configuration, HeroImagePath);
+        var heroImageUrl = string.IsNullOrWhiteSpace(cloudflareHeroImageUrl)
+            ? "/images/oficina.png"
+            : cloudflareHeroImageUrl;
+        var fralseContImageUrl = BuildPublicAssetUrl(configuration, FralseContImagePath);
+        var laZonaDeportivaImageUrl = BuildPublicAssetUrl(configuration, LaZonaDeportivaImagePath);
 
         return new LandingPageViewModel
         {
             PageTitle = $"{LegalName} | Desarrollo de software y soluciones empresariales",
             MetaDescription = $"{LegalName} desarrolla sistemas empresariales, plataformas web y soluciones digitales para mejorar la gestión y el crecimiento de las empresas.",
             CanonicalUrl = SiteUrl,
-            StructuredDataJson = BuildStructuredDataJson(),
+            StructuredDataJson = BuildStructuredDataJson(structuredDataLogoUrl),
             CommercialName = CommercialName,
             LegalName = LegalName,
             Country = Country,
-            LogoPath = LogoPath,
+            LogoPath = logoPath,
             HeaderTagline = "Soluciones tecnológicas para empresas",
+            HeroImageUrl = heroImageUrl,
             HeroTitle = "Transformamos ideas en soluciones digitales",
             HeroDescription = "Desarrollamos sistemas empresariales, plataformas web y soluciones digitales diseñadas para mejorar la gestión y el crecimiento de tu negocio.",
             HeroPrimaryActionText = "Conoce nuestros sistemas",
@@ -154,20 +179,25 @@ public static class FralseTechSiteContent
                     IconClass = "bi bi-journal-check",
                     Description = "Plataforma administrativa y contable diseñada para centralizar la información de la empresa, controlar sus operaciones y facilitar la gestión contable.",
                     Status = "Disponible",
-                    PrimaryActionText = "Conocer FralseCont",
+                    PrimaryActionText = "Visitar plataforma",
                     PrimaryActionUrl = FralseContUrl,
                     SecondaryActionText = "Solicitar demostración",
                     SecondaryActionUrl = BuildWhatsAppUrl($"{DemoSubject}: FralseCont"),
                     AccentClass = "product-card--blue",
+                    ImageUrl = fralseContImageUrl,
+                    ImageAlt = "Vista del sistema administrativo y contable FralseCont",
                     Features =
                     [
-                        "Gestión administrativa",
-                        "Compras y ventas",
-                        "Contabilidad",
-                        "Cuentas por cobrar y pagar",
-                        "Libros electrónicos",
-                        "Reportes empresariales",
-                        "Acceso desde la nube"
+                        "Gestión multiempresa",
+                        "Compras y ventas sin límite",
+                        "Asientos manuales y automáticos",
+                        "Caja, bancos y cuentas corrientes",
+                        "Transferencias y notas de crédito",
+                        "Centros de costo y cuentas destino",
+                        "Tipo de cambio oficial en línea",
+                        "Consulta RUC, DNI y validación CPE",
+                        "Cierre y reapertura de periodos",
+                        "Reportes contables y libros PLE"
                     ],
                     MockupLines =
                     [
@@ -188,15 +218,20 @@ public static class FralseTechSiteContent
                     SecondaryActionText = "Solicitar demostración",
                     SecondaryActionUrl = BuildWhatsAppUrl($"{DemoSubject}: La Zona Deportiva"),
                     AccentClass = "product-card--cyan",
+                    ImageUrl = laZonaDeportivaImageUrl,
+                    ImageAlt = "Vista de la plataforma de reservas La Zona Deportiva",
                     Features =
                     [
-                        "Reservas online",
-                        "Control de horarios",
-                        "Gestión de clientes",
-                        "Pagos y saldos",
-                        "Promociones",
-                        "Reportes",
-                        "Administración desde celular o computadora"
+                        "Reservas online en tiempo real",
+                        "Agenda por horario y disponibilidad",
+                        "Gestión de clientes, adelantos y saldos",
+                        "Múltiples sedes y espacios deportivos",
+                        "Horarios, tarifas y días no laborables",
+                        "Roles y permisos operativos",
+                        "Promociones y cupones configurables",
+                        "Comprobantes electrónicos por reserva",
+                        "Reportes de ingresos y ocupación",
+                        "Publicación en portal y mayor visibilidad"
                     ],
                     MockupLines =
                     [
@@ -229,9 +264,10 @@ public static class FralseTechSiteContent
 
     public static string GetDefaultCanonicalUrl() => SiteUrl;
 
-    public static string GetStructuredDataJson() => BuildStructuredDataJson();
+    public static string GetStructuredDataJson() =>
+        BuildStructuredDataJson($"{SiteUrl}/images/logo-fralse-tech.png");
 
-    private static string BuildStructuredDataJson()
+    private static string BuildStructuredDataJson(string logoUrl)
     {
         var payload = new
         {
@@ -240,7 +276,7 @@ public static class FralseTechSiteContent
             name = LegalName,
             alternateName = CommercialName,
             url = SiteUrl,
-            logo = $"{SiteUrl}/images/logo-fralse-tech.png",
+            logo = logoUrl,
             email = Email,
             areaServed = Country,
             sameAs = new[] { FacebookUrl },
@@ -263,6 +299,26 @@ public static class FralseTechSiteContent
 
     private static string BuildWhatsAppUrl(string message) =>
         $"https://wa.me/{WhatsAppDigits}?text={Uri.EscapeDataString(message)}";
+
+    private static string BuildPublicAssetUrl(IConfiguration configuration, string assetRelativePath)
+    {
+        var publicBaseUrl = configuration[PublicBaseUrlKey]?.Trim().TrimEnd('/');
+        var bucketName = configuration[BucketNameKey]?.Trim();
+        var relativePath = (assetRelativePath ?? string.Empty).Trim().TrimStart('/');
+
+        if (string.IsNullOrWhiteSpace(publicBaseUrl) ||
+            string.IsNullOrWhiteSpace(bucketName) ||
+            string.IsNullOrWhiteSpace(relativePath))
+        {
+            return string.Empty;
+        }
+
+        var url = $"{publicBaseUrl}/{relativePath}";
+        var assetVersion = configuration[AssetVersionKey]?.Trim();
+        return string.IsNullOrWhiteSpace(assetVersion)
+            ? url
+            : $"{url}?v={Uri.EscapeDataString(assetVersion)}";
+    }
 
     private static string BuildMailToUrl(string subject) =>
         $"mailto:{Email}?subject={Uri.EscapeDataString(subject)}";

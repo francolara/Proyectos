@@ -1,10 +1,14 @@
 @using FralseTech.Web.ViewModels
+@inject IConfiguration Configuration
+@* Firma: FRANCO LARA - 03/09/2026 | Carga la configuración compartida de recursos públicos y utiliza el logo de Cloudflare en la cabecera, metadatos y pie del sitio. *@
 @{
     var pageTitle = ViewData["Title"] as string ?? FralseTechSiteContent.GetDefaultPageTitle();
     var metaDescription = ViewData["MetaDescription"] as string ?? FralseTechSiteContent.GetDefaultMetaDescription();
     var canonicalUrl = ViewData["CanonicalUrl"] as string ?? FralseTechSiteContent.GetDefaultCanonicalUrl();
     var structuredDataJson = ViewData["StructuredDataJson"] as string ?? FralseTechSiteContent.GetStructuredDataJson();
-    var landingPage = Model as LandingPageViewModel ?? FralseTechSiteContent.BuildLandingPage();
+    var landingPage = Model as LandingPageViewModel ?? FralseTechSiteContent.BuildLandingPage(Configuration);
+    var logoFallbackUrl = Url.Content("~/images/logo-fralse-tech.png") ?? "/images/logo-fralse-tech.png";
+    var logoUrl = Url.Content(landingPage.LogoPath) ?? logoFallbackUrl;
 }
 <!DOCTYPE html>
 <html lang="es">
@@ -18,7 +22,7 @@
     <meta property="og:description" content="@metaDescription" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="@canonicalUrl" />
-    <meta property="og:image" content="https://fralsetech.com/images/logo-fralse-tech.png" />
+    <meta property="og:image" content="@logoUrl" />
     <meta property="og:locale" content="es_PE" />
     <link rel="icon" type="image/x-icon" href="@Url.Content("~/favicon.ico")" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
@@ -32,7 +36,7 @@
     <header class="site-header" data-header>
         <div class="section-container site-header__inner">
             <a class="brand" href="#inicio" aria-label="Ir al inicio de FRALSE TECH">
-                <img src="@Url.Content(landingPage.LogoPath)" alt="Logo de @landingPage.LegalName" width="500" height="236" />
+                <img src="@logoUrl" alt="Logo de @landingPage.LegalName" width="500" height="236" fetchpriority="high" onerror="this.onerror=null;this.src='@logoFallbackUrl';" />
             </a>
             <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-navigation" aria-label="Abrir menú" data-menu-toggle>
                 <span></span>
@@ -59,7 +63,7 @@
     <footer class="site-footer">
         <div class="section-container site-footer__grid">
             <div>
-                <img class="site-footer__logo" src="@Url.Content(landingPage.LogoPath)" alt="Logo de @landingPage.LegalName" width="500" height="236" loading="lazy" />
+                <img class="site-footer__logo" src="@logoUrl" alt="Logo de @landingPage.LegalName" width="500" height="236" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='@logoFallbackUrl';" />
                 <p>@landingPage.LegalName desarrolla tecnología para impulsar empresas.</p>
                 <p class="site-footer__tax-id">RUC : @landingPage.TaxId</p>
             </div>

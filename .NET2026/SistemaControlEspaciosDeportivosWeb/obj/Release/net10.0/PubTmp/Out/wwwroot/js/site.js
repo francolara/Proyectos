@@ -39,21 +39,21 @@
         const t = normalizar(etiqueta);
 
         if (/(ingreso|cobranza|cobrado|monto|pago|ticket|saldo|recaud)/.test(t)) {
-            return { tone: "kpi-tone-green", icon: "bi-cash-stack" };
+            return "kpi-tone-green";
         }
         if (/(pendiente|alerta|vencer|vencid|no show|cancelad|inactivo|mantenimiento|anulad)/.test(t)) {
-            return { tone: "kpi-tone-amber", icon: "bi-exclamation-triangle" };
+            return "kpi-tone-amber";
         }
         if (/(critico|rechazad|error|caid|bloque|sin ingreso)/.test(t)) {
-            return { tone: "kpi-tone-red", icon: "bi-shield-exclamation" };
+            return "kpi-tone-red";
         }
         if (/(cliente|usuario|equipo)/.test(t)) {
-            return { tone: "kpi-tone-blue", icon: "bi-people" };
+            return "kpi-tone-blue";
         }
         if (/(reserva|dia|fecha|periodo|ocupacion|sede|espacio)/.test(t)) {
-            return { tone: "kpi-tone-blue", icon: "bi-calendar3" };
+            return "kpi-tone-blue";
         }
-        return { tone: "kpi-tone-blue", icon: "bi-bar-chart-line" };
+        return "kpi-tone-blue";
     }
 
     function estilizarKpis() {
@@ -62,17 +62,9 @@
             const labelNode = card.querySelector(".kpi-card-label, .sc-dash-kpi-label, p, span");
             if (!labelNode) return;
 
-            const meta = resolverMetaKpi(labelNode.textContent || "");
+            const tone = resolverMetaKpi(labelNode.textContent || "");
             card.classList.remove("kpi-tone-blue", "kpi-tone-green", "kpi-tone-amber", "kpi-tone-red");
-            card.classList.add(meta.tone);
-
-            let iconWrap = card.querySelector(".kpi-context-icon");
-            if (!iconWrap) {
-                iconWrap = document.createElement("span");
-                iconWrap.className = "kpi-context-icon";
-                card.appendChild(iconWrap);
-            }
-            iconWrap.innerHTML = `<i class="bi ${meta.icon}" aria-hidden="true"></i>`;
+            card.classList.add(tone);
         });
     }
 
@@ -82,6 +74,8 @@
         estilizarKpis();
     }
 })();
+
+// Firma: FRANCO LARA - 02/09/2026 | Conserva el color semantico de los KPI sin insertar iconos decorativos en las tarjetas administrativas.
 
 // Firma: FRANCO LARA - 08/07/2026 | Replica modo oscuro administrativo y ventana de carga del sistema administrativo para navegacion interna, formularios y acciones principales del panel.
 // Firma: FRANCO LARA - 15/07/2026 | Ventana de carga global omite submits interceptados por AJAX para evitar overlays bloqueados en modales administrativos.

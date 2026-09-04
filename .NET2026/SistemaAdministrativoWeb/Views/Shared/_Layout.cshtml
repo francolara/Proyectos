@@ -13,6 +13,7 @@
 @* Firma: FRANCO LARA - 26/08/2026 | Reordena el menu Proceso segun la secuencia operativa solicitada y lee los recursos publicos desde la configuracion identificada con el prefijo FRALSECONT_. *@
 @* Firma: FRANCO LARA - 27/08/2026 | Agrega al panel SuperAdmin el acceso y las pestañas laterales de Plan de cuentas, Cuentas destino, Asignaciones, Origenes y Configuracion de maestros contables. *@
 @* Firma: FRANCO LARA - 31/08/2026 | Versiona el logotipo remoto con la clave global de recursos para evitar cache obsoleta. *@
+@* Firma: FRANCO LARA - 02/09/2026 | Publica el favicon corporativo, declara el sitemap de rutas publicas y simplifica el mensaje institucional a Sistema contable web. *@
 <!DOCTYPE html>
 @{
     var adminShell = ViewData["AdminShell"] as bool? ?? false;
@@ -21,7 +22,7 @@
     var fullTitle = pageTitle.Contains("FralseCont", StringComparison.OrdinalIgnoreCase)
         ? pageTitle
         : $"{pageTitle} - FralseCont";
-    var metaDescription = ViewData["MetaDescription"]?.ToString() ?? "Sistema contable web para empresas y contadores.";
+    var metaDescription = ViewData["MetaDescription"]?.ToString() ?? "Sistema contable web.";
     var publicBrandLogoUrl = PublicAssetUrlBuilder.Build(Configuration, "Logo/LogoFralseTech.webp");
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
@@ -160,6 +161,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@fullTitle</title>
     <meta name="description" content="@metaDescription" />
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico" asp-append-version="true" />
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="~/sitemap.xml" />
     <script>
         (() => {
             const allowStoredTheme = @((adminShell || platformShell).ToString().ToLowerInvariant());
@@ -202,7 +205,7 @@
                         }
                         <span>
                             <strong><span>Fralse</span><span class="app-brand-name-accent">Cont</span></strong>
-                            <small>Sistema contable web para empresas y contadores</small>
+                            <small>Sistema contable web</small>
                             <small>Powered by Fralse Tech S.A.C.</small>
                         </span>
                     </a>

@@ -5,11 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FralseTech.Web.Controllers;
 
-public class HomeController : Controller
+public class HomeController(IConfiguration configuration) : Controller
 {
     public IActionResult Index()
     {
-        return View(FralseTechSiteContent.BuildLandingPage());
+        return View(FralseTechSiteContent.BuildLandingPage(configuration));
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
