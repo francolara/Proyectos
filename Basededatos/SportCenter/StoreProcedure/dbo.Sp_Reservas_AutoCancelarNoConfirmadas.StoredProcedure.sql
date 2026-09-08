@@ -1,4 +1,4 @@
-﻿USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -6,6 +6,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- Firma: Codex - 16/04/2026 | Cancela automaticamente reservas no confirmadas segun check/minutos por negocio; apto para ejecucion directa desde SQL Job.
+-- Firma: FRANCO LARA - 07/09/2026 | Unifica en UTC el calculo de tiempo transcurrido para evitar dependencia de la zona horaria del servidor.
 CREATE OR ALTER PROCEDURE dbo.Sp_Reservas_AutoCancelarNoConfirmadas
     @FechaHoraActual DATETIME2(7) = NULL,
     @Usuario NVARCHAR(120) = N'job_sql'
@@ -15,7 +16,7 @@ BEGIN
 
     BEGIN TRY
         DECLARE @Ahora DATETIME2(7);
-        SET @Ahora = COALESCE(@FechaHoraActual, SYSDATETIME());
+        SET @Ahora = COALESCE(@FechaHoraActual, SYSUTCDATETIME());
 
         DECLARE @Actualizadas TABLE (Id INT PRIMARY KEY);
 

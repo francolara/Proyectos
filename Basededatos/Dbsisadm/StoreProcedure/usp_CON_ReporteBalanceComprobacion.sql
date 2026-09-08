@@ -4,6 +4,7 @@
 -- Description:   Replica el balance de comprobacion legacy en HTML usando rango de periodos, grado y jerarquia contable sobre CON_Asiento y CON_AsientoDetalle.
 -- =============================================
 -- Firma: FRANCO LARA - 22/08/2026 | Limita el rango del reporte al calendario contable vigente 00-14.
+-- Firma: FRANCO LARA - 07/09/2026 | Evita conflictos de intercalacion entre tempdb y Dbsisadm al consolidar la jerarquia de cuentas.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ReporteBalanceComprobacion
     @IdEmpresa INT,
@@ -65,7 +66,7 @@ BEGIN
 
         CREATE TABLE #Movimientos
         (
-            CodigoCuentaMovimiento VARCHAR(20) NOT NULL PRIMARY KEY,
+            CodigoCuentaMovimiento VARCHAR(20) COLLATE DATABASE_DEFAULT NOT NULL PRIMARY KEY,
             DebAnt DECIMAL(18, 2) NOT NULL,
             HabAnt DECIMAL(18, 2) NOT NULL,
             DebMes DECIMAL(18, 2) NOT NULL,

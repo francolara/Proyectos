@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -6,6 +6,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 -- Firma: FRANCO LARA
 -- Create date: 03/05/2026
+-- Firma: FRANCO LARA - 07/09/2026 | Calcula la vigencia con la fecha operativa de Peru.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Cupones_Listar]
     @NegocioId INT,
     @SedeId INT = NULL,
@@ -27,7 +28,7 @@ BEGIN
             SET @FechaDesde = @FechaHasta;
             SET @FechaHasta = @tmp;
         END
-        DECLARE @Hoy DATE = CAST(SYSUTCDATETIME() AS DATE);
+        DECLARE @Hoy DATE = CONVERT(DATE, SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time');
         DECLARE @Offset INT = (@Pagina - 1) * @TamanoPagina;
 
         ;WITH F AS (

@@ -1,7 +1,13 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservasIndexViewModel
+@using SistemaControlEspaciosDeportivosWeb.Services
+@inject IBusinessClock BusinessClock
 @* Firma: FRANCO LARA - 01/09/2026 | Presenta los listados de reservas con titulos operativos y directos. *@
+@* Firma: FRANCO LARA - 07/09/2026 | Usa la fecha y hora operativa de Peru en filtros, pagos y disponibilidad del calendario. *@
 @{
     ViewData["Title"] = "Reservas";
+    var ahoraNegocio = BusinessClock.LocalNow;
+    var hoyNegocioIso = DateOnly.FromDateTime(ahoraNegocio).ToString("yyyy-MM-dd");
+    var ahoraNegocioIso = ahoraNegocio.ToString("yyyy-MM-ddTHH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
     var sedeSeleccionadaTexto = Model.SedesFiltro.FirstOrDefault(x => x.Value == Model.SedeId?.ToString())?.Text ?? "Seleccione sede";
     var espacioSeleccionadoTexto = Model.EspaciosFiltro.FirstOrDefault(x => x.Value == Model.EspacioDeportivoId?.ToString())?.Text ?? "Todos los espacios";
     var mostrarPanelOperativo = Model.SedeId.HasValue && Model.EspacioDeportivoId.HasValue;
@@ -200,7 +206,7 @@
             </div>
             <div class="sc-disponibilidad-date-filter">
                 <label for="disponibilidadFechaFiltro" class="form-label mb-1">Filtrar fecha</label>
-                <input type="date" id="disponibilidadFechaFiltro" class="form-control form-control-sm" value="@DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd")" />
+                <input type="date" id="disponibilidadFechaFiltro" class="form-control form-control-sm" value="@hoyNegocioIso" />
             </div>
         </div>
         <div class="sc-disponibilidad-body">
@@ -217,7 +223,7 @@
             </div>
             <div class="sc-disponibilidad-date-filter">
                 <label for="pendientesFechaFiltro" class="form-label mb-1">Filtrar fecha</label>
-                <input type="date" id="pendientesFechaFiltro" class="form-control form-control-sm" value="@DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd")" />
+                <input type="date" id="pendientesFechaFiltro" class="form-control form-control-sm" value="@hoyNegocioIso" />
             </div>
         </div>
         <div class="sc-disponibilidad-body">
@@ -779,7 +785,7 @@ else
                                 <div class="col-12"><label class="form-label" id="modalPrecioLabel">Precio de espacio (@Model.MonedaSimbolo)</label><input type="number" min="0.01" step="0.01" class="form-control sc-monto-input" id="modalTotal" name="Total" required /><input type="hidden" id="modalTotalBaseCupon" value="0.00" />@if (!Model.PermitirModificarPrecioReserva) { <small class="text-muted">El precio se calcula automáticamente según la tarifa y promoción del horario.</small> }</div>
                                 <div class="col-12"><div class="d-flex justify-content-between align-items-center gap-2"><label class="form-label mb-0">Adelanto / pago</label><div class="form-check m-0 sc-check-highlight sc-check-highlight-pago"><input class="form-check-input" type="checkbox" id="modalRegistrarPago" name="RegistrarPago" value="true" /><label class="form-check-label small" for="modalRegistrarPago">Registrar pago</label></div></div><small id="modalAdelantoActualInfo" class="text-muted d-block mb-1">Pagado acumulado actual: 0.00</small><input type="number" min="0" step="0.01" class="form-control sc-monto-input" id="modalAdelanto" name="Adelanto" value="0.00" disabled /></div>
                                 <div class="col-md-6"><label class="form-label">Forma de pago</label><select class="form-select" id="modalFormaPagoId" name="FormaPagoId" disabled><option value="">Selecciona...</option>@foreach (var fp in Model.FormasPagoFiltro) { <option value="@fp.Value">@fp.Text</option> }</select></div>
-                                <div class="col-md-3"><label class="form-label">Fecha de pago</label><input type="date" class="form-control" id="modalFechaPago" name="FechaPago" value="@DateTime.Today.ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" disabled /></div>
+                                <div class="col-md-3"><label class="form-label">Fecha de pago</label><input type="date" class="form-control" id="modalFechaPago" name="FechaPago" value="@hoyNegocioIso" max="@hoyNegocioIso" disabled /></div>
                                 <div class="col-md-3"><label class="form-label">Nro. operación</label><input type="text" class="form-control" id="modalNumeroOperacion" name="NumeroOperacion" maxlength="50" placeholder="Opcional" autocomplete="off" disabled /></div>
                                 <div class="col-12"><div class="sc-reserva-policy"><i class="bi bi-shield-check"></i><div><span>Política de confirmación</span><strong id="modalPoliticaPagoInfo">Cargando...</strong></div></div></div>
                             </div>
@@ -967,8 +973,10 @@ else
             const kpiSlotsLibresDiaEl = document.getElementById('kpiSlotsLibresDia');
             const kpiReservasActivasDiaEl = document.getElementById('kpiReservasActivasDia');
             const kpiPendientesDiaEl = document.getElementById('kpiPendientesDia');
-            const hoyDate = new Date();
-            const hoyIso = `${hoyDate.getFullYear()}-${String(hoyDate.getMonth() + 1).padStart(2, '0')}-${String(hoyDate.getDate()).padStart(2, '0')}`;
+            const businessNowAtRender = new Date('@ahoraNegocioIso');
+            const browserTimestampAtRender = Date.now();
+            const getBusinessNow = () => new Date(businessNowAtRender.getTime() + (Date.now() - browserTimestampAtRender));
+            const hoyIso = '@hoyNegocioIso';
             const puedeCrearReserva = @Model.PuedeCrear.ToString().ToLowerInvariant();
             const puedeEditarReserva = @Model.PuedeEditar.ToString().ToLowerInvariant();
             const permiteEditarPrecioReserva = @Model.PermitirModificarPrecioReserva.ToString().ToLowerInvariant();
@@ -2149,7 +2157,7 @@ else
                     if (requestSeq !== disponibilidadRenderSeq) return;
                     pintarKpiOperativoDia(resumen?.kpi, resumen?.totalPendientes ?? 0);
                     const slots = resumen?.slotsDisponibles || [];
-                    const ahora = new Date();
+                    const ahora = getBusinessNow();
                     const esHoySeleccionado = fechaIso === hoyIso;
                     let slotsVisibles = 0;
                     disponibilidadSlotsEl.innerHTML = '';
@@ -2397,8 +2405,8 @@ else
 
                     calendar?.refetchEvents();
                     limpiarCacheResumenDia();
-                    void renderDisponibilidadDia(info.event.start ?? new Date());
-                    void renderPendientesConfirmarDia(info.event.start ?? new Date());
+                    void renderDisponibilidadDia(info.event.start ?? getBusinessNow());
+                    void renderPendientesConfirmarDia(info.event.start ?? getBusinessNow());
                 } catch (err) {
                     info?.revert?.();
                     limpiarArrastreVisual();

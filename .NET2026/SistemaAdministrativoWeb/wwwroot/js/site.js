@@ -59,6 +59,119 @@ document.addEventListener("DOMContentLoaded", function () {
     applyTheme(root.getAttribute("data-theme"));
 });
 
+// Firma: FRANCO LARA - 07/09/2026 | Mantiene la navegacion movil enfocada en el area de trabajo al abrir modulos, detalles, formularios y retornos de operaciones.
+document.addEventListener("DOMContentLoaded", function () {
+    const sidebar = document.querySelector(".app-sidebar");
+    const navigation = sidebar?.querySelector(".app-sidebar-nav");
+    const shellMain = document.querySelector(".app-shell-main");
+    const mainContent = shellMain?.querySelector("main[role='main']");
+    if (!sidebar || !navigation || !shellMain || !mainContent) {
+        return;
+    }
+
+    const mobileWorkspaceKey = "sisadm-mobile-workspace-anchor";
+    const isMobileWorkspace = function () {
+        return window.matchMedia("(max-width: 991.98px)").matches;
+    };
+
+    const markWorkspaceRestore = function () {
+        if (!isMobileWorkspace()) {
+            return;
+        }
+
+        try {
+            sessionStorage.setItem(mobileWorkspaceKey, "1");
+        } catch {
+            // La navegacion sigue funcionando aunque el navegador bloquee sessionStorage.
+        }
+    };
+
+    const resolveWorkspaceAnchor = function () {
+        return mainContent.querySelector(".dashboard-shell, .workspace-window, .admin-page-frame, .app-section-head")
+            ?? mainContent;
+    };
+
+    const restoreWorkspaceAnchor = function () {
+        if (!isMobileWorkspace()) {
+            return;
+        }
+
+        let shouldRestore = false;
+        try {
+            shouldRestore = sessionStorage.getItem(mobileWorkspaceKey) === "1";
+        } catch {
+            shouldRestore = false;
+        }
+
+        if (!shouldRestore) {
+            return;
+        }
+
+        const target = resolveWorkspaceAnchor();
+        target.scrollIntoView({ behavior: "auto", block: "start" });
+        window.setTimeout(function () {
+            target.scrollIntoView({ behavior: "auto", block: "start" });
+        }, 140);
+        window.setTimeout(function () {
+            target.scrollIntoView({ behavior: "auto", block: "start" });
+        }, 360);
+
+        try {
+            sessionStorage.removeItem(mobileWorkspaceKey);
+        } catch {
+            // No requiere limpieza adicional si el almacenamiento no esta disponible.
+        }
+    };
+
+    navigation.querySelectorAll("a[href]").forEach(function (anchor) {
+        anchor.addEventListener("click", markWorkspaceRestore);
+    });
+
+    sidebar.querySelectorAll(".app-sidebar-company-link[href]").forEach(function (anchor) {
+        anchor.addEventListener("click", markWorkspaceRestore);
+    });
+
+    mainContent.addEventListener("click", function (event) {
+        if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+            return;
+        }
+
+        const clickableRow = event.target.closest(".workspace-clickable-row");
+        const interactiveControl = event.target.closest("a, button, input, select, textarea, label, form");
+        if (clickableRow && !interactiveControl) {
+            markWorkspaceRestore();
+            return;
+        }
+
+        const anchor = event.target.closest("a[href]");
+        if (!anchor || anchor.hasAttribute("download") || anchor.target === "_blank") {
+            return;
+        }
+
+        const href = anchor.getAttribute("href");
+        if (!href || href.startsWith("#")) {
+            return;
+        }
+
+        try {
+            const targetUrl = new URL(href, window.location.href);
+            if (targetUrl.origin === window.location.origin) {
+                markWorkspaceRestore();
+            }
+        } catch {
+            // Ignora enlaces que el navegador no pueda interpretar como URL.
+        }
+    });
+
+    mainContent.querySelectorAll("form").forEach(function (form) {
+        form.addEventListener("submit", markWorkspaceRestore);
+    });
+
+    window.requestAnimationFrame(restoreWorkspaceAnchor);
+    window.addEventListener("load", restoreWorkspaceAnchor, { once: true });
+    window.setTimeout(restoreWorkspaceAnchor, 180);
+});
+
 // Firma: FRANCO LARA - 04/08/2026 | Controla de forma reutilizable el despliegue accesible de filtros avanzados en reportes contables.
 // Firma: FRANCO LARA - 26/08/2026 | Limpia los valores del bloque de filtros avanzados cuando el usuario desactiva su interruptor.
 document.addEventListener("DOMContentLoaded", function () {

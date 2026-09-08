@@ -8,6 +8,7 @@
 -- Create date:   08/07/2026
 -- Description:   Ajusta Libro Mayor para trabajar por periodo contable, mostrar doble moneda y segmentar el saldo final solo al cierre de cada cuenta.
 -- =============================================
+-- Firma: FRANCO LARA - 07/09/2026 | Evita conflictos de intercalacion entre tempdb y Dbsisadm al relacionar saldos y movimientos por cuenta.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ReporteLibroMayor
     @IdEmpresa INT,
@@ -37,8 +38,8 @@ BEGIN
 
         CREATE TABLE #SaldosIniciales
         (
-            CodigoCuenta VARCHAR(20) NOT NULL PRIMARY KEY,
-            NombreCuenta NVARCHAR(200) NOT NULL,
+            CodigoCuenta VARCHAR(20) COLLATE DATABASE_DEFAULT NOT NULL PRIMARY KEY,
+            NombreCuenta NVARCHAR(200) COLLATE DATABASE_DEFAULT NOT NULL,
             SaldoInicial DECIMAL(18, 2) NOT NULL,
             SaldoInicialDolares DECIMAL(18, 2) NOT NULL
         );
@@ -66,20 +67,20 @@ BEGIN
 
         CREATE TABLE #Movimientos
         (
-            CodigoCuenta VARCHAR(20) NOT NULL,
-            NombreCuenta NVARCHAR(200) NOT NULL,
-            CodigoOrigen VARCHAR(10) NOT NULL,
-            NombreOrigen NVARCHAR(150) NOT NULL,
-            Periodo CHAR(6) NOT NULL,
+            CodigoCuenta VARCHAR(20) COLLATE DATABASE_DEFAULT NOT NULL,
+            NombreCuenta NVARCHAR(200) COLLATE DATABASE_DEFAULT NOT NULL,
+            CodigoOrigen VARCHAR(10) COLLATE DATABASE_DEFAULT NOT NULL,
+            NombreOrigen NVARCHAR(150) COLLATE DATABASE_DEFAULT NOT NULL,
+            Periodo CHAR(6) COLLATE DATABASE_DEFAULT NOT NULL,
             NumeroAsiento INT NOT NULL,
             Item SMALLINT NOT NULL,
             FechaEmision DATE NOT NULL,
-            TipoDocumento NVARCHAR(150) NOT NULL,
-            Serie VARCHAR(10) NOT NULL,
-            Referencia NVARCHAR(100) NOT NULL,
-            NumeroDocumento VARCHAR(20) NOT NULL,
-            NombreAuxiliar NVARCHAR(250) NOT NULL,
-            Glosa NVARCHAR(500) NOT NULL,
+            TipoDocumento NVARCHAR(150) COLLATE DATABASE_DEFAULT NOT NULL,
+            Serie VARCHAR(10) COLLATE DATABASE_DEFAULT NOT NULL,
+            Referencia NVARCHAR(100) COLLATE DATABASE_DEFAULT NOT NULL,
+            NumeroDocumento VARCHAR(20) COLLATE DATABASE_DEFAULT NOT NULL,
+            NombreAuxiliar NVARCHAR(250) COLLATE DATABASE_DEFAULT NOT NULL,
+            Glosa NVARCHAR(500) COLLATE DATABASE_DEFAULT NOT NULL,
             TipoCambio DECIMAL(18, 6) NOT NULL,
             Debe DECIMAL(18, 2) NOT NULL,
             Haber DECIMAL(18, 2) NOT NULL,

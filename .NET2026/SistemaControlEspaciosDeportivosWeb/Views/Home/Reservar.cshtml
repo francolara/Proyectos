@@ -3,9 +3,14 @@
 @using System.Globalization
 @using System.Linq
 @using Microsoft.AspNetCore.Mvc.Rendering
+@using SistemaControlEspaciosDeportivosWeb.Services
+@inject IBusinessClock BusinessClock
+@* Firma: FRANCO LARA - 07/09/2026 | Valida horarios publicos con la hora operativa de Peru, independiente de la ubicacion del visitante o hosting. *@
 
 @{
     ViewData["Title"] = "Registrar reserva";
+    var ahoraNegocio = BusinessClock.LocalNow;
+    var ahoraNegocioIso = ahoraNegocio.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
     var fecha = Model.Formulario.Fecha;
     var horaInicio = Model.Formulario.HoraInicio;
     var horaFin = Model.Formulario.HoraFin;
@@ -1183,6 +1188,9 @@
 
             const negocioId = @Model.NegocioId;
             const espacioId = @Model.Espacio.EspacioDeportivoId;
+            const businessNowAtRender = new Date('@ahoraNegocioIso');
+            const browserTimestampAtRender = Date.now();
+            const getBusinessNow = () => new Date(businessNowAtRender.getTime() + (Date.now() - browserTimestampAtRender));
 
             const inputFecha = document.getElementById('formFecha');
             const inputInicio = document.getElementById('formHoraInicio');
@@ -1435,7 +1443,7 @@
                 cotizarDebounced();
             }
             function aplicarSeleccion(start, endSeleccionado) {
-                if (start < new Date()) {
+                if (start < getBusinessNow()) {
                     alert('Ese horario ya paso. Selecciona una hora futura.');
                     return;
                 }

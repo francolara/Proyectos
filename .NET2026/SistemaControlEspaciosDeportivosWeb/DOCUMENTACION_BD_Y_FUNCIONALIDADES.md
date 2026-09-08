@@ -440,7 +440,7 @@
 - `Sp_Reservas_RecordatoriosPendientes`
 - `Sp_Reservas_MarcarRecordatorioEnviado`
 - `Sp_Reservas_AutoNoShow`
-- `Sp_Reservas_AutoCancelarNoConfirmadas` (apto para SQL Job: si no recibe `@FechaHoraActual`, usa `SYSDATETIME()`; valida check y minutos configurados en `Negocios`).
+- `Sp_Reservas_AutoCancelarNoConfirmadas` (apto para SQL Job: recibe UTC y, si no recibe `@FechaHoraActual`, usa `SYSUTCDATETIME()`; valida check y minutos configurados en `Negocios`).
 - `Sp_Reservas_MarcarRecordatorioEnviado` devuelve error si la reserva no existe para el negocio.
 
 ### 18_Sedes_Config_Notificaciones.sql
@@ -1656,3 +1656,11 @@
 - El portal publico ya exige `Negocios.Activo = 1`, por lo que la baja retira inmediatamente las sedes y espacios del complejo.
 - `Plataforma/Negocios` incorpora el filtro `Dados de baja`, confirmacion reforzada, reactivacion y acceso al historial.
 - El dashboard y los reportes separan las bajas definitivas de suspensiones y vencimientos.
+
+## Actualizacion 07/09/2026 - Zona horaria operativa de reservas
+- La aplicacion define `BusinessTimeZone:TimeZoneId` con `America/Lima` y resuelve tambien `SA Pacific Standard Time` para compatibilidad entre Linux y Windows.
+- Las fechas de `hoy`, rangos del calendario, busqueda publica, recordatorios y cambio automatico a No Asistio se calculan con la hora operativa de Peru, sin depender de la ubicacion del hosting.
+- Los rangos enviados por FullCalendar se interpretan por su fecha `yyyy-MM-dd`, evitando conversiones involuntarias por el huso horario del servidor.
+- La cancelacion automatica por minutos transcurridos usa UTC de extremo a extremo porque `Reservas.FechaRegistro` se registra con `SYSUTCDATETIME()`.
+- Los procedimientos de reservas, cupones, clientes y espacios que evaluan el dia u horario actual convierten UTC a `SA Pacific Standard Time`.
+- Las fechas y horas reservadas continuan almacenadas como `DATE` y `TIME`; representan la hora local del establecimiento.

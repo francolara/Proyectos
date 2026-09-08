@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
+using SistemaControlEspaciosDeportivosWeb.ViewModels.Ayuda;
 
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
@@ -22,7 +23,6 @@ public class AyudaController(
             return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Acceso denegado." });
 
         ViewData["Title"] = "Ayuda operativa";
-        ViewData["ModuloAyuda"] = modulo?.Trim().ToUpperInvariant();
-        return View(baseVm);
+        return View(AyudaCatalogoFactory.Crear(baseVm, modulo));
     }
 }

@@ -271,9 +271,11 @@
             _ => (byte)0
         };
 
+        onboardingChecklist = await spService.OnboardingChecklistValidarAsync(adminNegocioId);
+        onboardingVisible = !onboardingChecklist.ChecklistCompleto;
+
         if (onboardingPasoContexto > 0)
         {
-            onboardingChecklist = await spService.OnboardingChecklistValidarAsync(adminNegocioId);
             var sedeExistente = (await spService.SedesListarAsync(adminNegocioId)).FirstOrDefault();
             var espacioExistente = (await spService.EspaciosListarAsync(adminNegocioId)).FirstOrDefault();
             onboardingSedeUrl = sedeExistente is null
@@ -291,7 +293,6 @@
             if (onboardingChecklistVal.EspacioMinimoOk) completados++;
             if (onboardingChecklistVal.ChecklistCompleto) completados++;
             onboardingAvance = completados * 100 / 5;
-            onboardingVisible = !onboardingChecklistVal.ChecklistCompleto;
             onboardingSiguientePaso = onboardingPasoPendiente <= onboardingPasoContexto
                 ? (byte)Math.Min(5, onboardingPasoContexto + 1)
                 : onboardingPasoPendiente;
@@ -333,6 +334,7 @@
     }
 }
 @* Firma: FRANCO LARA - 01/09/2026 | Distingue el panel administrativo del complejo para aplicar la identidad visual verde sin alterar el panel Super Admin. *@
+@* Firma: FRANCO LARA - 07/09/2026 | Muestra la Guia de configuracion bajo Notificaciones, la oculta al completar el onboarding y retira la tarjeta de marca del Super Admin. *@
 <body class="d-flex flex-column min-vh-100 @(adminThemeEnabled ? "sc-admin-theme-shell" : "sc-public-theme-shell") @(adminShell ? "sc-business-admin-theme-shell" : platformShell ? "sc-platform-admin-theme-shell" : string.Empty)">
     @if (!adminShell && !platformShell)
     {
@@ -450,9 +452,17 @@
                     </div>
                 }
 
+                @if (onboardingVisible)
+                {
+                    <a class="@menuClass("Onboarding") sc-admin-onboarding-link" href="@menuUrl("Onboarding")">
+                        <i class="bi bi-signpost-split"></i>
+                        <span>Guia de configuracion</span>
+                    </a>
+                }
+
                 <nav class="sc-admin-nav" id="scAdminNavAccordion">
                     @{
-                        var seccionOperacionAbierta = currentController is "ONBOARDING" or "MAESTROS" or "SEDES" or "ESPACIOS" or "RESERVAS" or "PAGOS" or "COMPROBANTES";
+                        var seccionOperacionAbierta = currentController is "MAESTROS" or "SEDES" or "ESPACIOS" or "RESERVAS" or "PAGOS" or "COMPROBANTES";
                         var seccionComercialAbierta = currentController is "CLIENTES" or "PROMOCIONES" or "CUPONES" or "REPORTES";
                         var seccionGeneralAbierta = currentController is "PANEL" or "USUARIOS" or "CONFIGURACION" or "AYUDA" or "MISUSCRIPCION";
                     }
@@ -486,7 +496,6 @@
                         </button>
                         <div class="collapse @(seccionOperacionAbierta ? "show" : null)" id="scNavOperacion">
                             <div class="sc-admin-nav-group-body">
-                                <a class="@menuClass("Onboarding")" href="@menuUrl("Onboarding")"><i class="bi bi-signpost-split"></i><span>Guia de configuracion</span></a>
                                 @if (!bloquearModulosPorSuscripcion)
                                 {
                                     <a class="@menuClass("Maestros")" href="@menuUrl("Maestros")"><i class="bi bi-collection"></i><span>Maestros</span></a>
@@ -608,10 +617,6 @@
                 <div class="sc-admin-welcome">
                     <small>Bienvenido</small>
                     <strong>@saludoNombre</strong>
-                </div>
-                <div class="sc-admin-brand sc-platform-brand-card">
-                    <img src="https://pub-3afaea6b0b354821989565fa4b8bd250.r2.dev/logos/LaZonaDeportiva/LaZonaDeportiva_Logo.webp" alt="La Zona Deportiva" class="sc-platform-brand-logo" width="330" height="72" />
-                    <p class="sc-admin-brand-title">Control de plataforma</p>
                 </div>
                 <section class="sc-admin-theme-card">
                     <div class="sc-admin-theme-copy">

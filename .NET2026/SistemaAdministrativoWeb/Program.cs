@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.EventLog;
+using System.Globalization;
 using System.Net.Http.Headers;
 using SistemaAdministrativoWeb.Configuration;
 using SistemaAdministrativoWeb.Infrastructure.Contabilidad;
@@ -130,6 +132,13 @@ builder.Services.AddAuthorization(options =>
         policy => policy.Requirements.Add(new PlanFeatureRequirement(PlanFeature.CpeValidation)));
 });
 builder.Services.AddControllersWithViews();
+var culturaAplicacion = new CultureInfo("es-PE");
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    options.DefaultRequestCulture = new RequestCulture(culturaAplicacion);
+    options.SupportedCultures = [culturaAplicacion];
+    options.SupportedUICultures = [culturaAplicacion];
+});
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<IEmailService, BrevoEmailService>(httpClient =>
@@ -240,6 +249,7 @@ else
 }
 
 app.UseHttpsRedirection();
+app.UseRequestLocalization();
 app.UseRouting();
 app.UseSession();
 app.UseAuthentication();

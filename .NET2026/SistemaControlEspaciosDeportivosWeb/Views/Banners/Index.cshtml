@@ -1,4 +1,5 @@
 ﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.BannersAdminIndexViewModel
+@* Firma: FRANCO LARA - 07/09/2026 | Admite banners WebP originales sin reconversion y mantiene la conversion a WebP para JPG y PNG. *@
 @{
     ViewData["Title"] = "Banners web";
     var form = Model.Form;
@@ -96,15 +97,15 @@
             <span asp-validation-for="Form.FechaFin" class="text-danger"></span>
         </div>
         <div class="col-md-6" id="grupoImagenDesktop">
-            <label asp-for="Form.ImagenArchivo" class="form-label">Imagen (JPG/PNG)</label>
-            <input asp-for="Form.ImagenArchivo" class="form-control" type="file" accept=".jpg,.jpeg,.png" />
-            <small class="text-muted">Home: horizontal 1920x760. Login/Registro: este campo tambien debe ser vertical.</small>
+            <label asp-for="Form.ImagenArchivo" class="form-label">Imagen (JPG/PNG/WebP)</label>
+            <input asp-for="Form.ImagenArchivo" class="form-control" type="file" accept=".jpg,.jpeg,.png,.webp,image/webp" />
+            <small class="text-muted">Home: horizontal 1920x760. JPG/PNG se convierten a WebP; un WebP se conserva sin reconvertir.</small>
             <span asp-validation-for="Form.ImagenArchivo" class="text-danger d-block"></span>
         </div>
         <div class="col-md-6">
-            <label asp-for="Form.ImagenArchivoMobile" class="form-label">Imagen móvil (JPG/PNG)</label>
-            <input asp-for="Form.ImagenArchivoMobile" class="form-control" type="file" accept=".jpg,.jpeg,.png" />
-            <small class="text-muted">Se convierte a WebP 1080x1350 (vertical, principal para Login/Registro).</small>
+            <label asp-for="Form.ImagenArchivoMobile" class="form-label">Imagen móvil (JPG/PNG/WebP)</label>
+            <input asp-for="Form.ImagenArchivoMobile" class="form-control" type="file" accept=".jpg,.jpeg,.png,.webp,image/webp" />
+            <small class="text-muted">Vertical 1080x1350. JPG/PNG se convierten a WebP; un WebP se conserva sin reconvertir.</small>
             <span asp-validation-for="Form.ImagenArchivoMobile" class="text-danger d-block"></span>
         </div>
         @if (!string.IsNullOrWhiteSpace(form.ImagenUrl))

@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -9,6 +9,7 @@ GO
 -- Firma: Codex - 06/04/2026 | Agrega soporte de nombres/apellidos por separado para documentos distintos a RUC y mantiene NombresORazonSocial concatenado para compatibilidad.
 -- Firma: Codex - 06/04/2026 | Se elimina dependencia de NegocioClientes y se usa Clientes.NegocioId.
 -- Firma: Codex - 07/04/2026 | Valida reglas de numero de documento y bloquea inactivacion con reservas activas futuras.
+-- Firma: FRANCO LARA - 07/09/2026 | Usa la fecha y hora operativa de Peru al validar reservas activas.
 CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_Actualizar
     @Id INT,
     @NegocioId INT,
@@ -35,8 +36,9 @@ BEGIN
         DECLARE @NombresNormalizado NVARCHAR(120);
         DECLARE @ApellidosNormalizado NVARCHAR(120);
         DECLARE @NombresORazonSocialNormalizado NVARCHAR(200);
-        DECLARE @Hoy DATE = CAST(GETDATE() AS DATE);
-        DECLARE @HoraActual TIME = CAST(GETDATE() AS TIME);
+        DECLARE @AhoraLocal DATETIME2 = CAST(SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time' AS DATETIME2);
+        DECLARE @Hoy DATE = CAST(@AhoraLocal AS DATE);
+        DECLARE @HoraActual TIME = CAST(@AhoraLocal AS TIME);
         DECLARE @ReservasActivas NVARCHAR(MAX);
 
         SET @TipoDocumento = UPPER(LTRIM(RTRIM(@TipoDocumento)));

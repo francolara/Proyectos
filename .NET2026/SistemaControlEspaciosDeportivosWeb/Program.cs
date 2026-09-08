@@ -223,6 +223,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.Configure<BrevoSettings>(builder.Configuration.GetSection("Brevo"));
 builder.Services.Configure<AutomationSettings>(builder.Configuration.GetSection("AutomationSettings"));
 builder.Services.Configure<JobsSettings>(builder.Configuration.GetSection("Jobs"));
+builder.Services.Configure<BusinessTimeZoneSettings>(builder.Configuration.GetSection("BusinessTimeZone"));
 builder.Services.Configure<SedeImagenStorageSettings>(builder.Configuration.GetSection("SedeImagenStorage"));
 builder.Services.Configure<CloudflareTurnstileSettings>(builder.Configuration.GetSection("CloudflareTurnstile"));
 builder.Services.AddHttpClient<IEmailService, BrevoEmailService>(httpClient =>
@@ -239,6 +240,8 @@ builder.Services.AddHttpClient();
 builder.Services.AddHttpClient<ITurnstileValidationService, TurnstileValidationService>();
 builder.Services.AddScoped<IModuloPermisoService, ModuloPermisoService>();
 builder.Services.AddScoped<ISportCenterStoredProcedureService, SportCenterStoredProcedureService>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<IBusinessClock, BusinessClock>();
 builder.Services.AddScoped<OnboardingGuardFilter>();
 builder.Services.AddScoped<IComprobanteElectronicoEmisionService, ComprobanteElectronicoEmisionService>();
 builder.Services.AddScoped<IHomeReferencialesExternosSyncService, HomeReferencialesExternosSyncService>();

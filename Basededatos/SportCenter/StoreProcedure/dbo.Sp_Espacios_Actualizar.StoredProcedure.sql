@@ -1,4 +1,4 @@
-﻿
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -11,6 +11,7 @@ GO
 -- Firma: FRANCO LARA - 26/05/2026 | Agrega configuracion opcional de horario propio por espacio deportivo y su persistencia.
 -- Firma: FRANCO LARA - 06/06/2026 | Agrega sincronizacion bidireccional de espacios compartidos para bloqueo cruzado de horarios.
 -- Firma: FRANCO LARA - 08/06/2026 | Separa relaciones operativas entre bloqueo directo y espacios compuestos por componentes, y agrega soporte de fotos para espacios deportivos.
+-- Firma: FRANCO LARA - 07/09/2026 | Usa la fecha y hora operativa de Peru al validar reservas activas.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Espacios_Actualizar]
     @Id INT,
     @NegocioId INT,
@@ -48,8 +49,9 @@ BEGIN
     BEGIN TRY
         DECLARE @EstadoActual INT;
         DECLARE @SedeActualId INT;
-        DECLARE @Hoy DATE = CAST(GETDATE() AS DATE);
-        DECLARE @HoraActual TIME = CAST(GETDATE() AS TIME);
+        DECLARE @AhoraLocal DATETIME2 = CAST(SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time' AS DATETIME2);
+        DECLARE @Hoy DATE = CAST(@AhoraLocal AS DATE);
+        DECLARE @HoraActual TIME = CAST(@AhoraLocal AS TIME);
         DECLARE @ReservasActivas NVARCHAR(MAX);
         DECLARE @FotosAlternativasCount INT = 0;
 

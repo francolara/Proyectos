@@ -501,6 +501,15 @@ html[data-theme="dark"] .sc-theme-toggle-thumb {
   color: #cbd5e1;
 }
 
+/* Firma: FRANCO LARA - 07/09/2026 | Presenta la Guia de configuracion debajo de Notificaciones, corrige el boton Guardar y rediseña el FAQ operativo por categorias y modulos. */
+.sc-admin-onboarding-link {
+  margin-bottom: 0.9rem;
+  padding: 0.58rem 0.68rem;
+  border-radius: 0.82rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(147, 197, 253, 0.35);
+}
+
 .sc-admin-nav {
   display: grid;
   gap: 0.4rem;
@@ -9023,6 +9032,35 @@ body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.btn
   color: var(--sc-admin-on-color) !important;
 }
 
+.sc-usuario-role-form {
+  align-items: center;
+  min-width: 0;
+}
+
+.sc-usuario-role-form .form-select {
+  min-width: 0;
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-usuario-guardar {
+  flex: 0 0 auto;
+  min-width: 6.75rem;
+  min-height: 2rem;
+  padding: 0.34rem 0.72rem;
+  white-space: nowrap;
+  color: #ffffff !important;
+  border-color: #1d4ed8 !important;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  box-shadow: 0 5px 12px rgba(37, 99, 235, 0.24);
+}
+
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-usuario-guardar:hover,
+body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-usuario-guardar:focus-visible {
+  color: #ffffff !important;
+  border-color: #1e40af !important;
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.32);
+}
+
 body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .btn-outline-primary:not(.btn-accion-filtro) {
   border-color: var(--sc-admin-primary) !important;
   color: var(--sc-admin-primary) !important;
@@ -9364,6 +9402,378 @@ body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-moda
   body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.sc-reservas-list-card, .sc-pendientes-card, .sc-bloqueos-card) > .sc-reservas-list-head .section-title {
     font-size: 1.18rem;
   }
+}
+
+/* Ayuda operativa: catalogo de categorias, modulos y preguntas. */
+.sport-help-page {
+  width: 100%;
+  max-width: none;
+  display: grid;
+  gap: 1rem;
+}
+
+.sport-help-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 290px);
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem 1.4rem;
+  border-radius: 1rem;
+  background: linear-gradient(120deg, var(--sc-admin-header-start, #075f49), var(--sc-admin-header-end, #0b8f6b));
+  color: #fff;
+  box-shadow: 0 12px 30px rgba(3, 78, 59, .14);
+}
+
+.sport-help-hero-copy h1 {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin: .35rem 0 .25rem;
+  font-size: clamp(1.55rem, 2.4vw, 2.1rem);
+  font-weight: 800;
+}
+
+.sport-help-hero-copy p {
+  max-width: 760px;
+  margin: 0;
+  color: rgba(255, 255, 255, .9);
+}
+
+.sport-help-kicker {
+  display: inline-flex;
+  padding: .25rem .52rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .16);
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.sport-help-status {
+  display: grid;
+  gap: .15rem;
+  padding: .85rem 1rem;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: .8rem;
+  background: rgba(5, 24, 21, .78);
+}
+
+.sport-help-status span,
+.sport-help-status small { color: rgba(255, 255, 255, .76); }
+.sport-help-status strong { font-size: 1.05rem; color: #fff; }
+
+.sport-help-context {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  padding: .75rem 1rem;
+  border: 1px solid color-mix(in srgb, #2563eb 28%, var(--sc-admin-border, #d7e2de));
+  border-radius: .8rem;
+  background: color-mix(in srgb, #2563eb 7%, var(--sc-admin-card-bg, #fff));
+  color: var(--sc-admin-text, #17212b);
+}
+
+.sport-help-context > i { color: #2563eb; font-size: 1.25rem; }
+.sport-help-context div { display: grid; }
+.sport-help-context span { color: var(--sc-admin-muted, #637381); font-size: .84rem; }
+
+.sport-help-layout {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+}
+
+.sport-help-sidebar {
+  position: sticky;
+  top: 1rem;
+  display: grid;
+  gap: .65rem;
+}
+
+.sport-help-category {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  gap: .75rem;
+  min-height: 68px;
+  padding: .75rem;
+  border: 1px solid var(--sc-admin-border, #d7e2de);
+  border-radius: .9rem;
+  background: var(--sc-admin-card-bg, #fff);
+  color: var(--sc-admin-text, #17212b);
+  text-align: left;
+  transition: transform .16s ease, border-color .16s ease, background-color .16s ease;
+}
+
+.sport-help-category:hover { transform: translateY(-1px); border-color: #60a5fa; }
+.sport-help-category > span:last-child { display: grid; gap: .05rem; }
+.sport-help-category small { color: var(--sc-admin-muted, #637381); font-size: .72rem; }
+.sport-help-category-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: .65rem;
+  background: color-mix(in srgb, #2563eb 10%, var(--sc-admin-card-bg, #fff));
+  color: #2563eb;
+}
+
+.sport-help-category.is-active {
+  border-color: #2563eb;
+  background: linear-gradient(135deg, #2563eb, #3485e8);
+  color: #fff;
+  box-shadow: 0 9px 20px rgba(37, 99, 235, .18);
+}
+
+.sport-help-category.is-active .sport-help-category-icon { background: rgba(255, 255, 255, .14); color: #fff; }
+.sport-help-category.is-active small { color: rgba(255, 255, 255, .78); }
+.sport-help-content { min-width: 0; display: grid; gap: .9rem; }
+
+.sport-help-search-card,
+.sport-help-section {
+  border: 1px solid var(--sc-admin-border, #d7e2de);
+  border-radius: .95rem;
+  background: var(--sc-admin-card-bg, #fff);
+  color: var(--sc-admin-text, #17212b);
+  overflow: hidden;
+}
+
+.sport-help-search-card { display: grid; gap: .35rem; padding: .9rem 1rem; }
+.sport-help-search-card label { font-weight: 700; font-size: .84rem; }
+.sport-help-search-card > small { color: var(--sc-admin-muted, #637381); }
+.sport-help-search-control { position: relative; }
+.sport-help-search-control > i {
+  position: absolute;
+  top: 50%;
+  left: .85rem;
+  z-index: 1;
+  color: var(--sc-admin-muted, #637381);
+  transform: translateY(-50%);
+}
+.sport-help-search-control .form-control { padding-left: 2.35rem; }
+
+.sport-help-category-panel,
+.sport-help-module-panel { display: none; }
+.sport-help-category-panel.is-active { display: grid; gap: .9rem; animation: sport-help-reveal .2s ease-out; }
+.sport-help-module-panel.is-active { display: block; animation: sport-help-reveal .2s ease-out; }
+
+.sport-help-section-header {
+  display: grid;
+  grid-template-columns: 38px max-content minmax(160px, 1fr);
+  align-items: center;
+  gap: .7rem;
+  padding: .8rem 1rem;
+  background: linear-gradient(110deg, var(--sc-admin-header-start, #075f49), var(--sc-admin-header-end, #0b8f6b));
+  color: #fff;
+}
+
+.sport-help-section-header > span {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(255, 255, 255, .25);
+  border-radius: .65rem;
+  background: rgba(255, 255, 255, .1);
+}
+
+.sport-help-section-header small { color: rgba(255, 255, 255, .72); font-size: .62rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.sport-help-section-header h2 { margin: 0; font-size: 1.05rem; font-weight: 800; }
+.sport-help-section-header p { justify-self: end; margin: 0; color: rgba(255, 255, 255, .86); font-size: .79rem; text-align: right; }
+
+.sport-help-modules {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: .65rem;
+  padding: .9rem;
+}
+
+.sport-help-module-tab {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: .55rem;
+  min-height: 64px;
+  padding: .62rem .7rem;
+  border: 1px solid var(--sc-admin-border, #d7e2de);
+  border-radius: .75rem;
+  background: var(--sc-admin-card-bg, #fff);
+  color: var(--sc-admin-text, #17212b);
+  text-align: left;
+  transition: border-color .16s ease, background-color .16s ease, transform .16s ease;
+}
+
+.sport-help-module-tab:hover { transform: translateY(-1px); border-color: #60a5fa; }
+.sport-help-module-tab > i { grid-row: 1 / 3; color: #1687ce; }
+.sport-help-module-tab > span { font-weight: 750; }
+.sport-help-module-tab > small { color: var(--sc-admin-muted, #637381); font-size: .68rem; }
+.sport-help-module-tab.is-active { border-color: #2563eb; background: #2f78dc; color: #fff; }
+.sport-help-module-tab.is-active > :is(i, small) { color: rgba(255, 255, 255, .86); }
+
+.sport-help-accordion { display: grid; gap: .58rem; padding: .95rem; }
+.sport-help-question {
+  border: 1px solid var(--sc-admin-border, #d7e2de) !important;
+  border-radius: .75rem !important;
+  overflow: hidden;
+  background: var(--sc-admin-card-bg, #fff);
+}
+.sport-help-question .accordion-button {
+  padding: .85rem 1rem;
+  background: var(--sc-admin-card-bg, #fff);
+  color: var(--sc-admin-text, #17212b);
+  font-size: .87rem;
+  font-weight: 750;
+  box-shadow: none;
+}
+.sport-help-question .accordion-button:not(.collapsed) {
+  background: color-mix(in srgb, #2563eb 9%, var(--sc-admin-card-bg, #fff));
+  color: #075aa6;
+}
+.sport-help-question .accordion-body {
+  border-top: 1px solid var(--sc-admin-border, #d7e2de);
+  background: var(--sc-admin-card-bg, #fff);
+  color: var(--sc-admin-text, #17212b);
+  line-height: 1.6;
+}
+
+.sport-help-question[hidden] { display: none !important; }
+.sport-help-empty { display: grid; place-items: center; gap: .25rem; padding: 2rem 1rem; color: var(--sc-admin-muted, #637381); text-align: center; }
+.sport-help-empty[hidden] { display: none; }
+.sport-help-empty i { font-size: 1.5rem; color: #2563eb; }
+.sport-help-empty strong { color: var(--sc-admin-text, #17212b); }
+
+html[data-theme="dark"] body.sc-business-admin-theme-shell .sport-help-search-card,
+html[data-theme="dark"] body.sc-business-admin-theme-shell .sport-help-section,
+html[data-theme="dark"] body.sc-business-admin-theme-shell .sport-help-category,
+html[data-theme="dark"] body.sc-business-admin-theme-shell .sport-help-module-tab,
+html[data-theme="dark"] body.sc-business-admin-theme-shell .sport-help-question,
+html[data-theme="dark"] body.sc-business-admin-theme-shell .sport-help-question :is(.accordion-button, .accordion-body) {
+  border-color: var(--sc-admin-border) !important;
+  background: var(--sc-admin-card-bg) !important;
+  color: var(--sc-admin-text) !important;
+}
+
+html[data-theme="dark"] body.sc-business-admin-theme-shell .sport-help-category.is-active,
+html[data-theme="dark"] body.sc-business-admin-theme-shell .sport-help-module-tab.is-active {
+  border-color: #4f93ed !important;
+  background: #2468c7 !important;
+  color: #fff !important;
+}
+
+html[data-theme="dark"] body.sc-business-admin-theme-shell .sport-help-question .accordion-button:not(.collapsed) {
+  background: color-mix(in srgb, #2563eb 18%, var(--sc-admin-card-bg)) !important;
+  color: #9cc9ff !important;
+}
+
+@keyframes sport-help-reveal {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1050px) {
+  .sport-help-layout { grid-template-columns: 1fr; }
+  .sport-help-sidebar { position: static; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 720px) {
+  .sport-help-hero { grid-template-columns: 1fr; }
+  .sport-help-sidebar { grid-template-columns: 1fr; }
+  .sport-help-section-header { grid-template-columns: 38px 1fr; }
+  .sport-help-section-header p { grid-column: 1 / -1; justify-self: start; text-align: left; }
+  .sport-help-modules { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sport-help-category,
+  .sport-help-module-tab,
+  .sport-help-category-panel.is-active,
+  .sport-help-module-panel.is-active { transition: none; animation: none; }
+}
+
+/* Firma: FRANCO LARA - 08/09/2026 | Dibuja y refuerza globalmente la marca, el borde y el foco de todos los checkbox en modo oscuro. */
+html[data-theme="dark"] body .sc-admin-main .form-check-input[type="checkbox"],
+html[data-theme="dark"] .form-check-input[type="checkbox"] {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  position: relative;
+  display: inline-grid;
+  place-content: center;
+  border-color: #7890aa !important;
+  background: #0d1917 !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .04);
+}
+
+html[data-theme="dark"] body .sc-admin-main .form-check-input[type="checkbox"]:checked,
+html[data-theme="dark"] .form-check-input[type="checkbox"]:checked {
+  border-color: #93c5fd !important;
+  background: #2563eb url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m3.5 8.5 3 3 6-7'/%3e%3c/svg%3e") center / contain no-repeat !important;
+  box-shadow:
+    0 0 0 1px rgba(147, 197, 253, .52),
+    0 0 0 .18rem rgba(37, 99, 235, .2) !important;
+}
+
+html[data-theme="dark"] body .sc-admin-main .form-check-input[type="checkbox"]:checked::after,
+html[data-theme="dark"] .form-check-input[type="checkbox"]:checked::after {
+  content: "";
+  width: .34rem;
+  height: .62rem;
+  margin-top: -.08rem;
+  border: solid #fff;
+  border-width: 0 .15rem .15rem 0;
+  transform: rotate(45deg);
+}
+
+html[data-theme="dark"] body .sc-admin-main .form-check-input[type="checkbox"]:indeterminate,
+html[data-theme="dark"] .form-check-input[type="checkbox"]:indeterminate {
+  border-color: #93c5fd !important;
+  background: #2563eb url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-width='3' d='M4 8h8'/%3e%3c/svg%3e") center / contain no-repeat !important;
+}
+
+html[data-theme="dark"] body .sc-admin-main .form-check-input[type="checkbox"]:indeterminate::after,
+html[data-theme="dark"] .form-check-input[type="checkbox"]:indeterminate::after {
+  content: "";
+  width: .58rem;
+  height: .14rem;
+  border-radius: 999px;
+  background: #fff;
+}
+
+html[data-theme="dark"] body .sc-admin-main .form-switch .form-check-input[type="checkbox"]:checked,
+html[data-theme="dark"] .form-switch .form-check-input[type="checkbox"]:checked {
+  display: inline-block;
+  background: #2563eb url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e") right center / contain no-repeat !important;
+}
+
+html[data-theme="dark"] body .sc-admin-main .form-switch .form-check-input[type="checkbox"]:checked::after,
+html[data-theme="dark"] .form-switch .form-check-input[type="checkbox"]:checked::after {
+  position: absolute;
+  top: 50%;
+  right: .12rem;
+  width: .68rem;
+  height: .68rem;
+  margin: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  transform: translateY(-50%);
+}
+
+html[data-theme="dark"] body .sc-admin-main .form-check-input[type="checkbox"]:focus-visible,
+html[data-theme="dark"] .form-check-input[type="checkbox"]:focus-visible {
+  border-color: #bfdbfe !important;
+  outline: 2px solid rgba(147, 197, 253, .9);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 .2rem rgba(37, 99, 235, .24) !important;
+}
+
+html[data-theme="dark"] body .sc-admin-main .form-check-input[type="checkbox"]:disabled,
+html[data-theme="dark"] body .sc-admin-main .form-check-input[type="checkbox"][disabled],
+html[data-theme="dark"] .form-check-input[type="checkbox"]:disabled,
+html[data-theme="dark"] .form-check-input[type="checkbox"][disabled] {
+  opacity: .72;
 }
 
 @media print {

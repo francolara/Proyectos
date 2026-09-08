@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
+using System.Globalization;
 
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
@@ -9,7 +10,8 @@ public class ReservasController(
     IModuloPermisoService moduloPermisoService,
     ISportCenterStoredProcedureService spService,
     IEmailService emailService,
-    IReservationEmailNotificationService reservationEmailNotificationService)
+    IReservationEmailNotificationService reservationEmailNotificationService,
+    IBusinessClock businessClock)
     : ModuloControllerBase(moduloPermisoService)
 {
     private const string CodigoDocumentoRucSunat = "6";
@@ -23,8 +25,8 @@ public class ReservasController(
         var baseVm = await ObtenerBaseAsync(resolvedNegocioId.Value, "RESERVAS");
         if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje)) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Acceso denegado." });
 
-        var desde = fechaDesde ?? DateOnly.FromDateTime(DateTime.Today);
-        var hasta = fechaHasta ?? DateOnly.FromDateTime(DateTime.Today.AddDays(6));
+        var desde = fechaDesde ?? businessClock.Today;
+        var hasta = fechaHasta ?? businessClock.Today.AddDays(6);
         if (hasta < desde) hasta = desde;
         sedeId = AplicarSedeAsignada(baseVm, sedeId);
 
@@ -163,9 +165,9 @@ public class ReservasController(
         return View(vm);
     }
 
-    private static (DateOnly Desde, DateOnly Hasta) ResolverRangoListado(DateOnly? listadoDesde, DateOnly? listadoHasta, string? listadoPreset, DateOnly desdeBase, DateOnly hastaBase)
+    private (DateOnly Desde, DateOnly Hasta) ResolverRangoListado(DateOnly? listadoDesde, DateOnly? listadoHasta, string? listadoPreset, DateOnly desdeBase, DateOnly hastaBase)
     {
-        var hoy = DateOnly.FromDateTime(DateTime.Today);
+        var hoy = businessClock.Today;
         DateOnly desde;
         DateOnly hasta;
 
@@ -512,8 +514,8 @@ public class ReservasController(
             if (!model.FormaPagoId.HasValue || model.FormaPagoId.Value <= 0)
                 return BadRequest(new { ok = false, mensaje = "Selecciona una forma de pago para registrar el adelanto/pago." });
 
-            model.FechaPago ??= DateTime.Today;
-            if (model.FechaPago.Value.Date > DateTime.Today)
+            model.FechaPago ??= businessClock.Today.ToDateTime(TimeOnly.MinValue);
+            if (DateOnly.FromDateTime(model.FechaPago.Value) > businessClock.Today)
                 return BadRequest(new { ok = false, mensaje = "La fecha de pago no puede ser mayor al dia actual." });
 
             model.NumeroOperacion = string.IsNullOrWhiteSpace(model.NumeroOperacion) ? null : model.NumeroOperacion.Trim();
@@ -606,13 +608,13 @@ public class ReservasController(
 
     [HttpGet]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public async Task<IActionResult> CalendarioEventos(int negocioId, DateTime? start, DateTime? end, int? sedeId, int? espacioDeportivoId, int? estado)
+    public async Task<IActionResult> CalendarioEventos(int negocioId, string? start, string? end, int? sedeId, int? espacioDeportivoId, int? estado)
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "RESERVAS");
         if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje)) return Forbid();
 
-        var desde = DateOnly.FromDateTime(start?.Date ?? DateTime.Today);
-        var hasta = DateOnly.FromDateTime((end?.Date ?? DateTime.Today.AddDays(7)).AddDays(-1));
+        var desde = ParseCalendarDate(start) ?? businessClock.Today;
+        var hasta = (ParseCalendarDate(end) ?? businessClock.Today.AddDays(7)).AddDays(-1);
         if (hasta < desde) hasta = desde;
         sedeId = AplicarSedeAsignada(baseVm, sedeId);
 
@@ -1030,7 +1032,7 @@ $"""
         if (!await EspacioPermitidoAsync(baseVm, model.NegocioId, model.EspacioDeportivoId))
             return Forbid();
         sedeId = AplicarSedeAsignada(baseVm, sedeId);
-        var desde = fechaDesde ?? DateOnly.FromDateTime(DateTime.Today);
+        var desde = fechaDesde ?? businessClock.Today;
         var hasta = fechaHasta ?? desde.AddDays(6);
         if (hasta < desde) hasta = desde;
 
@@ -1075,7 +1077,7 @@ $"""
             NegocioId = resolvedNegocioId.Value,
             NegocioNombre = baseVm.NegocioNombre,
             RolActual = baseVm.RolActual,
-            Fecha = fecha.HasValue && !EsFechaPasada(fecha.Value) ? fecha.Value : DateOnly.FromDateTime(DateTime.Today),
+            Fecha = fecha.HasValue && !EsFechaPasada(fecha.Value) ? fecha.Value : businessClock.Today,
             HoraInicio = horaInicio ?? new TimeOnly(18, 0),
             HoraFin = horaFin ?? (horaInicio?.AddHours(1) ?? new TimeOnly(19, 0))
         };
@@ -1229,9 +1231,19 @@ $"""
         };
     }
 
-    private static bool EsFechaPasada(DateOnly fecha)
+    private bool EsFechaPasada(DateOnly fecha)
     {
-        return fecha < DateOnly.FromDateTime(DateTime.Today);
+        return fecha < businessClock.Today;
+    }
+
+    private static DateOnly? ParseCalendarDate(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length < 10)
+            return null;
+
+        return DateOnly.TryParseExact(value[..10], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
+            ? date
+            : null;
     }
 
     private static DateTime NormalizarFechaHoraLocal(DateTime value)

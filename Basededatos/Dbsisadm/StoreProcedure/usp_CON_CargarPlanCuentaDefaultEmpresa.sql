@@ -10,6 +10,7 @@
 -- =============================================
 -- Firma: FRANCO LARA - 25/08/2026 | El maestro no contiene GeneraDiferenciaPorAnalisis; al cargarlo se inicializa en cero para la empresa.
 -- Firma: FRANCO LARA - 27/08/2026 | Corrige la copia desde una empresa base sin depender de una columna Orden inexistente en CON_PlanCuenta.
+-- Firma: FRANCO LARA - 07/09/2026 | Evita conflictos de intercalacion entre tempdb y Dbsisadm al reconstruir la jerarquia del plan contable.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_CargarPlanCuentaDefaultEmpresa
     @IdEmpresa INT,
@@ -50,13 +51,13 @@ BEGIN
 
         CREATE TABLE #PlanCuentaFuente
         (
-            CodigoCuenta VARCHAR(20) NOT NULL,
-            CodigoCuentaPadre VARCHAR(20) NULL,
-            NombreCuenta NVARCHAR(200) NOT NULL,
+            CodigoCuenta VARCHAR(20) COLLATE DATABASE_DEFAULT NOT NULL,
+            CodigoCuentaPadre VARCHAR(20) COLLATE DATABASE_DEFAULT NULL,
+            NombreCuenta NVARCHAR(200) COLLATE DATABASE_DEFAULT NOT NULL,
             NivelCuenta TINYINT NOT NULL,
-            ColBalance CHAR(1) NOT NULL,
-            IdMoneda VARCHAR(3) NOT NULL,
-            TipoCambio CHAR(1) NOT NULL,
+            ColBalance CHAR(1) COLLATE DATABASE_DEFAULT NOT NULL,
+            IdMoneda VARCHAR(3) COLLATE DATABASE_DEFAULT NOT NULL,
+            TipoCambio CHAR(1) COLLATE DATABASE_DEFAULT NOT NULL,
             AceptaMovimiento BIT NOT NULL,
             GeneraDiferenciaPorAnalisis BIT NOT NULL,
             RequiereCentroCosto BIT NOT NULL,

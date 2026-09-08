@@ -145,7 +145,8 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
             BannerTargetHeight,
             BannerMaxOutputBytes,
             exigirHorizontal: true,
-            cancellationToken);
+            cancellationToken,
+            conservarWebpOriginal: true);
 
         return urls.FirstOrDefault();
     }
@@ -165,7 +166,8 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
             BannerTargetHeight,
             BannerMaxOutputBytes,
             exigirHorizontal: false,
-            cancellationToken);
+            cancellationToken,
+            conservarWebpOriginal: true);
 
         return urls.FirstOrDefault();
     }
@@ -185,7 +187,8 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
             BannerMobileTargetHeight,
             BannerMobileMaxOutputBytes,
             exigirHorizontal: false,
-            cancellationToken);
+            cancellationToken,
+            conservarWebpOriginal: true);
 
         return urls.FirstOrDefault();
     }
@@ -241,7 +244,8 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
         int targetHeight,
         int maxOutputBytes,
         bool exigirHorizontal,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool conservarWebpOriginal = false)
     {
         if (!_settings.Enabled)
             throw new InvalidOperationException("La carga de imagenes esta deshabilitada. Configura SedeImagenStorage:Enabled=true.");
@@ -268,17 +272,32 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
                 throw new InvalidOperationException($"La imagen {archivo.FileName} supera el tamaÃ±o permitido de {_settings.MaxImageBytes / 1024 / 1024} MB.");
 
             var extension = Path.GetExtension(archivo.FileName ?? string.Empty);
-            if (string.IsNullOrWhiteSpace(extension) || !ExtensionesPermitidas.Contains(extension))
-                throw new InvalidOperationException($"Formato no permitido en {archivo.FileName}. Solo se acepta JPG/JPEG o PNG.");
+            var esWebpOriginal = conservarWebpOriginal && extension.Equals(".webp", StringComparison.OrdinalIgnoreCase);
+            if (string.IsNullOrWhiteSpace(extension) || (!ExtensionesPermitidas.Contains(extension) && !esWebpOriginal))
+            {
+                var formatosPermitidos = conservarWebpOriginal ? "JPG/JPEG, PNG o WebP" : "JPG/JPEG o PNG";
+                throw new InvalidOperationException($"Formato no permitido en {archivo.FileName}. Solo se acepta {formatosPermitidos}.");
+            }
 
             if (string.IsNullOrWhiteSpace(archivo.ContentType) ||
                 !(archivo.ContentType.Equals("image/jpeg", StringComparison.OrdinalIgnoreCase) ||
-                  archivo.ContentType.Equals("image/png", StringComparison.OrdinalIgnoreCase)))
-                throw new InvalidOperationException($"El archivo {archivo.FileName} no es una imagen JPG/PNG valida.");
+                  archivo.ContentType.Equals("image/png", StringComparison.OrdinalIgnoreCase) ||
+                  (esWebpOriginal && archivo.ContentType.Equals("image/webp", StringComparison.OrdinalIgnoreCase))))
+            {
+                var formatosPermitidos = conservarWebpOriginal ? "JPG/PNG/WebP" : "JPG/PNG";
+                throw new InvalidOperationException($"El archivo {archivo.FileName} no es una imagen {formatosPermitidos} valida.");
+            }
 
             await using var streamOrigen = archivo.OpenReadStream();
             var nombreArchivo = string.IsNullOrWhiteSpace(archivo.FileName) ? "imagen.jpg" : archivo.FileName;
-            var imagenProcesada = await ProcesarImagenAsync(streamOrigen, nombreArchivo, targetWidth, targetHeight, maxOutputBytes, exigirHorizontal, cancellationToken);
+            var imagenProcesada = esWebpOriginal
+                ? await CopiarWebpOriginalValidadoAsync(
+                    streamOrigen,
+                    nombreArchivo,
+                    exigirHorizontal,
+                    exigirVertical: targetHeight > targetWidth,
+                    cancellationToken)
+                : await ProcesarImagenAsync(streamOrigen, nombreArchivo, targetWidth, targetHeight, maxOutputBytes, exigirHorizontal, cancellationToken);
 
             var key = BuildObjectKey(categoria, negocioId, sedeId, espacioId, ".webp");
             imagenProcesada.Position = 0;
@@ -611,6 +630,45 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
         }
 
         return path;
+    }
+
+    private static async Task<MemoryStream> CopiarWebpOriginalValidadoAsync(
+        Stream sourceStream,
+        string nombreArchivo,
+        bool exigirHorizontal,
+        bool exigirVertical,
+        CancellationToken cancellationToken)
+    {
+        var output = new MemoryStream();
+        try
+        {
+            await sourceStream.CopyToAsync(output, cancellationToken);
+            output.Position = 0;
+
+            var formato = await Image.DetectFormatAsync(output, cancellationToken);
+            if (!string.Equals(formato.DefaultMimeType, "image/webp", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"El archivo {nombreArchivo} no contiene una imagen WebP valida.");
+
+            output.Position = 0;
+            using var image = await Image.LoadAsync<Rgba32>(output, cancellationToken);
+            image.Mutate(ctx => ctx.AutoOrient());
+            if (image.Width <= 0 || image.Height <= 0)
+                throw new InvalidOperationException($"No se pudo leer la imagen {nombreArchivo}.");
+
+            if (exigirHorizontal && image.Width < image.Height)
+                throw new InvalidOperationException($"La imagen {nombreArchivo} debe ser horizontal.");
+
+            if (exigirVertical && image.Width >= image.Height)
+                throw new InvalidOperationException($"La imagen {nombreArchivo} debe ser vertical.");
+
+            output.Position = 0;
+            return output;
+        }
+        catch
+        {
+            await output.DisposeAsync();
+            throw;
+        }
     }
 
     private async Task<MemoryStream> ProcesarImagenAsync(

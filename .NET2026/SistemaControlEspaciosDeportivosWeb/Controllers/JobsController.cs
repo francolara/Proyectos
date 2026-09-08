@@ -16,7 +16,8 @@ public class JobsController(
     ISportCenterStoredProcedureService spService,
     IOptions<JobsSettings> jobsOptions,
     IWebHostEnvironment environment,
-    ILogger<JobsController> logger) : ControllerBase
+    ILogger<JobsController> logger,
+    IBusinessClock businessClock) : ControllerBase
 {
     private readonly JobsSettings jobs = jobsOptions.Value;
 
@@ -64,7 +65,7 @@ public class JobsController(
             logger.LogInformation("Job iniciado. Endpoint={Endpoint}, UsuarioSistema={UsuarioSistema}", endpoint, jobs.UsuarioSistema);
 
             var procesadas = await spService.ReservasAutoCancelarNoConfirmadasAsync(
-                DateTime.Now,
+                businessClock.UtcNow,
                 string.IsNullOrWhiteSpace(jobs.UsuarioSistema) ? "job_scheduler" : jobs.UsuarioSistema);
 
             stopwatch.Stop();
@@ -104,4 +105,3 @@ public class JobsController(
                CryptographicOperations.FixedTimeEquals(recibidoBytes, configuradoBytes);
     }
 }
-

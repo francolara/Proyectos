@@ -23,7 +23,8 @@ public class ReporteController(
     IProveedorRepository proveedorRepository,
     ILibroDiarioRepository libroDiarioRepository,
     ILibroMayorRepository libroMayorRepository,
-    IAsientoRepository asientoRepository) : Controller
+    IAsientoRepository asientoRepository,
+    ILogger<ReporteController> logger) : Controller
 {
     [HttpGet]
     public async Task<IActionResult> VoucherContable(int idAsiento, CancellationToken cancellationToken = default)
@@ -352,11 +353,22 @@ public class ReporteController(
         }
         catch (SqlException ex)
         {
-            model.MensajeError = ex.Message;
+            logger.LogError(
+                ex,
+                "No se pudo generar el Balance de comprobacion para la empresa {IdEmpresa}, ejercicio {Anio}, periodos {PeriodoDesde}-{PeriodoHasta}.",
+                idEmpresa,
+                model.AnioSeleccionado,
+                model.PeriodoDesdeSeleccionado,
+                model.PeriodoHastaSeleccionado);
+            model.MensajeError = "No se pudo generar el Balance de comprobación. Intente nuevamente o comuníquese con soporte.";
         }
         catch (InvalidOperationException ex)
         {
-            model.MensajeError = ex.Message;
+            logger.LogError(
+                ex,
+                "La respuesta del Balance de comprobacion no tuvo el formato esperado para la empresa {IdEmpresa}.",
+                idEmpresa);
+            model.MensajeError = "No se pudo generar el Balance de comprobación. Intente nuevamente o comuníquese con soporte.";
         }
 
         return View(model);

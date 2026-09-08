@@ -15,7 +15,8 @@ public class HomeController(
     ISportCenterStoredProcedureService spService,
     IReservationEmailNotificationService reservationEmailNotificationService,
     UserManager<ApplicationUser> userManager,
-    ILogger<HomeController> logger) : Controller
+    ILogger<HomeController> logger,
+    IBusinessClock businessClock) : Controller
 {
     private const int HorasMaximasReservaPublicaPorDefecto = 1;
     private const int DuracionReservaPublicaMinutos = 60;
@@ -126,7 +127,7 @@ public class HomeController(
         ViewData["PublicFullWidth"] = true;
         ViewData["Robots"] = "noindex,follow";
 
-        var fechaConsulta = fecha ?? DateOnly.FromDateTime(DateTime.Today);
+        var fechaConsulta = fecha ?? businessClock.Today;
         var horaInicioConsulta = horaInicio ?? new TimeOnly(18, 0);
         var horaFinConsulta = horaFin ?? horaInicioConsulta.AddHours(1);
         if (horaFinConsulta <= horaInicioConsulta)
@@ -172,11 +173,11 @@ public class HomeController(
     public async Task<IActionResult> ReservarCalendarioEventos(
         int negocioId,
         int espacioDeportivoId,
-        DateTime? start,
-        DateTime? end)
+        string? start,
+        string? end)
     {
-        var desde = DateOnly.FromDateTime((start ?? DateTime.Today).Date);
-        var hasta = DateOnly.FromDateTime((end ?? DateTime.Today).Date);
+        var desde = ParseCalendarDate(start) ?? businessClock.Today;
+        var hasta = ParseCalendarDate(end) ?? businessClock.Today;
         if (hasta < desde)
             hasta = desde;
 
@@ -870,7 +871,7 @@ public class HomeController(
         int pagina = 1)
     {
         const int tamanoPagina = 9;
-        var sugerido = ObtenerRangoSugeridoBusqueda(DateTime.Now);
+        var sugerido = ObtenerRangoSugeridoBusqueda(businessClock.LocalNow);
         var fechaConsulta = fecha ?? sugerido.Fecha;
         var horaInicioConsulta = horaInicio ?? sugerido.HoraInicio;
         var horaFinConsulta = horaFin ?? sugerido.HoraFin;
@@ -979,6 +980,16 @@ public class HomeController(
             PortalConfig = portalConfig,
             PopupPromocionesConfig = popupPromocionesConfig
         };
+    }
+
+    private static DateOnly? ParseCalendarDate(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length < 10)
+            return null;
+
+        return DateOnly.TryParseExact(value[..10], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
+            ? date
+            : null;
     }
 
     private static List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ConstruirNegociosFiltradosPorUbigeo(

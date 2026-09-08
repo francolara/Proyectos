@@ -1,4 +1,4 @@
-﻿
+
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Reservas_Crear]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -14,6 +14,7 @@ GO
 -- Firma: FRANCO LARA - 26/05/2026 | Prioriza horario configurable por espacio deportivo; si no aplica, usa horario de la sede.
 -- Firma: FRANCO LARA - 06/06/2026 | Valida cruces usando el espacio reservado y sus espacios compartidos activos.
 -- Firma: FRANCO LARA - 08/06/2026 | Distingue bloqueo directo y espacios compuestos para evitar sobrebloqueos por propagacion en cadena.
+-- Firma: FRANCO LARA - 07/09/2026 | Evalua fecha de pago y vigencia de cupones con la fecha operativa de Peru, independiente del hosting.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Reservas_Crear]
     @NegocioId INT,
     @EspacioDeportivoId INT,
@@ -69,9 +70,9 @@ BEGIN
                 RAISERROR('La forma de pago seleccionada no es valida para el negocio.', 16, 1);
 
             IF @FechaPago IS NULL
-                SET @FechaPago = CAST(SYSUTCDATETIME() AS DATE);
+                SET @FechaPago = CONVERT(DATE, SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time');
 
-            IF CAST(@FechaPago AS DATE) > CAST(SYSUTCDATETIME() AS DATE)
+            IF CAST(@FechaPago AS DATE) > CONVERT(DATE, SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time')
                 RAISERROR('La fecha de pago no puede ser mayor al dia actual.', 16, 1);
         END
 
@@ -197,7 +198,7 @@ BEGIN
         SET @CodigoCupon = UPPER(NULLIF(LTRIM(RTRIM(@CodigoCupon)), N''));
         IF @CodigoCupon IS NOT NULL
         BEGIN
-            DECLARE @HoyCupon DATE = CAST(SYSUTCDATETIME() AS DATE);
+            DECLARE @HoyCupon DATE = CONVERT(DATE, SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time');
             SELECT TOP 1
                 @CuponId = c.Id,
                 @DescuentoCupon = CASE

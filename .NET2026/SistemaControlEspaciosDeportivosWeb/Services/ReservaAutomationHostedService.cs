@@ -6,7 +6,8 @@ namespace SistemaControlEspaciosDeportivosWeb.Services;
 public class ReservaAutomationHostedService(
     IServiceScopeFactory scopeFactory,
     IOptions<AutomationSettings> options,
-    ILogger<ReservaAutomationHostedService> logger) : BackgroundService
+    ILogger<ReservaAutomationHostedService> logger,
+    IBusinessClock businessClock) : BackgroundService
 {
     private readonly AutomationSettings _settings = options.Value;
 
@@ -37,9 +38,10 @@ public class ReservaAutomationHostedService(
         var spService = scope.ServiceProvider.GetRequiredService<ISportCenterStoredProcedureService>();
         var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
 
-        var ahora = DateTime.Now;
+        var ahoraLocal = businessClock.LocalNow;
+        var ahoraUtc = businessClock.UtcNow;
         var pendientes = emailService.IsEnabled
-            ? await spService.ReservasRecordatoriosPendientesAsync(ahora)
+            ? await spService.ReservasRecordatoriosPendientesAsync(ahoraLocal)
             : new List<ReservaRecordatorioPendienteViewModel>();
         var enviados = 0;
 
@@ -80,10 +82,10 @@ public class ReservaAutomationHostedService(
         }
 
         var autoNoShow = await spService.ReservasAutoNoShowAsync(
-            ahora,
+            ahoraLocal,
             _settings.UsuarioSistema);
         var autoCanceladas = await spService.ReservasAutoCancelarNoConfirmadasAsync(
-            ahora,
+            ahoraUtc,
             _settings.UsuarioSistema);
 
         if (enviados > 0 || autoNoShow > 0 || autoCanceladas > 0)

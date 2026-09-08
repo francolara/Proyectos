@@ -1,4 +1,4 @@
-﻿USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -7,6 +7,7 @@ GO
 
 -- SOURCE: 03_Sedes_Espacios.sql (linea 340)
 -- Firma: Codex - 07/04/2026 | Inactivacion de espacio bloqueada solo si el espacio tiene reservas activas futuras.
+-- Firma: FRANCO LARA - 07/09/2026 | Usa la fecha y hora operativa de Peru al validar reservas activas.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Espacios_Eliminar]
     @NegocioId INT,
     @Id INT,
@@ -16,8 +17,9 @@ BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
         DECLARE @SedeId INT;
-        DECLARE @Hoy DATE = CAST(GETDATE() AS DATE);
-        DECLARE @HoraActual TIME = CAST(GETDATE() AS TIME);
+        DECLARE @AhoraLocal DATETIME2 = CAST(SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time' AS DATETIME2);
+        DECLARE @Hoy DATE = CAST(@AhoraLocal AS DATE);
+        DECLARE @HoraActual TIME = CAST(@AhoraLocal AS TIME);
         DECLARE @ReservasActivas NVARCHAR(MAX);
 
         SELECT @SedeId = e.SedeId

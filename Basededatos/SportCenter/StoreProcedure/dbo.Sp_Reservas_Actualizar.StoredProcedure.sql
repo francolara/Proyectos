@@ -13,6 +13,7 @@ GO
 -- Firma: FRANCO LARA - 06/06/2026 | Valida cruces usando el espacio reservado y sus espacios compartidos activos.
 -- Firma: FRANCO LARA - 08/06/2026 | Distingue bloqueo directo y espacios compuestos para evitar sobrebloqueos por propagacion en cadena.
 -- Firma: FRANCO LARA - 16/07/2026 | Elimina el limite de dos pagos y valida que la reserva tenga saldo y que el nuevo pago no lo exceda.
+-- Firma: FRANCO LARA - 07/09/2026 | Evalua la fecha de pago con la fecha operativa de Peru, independiente del hosting.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Reservas_Actualizar]
     @Id INT,
     @NegocioId INT,
@@ -82,9 +83,9 @@ BEGIN
                 RAISERROR('La forma de pago seleccionada no es valida para el negocio.', 16, 1);
 
             IF @FechaPago IS NULL
-                SET @FechaPago = CAST(SYSUTCDATETIME() AS DATE);
+                SET @FechaPago = CONVERT(DATE, SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time');
 
-            IF CAST(@FechaPago AS DATE) > CAST(SYSUTCDATETIME() AS DATE)
+            IF CAST(@FechaPago AS DATE) > CONVERT(DATE, SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time')
                 RAISERROR('La fecha de pago no puede ser mayor al dia actual.', 16, 1);
 
             IF @SaldoPendienteActual <= 0
@@ -326,4 +327,3 @@ BEGIN
 END
 
 GO
-

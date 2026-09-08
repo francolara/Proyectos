@@ -1,6 +1,7 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.UsuariosNegocioIndexViewModel
 @* Firma: FRANCO LARA - 21/07/2026 | Ajusta el mensaje de alta de usuarios para respetar IdentityBehavior. *@
 @* Firma: FRANCO LARA - 01/09/2026 | Presenta el listado con un titulo operativo y directo. *@
+@* Firma: FRANCO LARA - 07/09/2026 | Corrige la visibilidad y el ancho del boton Guardar al editar el rol y la sede en ambos temas. *@
 @{
     ViewData["Title"] = "Usuarios del negocio";
 }
@@ -95,7 +96,7 @@
                     <td>@($"{item.Nombres} {item.Apellidos}".Trim())</td>
                     <td>@item.Correo</td>
                     <td>
-                        <form asp-action="CambiarRol" method="post" class="d-flex gap-2">
+                        <form asp-action="CambiarRol" method="post" class="d-flex gap-2 sc-usuario-role-form">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="NegocioId" value="@Model.NegocioId" />
                             <input type="hidden" name="UsuarioNegocioId" value="@item.UsuarioNegocioId" />
@@ -114,7 +115,10 @@
                             </select>
                             @if (Model.PuedeEditar)
                             {
-                                <button class="btn btn-sm btn-outline-primary btn-grabar" type="submit">Guardar</button>
+                                <button class="btn btn-sm btn-grabar sc-usuario-guardar" type="submit">
+                                    <i class="bi bi-check2-circle" aria-hidden="true"></i>
+                                    <span>Guardar</span>
+                                </button>
                             }
                         </form>
                     </td>
