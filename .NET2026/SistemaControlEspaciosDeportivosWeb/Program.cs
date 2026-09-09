@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using SistemaControlEspaciosDeportivosWeb.Data;
 using SistemaControlEspaciosDeportivosWeb.Configuration;
 using SistemaControlEspaciosDeportivosWeb.Models;
@@ -78,6 +80,10 @@ Directory.CreateDirectory(dataProtectionKeysPath);
 builder.Services.AddDataProtection()
     .SetApplicationName("SistemaControlEspaciosDeportivosWeb")
     .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
+
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
+    .AddCheck<DatabaseHealthCheck>("sql", tags: ["ready"]);
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -378,6 +384,37 @@ app.MapControllerRoute(
 
 app.MapRazorPages();
 
+app.MapHealthChecks("/healthz/live", new HealthCheckOptions
+{
+    Predicate = registration => registration.Tags.Contains("live")
+});
+app.MapHealthChecks("/healthz/ready", new HealthCheckOptions
+{
+    Predicate = registration => registration.Tags.Contains("ready")
+});
+
 await IdentitySeeder.SeedRolesAsync(app.Services);
 
 app.Run();
+
+sealed class DatabaseHealthCheck(IServiceScopeFactory scopeFactory) : IHealthCheck
+{
+    public async Task<HealthCheckResult> CheckHealthAsync(
+        HealthCheckContext context,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            return await dbContext.Database.CanConnectAsync(cancellationToken)
+                ? HealthCheckResult.Healthy()
+                : HealthCheckResult.Unhealthy();
+        }
+        catch
+        {
+            return HealthCheckResult.Unhealthy();
+        }
+    }
+}

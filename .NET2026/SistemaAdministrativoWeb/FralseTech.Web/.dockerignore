@@ -1,0 +1,14 @@
+.git
+.gitignore
+bin/
+obj/
+*.user
+*.suo
+*.pubxml
+*.pubxml.user
+Properties/PublishProfiles/
+appsettings*.json
+secrets*.json
+*.pfx
+*.pem
+*.key
