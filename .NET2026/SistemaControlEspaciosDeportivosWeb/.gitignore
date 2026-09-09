@@ -1,5 +1,10 @@
 # Configuracion local de desarrollo (no versionar secretos)
 appsettings.Development.json
 
+# Archivos generados por Visual Studio y .NET
+.vs/
+bin/
+obj/
+
 # Salida temporal local de compilacion/publicacion
 out-temp/

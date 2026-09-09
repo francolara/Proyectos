@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.CookiePolicy;
@@ -8,6 +9,7 @@ using SistemaControlEspaciosDeportivosWeb.Data;
 using SistemaControlEspaciosDeportivosWeb.Configuration;
 using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Globalization;
 using System.IO;
@@ -23,6 +25,48 @@ builder.Services.Configure<LegalDocumentsOptions>(builder.Configuration.GetSecti
 if (builder.Environment.IsDevelopment())
 {
     builder.Configuration.AddUserSecrets<Program>(optional: true, reloadOnChange: true);
+}
+
+var reverseProxySettings = builder.Configuration
+    .GetSection(ReverseProxyOptions.SectionName)
+    .Get<ReverseProxyOptions>() ?? new ReverseProxyOptions();
+builder.Services.Configure<ReverseProxyOptions>(
+    builder.Configuration.GetSection(ReverseProxyOptions.SectionName));
+
+var knownProxyAddresses = new HashSet<IPAddress>();
+foreach (var configuredProxy in reverseProxySettings.KnownProxies)
+{
+    if (!IPAddress.TryParse(configuredProxy?.Trim(), out var proxyAddress))
+    {
+        throw new InvalidOperationException(
+            "ReverseProxy:KnownProxies contiene una dirección IP no válida.");
+    }
+
+    knownProxyAddresses.Add(proxyAddress);
+}
+
+if (reverseProxySettings.Enabled && knownProxyAddresses.Count == 0)
+{
+    throw new InvalidOperationException(
+        "ReverseProxy está habilitado, pero no tiene ninguna dirección IP válida configurada en KnownProxies.");
+}
+
+if (reverseProxySettings.Enabled)
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
+                                   ForwardedHeaders.XForwardedProto;
+
+        // Sustituye las redes de confianza predeterminadas por la lista explícita.
+        // La confianza continúa restringida: nunca se aceptan todos los orígenes.
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+        foreach (var proxyAddress in knownProxyAddresses)
+        {
+            options.KnownProxies.Add(proxyAddress);
+        }
+    });
 }
 
 var dataProtectionKeysPath = (builder.Configuration["DataProtection:KeysPath"] ?? string.Empty).Trim();
@@ -268,6 +312,11 @@ var localizationOptions = new RequestLocalizationOptions
 };
 
 // Configure the HTTP request pipeline.
+if (reverseProxySettings.Enabled)
+{
+    app.UseForwardedHeaders();
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();

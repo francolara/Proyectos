@@ -1,3 +1,7 @@
+using FralseTech.Web.Configuration;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Net;
+
 var builder = WebApplication.CreateBuilder(args);
 
 if (builder.Environment.IsDevelopment())
@@ -5,9 +9,54 @@ if (builder.Environment.IsDevelopment())
     builder.Configuration.AddUserSecrets<Program>(optional: true, reloadOnChange: true);
 }
 
+var reverseProxySettings = builder.Configuration
+    .GetSection(ReverseProxyOptions.SectionName)
+    .Get<ReverseProxyOptions>() ?? new ReverseProxyOptions();
+builder.Services.Configure<ReverseProxyOptions>(
+    builder.Configuration.GetSection(ReverseProxyOptions.SectionName));
+
+var knownProxyAddresses = new HashSet<IPAddress>();
+foreach (var configuredProxy in reverseProxySettings.KnownProxies)
+{
+    if (!IPAddress.TryParse(configuredProxy?.Trim(), out var proxyAddress))
+    {
+        throw new InvalidOperationException(
+            "ReverseProxy:KnownProxies contiene una dirección IP no válida.");
+    }
+
+    knownProxyAddresses.Add(proxyAddress);
+}
+
+if (reverseProxySettings.Enabled && knownProxyAddresses.Count == 0)
+{
+    throw new InvalidOperationException(
+        "ReverseProxy está habilitado, pero no tiene ninguna dirección IP válida configurada en KnownProxies.");
+}
+
+if (reverseProxySettings.Enabled)
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
+                                   ForwardedHeaders.XForwardedProto;
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+
+        foreach (var proxyAddress in knownProxyAddresses)
+        {
+            options.KnownProxies.Add(proxyAddress);
+        }
+    });
+}
+
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
+
+if (reverseProxySettings.Enabled)
+{
+    app.UseForwardedHeaders();
+}
 
 if (!app.Environment.IsDevelopment())
 {
