@@ -1,3 +1,20 @@
 .tmp_build*/
 temp_codex_build/
 tmp/
+
+# Credenciales y configuraciones locales; las plantillas *.example se mantienen rastreadas.
+.env
+.env.*
+!.env.example
+appsettings.Secrets.json
+appsettings.*.local.json
+*.pfx
+*.p12
+*.pem
+*.key
+*.crt
+*.cer
+
+# Material local de Data Protection y perfiles de publicación con credenciales guardadas.
+.NET2026/SistemaControlEspaciosDeportivosWeb/App_Data/DataProtection-Keys/
+*.pubxml.user

@@ -34,7 +34,6 @@ public class LoginModel(
     private const string LoginFailuresSessionKey = "Auth:LoginFailures";
     private const string ResendAttemptsSessionKey = "Auth:ResendConfirmationAttempts";
     private const string LoginCaptchaScope = "LOGIN";
-    private static readonly string LoginDebugPath = Path.Combine(AppContext.BaseDirectory, "login-debug.log");
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -77,7 +76,7 @@ public class LoginModel(
 
     public async Task OnGetAsync(string? returnUrl = null)
     {
-        RegistrarDebug($"GET login | Auth={User.Identity?.IsAuthenticated} | ReturnUrl={returnUrl}");
+        logger.LogDebug("Solicitud de inicio de sesion recibida.");
         if (User.Identity?.IsAuthenticated == true)
         {
             Response.Redirect(Url.Content("~/"));
@@ -94,7 +93,7 @@ public class LoginModel(
 
     public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
-        RegistrarDebug($"POST login START | Email={Input.Email} | ReturnUrl={returnUrl} | Auth={User.Identity?.IsAuthenticated}");
+        logger.LogDebug("Intento de inicio de sesion recibido.");
         returnUrl ??= Url.Content("~/");
         ReturnUrl = returnUrl;
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
@@ -104,13 +103,13 @@ public class LoginModel(
 
         if (!ModelState.IsValid)
         {
-            RegistrarDebug($"POST login | ModelState invalido | Detalle={ObtenerErroresModelState(ModelState)}");
+            logger.LogWarning("Intento de inicio de sesion con modelo invalido.");
             return Page();
         }
 
         if (DebeValidarTurnstileEnLogin() && !await ValidarDesafioAccesoAsync())
         {
-            RegistrarDebug("POST login | desafio no valido");
+            logger.LogWarning("Desafio de inicio de sesion no valido.");
             IncrementarContador(LoginFailuresSessionKey);
             MostrarTurnstile = true;
             return Page();
@@ -119,7 +118,7 @@ public class LoginModel(
         var authenticatedUser = await userManager.FindByEmailAsync(Input.Email.Trim());
         if (authenticatedUser is null)
         {
-            RegistrarDebug("POST login | usuario no encontrado por email");
+            logger.LogWarning("Intento de inicio de sesion rechazado.");
             IncrementarContador(LoginFailuresSessionKey);
             MostrarTurnstile = DebeMostrarTurnstile();
             ModelState.AddModelError(string.Empty, "Credenciales invalidas.");
@@ -145,7 +144,7 @@ public class LoginModel(
             };
             await signInManager.SignInAsync(authenticatedUser, authenticationProperties);
 
-            RegistrarDebug($"POST login | SUCCESS | UserId={authenticatedUser.Id}");
+            logger.LogInformation("Inicio de sesion exitoso.");
             ReiniciarContador(LoginFailuresSessionKey);
             currentCompanyAccessor.LimpiarEmpresa();
             logger.LogInformation("Usuario autenticado.");
@@ -153,18 +152,18 @@ public class LoginModel(
             if (authenticatedUser is not null
                 && await RequiereCambioContrasenaTemporalAsync(authenticatedUser))
             {
-                RegistrarDebug($"POST login | requiere cambio temporal | UserId={authenticatedUser.Id}");
+                logger.LogInformation("El usuario autenticado requiere cambio de contrasena temporal.");
                 HttpContext.Session.Remove(TemporaryPasswordFlowConstants.VerificationSessionKey);
                 return RedirectToPage("./VerificacionTemporal", new { returnUrl });
             }
 
-            RegistrarDebug($"POST login | redireccion contexto | UserId={authenticatedUser!.Id}");
+            logger.LogDebug("Redireccionando al usuario autenticado segun su contexto.");
             return await RedirigirSegunContextoAsync(authenticatedUser, returnUrl);
         }
 
         if (result.IsLockedOut)
         {
-            RegistrarDebug($"POST login | LOCKOUT | UserId={authenticatedUser.Id}");
+            logger.LogWarning("Intento de inicio de sesion bloqueado por lockout.");
             IncrementarContador(LoginFailuresSessionKey);
             MostrarTurnstile = DebeMostrarTurnstile();
             ModelState.AddModelError(string.Empty, "La cuenta se encuentra bloqueada temporalmente por varios intentos fallidos.");
@@ -173,7 +172,7 @@ public class LoginModel(
 
         if (result.IsNotAllowed)
         {
-            RegistrarDebug($"POST login | NOT_ALLOWED | UserId={authenticatedUser.Id}");
+            logger.LogWarning("Intento de inicio de sesion no permitido.");
             IncrementarContador(LoginFailuresSessionKey);
             MostrarTurnstile = DebeMostrarTurnstile();
             ModelState.AddModelError(
@@ -186,14 +185,14 @@ public class LoginModel(
 
         if (result.RequiresTwoFactor)
         {
-            RegistrarDebug($"POST login | REQUIRES_2FA | UserId={authenticatedUser.Id}");
+            logger.LogInformation("El inicio de sesion requiere segundo factor.");
             IncrementarContador(LoginFailuresSessionKey);
             MostrarTurnstile = DebeMostrarTurnstile();
             ModelState.AddModelError(string.Empty, "La cuenta requiere un segundo factor de autenticacion.");
             return Page();
         }
 
-        RegistrarDebug($"POST login | FAILED | UserId={authenticatedUser.Id}");
+        logger.LogWarning("Intento de inicio de sesion fallido.");
         IncrementarContador(LoginFailuresSessionKey);
         MostrarTurnstile = DebeMostrarTurnstile();
         ModelState.AddModelError(string.Empty, "Credenciales invalidas.");
@@ -519,33 +518,4 @@ public class LoginModel(
             && string.Equals(x.Value, TemporaryPasswordFlowConstants.RequirePasswordChangeClaimValue, StringComparison.Ordinal));
     }
 
-    private static void RegistrarDebug(string mensaje)
-    {
-        try
-        {
-            System.IO.File.AppendAllText(LoginDebugPath, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} | {mensaje}{Environment.NewLine}");
-        }
-        catch
-        {
-        }
-    }
-
-    private static string ObtenerErroresModelState(ModelStateDictionary modelState)
-    {
-        var errores = modelState
-            .Where(x => x.Value is not null && x.Value.Errors.Count > 0)
-            .Select(x =>
-            {
-                var mensajes = x.Value!.Errors
-                    .Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage)
-                        ? error.Exception?.Message ?? "(sin mensaje)"
-                        : error.ErrorMessage)
-                    .ToArray();
-
-                return $"{x.Key}=[{string.Join(" | ", mensajes)}]";
-            })
-            .ToArray();
-
-        return errores.Length == 0 ? "(sin errores detallados)" : string.Join("; ", errores);
-    }
 }

@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.EventLog;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
@@ -93,6 +95,10 @@ Directory.CreateDirectory(dataProtectionKeysPath);
 builder.Services.AddDataProtection()
     .SetApplicationName("SistemaAdministrativoWeb")
     .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
+
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
+    .AddCheck<DatabaseHealthCheck>("sql", tags: ["ready"]);
 
 var connectionString = builder.Configuration["FRALSECONT_ConnectionStrings:DefaultConnection"]
     ?? throw new InvalidOperationException("Configuration 'FRALSECONT_ConnectionStrings:DefaultConnection' not found.");
@@ -320,6 +326,15 @@ app.MapControllerRoute(
 app.MapRazorPages()
     .WithStaticAssets();
 
+app.MapHealthChecks("/healthz/live", new HealthCheckOptions
+{
+    Predicate = registration => registration.Tags.Contains("live")
+});
+app.MapHealthChecks("/healthz/ready", new HealthCheckOptions
+{
+    Predicate = registration => registration.Tags.Contains("ready")
+});
+
 app.Run();
 
 static string ResolverContentRoot()
@@ -348,4 +363,26 @@ static bool ExisteEstructuraProyecto(string rutaBase)
 {
     return File.Exists(Path.Combine(rutaBase, "SistemaAdministrativoWeb.csproj"))
         && Directory.Exists(Path.Combine(rutaBase, "Views"));
+}
+
+sealed class DatabaseHealthCheck(IServiceScopeFactory scopeFactory) : IHealthCheck
+{
+    public async Task<HealthCheckResult> CheckHealthAsync(
+        HealthCheckContext context,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            return await dbContext.Database.CanConnectAsync(cancellationToken)
+                ? HealthCheckResult.Healthy()
+                : HealthCheckResult.Unhealthy();
+        }
+        catch
+        {
+            return HealthCheckResult.Unhealthy();
+        }
+    }
 }

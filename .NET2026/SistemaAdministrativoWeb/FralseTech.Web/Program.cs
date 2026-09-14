@@ -1,5 +1,7 @@
 using FralseTech.Web.Configuration;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -50,6 +52,8 @@ if (reverseProxySettings.Enabled)
 }
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live", "ready"]);
 
 var app = builder.Build();
 
@@ -72,5 +76,14 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
+
+app.MapHealthChecks("/healthz/live", new HealthCheckOptions
+{
+    Predicate = registration => registration.Tags.Contains("live")
+});
+app.MapHealthChecks("/healthz/ready", new HealthCheckOptions
+{
+    Predicate = registration => registration.Tags.Contains("ready")
+});
 
 app.Run();
