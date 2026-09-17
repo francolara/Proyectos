@@ -31,6 +31,7 @@ public class LoginModel(
 {
     // Firma: FRANCO LARA - 31/08/2026 | Agrega recuperacion y reenvio mediante Brevo y diferencia visualmente los avisos de entrega fallida.
     // Firma: FRANCO LARA - 02/09/2026 | Aplica 30 minutos a la sesion normal y 2 dias a Recordarme sin perder bloqueo, segundo factor, captcha ni redireccion por empresa.
+    // Firma: FRANCO LARA - 13/09/2026 | Aplica POST-Redirect-GET ante fallos de acceso para evitar reenvios del formulario al volver atras.
     private const string LoginFailuresSessionKey = "Auth:LoginFailures";
     private const string ResendAttemptsSessionKey = "Auth:ResendConfirmationAttempts";
     private const string LoginCaptchaScope = "LOGIN";
@@ -61,6 +62,12 @@ public class LoginModel(
     [TempData]
     public string? AccountMessageType { get; set; }
 
+    [TempData]
+    public string? AccountErrorMessage { get; set; }
+
+    [TempData]
+    public string? LoginEmail { get; set; }
+
     public sealed class InputModel
     {
         [Required(ErrorMessage = "Ingrese su correo.")]
@@ -77,6 +84,16 @@ public class LoginModel(
     public async Task OnGetAsync(string? returnUrl = null)
     {
         logger.LogDebug("Solicitud de inicio de sesion recibida.");
+        if (string.IsNullOrWhiteSpace(Input.Email) && !string.IsNullOrWhiteSpace(LoginEmail))
+        {
+            Input.Email = LoginEmail;
+        }
+
+        if (!string.IsNullOrWhiteSpace(AccountErrorMessage))
+        {
+            ModelState.AddModelError(string.Empty, AccountErrorMessage);
+        }
+
         if (User.Identity?.IsAuthenticated == true)
         {
             Response.Redirect(Url.Content("~/"));
@@ -104,15 +121,14 @@ public class LoginModel(
         if (!ModelState.IsValid)
         {
             logger.LogWarning("Intento de inicio de sesion con modelo invalido.");
-            return Page();
+            return RedirigirLoginConError(returnUrl, ObtenerMensajeErrorValidacion("Completa los datos de inicio de sesion."));
         }
 
         if (DebeValidarTurnstileEnLogin() && !await ValidarDesafioAccesoAsync())
         {
             logger.LogWarning("Desafio de inicio de sesion no valido.");
             IncrementarContador(LoginFailuresSessionKey);
-            MostrarTurnstile = true;
-            return Page();
+            return RedirigirLoginConError(returnUrl, ObtenerMensajeErrorValidacion("No se pudo validar la verificacion de seguridad. Intenta nuevamente."));
         }
 
         var authenticatedUser = await userManager.FindByEmailAsync(Input.Email.Trim());
@@ -120,9 +136,7 @@ public class LoginModel(
         {
             logger.LogWarning("Intento de inicio de sesion rechazado.");
             IncrementarContador(LoginFailuresSessionKey);
-            MostrarTurnstile = DebeMostrarTurnstile();
-            ModelState.AddModelError(string.Empty, "Credenciales invalidas.");
-            return Page();
+            return RedirigirLoginConError(returnUrl, "Credenciales invalidas.");
         }
 
         var result = await signInManager.PasswordSignInAsync(
@@ -165,39 +179,45 @@ public class LoginModel(
         {
             logger.LogWarning("Intento de inicio de sesion bloqueado por lockout.");
             IncrementarContador(LoginFailuresSessionKey);
-            MostrarTurnstile = DebeMostrarTurnstile();
-            ModelState.AddModelError(string.Empty, "La cuenta se encuentra bloqueada temporalmente por varios intentos fallidos.");
-            return Page();
+            return RedirigirLoginConError(returnUrl, "La cuenta se encuentra bloqueada temporalmente por varios intentos fallidos.");
         }
 
         if (result.IsNotAllowed)
         {
             logger.LogWarning("Intento de inicio de sesion no permitido.");
             IncrementarContador(LoginFailuresSessionKey);
-            MostrarTurnstile = DebeMostrarTurnstile();
-            ModelState.AddModelError(
-                string.Empty,
+            return RedirigirLoginConError(
+                returnUrl,
                 RequiresEmailConfirmation
                     ? "Debes confirmar tu correo antes de iniciar sesion. Puedes solicitar un nuevo enlace."
                     : "La cuenta no tiene permitido iniciar sesion con la configuracion actual.");
-            return Page();
         }
 
         if (result.RequiresTwoFactor)
         {
             logger.LogInformation("El inicio de sesion requiere segundo factor.");
             IncrementarContador(LoginFailuresSessionKey);
-            MostrarTurnstile = DebeMostrarTurnstile();
-            ModelState.AddModelError(string.Empty, "La cuenta requiere un segundo factor de autenticacion.");
-            return Page();
+            return RedirigirLoginConError(returnUrl, "La cuenta requiere un segundo factor de autenticacion.");
         }
 
         logger.LogWarning("Intento de inicio de sesion fallido.");
         IncrementarContador(LoginFailuresSessionKey);
-        MostrarTurnstile = DebeMostrarTurnstile();
-        ModelState.AddModelError(string.Empty, "Credenciales invalidas.");
-        return Page();
+        return RedirigirLoginConError(returnUrl, "Credenciales invalidas.");
     }
+
+    private IActionResult RedirigirLoginConError(string? returnUrl, string mensaje)
+    {
+        LoginEmail = (Input.Email ?? string.Empty).Trim();
+        AccountErrorMessage = mensaje;
+        return RedirectToPage("./Login", new { returnUrl });
+    }
+
+    private string ObtenerMensajeErrorValidacion(string mensajePredeterminado)
+        => ModelState.Values
+            .SelectMany(valor => valor.Errors)
+            .Select(error => error.ErrorMessage)
+            .FirstOrDefault(error => !string.IsNullOrWhiteSpace(error))
+            ?? mensajePredeterminado;
 
     public IActionResult OnPostExternalLogin(string provider, string? returnUrl = null, string? flow = null)
     {
@@ -429,8 +449,8 @@ public class LoginModel(
     }
 
     private bool DebeMostrarTurnstile()
-        => ObtenerContador(LoginFailuresSessionKey) >= Math.Max(1, turnstileOptions.Value.LoginFailuresBeforeChallenge)
-            || ObtenerContador(ResendAttemptsSessionKey) >= Math.Max(1, turnstileOptions.Value.ResendAttemptsBeforeChallenge);
+        => ObtenerContador(LoginFailuresSessionKey) + 1 >= Math.Max(1, turnstileOptions.Value.LoginFailuresBeforeChallenge)
+            || ObtenerContador(ResendAttemptsSessionKey) + 1 >= Math.Max(1, turnstileOptions.Value.ResendAttemptsBeforeChallenge);
 
     private bool DebeValidarTurnstileEnLogin()
         => DebeMostrarTurnstile();

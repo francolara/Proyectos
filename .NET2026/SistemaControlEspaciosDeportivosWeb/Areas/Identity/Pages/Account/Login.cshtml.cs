@@ -27,6 +27,7 @@ public class LoginModel(
     ILogger<LoginModel> logger) : PageModel
 {
     // Firma: FRANCO LARA - 21/07/2026 | Respeta la confirmacion de cuenta configurada y oculta el reenvio cuando la autoconfirmacion esta activa.
+    // Firma: FRANCO LARA - 13/09/2026 | Aplica POST-Redirect-GET ante fallos de login para evitar reenvios del formulario al volver atras.
     private const string LoginFailuresSessionKey = "Auth:LoginFailures";
     private const string ResendAttemptsSessionKey = "Auth:ResendAttempts";
     private const string LoginCaptchaScope = "LOGIN";
@@ -58,6 +59,9 @@ public class LoginModel(
     [TempData]
     public string? SuccessMessage { get; set; }
 
+    [TempData]
+    public string? LoginEmail { get; set; }
+
     public class InputModel
     {
         [Required(ErrorMessage = "El correo es obligatorio.")]
@@ -74,6 +78,11 @@ public class LoginModel(
 
     public async Task OnGetAsync(string? returnUrl = null)
     {
+        if (string.IsNullOrWhiteSpace(Input.Email) && !string.IsNullOrWhiteSpace(LoginEmail))
+        {
+            Input.Email = LoginEmail;
+        }
+
         if (!string.IsNullOrWhiteSpace(ErrorMessage))
         {
             ModelState.AddModelError(string.Empty, ErrorMessage);
@@ -97,15 +106,12 @@ public class LoginModel(
         ConfigurarCaptchaManual();
         if (!ModelState.IsValid)
         {
-            await CargarBannerLateralAsync();
-            return Page();
+            return RedirigirLoginConError(returnUrl, ObtenerMensajeErrorValidacion("Completa los datos de inicio de sesion."));
         }
         if (DebeValidarTurnstileEnLogin() && !await ValidarTurnstileAsync())
         {
             IncrementarContador(LoginFailuresSessionKey);
-            MostrarTurnstile = true;
-            await CargarBannerLateralAsync();
-            return Page();
+            return RedirigirLoginConError(returnUrl, ObtenerMensajeErrorValidacion("No se pudo validar Turnstile. Intenta nuevamente."));
         }
 
         var email = (Input.Email ?? string.Empty).Trim();
@@ -114,19 +120,13 @@ public class LoginModel(
         if (user is null)
         {
             IncrementarContador(LoginFailuresSessionKey);
-            MostrarTurnstile = DebeMostrarTurnstile();
-            ModelState.AddModelError(string.Empty, "Intento de inicio de sesion no valido.");
-            await CargarBannerLateralAsync();
-            return Page();
+            return RedirigirLoginConError(returnUrl, "Intento de inicio de sesion no valido.");
         }
 
         if (RequiereConfirmacionCorreo && !await userManager.IsEmailConfirmedAsync(user))
         {
             IncrementarContador(LoginFailuresSessionKey);
-            MostrarTurnstile = DebeMostrarTurnstile();
-            ModelState.AddModelError(string.Empty, "Tu cuenta aun no esta confirmada. Revisa tu correo o reenvia el enlace de confirmacion.");
-            await CargarBannerLateralAsync();
-            return Page();
+            return RedirigirLoginConError(returnUrl, "Tu cuenta aun no esta confirmada. Revisa tu correo o reenvia el enlace de confirmacion.");
         }
 
         var result = await signInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: true);
@@ -172,11 +172,22 @@ public class LoginModel(
         }
 
         IncrementarContador(LoginFailuresSessionKey);
-        MostrarTurnstile = DebeMostrarTurnstile();
-        ModelState.AddModelError(string.Empty, "Intento de inicio de sesion no valido.");
-        await CargarBannerLateralAsync();
-        return Page();
+        return RedirigirLoginConError(returnUrl, "Intento de inicio de sesion no valido.");
     }
+
+    private IActionResult RedirigirLoginConError(string? returnUrl, string mensaje)
+    {
+        LoginEmail = (Input.Email ?? string.Empty).Trim();
+        ErrorMessage = mensaje;
+        return RedirectToPage("./Login", new { returnUrl });
+    }
+
+    private string ObtenerMensajeErrorValidacion(string mensajePredeterminado)
+        => ModelState.Values
+            .SelectMany(valor => valor.Errors)
+            .Select(error => error.ErrorMessage)
+            .FirstOrDefault(error => !string.IsNullOrWhiteSpace(error))
+            ?? mensajePredeterminado;
 
     public async Task<IActionResult> OnPostResendConfirmationAsync(string? returnUrl = null)
     {

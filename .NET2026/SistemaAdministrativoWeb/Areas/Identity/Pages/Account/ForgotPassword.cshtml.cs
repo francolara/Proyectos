@@ -21,6 +21,7 @@ public class ForgotPasswordModel(
     ILogger<ForgotPasswordModel> logger) : PageModel
 {
     // Firma: FRANCO LARA - 31/08/2026 | Implementa recuperacion segura de contrasena y reenvio de confirmacion por Brevo.
+    // Firma: FRANCO LARA - 13/09/2026 | Muestra el desafio antes del intento de recuperacion que alcanza el limite configurado.
     private const string ForgotPasswordAttemptsSessionKey = "Auth:ForgotPasswordAttempts";
     private const string ForgotPasswordCaptchaScope = "FORGOTPWD";
 
@@ -66,7 +67,7 @@ public class ForgotPasswordModel(
         }
 
         var attempts = IncrementAttemptCount();
-        if (attempts >= Math.Max(1, turnstileOptions.Value.ResendAttemptsBeforeChallenge)
+        if (attempts >= Math.Max(1, turnstileOptions.Value.ForgotPasswordAttemptsBeforeChallenge)
             && !await ValidateChallengeAsync())
         {
             MostrarTurnstile = true;
@@ -80,7 +81,7 @@ public class ForgotPasswordModel(
             await TrySendAccountEmailAsync(user, email);
         }
 
-        if (attempts >= Math.Max(1, turnstileOptions.Value.ResendAttemptsBeforeChallenge))
+        if (attempts >= Math.Max(1, turnstileOptions.Value.ForgotPasswordAttemptsBeforeChallenge))
         {
             HttpContext.Session.Remove(ForgotPasswordAttemptsSessionKey);
         }
@@ -140,7 +141,9 @@ public class ForgotPasswordModel(
     private void PrepareChallenge()
     {
         TurnstileSiteKey = turnstileOptions.Value.SiteKey;
-        MostrarTurnstile = GetAttemptCount() >= Math.Max(1, turnstileOptions.Value.ResendAttemptsBeforeChallenge);
+        // La vista se prepara antes del POST; se anticipa el siguiente intento para
+        // que el usuario pueda completar Turnstile antes de alcanzar el limite.
+        MostrarTurnstile = GetAttemptCount() + 1 >= Math.Max(1, turnstileOptions.Value.ForgotPasswordAttemptsBeforeChallenge);
         MostrarCaptchaManual = MostrarTurnstile
             && (UsarCaptchaManual || string.IsNullOrWhiteSpace(TurnstileSiteKey));
 

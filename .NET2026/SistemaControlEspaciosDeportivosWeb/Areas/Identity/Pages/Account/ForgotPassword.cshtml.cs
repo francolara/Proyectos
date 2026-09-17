@@ -22,6 +22,7 @@ public class ForgotPasswordModel(
     ILogger<ForgotPasswordModel> logger) : PageModel
 {
     // Firma: FRANCO LARA - 21/07/2026 | Deshabilita la recuperacion por correo cuando AutoConfirmEmail omite todos los envios.
+    // Firma: FRANCO LARA - 13/09/2026 | Muestra la validacion de seguridad antes del intento que alcanza el limite de recuperacion.
     private const string ForgotPasswordAttemptsSessionKey = "Auth:ForgotPasswordAttempts";
     private const string ForgotPasswordCaptchaScope = "FORGOTPWD";
 
@@ -178,7 +179,9 @@ public class ForgotPasswordModel(
     }
 
     private bool DebeMostrarTurnstile()
-        => DebeValidarTurnstile(ObtenerContador(ForgotPasswordAttemptsSessionKey));
+        // La vista se muestra antes de incrementar el contador en el POST. Se anticipa
+        // el siguiente intento para que el usuario pueda completar Turnstile antes de enviarlo.
+        => DebeValidarTurnstile(ObtenerContador(ForgotPasswordAttemptsSessionKey) + 1);
 
     private bool DebeValidarTurnstile(int intentos)
         => intentos >= Math.Max(1, turnstileOptions.Value.ForgotPasswordAttemptsBeforeChallenge);

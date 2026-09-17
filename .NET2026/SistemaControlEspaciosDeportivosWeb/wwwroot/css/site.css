@@ -9019,6 +9019,28 @@ body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(
   color: var(--sc-admin-text) !important;
 }
 
+/* Firma: FRANCO LARA - 15/09/2026 | Restablece contraste de tabs activos de Reportes en modo claro tras el tema administrativo global. */
+html[data-theme="light"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-report-tab.is-active .sc-report-tab-text strong {
+  color: var(--sc-admin-text) !important;
+}
+
+html[data-theme="light"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-report-tab.is-active .sc-report-tab-text small {
+  color: var(--sc-admin-muted) !important;
+}
+
+html[data-theme="light"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-report-tab.is-active .sc-report-tab-icon {
+  border: 1px solid var(--sc-admin-border);
+  background: var(--sc-input-bg);
+}
+
+html[data-theme="light"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-report-tab.is-active .sc-report-tab-icon--cobros {
+  color: #15803d;
+}
+
+html[data-theme="light"] body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) .sc-report-tab.is-active .sc-report-tab-icon--operacion {
+  color: #1d4ed8;
+}
+
 body:is(.sc-business-admin-theme-shell, .sc-platform-admin-theme-shell) :is(.btn-primary, .btn-grabar, .btn-accion-filtro) {
   border-color: var(--sc-admin-primary) !important;
   background: var(--sc-admin-primary) !important;

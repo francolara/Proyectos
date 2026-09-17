@@ -19324,6 +19324,6 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdminist
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\temp_codex_build\validacion_intercalacion_cultura_web\runtimes\win-arm64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\temp_codex_build\validacion_intercalacion_cultura_web\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\temp_codex_build\validacion_intercalacion_cultura_web\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\rnf1c4oivs-{0}-t6e633061y-t6e633061y.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\9mixv7inkl-{0}-grf2qdezgl-grf2qdezgl.gz
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\rnf1c4oivs-{0}-zhe3hx0rd5-zhe3hx0rd5.gz

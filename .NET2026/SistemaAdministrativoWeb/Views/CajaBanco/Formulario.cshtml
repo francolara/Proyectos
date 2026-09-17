@@ -15,6 +15,7 @@
 @* Firma: FRANCO LARA - 11/08/2026 | Evita que el detalle de Caja y Bancos comprima sus campos en pantallas angostas, manteniendo anchos de columna estables y scroll horizontal como en el registro de asientos. *@
 @* Firma: FRANCO LARA - 13/08/2026 | Fija Centro de costo, Persona, TipoDoc, Serie, Referencia y TC en el detalle bancario con los anchos visibles de Asientos, reduce Item en 30%, conserva anchos minimos y scroll horizontal, y elimina la actualizacion manual del TC por linea porque se sincroniza desde la cabecera. *@
 @* Firma: FRANCO LARA - 26/08/2026 | Corrige la aplicacion de comprobantes para asignar el saldo al Haber en ingresos y al Debe en egresos, independientemente del modulo de origen, y recalcula las lineas vinculadas al cambiar el tipo de movimiento. *@
+@* Firma: FRANCO LARA - 17/09/2026 | En vista movil apila Flujo bancario, Datos del movimiento y Detalle del movimiento para que la seleccion de tipo de operacion y su cabecera se visualicen sin desplazamiento horizontal. *@
 
 @{
     ViewData["Title"] = Model.Formulario.IdMovimientoBanco.HasValue ? "Editar movimiento bancario" : "Registrar movimiento bancario";
@@ -336,6 +337,28 @@
 
     .caja-banco-detail-table .workspace-lookup-control-inline-tools {
         grid-template-columns: minmax(0, 1fr) auto auto;
+    }
+
+    /* En movil el flujo, la cabecera y el detalle se muestran como secciones consecutivas. */
+    @@media (max-width: 767.98px) {
+        .workspace-caja-banco-layout {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .workspace-caja-banco-sidebar,
+        .workspace-caja-banco-main,
+        .workspace-caja-banco-sidebar .workspace-section,
+        .workspace-caja-banco-main .workspace-section,
+        .workspace-caja-banco-sidebar .workspace-window-body,
+        .workspace-caja-banco-main .workspace-window-body {
+            height: auto;
+        }
+
+        .workspace-section-head-meta {
+            width: 100%;
+            min-width: 0;
+            align-self: stretch;
+        }
     }
 
 </style>

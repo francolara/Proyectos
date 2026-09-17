@@ -11,6 +11,7 @@ public sealed class CloudflareTurnstileSettings
     public string VerifyUrl { get; set; } = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
     public int LoginFailuresBeforeChallenge { get; set; } = 2;
     public int ResendAttemptsBeforeChallenge { get; set; } = 2;
+    public int ForgotPasswordAttemptsBeforeChallenge { get; set; } = 2;
 }
 
 public sealed class TurnstileVerifyResponse
