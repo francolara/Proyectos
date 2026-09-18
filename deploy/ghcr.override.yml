@@ -1,0 +1,8 @@
+# Override exclusivo para las imágenes de aplicaciones publicadas en GHCR.
+services:
+  fralsecont:
+    image: ghcr.io/francolara/fralsecont:${IMAGE_TAG}
+  fralsetech:
+    image: ghcr.io/francolara/fralsetech:${IMAGE_TAG}
+  zonadeportiva:
+    image: ghcr.io/francolara/zonadeportiva:${IMAGE_TAG}

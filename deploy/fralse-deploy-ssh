@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Wrapper de comando forzado para la clave de GitHub Actions.
+set -Eeuo pipefail
+
+readonly DEPLOY_SCRIPT="/usr/local/sbin/fralse-deploy"
+command="${SSH_ORIGINAL_COMMAND:-}"
+
+if [[ "$command" =~ ^deploy\ (main|[0-9a-f]{40})\ (all|fralsecont|fralsetech|zonadeportiva)$ ]]; then
+    exec sudo -- "$DEPLOY_SCRIPT" "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}"
+fi
+
+echo "Comando de despliegue no autorizado." >&2
+exit 126

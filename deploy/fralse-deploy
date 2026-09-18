@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+# Despliegue controlado de las aplicaciones Fralse desde GHCR.
+set -Eeuo pipefail
+
+readonly COMPOSE_FILE="/srv/fralse/compose/apps.compose.yml"
+readonly GHCR_OVERRIDE="/srv/fralse/compose/ghcr.override.yml"
+readonly LOCK_FILE="/var/lock/fralse-deploy.lock"
+readonly LOG_FILE="/var/log/fralse-deploy.log"
+readonly HEALTH_ATTEMPTS=30
+readonly HEALTH_INTERVAL=2
+
+usage() {
+    echo "Uso: fralse-deploy <main|sha-de-40-caracteres> <all|fralsecont|fralsetech|zonadeportiva>" >&2
+    exit 64
+}
+
+log_result() {
+    local result="$1"
+    printf '%s tag=%s target=%s result=%s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$IMAGE_TAG" "$TARGET" "$result" >> "$LOG_FILE"
+}
+
+fail() {
+    echo "Error: $1" >&2
+    exit 1
+}
+
+[[ $# -eq 2 ]] || usage
+IMAGE_TAG="$1"
+TARGET="$2"
+
+[[ "$IMAGE_TAG" == "main" || "$IMAGE_TAG" =~ ^[0-9a-f]{40}$ ]] || usage
+case "$TARGET" in
+    all) SERVICES=(fralsecont fralsetech zonadeportiva) ;;
+    fralsecont|fralsetech|zonadeportiva) SERVICES=("$TARGET") ;;
+    *) usage ;;
+esac
+
+[[ -r "$COMPOSE_FILE" ]] || fail "No se puede leer el compose de aplicaciones."
+[[ -r "$GHCR_OVERRIDE" ]] || fail "No se puede leer el override de GHCR."
+command -v docker >/dev/null 2>&1 || fail "Docker no está disponible."
+command -v curl >/dev/null 2>&1 || fail "curl no está disponible."
+command -v flock >/dev/null 2>&1 || fail "flock no está disponible."
+
+umask 077
+exec 9>"$LOCK_FILE"
+flock -n 9 || fail "Ya hay un despliegue en curso."
+
+declare -A PREVIOUS_IMAGE_IDS=()
+ROLLBACK_OVERRIDE="$(mktemp /tmp/fralse-deploy-rollback.XXXXXX.yml)"
+cleanup() {
+    rm -f -- "$ROLLBACK_OVERRIDE"
+}
+trap cleanup EXIT
+
+capture_previous_image_ids() {
+    local service container image_id
+    for service in "${SERVICES[@]}"; do
+        container="$(docker compose -f "$COMPOSE_FILE" ps -q "$service")"
+        [[ -n "$container" ]] || fail "No hay un contenedor actual para $service; se cancela para preservar un rollback seguro."
+        image_id="$(docker inspect --format '{{.Image}}' "$container")"
+        [[ "$image_id" =~ ^sha256:[0-9a-f]{64}$ ]] || fail "El ID de imagen actual de $service no tiene el formato sha256 esperado."
+        PREVIOUS_IMAGE_IDS["$service"]="$image_id"
+    done
+}
+
+write_rollback_override() {
+    local service
+    {
+        echo "services:"
+        for service in "${SERVICES[@]}"; do
+            printf '  %s:\n    image: %s\n' "$service" "${PREVIOUS_IMAGE_IDS[$service]}"
+        done
+    } > "$ROLLBACK_OVERRIDE"
+}
+
+services_use_previous_image_ids() {
+    local service container image_id
+    for service in "${SERVICES[@]}"; do
+        container="$(docker compose -f "$COMPOSE_FILE" ps -q "$service")"
+        [[ -n "$container" ]] || return 1
+        image_id="$(docker inspect --format '{{.Image}}' "$container")"
+        [[ "$image_id" == "${PREVIOUS_IMAGE_IDS[$service]}" ]] || return 1
+    done
+}
+
+rollback() {
+    local result=0
+    echo "El despliegue falló; restaurando únicamente los servicios seleccionados." >&2
+    if ! docker compose -f "$COMPOSE_FILE" -f "$ROLLBACK_OVERRIDE" config -q; then
+        result=1
+    fi
+    if ! docker compose -f "$COMPOSE_FILE" -f "$ROLLBACK_OVERRIDE" up -d --no-deps --force-recreate --pull never "${SERVICES[@]}"; then
+        result=1
+    fi
+    if (( result == 0 )); then
+        local service
+        for service in "${SERVICES[@]}"; do
+            health_check "$service" || result=1
+        done
+    fi
+    if (( result == 0 )); then
+        log_result "rollback_ok"
+    else
+        log_result "rollback_error"
+    fi
+    return "$result"
+}
+
+health_check() {
+    local service="$1" port attempt
+    case "$service" in
+        fralsecont) port=5103 ;;
+        fralsetech) port=5102 ;;
+        zonadeportiva) port=5101 ;;
+    esac
+
+    for ((attempt = 1; attempt <= HEALTH_ATTEMPTS; attempt++)); do
+        if curl --fail --silent --show-error --max-time 5 "http://127.0.0.1:${port}/healthz/live" >/dev/null \
+            && curl --fail --silent --show-error --max-time 5 "http://127.0.0.1:${port}/healthz/ready" >/dev/null; then
+            return 0
+        fi
+        sleep "$HEALTH_INTERVAL"
+    done
+    echo "No superó los health checks: $service." >&2
+    return 1
+}
+
+capture_previous_image_ids
+write_rollback_override
+
+export IMAGE_TAG
+if ! docker compose -f "$COMPOSE_FILE" -f "$GHCR_OVERRIDE" config -q; then
+    log_result "config_error"
+    exit 1
+fi
+
+if ! docker compose -f "$COMPOSE_FILE" -f "$GHCR_OVERRIDE" pull "${SERVICES[@]}"; then
+    if services_use_previous_image_ids; then
+        echo "Descarga fallida; producción permanece intacta y no se recrearán contenedores." >&2
+        log_result "pull_error_aborted_production_intact"
+    else
+        echo "Descarga fallida y se detectó una modificación inesperada; iniciando rollback preventivo." >&2
+        rollback || true
+        log_result "pull_error_rollback_preventive"
+    fi
+    exit 1
+fi
+
+if ! docker compose -f "$COMPOSE_FILE" -f "$GHCR_OVERRIDE" up -d --no-deps --force-recreate "${SERVICES[@]}"; then
+    rollback || true
+    exit 1
+fi
+
+for service in "${SERVICES[@]}"; do
+    if ! health_check "$service"; then
+        rollback || true
+        exit 1
+    fi
+done
+
+log_result "success"
+echo "Despliegue completado: $TARGET con etiqueta $IMAGE_TAG."

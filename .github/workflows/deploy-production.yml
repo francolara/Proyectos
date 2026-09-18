@@ -1,0 +1,74 @@
+name: Deploy production
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Etiqueta main o SHA completo de 40 caracteres en minúsculas'
+        required: true
+        type: string
+      target:
+        description: 'Aplicación que se desplegará'
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - fralsecont
+          - fralsetech
+          - zonadeportiva
+
+permissions: {}
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.target }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate inputs
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          TARGET: ${{ inputs.target }}
+          CONTABO_USER: ${{ secrets.CONTABO_USER }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$IMAGE_TAG" == "main" || "$IMAGE_TAG" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$TARGET" =~ ^(all|fralsecont|fralsetech|zonadeportiva)$ ]]
+          [[ "$CONTABO_USER" == "fralse-deploy" ]]
+
+      - name: Configure restricted SSH access
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CONTABO_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.CONTABO_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 700 "$HOME/.ssh"
+          umask 077
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/contabo_deploy"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/contabo_known_hosts"
+          chmod 600 "$HOME/.ssh/contabo_deploy" "$HOME/.ssh/contabo_known_hosts"
+
+      - name: Run authorized deployment command
+        env:
+          CONTABO_HOST: ${{ secrets.CONTABO_HOST }}
+          CONTABO_USER: ${{ secrets.CONTABO_USER }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          TARGET: ${{ inputs.target }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i "$HOME/.ssh/contabo_deploy" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/contabo_known_hosts" \
+            -o IdentitiesOnly=yes \
+            "$CONTABO_USER@$CONTABO_HOST" \
+            "deploy $IMAGE_TAG $TARGET"
+
+      - name: Remove temporary SSH material
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$HOME/.ssh/contabo_deploy" "$HOME/.ssh/contabo_known_hosts"
