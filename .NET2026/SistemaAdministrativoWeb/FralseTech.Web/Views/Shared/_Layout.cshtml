@@ -1,6 +1,6 @@
 @using FralseTech.Web.ViewModels
 @inject IConfiguration Configuration
-@* Firma: FRANCO LARA - 03/09/2026 | Carga la configuración compartida de recursos públicos y utiliza el logo de Cloudflare en la cabecera, metadatos y pie del sitio. *@
+@* Firma: FRANCO LARA - 18/09/2026 | Rediseña la cabecera, usa el logo local con encuadre verificable, corrige la navegación móvil, actualiza el pie de página y las acciones de contacto. *@
 @{
     var pageTitle = ViewData["Title"] as string ?? FralseTechSiteContent.GetDefaultPageTitle();
     var metaDescription = ViewData["MetaDescription"] as string ?? FralseTechSiteContent.GetDefaultMetaDescription();
@@ -8,7 +8,8 @@
     var structuredDataJson = ViewData["StructuredDataJson"] as string ?? FralseTechSiteContent.GetStructuredDataJson();
     var landingPage = Model as LandingPageViewModel ?? FralseTechSiteContent.BuildLandingPage(Configuration);
     var logoFallbackUrl = Url.Content("~/images/logo-fralse-tech.png") ?? "/images/logo-fralse-tech.png";
-    var logoUrl = Url.Content(landingPage.LogoPath) ?? logoFallbackUrl;
+    // El archivo local conserva el encuadre completo de la marca; algunos recursos remotos contienen un lienzo excesivo.
+    var logoUrl = logoFallbackUrl;
 }
 <!DOCTYPE html>
 <html lang="es">
@@ -32,68 +33,30 @@
 </head>
 <body>
     <a class="skip-link" href="#inicio">Ir al contenido principal</a>
-
     <header class="site-header" data-header>
-        <div class="section-container site-header__inner">
+        <div class="site-container site-header__inner">
             <a class="brand" href="#inicio" aria-label="Ir al inicio de FRALSE TECH">
-                <img src="@logoUrl" alt="Logo de @landingPage.LegalName" width="500" height="236" fetchpriority="high" onerror="this.onerror=null;this.src='@logoFallbackUrl';" />
+                <span class="brand__mark"><img src="@logoUrl" alt="" width="500" height="236" fetchpriority="high" /></span>
             </a>
-            <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-navigation" aria-label="Abrir menú" data-menu-toggle>
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
+            <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-navigation" aria-label="Abrir menú" data-menu-toggle><span></span><span></span></button>
             <nav class="site-nav" id="site-navigation" aria-label="Principal" data-navigation>
-                @foreach (var item in landingPage.Navigation)
-                {
-                    <a href="@item.Target">@item.Text</a>
-                }
-                <a class="btn btn-header" href="#contacto">Contáctanos</a>
+                @foreach (var item in landingPage.Navigation) { <a href="@item.Target">@item.Text</a> }
+                <a class="site-nav__contact" href="#contacto">Hablemos <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
             </nav>
         </div>
     </header>
-
     @RenderBody()
-
-    <a class="whatsapp-float" href="@landingPage.WhatsAppUrl" target="_blank" rel="noreferrer" aria-label="Abrir conversación de WhatsApp">
-        <i class="bi bi-whatsapp" aria-hidden="true"></i>
-        <span>Escríbenos</span>
-    </a>
-
+    <a class="whatsapp-float" href="@landingPage.WhatsAppUrl" target="_blank" rel="noreferrer" aria-label="Abrir conversación de WhatsApp"><i class="bi bi-whatsapp" aria-hidden="true"></i></a>
     <footer class="site-footer">
-        <div class="section-container site-footer__grid">
-            <div>
-                <img class="site-footer__logo" src="@logoUrl" alt="Logo de @landingPage.LegalName" width="500" height="236" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='@logoFallbackUrl';" />
-                <p>@landingPage.LegalName desarrolla tecnología para impulsar empresas.</p>
-                <p class="site-footer__tax-id">RUC : @landingPage.TaxId</p>
-            </div>
-            <div>
-                <h2>Enlaces rápidos</h2>
-                @foreach (var item in landingPage.Navigation)
-                {
-                    <a href="@item.Target">@item.Text</a>
-                }
-            </div>
-            <div>
-                <h2>Sistemas</h2>
-                @foreach (var product in landingPage.Products)
-                {
-                    <a href="@product.PrimaryActionUrl" target="_blank" rel="noreferrer">@product.Name</a>
-                }
-            </div>
-            <div>
-                <h2>Contacto</h2>
-                <a href="@landingPage.MailToUrl">@landingPage.Email</a>
-                <a href="@landingPage.WhatsAppUrl" target="_blank" rel="noreferrer">@landingPage.WhatsAppNumber</a>
-                <span>@landingPage.Country</span>
-            </div>
+        <div class="site-container site-footer__top">
+            <a class="footer-brand" href="#inicio" aria-label="Ir al inicio de FRALSE TECH">
+                <span class="footer-brand__mark"><img src="@logoUrl" alt="" width="500" height="236" loading="lazy" decoding="async" /></span>
+            </a>
+            <p>@landingPage.LegalName desarrolla tecnología que convierte la complejidad operativa en claridad.</p>
+            <a href="@landingPage.WhatsAppUrl" target="_blank" rel="noreferrer">Iniciar una conversación <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
         </div>
-        <div class="section-container site-footer__bottom">
-            <span>© @landingPage.CurrentYear @landingPage.LegalName. Todos los derechos reservados.</span>
-            <span>Desarrollamos tecnología para impulsar empresas.</span>
-        </div>
+        <div class="site-container site-footer__bottom"><span>© @landingPage.CurrentYear @landingPage.LegalName</span><span>RUC @landingPage.TaxId · @landingPage.Country</span><a href="@landingPage.MailToUrl">@landingPage.Email</a></div>
     </footer>
-
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

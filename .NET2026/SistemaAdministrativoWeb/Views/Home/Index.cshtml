@@ -5,28 +5,17 @@
 @{
     ViewData["Title"] = "FralseCont";
     var business = BusinessInformationOptionsAccessor.Value;
-    var whatsappUrl = string.IsNullOrWhiteSpace(business.WhatsAppNumber)
-        ? string.Empty
-        : $"https://wa.me/{business.WhatsAppNumber}";
+    var whatsappUrl = string.IsNullOrWhiteSpace(business.WhatsAppNumber) ? string.Empty : $"https://wa.me/{business.WhatsAppNumber}";
     var sharedPaidBenefits = new[]
     {
-        "Compras y ventas sin limite de registros.",
-        "Asientos contables manuales y automaticos.",
-        "Caja y Bancos.",
-        "Cuentas corrientes.",
-        "Transferencias entre cuentas.",
-        "Aplicacion de notas de credito.",
+        "Compras y ventas sin límite de registros.",
+        "Asientos contables manuales y automáticos.",
+        "Caja, bancos y cuentas corrientes.",
+        "Transferencias y notas de crédito.",
         "Centros de costo y cuentas destino.",
-        "Configuracion contable completa.",
-        "Tipo de cambio oficial en linea.",
-        "Sincronizacion mensual de tipos de cambio.",
-        "Consulta de RUC y DNI en linea.",
-        "Cierre y reapertura de periodos.",
-        "Diferencia en cambio y ajuste de cuentas.",
-        "Asientos de apertura y cierre.",
-        "Periodos especiales 00, 13 y 14.",
-        "Reportes contables completos.",
-        "Libros electronicos PLE e historial de archivos."
+        "Tipo de cambio oficial y consulta RUC/DNI en línea.",
+        "Cierre, reapertura y períodos especiales.",
+        "Reportes contables, libros electrónicos PLE e historial de archivos."
     };
 }
 <!-- Firma: FRANCO LARA - 10/07/2026 | Reorganiza la portada publica para mostrar primero una landing SaaS de FralseCont con tres planes de suscripcion y accesos al registro por plan, ajusta el branding visible a Sistema Contable con Fralse y Cont en dos colores y elimina la tarjeta informativa redundante. -->
@@ -35,185 +24,98 @@
 <!-- Firma: FRANCO LARA - 22/08/2026 | Actualiza la portada al calendario contable vigente con periodos especiales 00, 13 y 14. -->
 <!-- Firma: FRANCO LARA - 31/08/2026 | Incorpora la franja institucional y presenta dentro de cada lista principal de Emprendedor y Contador sus tres diferencias y 17 funciones comunes, para un total de 20 puntos por plan. -->
 <!-- Firma: FRANCO LARA - 02/09/2026 | Actualiza el mensaje principal y las descripciones comerciales de los planes Emprendedor y Contador para enfocarlos en contadores. -->
+<!-- Firma: FRANCO LARA - 18/09/2026 | Rediseña la portada pública como una landing de producto orientada a contadores, conserva la identidad FralseCont de cabecera y prioriza valor, módulos, vista del sistema y planes responsivos. -->
 
-<section class="nubecont-pricing-section" aria-labelledby="nubecont-pricing-title">
-    <div class="nubecont-pricing-container">
-        <header class="nubecont-pricing-header">
-            <span class="nubecont-brand-kicker">Sistema Contable</span>
-            <h1 id="nubecont-pricing-title" class="nubecont-brand-title"><span>Fralse</span><span class="nubecont-brand-accent">Cont</span></h1>
-            <p class="nubecont-brand-subtitle">Sistema contable web</p>
-            <p class="nubecont-brand-description">Powered by Fralse Tech S.A.C.</p>
-        </header>
+<section class="fralsecont-public-hero" aria-labelledby="fralsecont-hero-title">
+    <div class="fralsecont-public-shell fralsecont-public-hero__grid">
+        <div class="fralsecont-public-hero__copy">
+            <span class="fralsecont-public-eyebrow"><i class="bi bi-shield-check" aria-hidden="true"></i>La herramienta que todo contador necesita</span>
+            <h1 id="fralsecont-hero-title">La operación de tu empresa, <span>clara y bajo control.</span></h1>
+            <p>Centraliza contabilidad, compras y ventas en una plataforma web pensada para trabajar con orden, rapidez y visibilidad real.</p>
+            <div class="fralsecont-public-actions">
+                <a class="fralsecont-public-button fralsecont-public-button--primary" asp-area="Identity" asp-page="/Account/Register" asp-route-plan="GRATIS">Prueba gratis por 30 días <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+                <a class="fralsecont-public-text-action" asp-area="Identity" asp-page="/Account/Login">Iniciar sesión <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+            </div>
+            <div class="fralsecont-public-trust" aria-label="Beneficios principales">
+                <span><i class="bi bi-check2" aria-hidden="true"></i>Sin tarjeta</span>
+                <span><i class="bi bi-check2" aria-hidden="true"></i>Acceso desde la nube</span>
+                <span><i class="bi bi-check2" aria-hidden="true"></i>Soporte cercano</span>
+            </div>
+        </div>
 
-        <div class="nubecont-plans-grid">
-            <article class="nubecont-plan-card nubecont-plan-card--free">
-                <header class="nubecont-plan-top">
-                    <h2 class="nubecont-plan-name">Prueba</h2>
-                </header>
-
-                <div class="nubecont-plan-price-block">
-                    <div class="nubecont-plan-price-row">
-                        <span class="nubecont-plan-currency">S/</span>
-                        <span class="nubecont-plan-price">0</span>
-                    </div>
-                    <div class="nubecont-plan-period">por 30 dias</div>
+        <div class="fralsecont-product-preview" aria-label="Vista representativa del panel FralseCont">
+            <div class="fralsecont-product-preview__bar"><span class="fralsecont-product-preview__brand">Fralse<span>Cont</span></span><span class="fralsecont-product-preview__period">Setiembre 2026 <i class="bi bi-chevron-down" aria-hidden="true"></i></span></div>
+            <div class="fralsecont-product-preview__body">
+                <aside><span class="is-active"><i class="bi bi-grid-1x2" aria-hidden="true"></i></span><span><i class="bi bi-receipt" aria-hidden="true"></i></span><span><i class="bi bi-cart3" aria-hidden="true"></i></span><span><i class="bi bi-bar-chart" aria-hidden="true"></i></span></aside>
+                <div class="fralsecont-product-preview__workspace">
+                    <div class="fralsecont-product-preview__headline"><div><small>Resumen financiero</small><strong>Buenos días, Franco</strong></div><span><i class="bi bi-bell" aria-hidden="true"></i></span></div>
+                    <div class="fralsecont-product-preview__metrics"><div><small>Ventas del mes</small><strong>S/ 42,860</strong><span>+12.8%</span></div><div><small>Por cobrar</small><strong>S/ 8,450</strong><span class="neutral">18 documentos</span></div></div>
+                    <div class="fralsecont-product-preview__chart"><div class="fralsecont-product-preview__chart-head"><strong>Flujo de ingresos</strong><span>Últimos 6 meses</span></div><div class="fralsecont-product-preview__bars"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
                 </div>
-
-                <p class="nubecont-plan-description">
-                    Prueba FralseCont y conoce las funciones esenciales de nuestra plataforma contable.
-                </p>
-
-                <a class="nubecont-plan-button nubecont-plan-button--free"
-                   asp-area="Identity"
-                   asp-page="/Account/Register"
-                   asp-route-plan="GRATIS">
-                    Comenzar gratis
-                </a>
-
-                <hr class="nubecont-plan-divider" />
-
-                <ul class="nubecont-plan-features">
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>1 empresa.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>1 usuario.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Vigencia de 30 dias.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Compras y ventas.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Registros limitados.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Asientos contables limitados.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Reportes contables base.</span></li>
-                    <li class="nubecont-plan-feature nubecont-plan-feature--unavailable"><i class="bi bi-dash-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Sin consulta de RUC y DNI en linea.</span></li>
-                    <li class="nubecont-plan-feature nubecont-plan-feature--unavailable"><i class="bi bi-dash-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Sin tipo de cambio en linea.</span></li>
-                    <li class="nubecont-plan-feature nubecont-plan-feature--unavailable"><i class="bi bi-dash-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Sin validacion CPE.</span></li>
-                    <li class="nubecont-plan-feature nubecont-plan-feature--unavailable"><i class="bi bi-dash-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Sin empresas adicionales.</span></li>
-                </ul>
-            </article>
-
-            <article class="nubecont-plan-card nubecont-plan-card--entrepreneur">
-                <header class="nubecont-plan-top">
-                    <h2 class="nubecont-plan-name">Emprendedor</h2>
-                    <span class="nubecont-plan-badge nubecont-plan-badge--soft">Mas elegido</span>
-                </header>
-
-                <div class="nubecont-plan-price-block">
-                    <div class="nubecont-plan-price-row">
-                        <span class="nubecont-plan-currency">S/</span>
-                        <span class="nubecont-plan-price">39.90</span>
-                    </div>
-                    <div class="nubecont-plan-period">PEN / mes</div>
-                </div>
-
-                <p class="nubecont-plan-description">
-                    La solución completa para contadores que empiezan a gestionar empresas.
-                </p>
-
-                <a class="nubecont-plan-button nubecont-plan-button--entrepreneur"
-                   asp-area="Identity"
-                   asp-page="/Account/Register"
-                   asp-route-plan="EMPRENDEDOR">
-                    Elegir Emprendedor
-                </a>
-
-                <hr class="nubecont-plan-divider" />
-
-                <ul class="nubecont-plan-features">
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Hasta 3 empresas.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Hasta 2 usuarios.</span></li>
-                    <li class="nubecont-plan-feature nubecont-plan-feature--unavailable"><i class="bi bi-dash-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Validacion de comprobantes CPE no incluida.</span></li>
-                    @foreach (var benefit in sharedPaidBenefits)
-                    {
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>@benefit</span></li>
-                    }
-                </ul>
-            </article>
-
-            <article class="nubecont-plan-card nubecont-plan-card--recommended">
-                <header class="nubecont-plan-top">
-                    <h2 class="nubecont-plan-name">Contador</h2>
-                    <span class="nubecont-plan-badge">Recomendado</span>
-                </header>
-
-                <div class="nubecont-plan-price-block">
-                    <div class="nubecont-plan-price-row">
-                        <span class="nubecont-plan-currency">S/</span>
-                        <span class="nubecont-plan-price">89.90</span>
-                    </div>
-                    <div class="nubecont-plan-period">PEN / mes</div>
-                </div>
-
-                <p class="nubecont-plan-description">
-                    Diseñado para contadores que administran múltiples empresas.
-                </p>
-
-                <a class="nubecont-plan-button nubecont-plan-button--recommended"
-                   asp-area="Identity"
-                   asp-page="/Account/Register"
-                   asp-route-plan="CONTADOR">
-                    Elegir Contador
-                </a>
-
-                <hr class="nubecont-plan-divider" />
-
-                <ul class="nubecont-plan-features">
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Hasta 10 empresas.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Hasta 3 usuarios.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Validacion de comprobantes CPE.</span></li>
-                    @foreach (var benefit in sharedPaidBenefits)
-                    {
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>@benefit</span></li>
-                    }
-                </ul>
-            </article>
+            </div>
         </div>
     </div>
 </section>
 
-<section class="hero-auth-landing">
-    <div class="hero-auth-copy">
-        <span class="hero-kicker">Sistema administrativo contable</span>
-        <h2>Accede a tu empresa y centraliza contabilidad, compras y ventas en una sola plataforma.</h2>
-        <p>
-            SisAdm toma la base multiempresa del proyecto nuevo y la combina con un acceso web
-            orientado a negocio, operacion contable y control comercial.
-        </p>
-        <div class="hero-auth-actions">
-            <a class="btn btn-primary btn-lg" asp-area="Identity" asp-page="/Account/Login">Iniciar sesion</a>
-            <a class="btn btn-outline-primary btn-lg" asp-area="Identity" asp-page="/Account/Register">Registrar usuario</a>
+<section class="fralsecont-public-modules" aria-labelledby="fralsecont-modules-title">
+    <div class="fralsecont-public-shell">
+        <div class="fralsecont-section-heading"><span>Una plataforma / cuatro frentes</span><h2 id="fralsecont-modules-title">Todo lo importante, conectado.</h2><p>Menos tareas repetitivas. Más tiempo para analizar y decidir.</p></div>
+        <div class="fralsecont-module-list">
+            <article><i class="bi bi-journal-check" aria-hidden="true"></i><span>01</span><h3>Contabilidad</h3><p>Asientos, centros de costo, cierres y libros electrónicos con una estructura ordenada.</p></article>
+            <article><i class="bi bi-cart-check" aria-hidden="true"></i><span>02</span><h3>Compras</h3><p>Registra, consulta y relaciona cada compra con la información que tu operación necesita.</p></article>
+            <article><i class="bi bi-cash-stack" aria-hidden="true"></i><span>03</span><h3>Ventas</h3><p>Mantén al día tus comprobantes, clientes y ventas para tener una visión comercial completa.</p></article>
+            <article><i class="bi bi-graph-up-arrow" aria-hidden="true"></i><span>04</span><h3>Reportes</h3><p>Convierte los movimientos diarios en reportes listos para revisar, conciliar y presentar.</p></article>
+        </div>
+    </div>
+</section>
+
+<section class="fralsecont-public-workflow" aria-labelledby="fralsecont-workflow-title">
+    <div class="fralsecont-public-shell fralsecont-public-workflow__grid">
+        <div><span class="fralsecont-public-eyebrow fralsecont-public-eyebrow--dark">Hecho para tu operación diaria</span><h2 id="fralsecont-workflow-title">Menos búsqueda.<br /><span>Más claridad.</span></h2></div>
+        <div class="fralsecont-workflow-list">
+            <article><span>01</span><div><h3>Registra con contexto</h3><p>Compras, ventas y asientos quedan organizados desde el origen.</p></div></article>
+            <article><span>02</span><div><h3>Consulta en tiempo real</h3><p>Revisa RUC, DNI, comprobantes y tipo de cambio sin salir de tu flujo.</p></div></article>
+            <article><span>03</span><div><h3>Cierra con confianza</h3><p>Obtén reportes contables y archivos PLE cuando los necesitas.</p></div></article>
+        </div>
+    </div>
+</section>
+
+<section class="nubecont-pricing-section" aria-labelledby="nubecont-pricing-title">
+    <div class="nubecont-pricing-container">
+        <header class="nubecont-pricing-header"><span class="nubecont-brand-kicker">Planes FralseCont</span><h2 id="nubecont-pricing-title">Elige cómo quieres crecer.</h2><p>Comienza sin costo y cambia de plan cuando tu operación lo necesite.</p></header>
+        <div class="nubecont-plans-grid">
+            <article class="nubecont-plan-card nubecont-plan-card--free">
+                <header class="nubecont-plan-top"><h3 class="nubecont-plan-name">Prueba</h3></header>
+                <div class="nubecont-plan-price-block"><div class="nubecont-plan-price-row"><span class="nubecont-plan-currency">S/</span><span class="nubecont-plan-price">0</span></div><div class="nubecont-plan-period">por 30 días</div></div>
+                <p class="nubecont-plan-description">Conoce las funciones esenciales de la plataforma.</p>
+                <a class="nubecont-plan-button nubecont-plan-button--free" asp-area="Identity" asp-page="/Account/Register" asp-route-plan="GRATIS">Comenzar gratis</a>
+                <ul class="nubecont-plan-features"><li><i class="bi bi-check2" aria-hidden="true"></i>1 empresa y 1 usuario.</li><li><i class="bi bi-check2" aria-hidden="true"></i>Compras, ventas y asientos base.</li><li><i class="bi bi-check2" aria-hidden="true"></i>Reportes contables base.</li></ul>
+            </article>
+            <article class="nubecont-plan-card nubecont-plan-card--entrepreneur">
+                <header class="nubecont-plan-top"><h3 class="nubecont-plan-name">Emprendedor</h3><span class="nubecont-plan-badge nubecont-plan-badge--soft">Más elegido</span></header>
+                <div class="nubecont-plan-price-block"><div class="nubecont-plan-price-row"><span class="nubecont-plan-currency">S/</span><span class="nubecont-plan-price">39.90</span></div><div class="nubecont-plan-period">PEN / mes</div></div>
+                <p class="nubecont-plan-description">Para contadores que comienzan a gestionar empresas.</p>
+                <a class="nubecont-plan-button nubecont-plan-button--entrepreneur" asp-area="Identity" asp-page="/Account/Register" asp-route-plan="EMPRENDEDOR">Elegir Emprendedor</a>
+                <ul class="nubecont-plan-features"><li><i class="bi bi-check2" aria-hidden="true"></i>Hasta 3 empresas y 2 usuarios.</li><li><i class="bi bi-check2" aria-hidden="true"></i>Operación sin límite de registros.</li><li><i class="bi bi-check2" aria-hidden="true"></i>Reportes y libros electrónicos PLE.</li></ul>
+                <details class="nubecont-plan-details"><summary>Ver todas las funciones</summary><ul class="nubecont-plan-features">@foreach (var benefit in sharedPaidBenefits) { <li><i class="bi bi-check2" aria-hidden="true"></i>@benefit</li> }</ul></details>
+            </article>
+            <article class="nubecont-plan-card nubecont-plan-card--recommended">
+                <header class="nubecont-plan-top"><h3 class="nubecont-plan-name">Contador</h3><span class="nubecont-plan-badge">Recomendado</span></header>
+                <div class="nubecont-plan-price-block"><div class="nubecont-plan-price-row"><span class="nubecont-plan-currency">S/</span><span class="nubecont-plan-price">89.90</span></div><div class="nubecont-plan-period">PEN / mes</div></div>
+                <p class="nubecont-plan-description">Para manejar múltiples empresas con mayor control.</p>
+                <a class="nubecont-plan-button nubecont-plan-button--recommended" asp-area="Identity" asp-page="/Account/Register" asp-route-plan="CONTADOR">Elegir Contador</a>
+                <ul class="nubecont-plan-features"><li><i class="bi bi-check2" aria-hidden="true"></i>Hasta 10 empresas y 3 usuarios.</li><li><i class="bi bi-check2" aria-hidden="true"></i>Validación de comprobantes CPE.</li><li><i class="bi bi-check2" aria-hidden="true"></i>Todo lo incluido en Emprendedor.</li></ul>
+                <details class="nubecont-plan-details"><summary>Ver todas las funciones</summary><ul class="nubecont-plan-features">@foreach (var benefit in sharedPaidBenefits) { <li><i class="bi bi-check2" aria-hidden="true"></i>@benefit</li> }</ul></details>
+            </article>
         </div>
     </div>
 </section>
 
 <section class="nubecont-contact-band" aria-labelledby="nubecont-contact-title">
-    <div class="nubecont-contact-identity">
-        <span class="nubecont-contact-kicker">Informacion institucional</span>
-        <h2 id="nubecont-contact-title">@business.LegalName</h2>
-        <p>RUC @business.Ruc</p>
-    </div>
-
+    <div class="nubecont-contact-identity"><span class="nubecont-contact-kicker">Información institucional</span><h2 id="nubecont-contact-title">@business.LegalName</h2><p>RUC @business.Ruc</p></div>
     <div class="nubecont-contact-grid">
-        <a class="nubecont-contact-item" href="mailto:@business.SupportEmail">
-            <span class="nubecont-contact-icon" aria-hidden="true"><i class="bi bi-envelope"></i></span>
-            <span>
-                <small>Correo</small>
-                <strong>@business.SupportEmail</strong>
-            </span>
-        </a>
-
-        @if (!string.IsNullOrWhiteSpace(whatsappUrl))
-        {
-            <a class="nubecont-contact-item" href="@whatsappUrl" target="_blank" rel="noopener noreferrer">
-                <span class="nubecont-contact-icon" aria-hidden="true"><i class="bi bi-whatsapp"></i></span>
-                <span>
-                    <small>WhatsApp</small>
-                    <strong>@business.WhatsAppDisplay</strong>
-                </span>
-            </a>
-        }
-
-        <div class="nubecont-contact-item">
-            <span class="nubecont-contact-icon" aria-hidden="true"><i class="bi bi-clock"></i></span>
-            <span>
-                <small>Horario de atencion</small>
-                <strong>@business.SupportHours</strong>
-            </span>
-        </div>
+        <a class="nubecont-contact-item" href="mailto:@business.SupportEmail"><span class="nubecont-contact-icon" aria-hidden="true"><i class="bi bi-envelope"></i></span><span><small>Correo</small><strong>@business.SupportEmail</strong></span></a>
+        @if (!string.IsNullOrWhiteSpace(whatsappUrl)) { <a class="nubecont-contact-item" href="@whatsappUrl" target="_blank" rel="noopener noreferrer"><span class="nubecont-contact-icon" aria-hidden="true"><i class="bi bi-whatsapp"></i></span><span><small>WhatsApp</small><strong>@business.WhatsAppDisplay</strong></span></a> }
+        <div class="nubecont-contact-item"><span class="nubecont-contact-icon" aria-hidden="true"><i class="bi bi-clock"></i></span><span><small>Horario de atención</small><strong>@business.SupportHours</strong></span></div>
     </div>
 </section>

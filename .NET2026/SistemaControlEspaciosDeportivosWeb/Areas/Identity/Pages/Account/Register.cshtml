@@ -1,10 +1,13 @@
 @page
 @model SistemaControlEspaciosDeportivosWeb.Areas.Identity.Pages.Account.RegisterModel
 @inject Microsoft.Extensions.Options.IOptions<SistemaControlEspaciosDeportivosWeb.Services.SedeImagenStorageSettings> SedeImagenStorageOptions
+@* Firma: FRANCO LARA - 18/09/2026 | Adapta el registro a una experiencia deportiva que conserva la proporción del banner sin recortes. *@
 @* Firma: FRANCO LARA - 15/07/2026 | Registro publico agrega captcha manual de respaldo cuando Turnstile falla o no queda disponible. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Agrega avisos de verificacion de correo y mantiene visible la regla de seguridad de contrasena en ambos tipos de registro. *@
 @{
     ViewData["Title"] = "Crear cuenta";
+    ViewData["PublicFullWidth"] = true;
+    ViewData["HideDefaultFooter"] = true;
     Layout = "~/Views/Shared/_Layout.cshtml";
     var bannerArchivo = !string.IsNullOrWhiteSpace(Model.BannerLateral?.ImagenUrlMobile)
         ? Model.BannerLateral!.ImagenUrlMobile
@@ -20,8 +23,8 @@
         bannerUrl,
         SedeImagenStorageOptions.Value.PublicBaseUrl,
         SedeImagenStorageOptions.Value.BucketName);
-    var visualTitulo = Model.BannerLateral?.Titulo?.Trim();
-    var visualSubtitulo = Model.BannerLateral?.Subtitulo?.Trim();
+    var visualTitulo = Model.BannerLateral?.Titulo?.Trim() ?? "Tu cancha merece una operación a la altura del juego.";
+    var visualSubtitulo = Model.BannerLateral?.Subtitulo?.Trim() ?? "La Zona Deportiva";
     var visualDescripcion = Model.BannerLateral?.Descripcion?.Trim();
     var visualItems = string.IsNullOrWhiteSpace(visualDescripcion)
         ? Array.Empty<string>()
@@ -40,25 +43,19 @@
     <aside class="auth-visual @(string.IsNullOrWhiteSpace(bannerUrl) ? string.Empty : "auth-visual-has-banner")" style="@(string.IsNullOrWhiteSpace(bannerUrl) ? string.Empty : $"background-image:url('{bannerUrl}');")">
         @if (string.IsNullOrWhiteSpace(bannerUrl))
         {
-        <div class="auth-visual-content">
-            @if (!string.IsNullOrWhiteSpace(visualSubtitulo))
-            {
+            <div class="auth-visual-content">
                 <p class="auth-visual-tag">@visualSubtitulo</p>
-            }
-            @if (!string.IsNullOrWhiteSpace(visualTitulo))
-            {
                 <h2>@visualTitulo</h2>
-            }
-            @if (visualItems.Length > 0)
-            {
-                <ul class="auth-visual-list">
-                    @foreach (var item in visualItems)
-                    {
-                        <li>@item</li>
-                    }
-                </ul>
-            }
-        </div>
+                @if (visualItems.Length > 0)
+                {
+                    <ul class="auth-visual-list">
+                        @foreach (var item in visualItems)
+                        {
+                            <li>@item</li>
+                        }
+                    </ul>
+                }
+            </div>
         }
     </aside>
 

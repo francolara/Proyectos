@@ -3,6 +3,46 @@ html {
   min-height: 100%;
 }
 
+/* Portada pública FralseCont: sistema visual de producto. */
+.app-public-body { background: #f6f8fc; color: #10213e; }
+.app-public-main.container { width: 100%; max-width: none; margin: 0; padding: 0; }
+.app-public-footer { margin-top: 0; background: #09162b; color: #9fb0ca; }
+.app-public-footer-links a { color: #d7e3f4; }
+.fralsecont-public-shell { width: min(calc(100% - 3rem), 76rem); margin: 0 auto; }
+.fralsecont-public-hero { position: relative; overflow: hidden; padding: clamp(4.5rem, 8vw, 7.5rem) 0 clamp(4rem, 7vw, 6.4rem); background: #08172f; color: #fff; }
+.fralsecont-public-hero::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(144, 180, 241, .11) 1px, transparent 1px), linear-gradient(90deg, rgba(144, 180, 241, .11) 1px, transparent 1px); background-size: 62px 62px; mask-image: linear-gradient(90deg, #000 0%, transparent 73%); }
+.fralsecont-public-hero::after { content: ""; position: absolute; top: -28rem; right: -16rem; width: 52rem; height: 52rem; border: 1px solid rgba(64, 188, 255, .3); border-radius: 50%; box-shadow: 0 0 0 5rem rgba(64, 188, 255, .04), 0 0 0 10rem rgba(64, 188, 255, .025); }
+.fralsecont-public-hero__grid { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, .95fr) minmax(25rem, 1.05fr); gap: clamp(2.5rem, 6vw, 6.5rem); align-items: center; }
+.fralsecont-public-hero__copy { max-width: 37rem; }
+.fralsecont-public-eyebrow { display: inline-flex; align-items: center; gap: .48rem; color: #9edffd; font-size: .73rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.fralsecont-public-eyebrow i { color: #39cbff; font-size: .96rem; }
+.fralsecont-public-hero h1 { margin: 1.2rem 0 1.35rem; font-size: clamp(3rem, 5.5vw, 5.4rem); font-weight: 800; letter-spacing: -.07em; line-height: .96; }
+.fralsecont-public-hero h1 span, .fralsecont-public-workflow h2 span { color: #32c5f5; }
+.fralsecont-public-hero p { max-width: 33rem; margin: 0; color: #c3d0e5; font-size: 1.04rem; line-height: 1.7; }
+.fralsecont-public-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 1.25rem; margin-top: 2rem; }
+.fralsecont-public-button { display: inline-flex; align-items: center; justify-content: center; gap: .6rem; min-height: 3.2rem; padding: .85rem 1.1rem; border-radius: .55rem; background: #2bbdf0; color: #03152a; font-size: .88rem; font-weight: 800; text-decoration: none; transition: transform .2s ease, background .2s ease; }
+.fralsecont-public-button:hover { background: #7adfff; color: #03152a; transform: translateY(-3px); }
+.fralsecont-public-text-action { display: inline-flex; align-items: center; gap: .55rem; color: #fff; font-size: .88rem; font-weight: 800; text-decoration: none; }
+.fralsecont-public-text-action:hover { color: #7adfff; }
+.fralsecont-public-trust { display: flex; flex-wrap: wrap; gap: 1rem 1.3rem; margin-top: 2rem; color: #aebed5; font-size: .76rem; font-weight: 700; }
+.fralsecont-public-trust span { display: inline-flex; align-items: center; gap: .3rem; }.fralsecont-public-trust i { color: #4cdb98; font-size: .95rem; }
+.fralsecont-product-preview { position: relative; overflow: hidden; border: 1px solid rgba(157, 205, 255, .22); border-radius: 1.05rem; background: #fff; color: #12223c; box-shadow: 0 2rem 5rem rgba(0, 4, 19, .38); transform: rotate(1.5deg); }
+.fralsecont-product-preview::after { content: ""; position: absolute; inset: 0; border: 1px solid rgba(255,255,255,.28); border-radius: inherit; pointer-events: none; }
+.fralsecont-product-preview__bar { display: flex; align-items: center; justify-content: space-between; min-height: 3.7rem; padding: 0 1.25rem; border-bottom: 1px solid #e2e8f1; background: #fff; }
+.fralsecont-product-preview__brand { font-size: 1rem; font-weight: 900; letter-spacing: -.04em; }.fralsecont-product-preview__brand span { color: #1779ff; }.fralsecont-product-preview__period { padding: .42rem .6rem; border-radius: .4rem; background: #f3f6fb; color: #64748b; font-size: .66rem; font-weight: 700; }
+.fralsecont-product-preview__body { display: grid; grid-template-columns: 3.5rem 1fr; min-height: 23rem; background: #f6f8fc; }.fralsecont-product-preview__body aside { display: grid; align-content: start; gap: .55rem; padding: 1rem .7rem; background: #0d2141; color: #90a8ca; }.fralsecont-product-preview__body aside span { display: grid; width: 2rem; height: 2rem; place-items: center; border-radius: .45rem; font-size: .82rem; }.fralsecont-product-preview__body aside .is-active { background: #2586ff; color: #fff; }
+.fralsecont-product-preview__workspace { padding: 1.45rem; }.fralsecont-product-preview__headline { display: flex; justify-content: space-between; align-items: start; }.fralsecont-product-preview__headline small, .fralsecont-product-preview__metrics small { display: block; color: #71819a; font-size: .64rem; font-weight: 700; }.fralsecont-product-preview__headline strong { display: block; margin-top: .24rem; color: #10213e; font-size: 1.12rem; letter-spacing: -.03em; }.fralsecont-product-preview__headline > span { display: grid; width: 2.05rem; height: 2.05rem; place-items: center; border: 1px solid #e1e8f2; border-radius: .48rem; color: #46709d; font-size: .8rem; }
+.fralsecont-product-preview__metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: .7rem; margin-top: 1.25rem; }.fralsecont-product-preview__metrics > div { padding: .85rem; border: 1px solid #e2eaf4; border-radius: .6rem; background: #fff; }.fralsecont-product-preview__metrics strong { display: block; margin: .45rem 0 .3rem; font-size: 1.05rem; letter-spacing: -.04em; }.fralsecont-product-preview__metrics span { color: #179669; font-size: .62rem; font-weight: 800; }.fralsecont-product-preview__metrics .neutral { color: #6781a3; }
+.fralsecont-product-preview__chart { margin-top: .75rem; padding: .95rem; border: 1px solid #e2eaf4; border-radius: .6rem; background: #fff; }.fralsecont-product-preview__chart-head { display: flex; justify-content: space-between; align-items: center; }.fralsecont-product-preview__chart-head strong { font-size: .73rem; }.fralsecont-product-preview__chart-head span { color: #73829a; font-size: .58rem; }.fralsecont-product-preview__bars { display: flex; align-items: end; height: 6rem; gap: .55rem; margin-top: .8rem; padding-inline: .35rem; border-bottom: 1px solid #e8edf5; }.fralsecont-product-preview__bars i { flex: 1; border-radius: .22rem .22rem 0 0; background: linear-gradient(180deg, #51cdf5, #247bfa); }.fralsecont-product-preview__bars i:nth-child(1) { height: 33%; }.fralsecont-product-preview__bars i:nth-child(2) { height: 61%; }.fralsecont-product-preview__bars i:nth-child(3) { height: 46%; }.fralsecont-product-preview__bars i:nth-child(4) { height: 82%; }.fralsecont-product-preview__bars i:nth-child(5) { height: 67%; }.fralsecont-product-preview__bars i:nth-child(6) { height: 96%; }
+.fralsecont-public-modules { padding: clamp(5rem, 9vw, 8rem) 0; background: #fff; }.fralsecont-section-heading { max-width: 42rem; }.fralsecont-section-heading > span { color: #1b75d1; font-size: .71rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }.fralsecont-section-heading h2, .fralsecont-public-workflow h2 { margin: .85rem 0 1rem; font-size: clamp(2.5rem, 5vw, 4.6rem); font-weight: 800; letter-spacing: -.065em; line-height: .98; }.fralsecont-section-heading p { color: #66758a; line-height: 1.7; }
+.fralsecont-module-list { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: clamp(3rem, 6vw, 5rem); border-top: 1px solid #dbe3ee; border-bottom: 1px solid #dbe3ee; }.fralsecont-module-list article { position: relative; min-height: 16.5rem; padding: 1.5rem; border-right: 1px solid #dbe3ee; transition: background .2s ease; }.fralsecont-module-list article:last-child { border-right: 0; }.fralsecont-module-list article:hover { background: #f2f8ff; }.fralsecont-module-list i { color: #1e7cf5; font-size: 1.45rem; }.fralsecont-module-list span { position: absolute; top: 1.65rem; right: 1.45rem; color: #93a2b5; font-size: .68rem; font-weight: 800; }.fralsecont-module-list h3 { margin: 3.7rem 0 .7rem; font-size: 1.23rem; letter-spacing: -.025em; }.fralsecont-module-list p { margin: 0; color: #66758a; font-size: .88rem; line-height: 1.65; }
+.fralsecont-public-workflow { padding: clamp(5rem, 9vw, 8rem) 0; background: #eaf2ff; }.fralsecont-public-workflow__grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(23rem, 1fr); gap: clamp(3rem, 10vw, 10rem); }.fralsecont-public-eyebrow--dark { color: #39719f; }.fralsecont-public-workflow h2 { color: #0d2141; }.fralsecont-workflow-list { border-top: 1px solid #b9cde6; }.fralsecont-workflow-list article { display: grid; grid-template-columns: 3.2rem 1fr; gap: 1rem; padding: 1.35rem 0; border-bottom: 1px solid #b9cde6; }.fralsecont-workflow-list > article > span { color: #1979e5; font-size: .73rem; font-weight: 900; }.fralsecont-workflow-list h3 { margin: 0 0 .35rem; color: #10213e; font-size: 1.08rem; }.fralsecont-workflow-list p { margin: 0; color: #60728a; font-size: .89rem; line-height: 1.6; }
+.nubecont-pricing-section { margin: 0; border: 0; border-radius: 0; background: #fff; box-shadow: none; }.nubecont-pricing-container { width: min(calc(100% - 3rem), 76rem); padding: clamp(5rem, 9vw, 8rem) 0; }.nubecont-pricing-header { max-width: 39rem; margin: 0 0 3.5rem; text-align: left; }.nubecont-pricing-header h2 { margin: 1rem 0 .8rem; color: #0d2141; font-size: clamp(2.5rem, 5vw, 4.6rem); font-weight: 800; letter-spacing: -.065em; line-height: .98; }.nubecont-pricing-header p { margin: 0; color: #65758b; font-size: 1rem; line-height: 1.7; }.nubecont-brand-kicker { border: 0; border-radius: 0; padding: 0; background: transparent; color: #1b75d1; font-size: .71rem; }
+.nubecont-plans-grid { gap: 1rem; }.nubecont-plan-card { padding: 1.6rem; border: 1px solid #dbe3ee; border-radius: .9rem; background: #fff; box-shadow: none; }.nubecont-plan-card--entrepreneur { border-color: #b8d3f6; background: #f5f9ff; box-shadow: none; }.nubecont-plan-card--recommended { border-color: #187cf3; background: #0b65cf; box-shadow: 0 1.6rem 3.2rem rgba(18, 110, 229, .2); transform: translateY(-.6rem); }.nubecont-plan-card--recommended .nubecont-plan-name, .nubecont-plan-card--recommended .nubecont-plan-price, .nubecont-plan-card--recommended .nubecont-plan-currency, .nubecont-plan-card--recommended .nubecont-plan-description, .nubecont-plan-card--recommended .nubecont-plan-period, .nubecont-plan-card--recommended .nubecont-plan-features, .nubecont-plan-card--recommended .nubecont-plan-details summary { color: #fff; }.nubecont-plan-card--recommended .nubecont-plan-features i { color: #77e2ff; }.nubecont-plan-card--recommended .nubecont-plan-details { border-color: rgba(255,255,255,.25); }.nubecont-plan-name { font-size: 1.4rem; }.nubecont-plan-description { min-height: 4.8rem; color: #60738e; font-size: .89rem; font-weight: 600; }.nubecont-plan-button { border-radius: .5rem; }.nubecont-plan-button--recommended { background: #fff; color: #0757b8; box-shadow: none; }.nubecont-plan-button--recommended:hover { background: #dff7ff; color: #0757b8; }.nubecont-plan-features { gap: .7rem; margin-top: 1.4rem; color: #50647f; font-size: .82rem; font-weight: 650; }.nubecont-plan-feature, .nubecont-plan-features li { display: grid; grid-template-columns: 1rem minmax(0,1fr); gap: .45rem; }.nubecont-plan-features i { color: #2180ec; font-size: 1rem; }.nubecont-plan-details { margin-top: auto; }.nubecont-plan-details summary { color: #0b5cbf; }.nubecont-plan-details[open] .nubecont-plan-features { margin-top: 1rem; }
+.nubecont-contact-band { width: min(calc(100% - 3rem), 76rem); margin: 0 auto clamp(4rem, 8vw, 6rem); border-radius: .9rem; box-shadow: none; }
+@media (max-width: 991.98px) { .fralsecont-public-hero__grid, .fralsecont-public-workflow__grid { grid-template-columns: 1fr; }.fralsecont-product-preview { width: min(100%, 38rem); justify-self: center; }.fralsecont-module-list { grid-template-columns: repeat(2, 1fr); }.fralsecont-module-list article:nth-child(2) { border-right: 0; }.fralsecont-module-list article:nth-child(-n+2) { border-bottom: 1px solid #dbe3ee; }.nubecont-plan-card--recommended { transform: none; } }
+@media (max-width: 575.98px) { .fralsecont-public-shell, .nubecont-pricing-container, .nubecont-contact-band { width: min(calc(100% - 2rem), 76rem); }.fralsecont-public-hero { padding-top: 3.8rem; }.fralsecont-public-hero h1 { font-size: clamp(2.8rem, 14vw, 4rem); }.fralsecont-public-actions { align-items: flex-start; flex-direction: column; gap: 1rem; }.fralsecont-product-preview { transform: none; }.fralsecont-product-preview__workspace { padding: 1rem; }.fralsecont-product-preview__body { min-height: 20rem; }.fralsecont-module-list { grid-template-columns: 1fr; }.fralsecont-module-list article { min-height: 0; border-right: 0; border-bottom: 1px solid #dbe3ee; }.fralsecont-module-list article:nth-child(2) { border-bottom: 1px solid #dbe3ee; }.fralsecont-module-list article:last-child { border-bottom: 0; }.nubecont-pricing-header { margin-bottom: 2.5rem; }.nubecont-plan-card { padding: 1.35rem; }.nubecont-plan-description { min-height: auto; }.nubecont-contact-band { margin-bottom: 3.5rem; } }
+
 /* Permisos de usuario: pestanas, arbol y estados heredados. */
 .permission-workspace {
   padding-bottom: 0;
@@ -7371,4 +7411,55 @@ html[data-theme="dark"] .voucher-header {
     background: #f8fafc !important;
   }
 
+}
+
+/* Sobrescrituras finales de la portada pública FralseCont. */
+.app-public-body { background: #f6f8fc; color: #10213e; }
+.app-public-main.container { width: 100%; max-width: none; margin: 0; padding: 0; }
+.app-public-footer { margin-top: 0; background: #09162b; color: #9fb0ca; }
+.app-public-footer-links a { color: #d7e3f4; }
+.nubecont-pricing-section { margin: 0; border: 0; border-radius: 0; background: #fff; box-shadow: none; }
+.nubecont-pricing-container { width: min(calc(100% - 3rem), 76rem); padding: clamp(5rem, 9vw, 8rem) 0; }
+.nubecont-pricing-header { max-width: 39rem; margin: 0 0 3.5rem; text-align: left; }
+.nubecont-pricing-header h2 { margin: 1rem 0 .8rem; color: #0d2141; font-size: clamp(2.5rem, 5vw, 4.6rem); font-weight: 800; letter-spacing: -.065em; line-height: .98; }
+.nubecont-pricing-header p { margin: 0; color: #65758b; font-size: 1rem; line-height: 1.7; }
+.nubecont-brand-kicker { border: 0; border-radius: 0; padding: 0; background: transparent; color: #1b75d1; font-size: .71rem; }
+.nubecont-plans-grid { gap: 1rem; }
+.nubecont-plan-card { padding: 1.6rem; border: 1px solid #dbe3ee; border-radius: .9rem; background: #fff; box-shadow: none; }
+.nubecont-plan-card--entrepreneur { border-color: #b8d3f6; background: #f5f9ff; box-shadow: none; }
+.nubecont-plan-card--recommended { border-color: #187cf3; background: #0b65cf; box-shadow: 0 1.6rem 3.2rem rgba(18, 110, 229, .2); transform: translateY(-.6rem); }
+.nubecont-plan-card--recommended .nubecont-plan-name, .nubecont-plan-card--recommended .nubecont-plan-price, .nubecont-plan-card--recommended .nubecont-plan-currency, .nubecont-plan-card--recommended .nubecont-plan-description, .nubecont-plan-card--recommended .nubecont-plan-period, .nubecont-plan-card--recommended .nubecont-plan-features, .nubecont-plan-card--recommended .nubecont-plan-details summary { color: #fff; }
+.nubecont-plan-card--recommended .nubecont-plan-features i { color: #77e2ff; }
+.nubecont-plan-card--recommended .nubecont-plan-details { border-color: rgba(255,255,255,.25); }
+.nubecont-plan-name { font-size: 1.4rem; }
+.nubecont-plan-description { min-height: 4.8rem; color: #60738e; font-size: .89rem; font-weight: 600; }
+.nubecont-plan-button { border-radius: .5rem; }
+.nubecont-plan-button--recommended { background: #fff; color: #0757b8; box-shadow: none; }
+.nubecont-plan-button--recommended:hover { background: #dff7ff; color: #0757b8; }
+.nubecont-plan-features { gap: .7rem; margin-top: 1.4rem; color: #50647f; font-size: .82rem; font-weight: 650; }
+.nubecont-plan-feature, .nubecont-plan-features li { display: grid; grid-template-columns: 1rem minmax(0,1fr); gap: .45rem; }
+.nubecont-plan-features i { color: #2180ec; font-size: 1rem; }
+.nubecont-plan-details { margin-top: auto; }
+.nubecont-plan-details summary { color: #0b5cbf; }
+.nubecont-plan-details[open] .nubecont-plan-features { margin-top: 1rem; }
+.nubecont-contact-band { width: min(calc(100% - 3rem), 76rem); margin: 0 auto clamp(4rem, 8vw, 6rem); border-radius: .9rem; box-shadow: none; }
+@media (max-width: 991.98px) { .nubecont-plan-card--recommended { transform: none; } }
+@media (max-width: 575.98px) { .nubecont-pricing-container, .nubecont-contact-band { width: min(calc(100% - 2rem), 76rem); }.nubecont-pricing-header { margin-bottom: 2.5rem; }.nubecont-plan-card { padding: 1.35rem; }.nubecont-plan-description { min-height: auto; }.nubecont-contact-band { margin-bottom: 3.5rem; } }
+
+.app-public-footer-links a,
+.app-public-footer-links a:nth-child(1),
+.app-public-footer-links a:nth-child(2),
+.app-public-footer-links a:nth-child(3) {
+  border-color: rgba(94, 183, 255, .48);
+  background: #143663;
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.app-public-footer-links a:hover,
+.app-public-footer-links a:focus-visible {
+  border-color: #6edcff;
+  background: #1a4b88;
+  color: #ffffff;
+  box-shadow: 0 0 0 .2rem rgba(70, 194, 255, .18);
 }
