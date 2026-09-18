@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -9,6 +9,7 @@ GO
 -- Firma: Codex - 09/04/2026 | Obtiene cabecera de reserva (incluye horario, moneda y politica) y detalle de pagos para crear/editar pagos.
 -- Firma: Codex - 12/04/2026 | Incluye bandera de bloqueo por comprobante activo y referencia del ultimo comprobante principal (ultimo generado por Id) para forzar edicion solo lectura en pagos cuando ya se emitio documento.
 -- Firma: Codex - 12/04/2026 | Usa abreviatura del documento (TiposDocumentoComprobanteSuperMaestro.Abreviatura) en ReferenciaComprobante.
+-- Firma: FRANCO LARA - 17/09/2026 | Incluye trazabilidad de cada pago para su visualizacion durante la edicion.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Pagos_ObtenerPorId]
     @NegocioId INT,
     @Id INT
@@ -117,7 +118,11 @@ BEGIN
             p.FormaPago,
             fp.Nombre AS FormaPagoNombre,
             p.NumeroOperacion,
-            p.Observacion
+            p.Observacion,
+            p.UsuarioCreacion,
+            CAST(p.FechaCreacion AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time' AS DATETIME2) AS FechaRegistro,
+            p.UsuarioActualizacion,
+            CAST(p.FechaActualizacion AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time' AS DATETIME2) AS FechaActualizacion
         FROM dbo.Pagos p
         INNER JOIN dbo.FormasPago fp ON fp.Id = p.FormaPago
         INNER JOIN dbo.Reservas r ON r.Id = p.ReservaId

@@ -272,6 +272,10 @@ public class ReservaFormViewModel
     public string? Comentario { get; set; }
     [StringLength(30, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string? CodigoCupon { get; set; }
+    public string? UsuarioCreacion { get; set; }
+    public DateTime? FechaRegistro { get; set; }
+    public string? UsuarioActualizacion { get; set; }
+    public DateTime? FechaActualizacion { get; set; }
 
     public List<SelectListItem> Espacios { get; set; } = new();
     public List<SelectListItem> Clientes { get; set; } = new();
@@ -356,12 +360,16 @@ public class PagoPrevioItemViewModel
     public string? Observacion { get; set; }
 }
 
-public class ComprobanteFormViewModel
+public class ComprobanteFormViewModel : IRegistroTrazable
 {
     public int Id { get; set; }
     public int NegocioId { get; set; }
     public string NegocioNombre { get; set; } = string.Empty;
     public string RolActual { get; set; } = string.Empty;
+    public string? UsuarioCreacion { get; set; }
+    public DateTime? FechaRegistro { get; set; }
+    public string? UsuarioActualizacion { get; set; }
+    public DateTime? FechaActualizacion { get; set; }
 
     [Required(ErrorMessage = "Este campo es obligatorio.")]
     public int ReservaId { get; set; }
@@ -507,12 +515,16 @@ public class ComprobanteVisualizacionViewModel
     public string? UrlDescargaProveedor { get; set; }
 }
 
-public class ClienteFormViewModel
+public class ClienteFormViewModel : IRegistroTrazable
 {
     public int Id { get; set; }
     public int NegocioId { get; set; }
     public string NegocioNombre { get; set; } = string.Empty;
     public string RolActual { get; set; } = string.Empty;
+    public string? UsuarioCreacion { get; set; }
+    public DateTime? FechaRegistro { get; set; }
+    public string? UsuarioActualizacion { get; set; }
+    public DateTime? FechaActualizacion { get; set; }
 
     [StringLength(200, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string NombresORazonSocial { get; set; } = string.Empty;
@@ -561,12 +573,16 @@ public class ClienteFormViewModel
     public List<SelectListItem> DistritosUbigeo { get; set; } = new();
 }
 
-public class PromocionFormViewModel
+public class PromocionFormViewModel : IRegistroTrazable
 {
     public int Id { get; set; }
     public int NegocioId { get; set; }
     public string NegocioNombre { get; set; } = string.Empty;
     public string RolActual { get; set; } = string.Empty;
+    public string? UsuarioCreacion { get; set; }
+    public DateTime? FechaRegistro { get; set; }
+    public string? UsuarioActualizacion { get; set; }
+    public DateTime? FechaActualizacion { get; set; }
 
     public int? SedeId { get; set; }
     public int? EspacioDeportivoId { get; set; }
@@ -596,12 +612,16 @@ public class PromocionFormViewModel
     public List<SelectListItem> Espacios { get; set; } = new();
 }
 
-public class CuponFormViewModel
+public class CuponFormViewModel : IRegistroTrazable
 {
     public int Id { get; set; }
     public int NegocioId { get; set; }
     public string NegocioNombre { get; set; } = string.Empty;
     public string RolActual { get; set; } = string.Empty;
+    public string? UsuarioCreacion { get; set; }
+    public DateTime? FechaRegistro { get; set; }
+    public string? UsuarioActualizacion { get; set; }
+    public DateTime? FechaActualizacion { get; set; }
     public int? SedeId { get; set; }
     public int? EspacioDeportivoId { get; set; }
 

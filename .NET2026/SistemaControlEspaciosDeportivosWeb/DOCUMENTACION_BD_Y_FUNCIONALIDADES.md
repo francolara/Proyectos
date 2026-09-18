@@ -155,6 +155,8 @@
 - `Sp_Combos_ReservasPorNegocio`
 - `Sp_Reservas_Listar`
 - `Sp_Reservas_ObtenerPorId`
+- Actualizacion 17/09/2026:
+  - `Sp_Reservas_ObtenerPorId` expone el usuario y la fecha de registro, junto con el usuario y la fecha de ultima actualizacion, para la trazabilidad mostrada en el pop-up de reservas. Las fechas se devuelven convertidas a la zona horaria de Peru solo para su presentacion.
 - `Sp_Reservas_Crear`
 - Actualizacion 06/06/2026:
   - `Sp_Reservas_ValidarDisponibilidad`, `Sp_Reservas_Crear`, `Sp_Reservas_Actualizar` y `Sp_Reservas_Mover` ahora validan cruces no solo contra el espacio reservado, sino tambien contra sus espacios relacionados activos (`EspaciosDeportivosCompartidos`).
@@ -1664,3 +1666,16 @@
 - La cancelacion automatica por minutos transcurridos usa UTC de extremo a extremo porque `Reservas.FechaRegistro` se registra con `SYSUTCDATETIME()`.
 - Los procedimientos de reservas, cupones, clientes y espacios que evaluan el dia u horario actual convierten UTC a `SA Pacific Standard Time`.
 - Las fechas y horas reservadas continuan almacenadas como `DATE` y `TIME`; representan la hora local del establecimiento.
+
+
+### Trazabilidad en formularios de edición (17/09/2026)
+- Los procedimientos Sp_Pagos_ObtenerPorId, Sp_Comprobantes_ObtenerPorId, Sp_Clientes_ObtenerPorId, Sp_Promociones_ObtenerPorId y Sp_Cupones_ObtenerPorId devuelven usuario y fecha de creación, además de usuario y fecha de actualización, convertidos a hora de Lima.
+- Los formularios de edición muestran esa información. En Pagos se presenta por cada pago registrado de la reserva.
+
+### Filtros de inactivos de promociones y cupones (17/09/2026)
+- Sp_Promociones_Listar y Sp_Cupones_Listar muestran los registros inactivos sin restringirlos por la vigencia configurada.
+- Sp_Cupones_Listar admite el estado inactivos; la interfaz y el controlador lo envían sin normalizarlo como vigentes.
+
+### Confirmacion automatica por pago desde reservas (17/09/2026)
+- Sp_Reservas_Actualizar confirma automaticamente una reserva pendiente al registrar un pago cuyo acumulado alcance la politica de confirmacion del negocio.
+- Si el acumulado llega al 100%, conserva la transicion a estado Pagada.

@@ -1,4 +1,4 @@
-﻿USE [DbSportCenter]
+﻿
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Comprobantes_ObtenerPorId]    Script Date: 5/05/2026 14:02:10 ******/
 SET ANSI_NULLS ON
@@ -7,6 +7,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 -- Firma: Codex - 09/04/2026 | Ajuste a CREATE OR ALTER y salida de codigo de documento para UI de comprobantes.
 -- Firma: Codex - 11/04/2026 | Incluye datos de referencia/tipo de nota y codigos 07/08 para NC/ND.
+-- Firma: FRANCO LARA - 17/09/2026 | Incluye trazabilidad del comprobante para su visualizacion durante la edicion.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Comprobantes_ObtenerPorId]
     @NegocioId INT,
     @Id INT
@@ -42,7 +43,11 @@ BEGIN
             CASE WHEN ISNULL(e.TipoDocumento,0) = 0 THEN '-' ELSE ISNULL(e.TipoDocumento,0) END AS ClienteTipoDocumento,
             CASE WHEN ISNULL(e.TipoDocumento,0) = 0 THEN '-' ELSE e.NumeroDocumento END AS ClienteNumeroDocumento,
             CASE WHEN M.Codigo = 'PEN' THEN 1 
-                 WHEN M.Codigo = 'USD' THEN 2 END MonedaNubefact
+                 WHEN M.Codigo = 'USD' THEN 2 END MonedaNubefact,
+            c.UsuarioCreacion,
+            CAST(c.FechaRegistro AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time' AS DATETIME2) AS FechaRegistro,
+            c.UsuarioActualizacion,
+            CAST(c.FechaActualizacion AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time' AS DATETIME2) AS FechaActualizacion
             
         FROM dbo.ComprobantesElectronicos c
         inner join NegociosTiposDocumentoComprobante d

@@ -73,6 +73,10 @@ public partial class SportCenterStoredProcedureService
             HoraFin = TimeOnly.FromTimeSpan(dr.GetTimeSpan(7)),
             PorcentajeDescuento = dr.GetDecimal(8),
             Activo = dr.GetBoolean(9),
+            UsuarioCreacion = dr.FieldCount > 10 && !dr.IsDBNull(10) ? dr.GetString(10) : null,
+            FechaRegistro = dr.FieldCount > 11 && !dr.IsDBNull(11) ? dr.GetDateTime(11) : null,
+            UsuarioActualizacion = dr.FieldCount > 12 && !dr.IsDBNull(12) ? dr.GetString(12) : null,
+            FechaActualizacion = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetDateTime(13) : null,
             NegocioId = negocioId
         };
     }

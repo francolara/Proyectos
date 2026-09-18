@@ -26,7 +26,7 @@ public class CuponesController(IModuloPermisoService moduloPermisoService, ISpor
         if (hasta < desde) (desde, hasta) = (hasta, desde);
 
         var estadoFiltro = (estado ?? "vigentes").Trim().ToLowerInvariant();
-        if (estadoFiltro is not ("vigentes" or "activos" or "agotados" or "vencidos" or "todos"))
+        if (estadoFiltro is not ("vigentes" or "activos" or "inactivos" or "agotados" or "vencidos" or "todos"))
             estadoFiltro = "vigentes";
 
         const int tamanoPagina = 20;

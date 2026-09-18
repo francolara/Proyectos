@@ -372,7 +372,11 @@ public class ReservasController(
             estado = (int)vm.Estado,
             total = vm.Total,
             adelanto = vm.Adelanto,
-            comentario = vm.Comentario
+            comentario = vm.Comentario,
+            usuarioCreacion = vm.UsuarioCreacion,
+            fechaRegistro = vm.FechaRegistro?.ToString("dd/MM/yyyy HH:mm", CultureInfo.GetCultureInfo("es-PE")),
+            usuarioActualizacion = vm.UsuarioActualizacion,
+            fechaActualizacion = vm.FechaActualizacion?.ToString("dd/MM/yyyy HH:mm", CultureInfo.GetCultureInfo("es-PE"))
         });
     }
 

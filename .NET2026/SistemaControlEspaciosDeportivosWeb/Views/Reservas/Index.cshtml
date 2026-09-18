@@ -3,6 +3,7 @@
 @inject IBusinessClock BusinessClock
 @* Firma: FRANCO LARA - 01/09/2026 | Presenta los listados de reservas con titulos operativos y directos. *@
 @* Firma: FRANCO LARA - 07/09/2026 | Usa la fecha y hora operativa de Peru en filtros, pagos y disponibilidad del calendario. *@
+@* Firma: FRANCO LARA - 17/09/2026 | Reduce el bloque de promociones y agrega trazabilidad de registro y actualizacion en el pop-up de reservas. *@
 @{
     ViewData["Title"] = "Reservas";
     var ahoraNegocio = BusinessClock.LocalNow;
@@ -793,9 +794,20 @@ else
 
                         @* Firma: Franco Lara - 03/05/2026 | Se agrega bloque de cupon en modal de reserva administrativa. *@
                         <section class="sc-reserva-form-section sc-reserva-form-section-extra">
-                            <div class="sc-reserva-form-section-head"><span class="sc-reserva-form-section-icon"><i class="bi bi-ticket-perforated"></i></span><div><h6>Promociones y observaciones</h6><p>Aplica un cupón y deja notas para el equipo.</p></div></div>
-                            <div id="modalCuponWrap"><div class="form-check mb-2 sc-check-highlight sc-check-highlight-cupon"><input class="form-check-input" type="checkbox" id="modalTieneCupon" /><label class="form-check-label" for="modalTieneCupon">Tengo un cupón</label></div><div id="modalCuponContainer" class="d-none"><div class="input-group input-group-sm"><input type="text" class="form-control" id="modalCodigoCupon" name="CodigoCupon" maxlength="50" placeholder="Ingresa código de cupón" autocomplete="off" /><button type="button" class="btn btn-outline-primary" id="btnValidarCuponModal">Validar</button></div><small id="modalCuponMensaje" class="d-block mt-1 text-muted">Ingresa el cupón y valida para aplicar descuento.</small></div></div>
-                            <div class="mt-3"><label class="form-label">Observaciones</label><textarea class="form-control" id="modalComentario" name="Comentario" rows="3" maxlength="500" placeholder="Indicaciones, requerimientos u observaciones para esta reserva..."></textarea></div>
+                            <div class="sc-reserva-extra-inputs">
+                                <div class="sc-reserva-form-section-head"><span class="sc-reserva-form-section-icon"><i class="bi bi-ticket-perforated"></i></span><div><h6>Promociones y observaciones</h6><p>Aplica un cupón y deja notas para el equipo.</p></div></div>
+                                <div id="modalCuponWrap"><div class="form-check mb-2 sc-check-highlight sc-check-highlight-cupon"><input class="form-check-input" type="checkbox" id="modalTieneCupon" /><label class="form-check-label" for="modalTieneCupon">Tengo un cupón</label></div><div id="modalCuponContainer" class="d-none"><div class="input-group input-group-sm"><input type="text" class="form-control" id="modalCodigoCupon" name="CodigoCupon" maxlength="50" placeholder="Ingresa código de cupón" autocomplete="off" /><button type="button" class="btn btn-outline-primary" id="btnValidarCuponModal">Validar</button></div><small id="modalCuponMensaje" class="d-block mt-1 text-muted">Ingresa el cupón y valida para aplicar descuento.</small></div></div>
+                                <div class="mt-2"><label class="form-label">Observaciones</label><textarea class="form-control sc-reserva-comentario-compacto" id="modalComentario" name="Comentario" rows="1" maxlength="500" placeholder="Indicaciones, requerimientos u observaciones para esta reserva..."></textarea></div>
+                            </div>
+                            <aside class="sc-reserva-auditoria d-none" id="modalAuditoriaReserva" aria-label="Trazabilidad de la reserva">
+                                <div class="sc-reserva-auditoria-title"><i class="bi bi-clock-history"></i><span>Trazabilidad de la reserva</span></div>
+                                <div class="sc-reserva-auditoria-grid">
+                                    <div><span>Usuario de registro</span><strong id="modalUsuarioCreacion">—</strong></div>
+                                    <div><span>Fecha de registro</span><strong id="modalFechaRegistro">—</strong></div>
+                                    <div><span>Usuario de actualización</span><strong id="modalUsuarioActualizacion">—</strong></div>
+                                    <div><span>Fecha de actualización</span><strong id="modalFechaActualizacion">—</strong></div>
+                                </div>
+                            </aside>
                         </section>
                     </div>
                     <div class="sc-reserva-resumen" aria-label="Resumen de pago">
@@ -934,6 +946,11 @@ else
             const modalResumenPagoActualEl = document.getElementById('modalResumenPagoActual');
             const modalResumenTotalPagadoEl = document.getElementById('modalResumenTotalPagado');
             const modalResumenSaldoEl = document.getElementById('modalResumenSaldo');
+            const modalAuditoriaReservaEl = document.getElementById('modalAuditoriaReserva');
+            const modalUsuarioCreacionEl = document.getElementById('modalUsuarioCreacion');
+            const modalFechaRegistroEl = document.getElementById('modalFechaRegistro');
+            const modalUsuarioActualizacionEl = document.getElementById('modalUsuarioActualizacion');
+            const modalFechaActualizacionEl = document.getElementById('modalFechaActualizacion');
             const clienteRapidoModalEl = document.getElementById('clienteRapidoModal');
             const clienteRapidoModal = clienteRapidoModalEl ? new bootstrap.Modal(clienteRapidoModalEl) : null;
             const clienteRapidoFormEl = document.getElementById('clienteRapidoForm');
@@ -1356,6 +1373,17 @@ else
             function setValue(id, value) {
                 const el = document.getElementById(id);
                 el.value = value ?? '';
+            }
+
+            function actualizarAuditoriaReserva(data = null) {
+                const disponible = Boolean(data);
+                if (modalAuditoriaReservaEl) modalAuditoriaReservaEl.classList.toggle('d-none', !disponible);
+                if (!disponible) return;
+
+                if (modalUsuarioCreacionEl) modalUsuarioCreacionEl.textContent = data.usuarioCreacion || 'Sin registro';
+                if (modalFechaRegistroEl) modalFechaRegistroEl.textContent = data.fechaRegistro || 'Sin registro';
+                if (modalUsuarioActualizacionEl) modalUsuarioActualizacionEl.textContent = data.usuarioActualizacion || 'Sin actualizaciones';
+                if (modalFechaActualizacionEl) modalFechaActualizacionEl.textContent = data.fechaActualizacion || 'Sin actualizaciones';
             }
 
             function mostrarResultadosCliente(visible) {
@@ -1976,6 +2004,7 @@ else
                 reservaModalTitulo.textContent = 'Nueva reserva';
                 if (modalEstadoWrap) modalEstadoWrap.classList.add('d-none');
                 if (modalCuponWrapEl) modalCuponWrapEl.classList.remove('d-none');
+                actualizarAuditoriaReserva();
                 setValue('modalReservaId', 0);
                 const fechaInicial = fechaIso && !esFechaPasadaIso(fechaIso) ? fechaIso : hoyIso;
                 const rangoHorario = normalizeReservaRange(horaInicio || '18:00', horaFin || '19:00');
@@ -2025,6 +2054,7 @@ else
                         reservaModalTitulo.textContent = `Editar reserva #${data.id}`;
                         if (modalEstadoWrap) modalEstadoWrap.classList.remove('d-none');
                         if (modalCuponWrapEl) modalCuponWrapEl.classList.add('d-none');
+                        actualizarAuditoriaReserva(data);
                         setValue('modalReservaId', data.id);
                         setValue('modalEspacioDeportivoId', data.espacioDeportivoId);
                         setValue('modalClienteId', data.clienteId);
@@ -3164,8 +3194,6 @@ else
         })();
     </script>
 }
-
-
 
 
 

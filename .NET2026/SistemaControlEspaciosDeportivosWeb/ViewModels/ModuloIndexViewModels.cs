@@ -397,7 +397,7 @@ public class PagoReservaEditViewModel : ModuloBaseViewModel
     public List<SelectListItem> FormasPago { get; set; } = new();
 }
 
-public class PagoReservaDetalleItemViewModel
+public class PagoReservaDetalleItemViewModel : IRegistroTrazable
 {
     public int PagoId { get; set; }
     public DateTime FechaPago { get; set; }
@@ -406,6 +406,10 @@ public class PagoReservaDetalleItemViewModel
     public string FormaPagoNombre { get; set; } = string.Empty;
     public string? NumeroOperacion { get; set; }
     public string? Observacion { get; set; }
+    public string? UsuarioCreacion { get; set; }
+    public DateTime? FechaRegistro { get; set; }
+    public string? UsuarioActualizacion { get; set; }
+    public DateTime? FechaActualizacion { get; set; }
     public bool Eliminar { get; set; }
 }
 

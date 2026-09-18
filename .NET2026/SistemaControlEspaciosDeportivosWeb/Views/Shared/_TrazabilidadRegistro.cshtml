@@ -1,0 +1,12 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.IRegistroTrazable
+@* Firma: FRANCO LARA - 17/09/2026 | Componente reutilizable de trazabilidad para registros en edicion. *@
+
+<aside class="sc-trazabilidad-registro" aria-label="Trazabilidad del registro">
+    <div class="sc-trazabilidad-registro-title"><i class="bi bi-clock-history"></i><span>Trazabilidad del registro</span></div>
+    <div class="sc-trazabilidad-registro-grid">
+        <div><span>Usuario de registro</span><strong>@(Model.UsuarioCreacion ?? "Sin registro")</strong></div>
+        <div><span>Fecha de registro</span><strong>@(Model.FechaRegistro?.ToString("dd/MM/yyyy HH:mm") ?? "Sin registro")</strong></div>
+        <div><span>Usuario de actualización</span><strong>@(Model.UsuarioActualizacion ?? "Sin actualizaciones")</strong></div>
+        <div><span>Fecha de actualización</span><strong>@(Model.FechaActualizacion?.ToString("dd/MM/yyyy HH:mm") ?? "Sin actualizaciones")</strong></div>
+    </div>
+</aside>

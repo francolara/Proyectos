@@ -1,4 +1,4 @@
-﻿
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -7,6 +7,7 @@ GO
 -- Firma: FRANCO LARA
 -- Create date: 03/05/2026
 -- Firma: FRANCO LARA - 07/09/2026 | Calcula la vigencia con la fecha operativa de Peru.
+-- Firma: FRANCO LARA - 17/09/2026 | Incorpora inactivos y evita que su vigencia los oculte del filtro.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Cupones_Listar]
     @NegocioId INT,
     @SedeId INT = NULL,
@@ -52,12 +53,18 @@ BEGIN
             LEFT JOIN dbo.EspaciosDeportivos e ON e.Id = c.EspacioDeportivoId
             WHERE c.NegocioId = @NegocioId
               AND (@SedeId IS NULL OR c.SedeId = @SedeId OR (c.SedeId IS NULL AND c.EspacioDeportivoId IS NULL))
-              AND (@FechaDesde IS NULL OR c.FechaFin >= @FechaDesde)
-              AND (@FechaHasta IS NULL OR c.FechaInicio <= @FechaHasta)
+              AND (
+                    @Estado = N'inactivos'
+                    OR (
+                        (@FechaDesde IS NULL OR c.FechaFin >= @FechaDesde)
+                        AND (@FechaHasta IS NULL OR c.FechaInicio <= @FechaHasta)
+                    )
+                  )
               AND (
                     @Estado = N'todos'
                     OR (@Estado = N'vigentes' AND c.Activo = 1 AND c.FechaInicio <= @Hoy AND c.FechaFin >= @Hoy AND c.CantidadUsosActuales < c.CantidadMaxUsos)
                     OR (@Estado = N'activos' AND c.Activo = 1)
+                    OR (@Estado = N'inactivos' AND c.Activo = 0)
                     OR (@Estado = N'agotados' AND c.CantidadUsosActuales >= c.CantidadMaxUsos)
                     OR (@Estado = N'vencidos' AND c.FechaFin < @Hoy)
                   )
@@ -85,17 +92,37 @@ BEGIN
             LEFT JOIN dbo.EspaciosDeportivos e ON e.Id = c.EspacioDeportivoId
             WHERE c.NegocioId = @NegocioId
               AND (@SedeId IS NULL OR c.SedeId = @SedeId OR (c.SedeId IS NULL AND c.EspacioDeportivoId IS NULL))
-              AND (@FechaDesde IS NULL OR c.FechaFin >= @FechaDesde)
-              AND (@FechaHasta IS NULL OR c.FechaInicio <= @FechaHasta)
+              AND (
+                    @Estado = N'inactivos'
+                    OR (
+                        (@FechaDesde IS NULL OR c.FechaFin >= @FechaDesde)
+                        AND (@FechaHasta IS NULL OR c.FechaInicio <= @FechaHasta)
+                    )
+                  )
               AND (
                     @Estado = N'todos'
                     OR (@Estado = N'vigentes' AND c.Activo = 1 AND c.FechaInicio <= @Hoy AND c.FechaFin >= @Hoy AND c.CantidadUsosActuales < c.CantidadMaxUsos)
                     OR (@Estado = N'activos' AND c.Activo = 1)
+                    OR (@Estado = N'inactivos' AND c.Activo = 0)
                     OR (@Estado = N'agotados' AND c.CantidadUsosActuales >= c.CantidadMaxUsos)
                     OR (@Estado = N'vencidos' AND c.FechaFin < @Hoy)
                   )
         )
-        SELECT *
+        SELECT
+            Id,
+            CodigoCupon,
+            Nombre,
+            TipoDescuento,
+            ValorDescuento,
+            CantidadMaxUsos,
+            CantidadUsosActuales,
+            CantidadUsosDisponibles,
+            FechaInicio,
+            FechaFin,
+            Sede,
+            Espacio,
+            Activo,
+            VigenteHoy
         FROM F
         ORDER BY FechaInicio DESC, Id DESC
         OFFSET @Offset ROWS FETCH NEXT @TamanoPagina ROWS ONLY;

@@ -1,4 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ClienteFormViewModel
+@* Firma: FRANCO LARA - 17/09/2026 | Agrega trazabilidad del cliente durante la edicion. *@
 @{
     ViewData["Title"] = "Editar cliente";
 }
@@ -105,6 +106,8 @@
                 </div>
             </div>
         </section>
+
+        <partial name="_TrazabilidadRegistro" model="Model" />
 
         <div class="sc-form-actions">
             <button type="submit" class="btn btn-primary btn-grabar">

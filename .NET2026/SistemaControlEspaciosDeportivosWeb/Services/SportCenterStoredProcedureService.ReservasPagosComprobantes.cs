@@ -111,6 +111,10 @@ public partial class SportCenterStoredProcedureService
             Estado = (EstadoReserva)dr.GetInt32(8),
             Comentario = dr.FieldCount > 9 && !dr.IsDBNull(9) ? dr.GetString(9) : null,
             CodigoCupon = dr.FieldCount > 10 && !dr.IsDBNull(10) ? dr.GetString(10) : null,
+            UsuarioCreacion = dr.FieldCount > 11 && !dr.IsDBNull(11) ? dr.GetString(11) : null,
+            FechaRegistro = dr.FieldCount > 12 && !dr.IsDBNull(12) ? dr.GetDateTime(12) : null,
+            UsuarioActualizacion = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetString(13) : null,
+            FechaActualizacion = dr.FieldCount > 14 && !dr.IsDBNull(14) ? dr.GetDateTime(14) : null,
             NegocioId = negocioId
         };
     }
@@ -555,7 +559,11 @@ public partial class SportCenterStoredProcedureService
                     FormaPagoId = dr.GetInt32(3),
                     FormaPagoNombre = dr.IsDBNull(4) ? string.Empty : dr.GetString(4),
                     NumeroOperacion = dr.IsDBNull(5) ? null : dr.GetString(5),
-                    Observacion = dr.IsDBNull(6) ? null : dr.GetString(6)
+                    Observacion = dr.IsDBNull(6) ? null : dr.GetString(6),
+                    UsuarioCreacion = dr.FieldCount > 7 && !dr.IsDBNull(7) ? dr.GetString(7) : null,
+                    FechaRegistro = dr.FieldCount > 8 && !dr.IsDBNull(8) ? dr.GetDateTime(8) : null,
+                    UsuarioActualizacion = dr.FieldCount > 9 && !dr.IsDBNull(9) ? dr.GetString(9) : null,
+                    FechaActualizacion = dr.FieldCount > 10 && !dr.IsDBNull(10) ? dr.GetDateTime(10) : null
                 });
             }
         }
@@ -853,6 +861,10 @@ public partial class SportCenterStoredProcedureService
             ClienteTipoDocumento = dr.FieldCount > 17 && !dr.IsDBNull(17) ? dr.GetString(17) : null,
             ClienteNumeroDocumento = dr.FieldCount > 18 && !dr.IsDBNull(18) ? dr.GetString(18) : null,
             MonedaNubefact = dr.FieldCount > 19 && !dr.IsDBNull(19) ? dr.GetInt32(19) : 1,
+            UsuarioCreacion = dr.FieldCount > 20 && !dr.IsDBNull(20) ? dr.GetString(20) : null,
+            FechaRegistro = dr.FieldCount > 21 && !dr.IsDBNull(21) ? dr.GetDateTime(21) : null,
+            UsuarioActualizacion = dr.FieldCount > 22 && !dr.IsDBNull(22) ? dr.GetString(22) : null,
+            FechaActualizacion = dr.FieldCount > 23 && !dr.IsDBNull(23) ? dr.GetDateTime(23) : null,
             NegocioId = negocioId
         };
     }

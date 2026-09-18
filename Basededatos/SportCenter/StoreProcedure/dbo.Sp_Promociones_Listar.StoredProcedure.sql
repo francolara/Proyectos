@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -7,6 +7,7 @@ GO
 
 -- SOURCE: 32_Usuarios_Sede_Restriccion_Filtros.sql (linea 503)
 -- Firma: Codex - 13/04/2026 | Agrega filtro por rango de fechas y estado (activos/inactivos/todos) con paginacion backend 20x20 y total de registros para el listado de promociones.
+-- Firma: FRANCO LARA - 17/09/2026 | Los inactivos se listan por estado sin ocultarlos por su rango de vigencia.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Promociones_Listar]
     @NegocioId INT,
     @SedeId INT = NULL,
@@ -52,8 +53,13 @@ BEGIN
             WHERE p.NegocioId = @NegocioId
               AND (@SedeId IS NULL OR p.SedeId = @SedeId OR (p.SedeId IS NULL AND p.EspacioDeportivoId IS NULL))
               AND (@SoloActivos IS NULL OR p.Activo = @SoloActivos)
-              AND (@FechaDesde IS NULL OR p.FechaFin >= @FechaDesde)
-              AND (@FechaHasta IS NULL OR p.FechaInicio <= @FechaHasta)
+              AND (
+                    @SoloActivos = 0
+                    OR (
+                        (@FechaDesde IS NULL OR p.FechaFin >= @FechaDesde)
+                        AND (@FechaHasta IS NULL OR p.FechaInicio <= @FechaHasta)
+                    )
+                  )
         )
         SELECT @TotalRegistros = COUNT(1)
         FROM PromocionesFiltradas;
@@ -77,8 +83,13 @@ BEGIN
             WHERE p.NegocioId = @NegocioId
               AND (@SedeId IS NULL OR p.SedeId = @SedeId OR (p.SedeId IS NULL AND p.EspacioDeportivoId IS NULL))
               AND (@SoloActivos IS NULL OR p.Activo = @SoloActivos)
-              AND (@FechaDesde IS NULL OR p.FechaFin >= @FechaDesde)
-              AND (@FechaHasta IS NULL OR p.FechaInicio <= @FechaHasta)
+              AND (
+                    @SoloActivos = 0
+                    OR (
+                        (@FechaDesde IS NULL OR p.FechaFin >= @FechaDesde)
+                        AND (@FechaHasta IS NULL OR p.FechaInicio <= @FechaHasta)
+                    )
+                  )
         )
         SELECT
             Id,

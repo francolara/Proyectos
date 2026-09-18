@@ -1,4 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PagoReservaEditViewModel
+@* Firma: FRANCO LARA - 17/09/2026 | Agrega trazabilidad individual de pagos durante la edicion. *@
 @{
     ViewData["Title"] = $"Editar pagos reserva {Model.ReservaCodigo}";
     var totalPagos = Model.Pagos?.Count ?? 0;
@@ -131,6 +132,11 @@
                                     {
                                         <input type="hidden" asp-for="Pagos[i].Eliminar" value="false" />
                                     }
+                                </tr>
+                                <tr class="sc-pago-trazabilidad-row">
+                                    <td colspan="@(soloLecturaComprobante ? 6 : 7)">
+                                        <partial name="_TrazabilidadRegistro" model="Model.Pagos[i]" />
+                                    </td>
                                 </tr>
                             }
                         </tbody>

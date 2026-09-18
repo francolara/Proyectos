@@ -1,4 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.CuponesIndexViewModel
+@* Firma: FRANCO LARA - 17/09/2026 | Incorpora filtro de cupones inactivos. *@
 @* Firma: FRANCO LARA - 01/09/2026 | Presenta el listado con un titulo operativo y directo. *@
 @{
     ViewData["Title"] = "Cupones";
@@ -47,6 +48,7 @@
                     <select class="form-select" name="estado">
                         <option value="vigentes" selected="@(Model.EstadoFiltro == "vigentes")">Vigentes</option>
                         <option value="activos" selected="@(Model.EstadoFiltro == "activos")">Activos</option>
+                        <option value="inactivos" selected="@(Model.EstadoFiltro == "inactivos")">Inactivos</option>
                         <option value="agotados" selected="@(Model.EstadoFiltro == "agotados")">Agotados</option>
                         <option value="vencidos" selected="@(Model.EstadoFiltro == "vencidos")">Vencidos</option>
                         <option value="todos" selected="@(Model.EstadoFiltro == "todos")">Todos</option>

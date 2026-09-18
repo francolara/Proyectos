@@ -1,0 +1,12 @@
+[Unit]
+Description=Ejecucion cada 15 minutos de cancelacion automatica - Zona Deportiva
+
+[Timer]
+OnBootSec=5min
+OnUnitInactiveSec=10min
+AccuracySec=1min
+Persistent=true
+Unit=zona-deportiva-autocancel.service
+
+[Install]
+WantedBy=timers.target

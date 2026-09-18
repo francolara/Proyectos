@@ -152,6 +152,10 @@ public partial class SportCenterStoredProcedureService
             FechaInicio = DateOnly.FromDateTime(dr.GetDateTime(8)),
             FechaFin = DateOnly.FromDateTime(dr.GetDateTime(9)),
             Activo = dr.GetBoolean(10),
+            UsuarioCreacion = dr.FieldCount > 11 && !dr.IsDBNull(11) ? dr.GetString(11) : null,
+            FechaRegistro = dr.FieldCount > 12 && !dr.IsDBNull(12) ? dr.GetDateTime(12) : null,
+            UsuarioActualizacion = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetString(13) : null,
+            FechaActualizacion = dr.FieldCount > 14 && !dr.IsDBNull(14) ? dr.GetDateTime(14) : null,
             NegocioId = negocioId
         };
     }

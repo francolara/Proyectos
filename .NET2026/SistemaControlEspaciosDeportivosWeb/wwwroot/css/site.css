@@ -5812,23 +5812,104 @@ html[data-theme="dark"] .auth-manual-captcha-code {
 }
 
 /* Firma: Franco Lara - 21/05/2026 | Se agrega realce visual con sombra para checks de cupon y registrar pago en modal de reservas. */
+/* Firma: FRANCO LARA - 17/09/2026 | Mejora el contraste y el tamano de los controles de cupon y pago, incluidos sus estados en modo oscuro. */
 .sc-check-highlight {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.28rem 0.52rem;
-  border-radius: 0.55rem;
-  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+  gap: 0.55rem;
+  min-height: 2rem;
+  padding: 0.36rem 0.66rem;
+  border: 1px solid #b9c8db;
+  border-radius: 0.65rem;
+  background: #f8fafc;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.sc-check-highlight .form-check-input {
+  width: 1.15rem;
+  height: 1.15rem;
+  min-width: 1.15rem;
+  margin: 0;
+  border: 2px solid #64748b;
+  border-radius: 0.32rem;
+  background-color: #fff;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.sc-check-highlight .form-check-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 0.22rem rgba(37, 99, 235, 0.22);
+}
+
+.sc-check-highlight .form-check-label {
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .sc-check-highlight-cupon {
-  background: rgba(212, 165, 116, 0.12);
-  box-shadow: 0 0 0 1px rgba(176, 128, 58, 0.3), 0 0 10px rgba(212, 165, 116, 0.42);
+  border-color: #d6aa60;
+  background: #fffaf0;
 }
 
 .sc-check-highlight-pago {
-  background: rgba(34, 197, 94, 0.12);
-  box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.3), 0 0 10px rgba(34, 197, 94, 0.45);
+  border-color: #75c69c;
+  background: #f1fcf5;
+}
+
+.sc-check-highlight-cupon:has(.form-check-input:checked) {
+  border-color: #b7791f;
+  background: #fff1cc;
+  box-shadow: 0 0 0 2px rgba(217, 154, 46, 0.18);
+}
+
+.sc-check-highlight-pago:has(.form-check-input:checked) {
+  border-color: #16834a;
+  background: #dcf7e7;
+  box-shadow: 0 0 0 2px rgba(22, 131, 74, 0.18);
+}
+
+.sc-check-highlight-cupon .form-check-input:checked {
+  border-color: #b7791f;
+  background-color: #c88719;
+}
+
+.sc-check-highlight-pago .form-check-input:checked {
+  border-color: #16834a;
+  background-color: #16834a;
+}
+
+html[data-theme="dark"] .sc-check-highlight,
+body.dark-mode .sc-check-highlight {
+  border-color: #496481;
+  background: #172a42;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.32);
+}
+
+html[data-theme="dark"] .sc-check-highlight .form-check-input,
+body.dark-mode .sc-check-highlight .form-check-input {
+  border-color: #93a9c3;
+  background-color: #0c1a2d;
+}
+
+html[data-theme="dark"] .sc-check-highlight .form-check-label,
+body.dark-mode .sc-check-highlight .form-check-label {
+  color: #e6f0ff;
+}
+
+html[data-theme="dark"] .sc-check-highlight-cupon:has(.form-check-input:checked),
+body.dark-mode .sc-check-highlight-cupon:has(.form-check-input:checked) {
+  border-color: #e4ae4a;
+  background: #4b3512;
+}
+
+html[data-theme="dark"] .sc-check-highlight-pago:has(.form-check-input:checked),
+body.dark-mode .sc-check-highlight-pago:has(.form-check-input:checked) {
+  border-color: #4fd18a;
+  background: #123d2b;
 }
 
 /* Firma: FRANCO LARA - 16/07/2026 | El modal oficial de reservas se reagrupa por secciones y su resumen diferencia pagos anteriores, pago actual, total pagado y saldo real. */
@@ -5889,6 +5970,157 @@ html[data-theme="dark"] .auth-manual-captcha-code {
   color: #334155;
   font-size: 0.78rem;
   font-weight: 700;
+}
+
+.sc-reserva-form-section-extra {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sc-reserva-extra-inputs {
+  flex: 0 0 auto;
+}
+
+.sc-reserva-extra-inputs .sc-reserva-form-section-head {
+  margin-bottom: 0.55rem;
+}
+
+.sc-reserva-comentario-compacto {
+  min-height: 2.45rem;
+  max-height: 2.45rem;
+  resize: none;
+}
+
+.sc-reserva-auditoria {
+  margin-top: auto;
+  padding: 0.72rem 0.8rem;
+  border: 1px solid #cfe1fa;
+  border-radius: 0.7rem;
+  background: #f3f8ff;
+}
+
+.sc-reserva-auditoria-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.55rem;
+  color: #1857a6;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.sc-reserva-auditoria-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 0.75rem;
+}
+
+.sc-reserva-auditoria-grid div {
+  min-width: 0;
+}
+
+.sc-reserva-auditoria-grid span,
+.sc-reserva-auditoria-grid strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-reserva-auditoria-grid span {
+  color: #64748b;
+  font-size: 0.67rem;
+  font-weight: 700;
+}
+
+.sc-reserva-auditoria-grid strong {
+  color: #1e3a5f;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+/* Firma: FRANCO LARA - 17/09/2026 | Tarjeta reutilizable de trazabilidad para formularios de edicion. */
+.sc-trazabilidad-registro {
+  margin: 1rem 0;
+  padding: 0.78rem 0.9rem;
+  border: 1px solid #cfe1fa;
+  border-radius: 0.72rem;
+  background: #f3f8ff;
+}
+
+.sc-trazabilidad-registro-title {
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+  margin-bottom: 0.58rem;
+  color: #1857a6;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.sc-trazabilidad-registro-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem 0.8rem;
+}
+
+.sc-trazabilidad-registro-grid div {
+  min-width: 0;
+}
+
+.sc-trazabilidad-registro-grid span,
+.sc-trazabilidad-registro-grid strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-trazabilidad-registro-grid span {
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.sc-trazabilidad-registro-grid strong {
+  color: #1e3a5f;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.sc-pago-trazabilidad-row > td {
+  padding: 0 0.45rem 0.5rem;
+  background: #fbfdff;
+}
+
+.sc-pago-trazabilidad-row .sc-trazabilidad-registro {
+  margin: 0.35rem 0 0;
+  padding: 0.62rem 0.72rem;
+}
+
+@media (max-width: 767.98px) {
+  .sc-trazabilidad-registro-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+html[data-theme="dark"] .sc-trazabilidad-registro,
+html[data-theme="dark"] .sc-pago-trazabilidad-row > td {
+  border-color: #35577f;
+  background: #10233a;
+}
+
+html[data-theme="dark"] .sc-trazabilidad-registro-title {
+  color: #93c5fd;
+}
+
+html[data-theme="dark"] .sc-trazabilidad-registro-grid span {
+  color: #aebfd4;
+}
+
+html[data-theme="dark"] .sc-trazabilidad-registro-grid strong {
+  color: #e0edff;
 }
 
 .sc-reserva-policy {

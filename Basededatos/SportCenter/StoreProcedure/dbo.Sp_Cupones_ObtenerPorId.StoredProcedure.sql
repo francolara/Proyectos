@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -6,6 +6,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 -- Firma: FRANCO LARA
 -- Create date: 03/05/2026
+-- Firma: FRANCO LARA - 17/09/2026 | Incluye trazabilidad del cupon para su visualizacion durante la edicion.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Cupones_ObtenerPorId]
     @NegocioId INT,
     @Id INT
@@ -24,7 +25,11 @@ BEGIN
             c.CantidadMaxUsos,
             c.FechaInicio,
             c.FechaFin,
-            c.Activo
+            c.Activo,
+            c.UsuarioCreacion,
+            CAST(c.FechaRegistro AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time' AS DATETIME2) AS FechaRegistro,
+            c.UsuarioActualizacion,
+            CAST(c.FechaActualizacion AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time' AS DATETIME2) AS FechaActualizacion
         FROM dbo.Cupones c
         WHERE c.NegocioId = @NegocioId
           AND c.Id = @Id;

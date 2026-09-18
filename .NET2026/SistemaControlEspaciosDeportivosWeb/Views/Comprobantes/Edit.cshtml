@@ -1,4 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteFormViewModel
+@* Firma: FRANCO LARA - 17/09/2026 | Agrega trazabilidad del comprobante durante la edicion. *@
 @{
     ViewData["Title"] = "Editar comprobante";
     var puedeEditarCliente = Model.PuedeEditarDatosCliente;
@@ -174,6 +175,8 @@
                 </div>
             </div>
         </section>
+
+        <partial name="_TrazabilidadRegistro" model="Model" />
 
         @if (puedeEditarCliente)
         {

@@ -1,4 +1,4 @@
-
+﻿
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Reservas_Actualizar]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -14,6 +14,7 @@ GO
 -- Firma: FRANCO LARA - 08/06/2026 | Distingue bloqueo directo y espacios compuestos para evitar sobrebloqueos por propagacion en cadena.
 -- Firma: FRANCO LARA - 16/07/2026 | Elimina el limite de dos pagos y valida que la reserva tenga saldo y que el nuevo pago no lo exceda.
 -- Firma: FRANCO LARA - 07/09/2026 | Evalua la fecha de pago con la fecha operativa de Peru, independiente del hosting.
+-- Firma: FRANCO LARA - 17/09/2026 | Confirma automaticamente la reserva al registrar un pago que alcance la politica del negocio.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Reservas_Actualizar]
     @Id INT,
     @NegocioId INT,
@@ -110,6 +111,24 @@ BEGIN
         SET @EstadoFinal = @Estado;
         IF @AdelantoFinal >= @Total AND @Estado NOT IN (5, 6)
             SET @EstadoFinal = 4;
+
+        IF @RegistrarPago = 1
+           AND @EstadoFinal NOT IN (4, 5, 6)
+        BEGIN
+            IF @PoliticaConfirmacionPago = 0
+            BEGIN
+                SET @EstadoFinal = 2;
+            END
+            ELSE IF @PoliticaConfirmacionPago = 1
+            BEGIN
+                IF @PorcentajeAdelantoMinimo IS NULL OR @PorcentajeAdelantoMinimo <= 0 OR @PorcentajeAdelantoMinimo > 100
+                    RAISERROR('La configuracion del porcentaje minimo de adelanto no es valida para confirmar.', 16, 1);
+
+                SET @PagoMinimoRequerido = ROUND(@Total * (@PorcentajeAdelantoMinimo / 100.0), 2);
+                IF @AdelantoFinal >= @PagoMinimoRequerido
+                    SET @EstadoFinal = 2;
+            END
+        END
 
         IF @EstadoFinal = 5
         BEGIN

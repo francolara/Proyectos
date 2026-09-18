@@ -1,4 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.CuponFormViewModel
+@* Firma: FRANCO LARA - 17/09/2026 | Agrega trazabilidad del cupon durante la edicion. *@
 @{
     ViewData["Title"] = "Editar cupon";
 }
@@ -34,6 +35,7 @@
                 </div>
             </div>
         </section>
+        <partial name="_TrazabilidadRegistro" model="Model" />
         <div class="sc-form-actions">
             <button type="submit" class="btn btn-primary btn-grabar"><i class="bi bi-check2-circle me-1"></i> Guardar cambios</button>
             <a class="btn btn-outline-secondary btn-cancelar" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>

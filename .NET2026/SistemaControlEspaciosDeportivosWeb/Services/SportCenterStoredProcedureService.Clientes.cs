@@ -91,6 +91,10 @@ public partial class SportCenterStoredProcedureService
             DireccionFiscal = dr.IsDBNull(9) ? null : dr.GetString(9),
             CodigoUbigeo = dr.IsDBNull(10) ? null : dr.GetString(10),
             Activo = dr.GetBoolean(11),
+            UsuarioCreacion = dr.FieldCount > 12 && !dr.IsDBNull(12) ? dr.GetString(12) : null,
+            FechaRegistro = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetDateTime(13) : null,
+            UsuarioActualizacion = dr.FieldCount > 14 && !dr.IsDBNull(14) ? dr.GetString(14) : null,
+            FechaActualizacion = dr.FieldCount > 15 && !dr.IsDBNull(15) ? dr.GetDateTime(15) : null,
             NegocioId = negocioId
         };
     }
