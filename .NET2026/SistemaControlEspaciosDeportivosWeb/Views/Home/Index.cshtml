@@ -1,4 +1,4 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.HomeIndexViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.HomeIndexViewModel
 @inject Microsoft.Extensions.Options.IOptions<SistemaControlEspaciosDeportivosWeb.Services.SedeImagenStorageSettings> SedeImagenStorageOptions
 @using System.Linq
 @using System.Globalization
@@ -6,6 +6,7 @@
 @* Firma: FRANCO LARA - 20/07/2026 | Agrega planes comerciales publicos, limites visibles y accesos de registro para complejos deportivos. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Renombra los planes, muestra sus beneficios, ubica preguntas frecuentes debajo de la tarjeta Esencial y reorganiza el pie público. *@
 @* Firma: FRANCO LARA - 02/09/2026 | Actualiza el mensaje prellenado de la burbuja de WhatsApp para solicitar información de afiliación y gestión de reservas. *@
+@* Firma: FRANCO LARA - 18/09/2026 | Moderniza la búsqueda, resultados, tarjetas, planes, cierre comercial y pie público con composición adaptable a cada monitor, sin alterar cabecera, banners ni presentación del logo. *@
 
 @{
     ViewData["Title"] = "Portal deportivo";
@@ -168,7 +169,7 @@
     </div>
 </section>
 
-<div class="container py-4">
+<div class="container py-4 home-public-content">
 
 @if (!string.IsNullOrWhiteSpace(Model.MensajeSolicitud))
 {
@@ -344,7 +345,7 @@
     </div>
 </section>
 
-<section id="resultados" class="mb-4">
+<section id="resultados" class="mb-5 home-results-section">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <h2 class="home-section-title mb-0"><i class="bi bi-grid-3x3-gap-fill me-1"></i>Espacios disponibles</h2>
         <span class="badge text-bg-primary">@Model.TotalResultados resultado(s)</span>
@@ -358,14 +359,14 @@
     }
     else
     {
-        <div class="row g-3">
+        <div class="home-results-grid">
             @foreach (var item in Model.Disponibles)
             {
                 var carouselId = $"sedeFotos-{item.EspacioDeportivoId}";
                 var detalleId = $"detalle-{item.EspacioDeportivoId}";
                 var fotosTarjeta = item.FotosTarjetaConFallback ?? item.SedeFotosConFallback ?? new List<string>();
 
-                <div class="col-md-6 col-xl-4">
+                <div class="home-results-item">
                     <article class="card h-100 border-0 shadow-sm home-space-card @(item.SedeId.HasValue ? null : "home-space-card--external")">
                         <div class="card-body d-flex flex-column">
                             @if (fotosTarjeta.Count == 1)

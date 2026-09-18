@@ -8,10 +8,10 @@
         : $"https://wa.me/{business.WhatsAppNumber}?text={Uri.EscapeDataString(business.WhatsAppMessage ?? string.Empty)}";
 }
 @* Firma: FRANCO LARA - 21/07/2026 | Muestra los datos institucionales y canales de soporte en documentos legales. *@
+@* Firma: FRANCO LARA - 18/09/2026 | Omite la dirección física de los datos de contacto expuestos en términos, privacidad y cancelaciones. *@
 <aside class="legal-contact" aria-label="Datos de contacto">
     <strong>@business.LegalName</strong>
     <span>RUC: @business.Ruc</span>
-    <span>Dirección: @business.Address</span>
     <span>Correo: <a href="mailto:@business.SupportEmail">@business.SupportEmail</a></span>
     @if (!string.IsNullOrWhiteSpace(whatsappUrl))
     {

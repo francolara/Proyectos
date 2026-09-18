@@ -870,7 +870,7 @@ public class HomeController(
         bool omitirFechaHorario = true,
         int pagina = 1)
     {
-        const int tamanoPagina = 9;
+        const int tamanoPagina = 12;
         var sugerido = ObtenerRangoSugeridoBusqueda(businessClock.LocalNow);
         var fechaConsulta = fecha ?? sugerido.Fecha;
         var horaInicioConsulta = horaInicio ?? sugerido.HoraInicio;

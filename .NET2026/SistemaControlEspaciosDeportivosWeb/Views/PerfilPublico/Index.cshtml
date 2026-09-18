@@ -7,7 +7,8 @@
     var tabBoletines = tab == "boletines";
 }
 @* Firma: FRANCO LARA - 21/07/2026 | Renombra el acceso del perfil a Preguntas Frecuentes. *@
-<div class="container py-4">
+@* Firma: FRANCO LARA - 18/09/2026 | Adapta el perfil público a un lienzo fluido para aprovechar monitores amplios sin perder legibilidad en móvil. *@
+<div class="container py-4 profile-public-page">
     <header class="page-header">
         <div>
             <h1>Mi perfil</h1>
@@ -623,6 +624,12 @@
 
 @section Styles {
     <style>
+        .profile-public-page {
+            max-width: min(1740px, calc(100% - clamp(2rem, 5vw, 8rem))) !important;
+        }
+        .profile-public-page .content-card {
+            padding: clamp(1rem, 1.8vw, 1.45rem);
+        }
         .profile-availability-badge {
             display: inline-flex;
             align-items: center;
@@ -734,6 +741,9 @@
             box-shadow: 0 8px 18px rgba(13, 59, 102, .26);
         }
         @@media (max-width: 768px) {
+            .profile-public-page {
+                max-width: calc(100% - 1.5rem) !important;
+            }
             .profile-tabs {
                 flex-wrap: nowrap;
                 overflow-x: auto;

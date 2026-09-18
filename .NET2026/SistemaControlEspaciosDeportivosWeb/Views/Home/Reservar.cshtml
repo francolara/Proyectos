@@ -6,6 +6,7 @@
 @using SistemaControlEspaciosDeportivosWeb.Services
 @inject IBusinessClock BusinessClock
 @* Firma: FRANCO LARA - 07/09/2026 | Valida horarios publicos con la hora operativa de Peru, independiente de la ubicacion del visitante o hosting. *@
+@* Firma: FRANCO LARA - 18/09/2026 | Recompone la reserva pública para aprovechar monitores amplios, priorizar el calendario y organizar el formulario en bloques de reserva, cliente y opciones. *@
 
 @{
     ViewData["Title"] = "Registrar reserva";
@@ -60,6 +61,7 @@
     var totalResenas = resenasPublicas.Count;
     var usuarioAutenticado = User.Identity?.IsAuthenticated == true;
 }
+
 <div class="container py-4 home-reservar-page">
     <section class="sc-public-reserva-hero mb-3">
         <div class="sc-public-reserva-hero-main">
@@ -180,7 +182,8 @@
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm mb-3 sc-public-section-card">
+    <div class="sc-public-reservation-workspace">
+    <div class="card border-0 shadow-sm mb-3 sc-public-section-card sc-public-calendar-card">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
                 <h2 class="h6 mb-0 sc-public-section-title"><i class="bi bi-calendar-week me-1"></i>Calendario del espacio</h2>
@@ -206,7 +209,7 @@
 @* Firma: FRANCO LARA - 09/06/2026 | La reserva publica habilita Hora fin segun la configuracion de hora(s) maxima de reserva por cliente y solo ofrece saltos exactos de 1 hora. *@
 @* Firma: FRANCO LARA - 11/06/2026 | Las reseñas publicas del espacio ahora muestran la respuesta del negocio cuando existe y solo consideran reseñas activas. *@
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                <h2 class="h6 mb-0 sc-public-section-title"><i class="bi bi-pencil-square me-1"></i>Datos para registrar la reserva</h2>
+                <h2 class="h6 mb-0 sc-public-section-title"><i class="bi bi-calendar2-check me-1"></i>Datos de la reserva</h2>
                 <span class="badge text-bg-info">
                     <i class="bi bi-clock-history me-1"></i>
                     @(horasMaximasReservaCliente <= 1 ? "Solo reservas de 1 hora" : $"Hasta {horasMaximasReservaCliente} hora(s) por reserva")
@@ -405,6 +408,9 @@
                     <label class="form-label">Comentario (opcional)</label>
                     <textarea name="Comentario" class="form-control" rows="3">@Model.Formulario.Comentario</textarea>
                 </div>
+                <div class="col-12 pt-2">
+                    <h3 class="h6 mb-2 sc-public-section-title"><i class="bi bi-sliders me-1"></i>Opciones</h3>
+                </div>
                 <div class="col-md-4">
                     <label class="form-label">Codigo de cupon (opcional)</label>
                     <div class="input-group">
@@ -460,6 +466,7 @@
                 </div>
             </form>
         </div>
+    </div>
     </div>
 
     @if (!string.IsNullOrWhiteSpace(Model.Espacio.SedeConsideracionesReserva))
@@ -1175,6 +1182,101 @@
                 justify-content: flex-start;
             }
         }
+
+        /* Composición adaptable: calendario dominante y formulario completo debajo. */
+        .home-reservar-page {
+            max-width: min(1740px, calc(100% - clamp(2rem, 5vw, 8rem))) !important;
+        }
+        .home-reservar-page .sc-public-reserva-hero {
+            border-radius: 1.35rem;
+            box-shadow: 0 18px 42px rgba(9, 47, 103, .16);
+        }
+        .home-reservar-page .sc-public-reservation-workspace {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            align-items: start;
+            gap: clamp(1rem, 2vw, 1.5rem);
+            margin-bottom: 1.25rem;
+        }
+        .home-reservar-page .sc-public-reservation-workspace > .sc-public-section-card {
+            margin-bottom: 0 !important;
+        }
+        .home-reservar-page .sc-public-calendar-card .card-body {
+            padding: clamp(1rem, 1.8vw, 1.5rem);
+        }
+        .home-reservar-page .sc-public-reservation-workspace #formularioReservaPublica {
+            position: static;
+        }
+        .home-reservar-page .sc-public-reservation-workspace #formularioReservaPublica .card-body {
+            padding: clamp(1.1rem, 1.8vw, 1.45rem);
+        }
+        .home-reservar-page .sc-public-reservation-workspace .sc-public-cal-scroll > #calendarioPublicoReserva,
+        .home-reservar-page .sc-public-reservation-workspace #calendarioPublicoReserva .fc {
+            min-width: 0;
+        }
+        .home-reservar-page .sc-public-reservation-workspace #calendarioPublicoReserva .fc-toolbar-title {
+            font-size: clamp(1.2rem, 2vw, 1.8rem);
+        }
+
+        @@media (max-width: 1199.98px) {
+            .home-reservar-page {
+                max-width: min(100% - 2rem, 1120px) !important;
+            }
+            .home-reservar-page .sc-public-reservation-workspace #formularioReservaPublica {
+                position: static;
+            }
+            .home-reservar-page .sc-public-reservation-workspace .sc-public-cal-scroll > #calendarioPublicoReserva,
+            .home-reservar-page .sc-public-reservation-workspace #calendarioPublicoReserva .fc {
+                min-width: 880px;
+            }
+        }
+
+        @@media (max-width: 575.98px) {
+            .home-reservar-page {
+                max-width: calc(100% - 1.5rem) !important;
+            }
+            .home-reservar-page .sc-public-reserva-hero {
+                border-radius: 1rem;
+            }
+            .home-reservar-page .sc-public-reservation-workspace .sc-public-cal-scroll > #calendarioPublicoReserva,
+            .home-reservar-page .sc-public-reservation-workspace #calendarioPublicoReserva .fc {
+                min-width: 760px;
+            }
+        }
+
+        /* Bloques del formulario: separan selección, cliente y acciones opcionales. */
+        .home-reservar-page #formReservaPublica > .col-12.pt-2 {
+            margin-top: .65rem;
+            padding-top: 1.25rem !important;
+            border-top: 1px solid #d9e5f2;
+        }
+        .home-reservar-page #formReservaPublica .sc-public-section-title {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            margin-bottom: .9rem !important;
+            padding: .42rem .78rem;
+            border: 1px solid #b8d6fa;
+            border-radius: 999px;
+            background: #edf6ff;
+            color: #0b4d9c;
+            font-size: .77rem;
+            font-weight: 800;
+            letter-spacing: .035em;
+            text-transform: uppercase;
+        }
+        .home-reservar-page #formReservaPublica .sc-slot-summary {
+            margin-top: .2rem;
+            padding: .82rem 1rem;
+            border: 1px dashed #9fc4ef;
+            border-radius: .8rem;
+            background: #f3f8ff;
+        }
+        .home-reservar-page #formReservaPublica > .col-12.d-flex.gap-2 {
+            margin-top: .7rem;
+            padding-top: 1.2rem;
+            border-top: 1px solid #d9e5f2;
+        }
     </style>
 }
 
@@ -1582,4 +1684,3 @@
         })();
     </script>
 }
-

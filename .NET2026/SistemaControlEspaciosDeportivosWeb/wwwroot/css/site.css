@@ -10087,3 +10087,421 @@ html[data-theme="dark"] .form-check-input[type="checkbox"][disabled] {
     padding: 0.45rem 0.65rem;
   }
 }
+
+/* Firma: FRANCO LARA - 18/09/2026 | Rediseña las secciones públicas de búsqueda, resultados, planes, CTA, pie y FAQ con composición fluida; recupera marcos y jerarquía entre complejo y espacio. */
+.home-public-content {
+  max-width: min(1720px, calc(100% - clamp(2rem, 5vw, 8rem))) !important;
+}
+
+.home-search-card {
+  overflow: hidden;
+  border: 1px solid #dce7f5 !important;
+  border-radius: 1.35rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f7fbff 100%);
+  box-shadow: 0 18px 44px rgba(15, 41, 76, .08) !important;
+}
+
+.home-search-card .card-body { padding: clamp(1.35rem, 2.5vw, 2.3rem); }
+.home-section-head-top { align-items: center; }
+.home-section-kicker { color: #1460bd; background: #edf6ff; border-color: #cfe4fb; }
+.home-section-title { color: #071d3c; font-size: clamp(1.55rem, 2.4vw, 2.25rem); letter-spacing: -.045em; }
+.home-section-subtitle { max-width: 48rem; color: #62748d; }
+.home-section-head-actions {
+  gap: .6rem;
+  padding: .55rem;
+  border-radius: 1rem;
+  background: #f2f7fc;
+  border-color: #dce8f5;
+}
+.home-search-form-tight { margin-top: .9rem; row-gap: .8rem !important; }
+.home-search-form-tight .form-select,
+.home-search-form-tight .form-control {
+  min-height: 3.15rem;
+  border-color: #d7e2ee;
+  border-radius: .8rem;
+  background: #fff;
+}
+.home-search-form-tight .form-label { margin-bottom: .45rem; color: #52657d; }
+.home-search-form-tight .border.rounded-3 {
+  margin-top: .25rem;
+  padding: 1.1rem !important;
+  border: 1px solid #dce7f2 !important;
+  border-radius: 1rem !important;
+  background: #f8fbfe !important;
+}
+.home-action-btn { min-height: 3.25rem; border-radius: .82rem; font-size: 1rem; box-shadow: 0 12px 24px rgba(30, 99, 210, .2); }
+
+.home-results-section > .d-flex { margin-bottom: 1.15rem !important; }
+.home-results-section .home-section-title { display: flex; align-items: center; gap: .5rem; }
+.home-results-section .badge.text-bg-primary { padding: .5rem .75rem; border-radius: 999px; background: #0d67ca !important; font-weight: 800; }
+.home-results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: clamp(1rem, 1.6vw, 1.45rem);
+}
+.home-results-item { min-width: 0; }
+.home-space-card {
+  height: 100%;
+  border: 1.5px solid #91c5f4 !important;
+  border-radius: 1.2rem;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 12px 30px rgba(15, 41, 76, .09) !important;
+}
+.home-space-card::before { display: none; }
+.home-space-card:hover { transform: translateY(-5px); border-color: #3b94df !important; box-shadow: 0 22px 42px rgba(15, 41, 76, .15) !important; }
+.home-space-card .card-body { padding: .85rem; }
+.home-space-card .home-space-media {
+  margin: -.85rem -.85rem .95rem !important;
+  overflow: hidden;
+  border-radius: 1.15rem 1.15rem .8rem .8rem;
+  background: #eaf2f8;
+}
+.home-space-media-img { aspect-ratio: 16 / 10; object-fit: cover; transition: transform .35s ease; }
+.home-space-card:hover .home-space-media-img { transform: scale(1.035); }
+.home-negocio-highlight {
+  margin-bottom: .8rem !important;
+  padding: .68rem .76rem;
+  border: 1px solid #b7d6f4;
+  border-radius: .78rem;
+  background: linear-gradient(135deg, #f7fbff 0%, #eaf4ff 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .92);
+}
+.home-negocio-label { color: #48719c; }
+.home-negocio-title { color: #0c3464; font-size: 1rem; }
+.home-item-title,
+.home-space-card--external .home-item-title {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #071d3c;
+  font-size: 1.14rem;
+  line-height: 1.25;
+}
+.home-item-label { color: #718197; font-size: .64rem; }
+.home-space-card .badge { box-shadow: none; }
+.home-space-card .home-price-from { margin-top: .2rem; border: 0; border-radius: .8rem; background: #f1f7fd; box-shadow: none; }
+.home-space-card .home-price-main strong { color: #0a57b6; font-size: 1.05rem; }
+.home-reserve-btn { min-height: 2.3rem; border-radius: .68rem; }
+.home-map-btn { min-width: auto; min-height: 2.3rem; border-color: #d2dfec; box-shadow: none; }
+.home-sede-social { gap: .35rem; }
+.home-sede-social a { width: 2rem; height: 2rem; }
+
+.home-benefits-section {
+  padding: clamp(1.5rem, 3vw, 3.25rem);
+  border: 1px solid #e1eaf2;
+  border-radius: 1.5rem;
+  background: linear-gradient(145deg, #fff 0%, #f7fbfe 100%);
+  box-shadow: 0 18px 46px rgba(15, 41, 76, .06);
+}
+.home-benefits-head {
+  display: flex;
+  width: 100%;
+  max-width: none;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 auto 2rem;
+  text-align: center;
+}
+.home-benefits-head h2 { width: 100%; color: #071d3c; font-size: clamp(1.7rem, 3vw, 2.7rem); letter-spacing: -.05em; text-align: center; }
+.home-benefits-head p { width: 100%; text-align: center; }
+.home-benefits-grid { gap: 0; border-top: 1px solid #e1eaf2; border-left: 1px solid #e1eaf2; }
+.home-benefit-card { padding: 1.45rem; border: 0; border-right: 1px solid #e1eaf2; border-bottom: 1px solid #e1eaf2; border-radius: 0; background: transparent; box-shadow: none; }
+.home-benefit-card:hover { transform: none; background: #f3f8fd; box-shadow: none; }
+.home-benefit-icon { background: #e9f4ff; color: #0c68c7; }
+
+.home-pricing-section { margin-top: 3rem; padding-top: 2.5rem; }
+.home-pricing-head { max-width: 42rem; margin-bottom: 2rem; }
+.home-pricing-head h2 { font-size: clamp(1.75rem, 3vw, 2.55rem); }
+.home-pricing-grid { gap: 1.25rem; align-items: stretch; }
+.home-plan-card { min-height: 100%; padding: 1.6rem; border-color: #dce7f1; border-radius: 1.15rem; box-shadow: none; }
+.home-plan-card:hover { transform: translateY(-5px); box-shadow: 0 20px 42px rgba(15, 41, 76, .1); }
+.home-plan-card--entrepreneur { border-color: #9ec5ee; }
+.home-plan-card--professional { border-color: #0d67ca; background: linear-gradient(160deg, #0b315f 0%, #0b62bd 100%); }
+.home-plan-card--professional h3,
+.home-plan-card--professional .home-plan-price,
+.home-plan-card--professional .home-plan-description,
+.home-plan-card--professional .home-plan-limits,
+.home-plan-card--professional .home-plan-includes { color: #fff; }
+.home-plan-card--professional .home-plan-price small { color: #cfe7ff; }
+.home-plan-card--professional .home-plan-includes { border-color: rgba(255,255,255,.22); }
+.home-plan-card--professional .home-plan-limits i { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.25); color: #b7efff; }
+.home-plan-card--professional .home-plan-button { background: #fff; color: #0b4c9b; }
+.home-plan-card--professional .home-plan-button:hover { color: #0b4c9b; }
+.home-plan-price { font-size: 2.5rem; }
+.home-plan-button { min-height: 3rem; border-radius: .75rem; }
+.home-plan-button--faq { margin-top: .2rem; border-radius: .75rem; }
+
+.home-platform-brand-strip { padding-top: 2.25rem; }
+.home-platform-strip-title { border: 0; background: transparent; box-shadow: none; color: #48617f; font-size: .95rem; }
+.home-platform-cta { margin-top: 1rem; padding: clamp(3rem, 6vw, 5.2rem) 0; background: linear-gradient(115deg, #06264f 0%, #0c5bb2 55%, #0f91cd 100%); }
+.home-platform-cta .container { max-width: 54rem; }
+.home-platform-cta h2 { font-size: clamp(2rem, 4vw, 3.55rem); letter-spacing: -.055em; }
+.home-platform-cta p { max-width: 38rem; white-space: normal; }
+.home-platform-footer { padding: 3rem 0 1.5rem; background: #f8fbfe; border-top: 0; }
+.home-platform-footer .container { max-width: min(1500px, calc(100% - clamp(2rem, 5vw, 8rem))); }
+.home-platform-footer .row { align-items: center !important; }
+.home-platform-footer .col-lg-4,
+.home-platform-footer .col-lg-3 { border-left: 1px solid #dce7f1; padding-left: 2.25rem; }
+.home-platform-legal { margin-top: 1.75rem; padding-top: 1.25rem; }
+
+@media (max-width: 991.98px) {
+  .home-public-content,
+  .home-platform-footer .container { max-width: min(100% - 2rem, 46rem) !important; }
+  .home-section-head-actions { width: 100%; justify-content: space-between; }
+  .home-results-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-platform-footer .col-lg-4,
+  .home-platform-footer .col-lg-3 { border-left: 0; padding-left: calc(var(--bs-gutter-x) * .5); }
+}
+
+@media (max-width: 575.98px) {
+  .home-public-content,
+  .home-platform-footer .container { max-width: calc(100% - 1.5rem) !important; }
+  .home-search-card .card-body,
+  .home-benefits-section { padding: 1.15rem; }
+  .home-section-head-actions { align-items: stretch; flex-direction: column; }
+  .home-section-head-actions > * { width: 100%; }
+  .home-head-radio-wrap { justify-content: space-between; }
+  .home-results-grid { grid-template-columns: 1fr; }
+  .home-benefits-grid { grid-template-columns: 1fr; }
+  .home-benefit-card { padding: 1.2rem; }
+  .home-pricing-grid { max-width: none; }
+  .home-platform-cta-actions .btn { width: 100%; min-width: 0; }
+}
+
+/* FAQ público: centro de ayuda para usuarios y guía editorial para complejos. */
+.home-faq-page {
+  max-width: min(1640px, calc(100% - clamp(2rem, 5vw, 8rem))) !important;
+}
+
+.home-faq-section {
+  padding: clamp(1.6rem, 3vw, 3.2rem) 0 clamp(2rem, 4vw, 4rem);
+}
+
+.home-faq-head {
+  max-width: 70rem;
+  margin: 0 auto clamp(1.5rem, 3vw, 2.6rem);
+  text-align: center;
+}
+
+.home-faq-head--owners .home-faq-kicker,
+.home-faq-head--users .home-faq-kicker {
+  margin: 0 auto;
+  padding: .42rem .8rem;
+  background: #eef6ff;
+  color: #0d5cac;
+}
+
+.home-faq-head h2 {
+  max-width: 64rem;
+  margin: .85rem auto .55rem;
+  color: #071f42;
+  font-size: clamp(2rem, 3.5vw, 3.35rem);
+  letter-spacing: -.055em;
+  line-height: 1.02;
+}
+
+.home-faq-head p {
+  max-width: 46rem;
+  margin: 0 auto;
+  color: #5f718a;
+  font-size: 1rem;
+}
+
+.home-faq-layout {
+  grid-template-columns: minmax(230px, 290px) minmax(0, 1fr);
+  gap: clamp(1.25rem, 3vw, 3.5rem);
+  align-items: start;
+}
+
+.home-faq-sidebar {
+  top: 5.7rem;
+  gap: .15rem;
+  padding: .35rem 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  border-left: 1px solid #d9e4f1;
+}
+
+.home-faq-tab {
+  position: relative;
+  border-radius: 0;
+  padding: .82rem 1rem .82rem 1.2rem;
+  color: #536984;
+  font-size: .92rem;
+  font-weight: 750;
+}
+
+.home-faq-tab::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 18%;
+  bottom: 18%;
+  width: 3px;
+  border-radius: 999px;
+  background: transparent;
+  transition: background .2s ease, top .2s ease, bottom .2s ease;
+}
+
+.home-faq-tab:hover {
+  border-color: transparent;
+  background: #f2f7fc;
+  color: #0b4f9c;
+  transform: none;
+}
+
+.home-faq-tab.is-active {
+  border-color: transparent;
+  background: #edf5ff;
+  color: #0b4f9c;
+  box-shadow: none;
+}
+
+.home-faq-tab.is-active::before {
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, #0c63cf, #10a7d8);
+}
+
+.home-faq-content {
+  min-width: 0;
+  padding: clamp(1.15rem, 2.2vw, 2rem);
+  border: 1px solid #dce7f1;
+  border-radius: 1.35rem;
+  background: #fff;
+  box-shadow: 0 20px 46px rgba(15, 41, 76, .08);
+}
+
+.home-faq-search-wrap {
+  margin-bottom: 1.35rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #e2eaf2;
+}
+
+.home-faq-search {
+  min-height: 3.1rem;
+  padding-inline: 1rem;
+  border: 1px solid #cbdcec;
+  border-radius: .85rem;
+  background: #f8fbfe;
+  box-shadow: none;
+}
+
+.home-faq-search:focus {
+  border-color: #4896e7;
+  background: #fff;
+  box-shadow: 0 0 0 .2rem rgba(45, 123, 225, .12);
+}
+
+.home-faq-search-wrap small {
+  display: block;
+  margin-top: .55rem;
+  color: #72839a !important;
+}
+
+.home-faq-panel h3 {
+  margin: 0 0 1rem;
+  color: #0a315f;
+  font-size: clamp(1.2rem, 1.8vw, 1.5rem);
+  letter-spacing: -.025em;
+}
+
+.home-faq-accordion {
+  border-top: 1px solid #e1e9f1;
+}
+
+.home-faq-item,
+.home-faq-item + .home-faq-item {
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid #e1e9f1;
+  border-radius: 0;
+}
+
+.home-faq-item .accordion-button {
+  min-height: 4rem;
+  padding: 1rem 3rem 1rem .15rem;
+  background: transparent;
+  color: #173b67;
+  font-size: 1rem;
+  font-weight: 750;
+  box-shadow: none;
+}
+
+.home-faq-item .accordion-button::after {
+  width: .8rem;
+  height: .8rem;
+  background-size: .8rem;
+}
+
+.home-faq-item .accordion-button:hover {
+  color: #0a63be;
+}
+
+.home-faq-item .accordion-button:not(.collapsed) {
+  color: #084b94;
+  background: linear-gradient(90deg, #eef6ff 0%, rgba(238, 246, 255, 0) 92%);
+}
+
+.home-faq-item .accordion-body {
+  max-width: 70rem;
+  padding: 0 .15rem 1.2rem;
+  color: #52657d;
+  font-size: .97rem;
+  line-height: 1.65;
+}
+
+.home-faq-section--owners .home-faq-content {
+  border-top: 3px solid #0a63be;
+}
+
+.home-faq-section--owners .home-faq-head h2 {
+  max-width: 72rem;
+}
+
+.home-faq-section--users .home-faq-content {
+  border-top: 3px solid #16a4cb;
+}
+
+.home-faq-section--users .home-faq-tab.is-active::before {
+  background: linear-gradient(180deg, #078bb4, #22b7d6);
+}
+
+.home-faq-cta-zone {
+  padding: 0 0 clamp(2rem, 4vw, 4rem) !important;
+}
+
+.home-faq-cta-zone .home-faq-cta-btn {
+  min-width: min(100%, 20rem);
+  padding: .95rem 1.35rem !important;
+  border-radius: .85rem;
+  font-size: 1rem !important;
+}
+
+@media (max-width: 991.98px) {
+  .home-faq-page { max-width: min(100% - 2rem, 58rem) !important; }
+  .home-faq-layout { grid-template-columns: 1fr; gap: 1rem; }
+  .home-faq-sidebar {
+    position: static;
+    display: flex;
+    overflow-x: auto;
+    border-left: 0;
+    border-bottom: 1px solid #d9e4f1;
+    padding: 0 0 .65rem;
+  }
+  .home-faq-tab { flex: 0 0 auto; white-space: nowrap; }
+  .home-faq-tab::before { left: 15%; right: 15%; top: auto; bottom: -1px; width: auto; height: 3px; }
+  .home-faq-tab.is-active::before { top: auto; bottom: -1px; }
+}
+
+@media (max-width: 575.98px) {
+  .home-faq-page { max-width: calc(100% - 1.5rem) !important; }
+  .home-faq-section { padding-top: 1.25rem; }
+  .home-faq-head h2 { font-size: clamp(1.8rem, 9vw, 2.3rem); }
+  .home-faq-content { padding: 1rem; border-radius: 1rem; }
+  .home-faq-item .accordion-button { padding-right: 2.5rem; font-size: .94rem; }
+}
