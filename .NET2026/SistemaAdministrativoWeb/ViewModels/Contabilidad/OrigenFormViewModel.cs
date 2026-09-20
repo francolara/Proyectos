@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SistemaAdministrativoWeb.ViewModels.Contabilidad;
 
-public sealed class OrigenFormViewModel
+public sealed class OrigenFormViewModel : IRegistroTrazable
 {
     public int? IdOrigen { get; set; }
 
@@ -20,4 +20,8 @@ public sealed class OrigenFormViewModel
 
     public bool PermiteRegistroManual { get; set; } = true;
     public bool Estado { get; set; } = true;
+    public string? UsuarioCreacion { get; set; }
+    public DateTime? FechaRegistro { get; set; }
+    public string? UsuarioActualizacion { get; set; }
+    public DateTime? FechaActualizacion { get; set; }
 }

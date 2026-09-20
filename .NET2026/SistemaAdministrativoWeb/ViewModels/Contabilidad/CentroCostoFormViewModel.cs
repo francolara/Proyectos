@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SistemaAdministrativoWeb.ViewModels.Contabilidad;
 
-public sealed class CentroCostoFormViewModel
+public sealed class CentroCostoFormViewModel : IRegistroTrazable
 {
     public int? IdCentroCosto { get; set; }
 
@@ -15,4 +15,8 @@ public sealed class CentroCostoFormViewModel
     public string NombreCentroCosto { get; set; } = string.Empty;
 
     public bool Estado { get; set; } = true;
+    public string? UsuarioCreacion { get; set; }
+    public DateTime? FechaRegistro { get; set; }
+    public string? UsuarioActualizacion { get; set; }
+    public DateTime? FechaActualizacion { get; set; }
 }

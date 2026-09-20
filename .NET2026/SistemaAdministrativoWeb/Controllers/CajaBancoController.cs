@@ -729,6 +729,10 @@ public class CajaBancoController(
                 Glosa = movimientoEditar.Glosa,
                 Observacion = movimientoEditar.Observacion,
                 ImporteTotal = movimientoEditar.ImporteTotal,
+                UsuarioCreacion = movimientoEditar.UsuarioCreacion,
+                FechaRegistro = movimientoEditar.FechaRegistro,
+                UsuarioActualizacion = movimientoEditar.UsuarioActualizacion,
+                FechaActualizacion = movimientoEditar.FechaActualizacion,
                 Detalles = movimientoEditar.Detalles
                     .OrderBy(x => x.Item)
                     .Select(x => new CajaBancoDetalleFormViewModel

@@ -276,6 +276,10 @@ public class CuentaDestinoReglaController(
                     CuentaOrigenTexto = $"{reglaEditar.CodigoCuentaOrigen} - {reglaEditar.NombreCuentaOrigen}",
                     Observacion = reglaEditar.Observacion,
                     Activo = reglaEditar.Activo,
+                    UsuarioCreacion = reglaEditar.UsuarioCreacion,
+                    FechaRegistro = reglaEditar.FechaRegistro,
+                    UsuarioActualizacion = reglaEditar.UsuarioActualizacion,
+                    FechaActualizacion = reglaEditar.FechaActualizacion,
                     Detalles = reglaEditar.Detalles
                         .OrderBy(x => x.Orden)
                         .Select(x => new CuentaDestinoReglaDetalleFormViewModel

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SistemaAdministrativoWeb.ViewModels.Contabilidad;
 
-public sealed class CuentaDestinoReglaFormViewModel
+public sealed class CuentaDestinoReglaFormViewModel : IRegistroTrazable
 {
     public int? IdCuentaDestinoRegla { get; set; }
 
@@ -15,6 +15,10 @@ public sealed class CuentaDestinoReglaFormViewModel
     public string? Observacion { get; set; }
 
     public bool Activo { get; set; } = true;
+    public string? UsuarioCreacion { get; set; }
+    public DateTime? FechaRegistro { get; set; }
+    public string? UsuarioActualizacion { get; set; }
+    public DateTime? FechaActualizacion { get; set; }
 
     public List<CuentaDestinoReglaDetalleFormViewModel> Detalles { get; set; } =
     [

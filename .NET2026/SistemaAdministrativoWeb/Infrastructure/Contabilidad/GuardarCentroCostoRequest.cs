@@ -7,4 +7,5 @@ public sealed class GuardarCentroCostoRequest
     public string CodigoCentroCosto { get; init; } = string.Empty;
     public string NombreCentroCosto { get; init; } = string.Empty;
     public bool Estado { get; init; }
+    public string? UsuarioRegistro { get; init; }
 }

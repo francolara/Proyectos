@@ -4,6 +4,8 @@
 -- Description:   Inserta o actualiza un origen contable por empresa validando codigo y estado.
 -- =============================================
 
+-- Firma: FRANCO LARA - 19/09/2026 | Registra la trazabilidad de alta y actualizacion del origen desde el procedimiento.
+
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarOrigenPorEmpresa
     @IdOrigen INT = NULL,
     @IdEmpresa INT,
@@ -52,7 +54,8 @@ BEGIN
                 ModuloOrigen,
                 PermiteRegistroManual,
                 Estado,
-                UsuarioRegistro
+                UsuarioRegistro,
+                FechaRegistro
             )
             VALUES
             (
@@ -62,7 +65,8 @@ BEGIN
                 @ModuloOrigen,
                 @PermiteRegistroManual,
                 @Estado,
-                @UsuarioRegistro
+                @UsuarioRegistro,
+                SYSDATETIME()
             );
 
             SET @IdOrigen = SCOPE_IDENTITY();
@@ -86,7 +90,8 @@ BEGIN
                 ModuloOrigen = @ModuloOrigen,
                 PermiteRegistroManual = @PermiteRegistroManual,
                 Estado = @Estado,
-                UsuarioRegistro = @UsuarioRegistro
+                FechaActualizacion = SYSDATETIME(),
+                UsuarioActualizacion = @UsuarioRegistro
             WHERE IdOrigen = @IdOrigen
               AND IdEmpresa = @IdEmpresa;
         END;
@@ -97,7 +102,11 @@ BEGIN
             o.NombreOrigen,
             o.ModuloOrigen,
             o.PermiteRegistroManual,
-            o.Estado
+            o.Estado,
+            o.UsuarioRegistro,
+            o.FechaRegistro,
+            o.UsuarioActualizacion,
+            o.FechaActualizacion
         FROM dbo.CON_Origen AS o
         WHERE o.IdOrigen = @IdOrigen;
 

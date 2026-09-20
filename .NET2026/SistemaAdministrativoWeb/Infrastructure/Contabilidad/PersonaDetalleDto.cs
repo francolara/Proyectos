@@ -21,4 +21,8 @@ public sealed class PersonaDetalleDto
     public bool EsCliente { get; init; }
     public bool EsProveedor { get; init; }
     public bool Estado { get; init; }
+    public string? UsuarioCreacion { get; init; }
+    public DateTime? FechaRegistro { get; init; }
+    public string? UsuarioActualizacion { get; init; }
+    public DateTime? FechaActualizacion { get; init; }
 }

@@ -121,6 +121,9 @@ public sealed class TipoCambioRepository(IDbConnectionFactory connectionFactory)
             VentaSbs = reader.GetDecimal(reader.GetOrdinal("VentaSBS")),
             Fuente = reader.GetString(reader.GetOrdinal("Fuente")),
             UsuarioRegistro = reader.IsDBNull(reader.GetOrdinal("UsuarioRegistro")) ? null : reader.GetString(reader.GetOrdinal("UsuarioRegistro")),
+            FechaRegistro = reader.IsDBNull(reader.GetOrdinal("FechaRegistro")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaRegistro")),
+            UsuarioActualizacion = reader.IsDBNull(reader.GetOrdinal("UsuarioActualizacion")) ? null : reader.GetString(reader.GetOrdinal("UsuarioActualizacion")),
+            FechaActualizacion = reader.IsDBNull(reader.GetOrdinal("FechaActualizacion")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaActualizacion")),
             Estado = reader.GetBoolean(reader.GetOrdinal("Estado"))
         };
     }

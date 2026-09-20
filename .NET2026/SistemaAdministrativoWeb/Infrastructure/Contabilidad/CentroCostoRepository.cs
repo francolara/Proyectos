@@ -78,6 +78,7 @@ public sealed class CentroCostoRepository(IDbConnectionFactory connectionFactory
         command.Parameters.AddWithValue("@CodigoCentroCosto", request.CodigoCentroCosto);
         command.Parameters.AddWithValue("@NombreCentroCosto", request.NombreCentroCosto);
         command.Parameters.AddWithValue("@Estado", request.Estado);
+        command.Parameters.AddWithValue("@UsuarioRegistro", string.IsNullOrWhiteSpace(request.UsuarioRegistro) ? (object)DBNull.Value : request.UsuarioRegistro.Trim());
 
         await connection.OpenAsync(cancellationToken);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -112,7 +113,11 @@ public sealed class CentroCostoRepository(IDbConnectionFactory connectionFactory
             IdEmpresa = reader.GetInt32(reader.GetOrdinal("IdEmpresa")),
             CodigoCentroCosto = reader.GetString(reader.GetOrdinal("CodigoCentroCosto")),
             NombreCentroCosto = reader.GetString(reader.GetOrdinal("NombreCentroCosto")),
-            Estado = reader.GetBoolean(reader.GetOrdinal("Estado"))
+            Estado = reader.GetBoolean(reader.GetOrdinal("Estado")),
+            UsuarioCreacion = reader.IsDBNull(reader.GetOrdinal("UsuarioRegistro")) ? null : reader.GetString(reader.GetOrdinal("UsuarioRegistro")),
+            FechaRegistro = reader.IsDBNull(reader.GetOrdinal("FechaRegistro")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaRegistro")),
+            UsuarioActualizacion = reader.IsDBNull(reader.GetOrdinal("UsuarioActualizacion")) ? null : reader.GetString(reader.GetOrdinal("UsuarioActualizacion")),
+            FechaActualizacion = reader.IsDBNull(reader.GetOrdinal("FechaActualizacion")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaActualizacion"))
         };
     }
 }

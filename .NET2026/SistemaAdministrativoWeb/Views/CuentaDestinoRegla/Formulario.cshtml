@@ -120,6 +120,10 @@
                     </div>
                 </div>
 
+                @if (Model.Formulario.IdCuentaDestinoRegla.HasValue)
+                {
+                    @await Html.PartialAsync("_TrazabilidadRegistro", Model.Formulario)
+                }
                 <div class="workspace-actions">
                     <button type="submit" class="btn btn-primary">Guardar cuenta destino</button>
                     <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SistemaAdministrativoWeb.ViewModels.Contabilidad;
 
-public sealed class PlanCuentaFormViewModel
+public sealed class PlanCuentaFormViewModel : IRegistroTrazable
 {
     public int? IdPlanCuenta { get; set; }
 
@@ -37,5 +37,9 @@ public sealed class PlanCuentaFormViewModel
     public bool RequiereCentroCosto { get; set; }
     public bool Estado { get; set; } = true;
     public bool PermiteConfigurarDestinos { get; set; }
+    public string? UsuarioCreacion { get; set; }
+    public DateTime? FechaRegistro { get; set; }
+    public string? UsuarioActualizacion { get; set; }
+    public DateTime? FechaActualizacion { get; set; }
     public PlanCuentaDestinoConfiguracionViewModel ConfiguracionDestino { get; set; } = new();
 }

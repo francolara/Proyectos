@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SistemaAdministrativoWeb.ViewModels.Contabilidad;
 
-public sealed class TipoCambioFormViewModel
+public sealed class TipoCambioFormViewModel : IRegistroTrazable
 {
     private string _idMoneda = "USD";
 
@@ -37,6 +37,10 @@ public sealed class TipoCambioFormViewModel
     public string Fuente { get; set; } = "MANUAL";
 
     public bool Estado { get; set; } = true;
+    public string? UsuarioCreacion { get; set; }
+    public DateTime? FechaRegistro { get; set; }
+    public string? UsuarioActualizacion { get; set; }
+    public DateTime? FechaActualizacion { get; set; }
 
     private static string NormalizarCodigoMoneda(string? idMoneda)
     {

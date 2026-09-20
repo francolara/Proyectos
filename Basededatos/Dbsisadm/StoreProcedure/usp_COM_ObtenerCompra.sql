@@ -26,6 +26,8 @@
 -- =============================================
 -- Firma: FRANCO LARA - 30/06/2026 | Devuelve la retencion de renta de 4ta en cabecera de compras, expone el IdCompraRetencion vinculado y permite recuperar detalles importados sin cuenta contable asignada.
 
+-- Firma: FRANCO LARA - 19/09/2026 | Expone la trazabilidad de la compra para su formulario de edicion.
+
 CREATE OR ALTER PROCEDURE dbo.usp_COM_ObtenerCompra
     @IdCompra INT
 AS
@@ -90,6 +92,10 @@ BEGIN
             c.BasePercepcion,
             c.ImportePercepcion,
             c.Observacion,
+            c.UsuarioRegistro,
+            c.FechaRegistro,
+            c.UsuarioActualizacion,
+            c.FechaActualizacion,
             c.FechaValidacionCpe,
             c.EstadoValidacionCpe,
             c.MensajeValidacionCpe,

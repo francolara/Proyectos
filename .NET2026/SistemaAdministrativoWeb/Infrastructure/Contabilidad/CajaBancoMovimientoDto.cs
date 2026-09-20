@@ -27,5 +27,9 @@ public sealed class CajaBancoMovimientoDto
     public string Observacion { get; init; } = string.Empty;
     public decimal ImporteTotal { get; init; }
     public bool Activo { get; init; }
+    public string? UsuarioCreacion { get; init; }
+    public DateTime? FechaRegistro { get; init; }
+    public string? UsuarioActualizacion { get; init; }
+    public DateTime? FechaActualizacion { get; init; }
     public List<CajaBancoDetalleDto> Detalles { get; init; } = [];
 }

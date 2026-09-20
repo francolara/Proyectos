@@ -472,6 +472,10 @@ public class TipoCambioController(
                 : new TipoCambioFormViewModel
                 {
                     IdTipoCambio = tipoCambioEditar.IdTipoCambio,
+                    UsuarioCreacion = tipoCambioEditar.UsuarioRegistro,
+                    FechaRegistro = tipoCambioEditar.FechaRegistro,
+                    UsuarioActualizacion = tipoCambioEditar.UsuarioActualizacion,
+                    FechaActualizacion = tipoCambioEditar.FechaActualizacion,
                     Fecha = tipoCambioEditar.Fecha,
                     IdMoneda = tipoCambioEditar.IdMoneda,
                     Compra = tipoCambioEditar.Compra,

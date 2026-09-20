@@ -51,4 +51,8 @@ public class CompraResumenDto
     public string? MensajeValidacionCpe { get; init; }
     public string Estado { get; init; } = string.Empty;
     public string Situacion { get; init; } = string.Empty;
+    public string? UsuarioCreacion { get; init; }
+    public DateTime? FechaRegistro { get; init; }
+    public string? UsuarioActualizacion { get; init; }
+    public DateTime? FechaActualizacion { get; init; }
 }

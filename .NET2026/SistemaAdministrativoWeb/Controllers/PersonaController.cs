@@ -271,7 +271,11 @@ public class PersonaController(
                 CodigoUbigeo = persona.CodigoUbigeo,
                 EsCliente = persona.EsCliente,
                 EsProveedor = persona.EsProveedor,
-                Estado = persona.Estado
+                Estado = persona.Estado,
+                UsuarioCreacion = persona.UsuarioCreacion,
+                FechaRegistro = persona.FechaRegistro,
+                UsuarioActualizacion = persona.UsuarioActualizacion,
+                FechaActualizacion = persona.FechaActualizacion
             };
         }
         else

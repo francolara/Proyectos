@@ -5,6 +5,8 @@
 -- =============================================
 -- Firma: FRANCO LARA - 09/07/2026 | Agrega periodo y saldos iniciales Debe/Haber a la cuenta corriente para inicializar Caja y Bancos desde un corte definido.
 
+-- Firma: FRANCO LARA - 19/09/2026 | Registra la trazabilidad de alta y actualizacion de la cuenta corriente desde el procedimiento.
+
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarBancoConfiguracionEmpresa
     @IdBancoConfiguracionEmpresa INT = NULL,
     @IdEmpresa INT,
@@ -115,7 +117,8 @@ BEGIN
                 SaldoInicialDebe,
                 SaldoInicialHaber,
                 Activo,
-                UsuarioRegistro
+                UsuarioRegistro,
+                FechaRegistro
             )
             VALUES
             (
@@ -129,7 +132,8 @@ BEGIN
                 @SaldoInicialDebe,
                 @SaldoInicialHaber,
                 @Activo,
-                @UsuarioRegistro
+                @UsuarioRegistro,
+                SYSDATETIME()
             );
 
             SET @IdBancoConfiguracionEmpresa = SCOPE_IDENTITY();
@@ -156,7 +160,9 @@ BEGIN
                 PeriodoSaldoInicial = @PeriodoSaldoInicial,
                 SaldoInicialDebe = @SaldoInicialDebe,
                 SaldoInicialHaber = @SaldoInicialHaber,
-                Activo = @Activo
+                Activo = @Activo,
+                FechaActualizacion = SYSDATETIME(),
+                UsuarioActualizacion = @UsuarioRegistro
             WHERE IdBancoConfiguracionEmpresa = @IdBancoConfiguracionEmpresa
               AND IdEmpresa = @IdEmpresa;
         END;
@@ -180,7 +186,9 @@ BEGIN
             c.SaldoInicialHaber,
             c.Activo,
             c.FechaRegistro,
-            c.UsuarioRegistro
+            c.UsuarioRegistro,
+            c.FechaActualizacion,
+            c.UsuarioActualizacion
         FROM dbo.CON_BancosConfiguracionEmpresa AS c
         INNER JOIN dbo.CON_Bancos AS b
             ON b.IdBanco = c.IdBanco

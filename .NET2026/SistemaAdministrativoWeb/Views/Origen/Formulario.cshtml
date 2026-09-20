@@ -54,6 +54,10 @@
                     </label>
                 </div>
 
+                @if (Model.Formulario.IdOrigen.HasValue)
+                {
+                    @await Html.PartialAsync("_TrazabilidadRegistro", Model.Formulario)
+                }
                 <div class="workspace-actions">
                     <button type="submit" class="btn btn-primary">Guardar origen</button>
                     <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>

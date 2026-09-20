@@ -886,6 +886,20 @@ body {
     transform: translateY(-2px);
 }
 
+/* Firma: FRANCO LARA - 19/09/2026 | Tarjeta de trazabilidad reutilizable para formularios de edición. */
+.workspace-trazabilidad-registro { margin: 1rem 0; padding: .78rem .9rem; border: 1px solid #cfe1fa; border-radius: .55rem; background: #f3f8ff; }
+.workspace-trazabilidad-registro-title { display: flex; align-items: center; gap: .42rem; margin-bottom: .48rem; color: #0b5cbf; font-size: .76rem; font-weight: 800; }
+.workspace-trazabilidad-registro-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .55rem .8rem; }
+.workspace-trazabilidad-registro-grid div { min-width: 0; }
+.workspace-trazabilidad-registro-grid span, .workspace-trazabilidad-registro-grid strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workspace-trazabilidad-registro-grid span { color: #64748b; font-size: .68rem; font-weight: 700; }
+.workspace-trazabilidad-registro-grid strong { color: #1e3a5f; font-size: .76rem; font-weight: 800; }
+@media (max-width: 767.98px) { .workspace-trazabilidad-registro-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+html[data-theme="dark"] .workspace-trazabilidad-registro { border-color: #35577f; background: #10233a; }
+html[data-theme="dark"] .workspace-trazabilidad-registro-title { color: #93c5fd; }
+html[data-theme="dark"] .workspace-trazabilidad-registro-grid span { color: #aebfd4; }
+html[data-theme="dark"] .workspace-trazabilidad-registro-grid strong { color: #e0edff; }
+
 .app-brand {
   display: inline-flex;
   align-items: center;

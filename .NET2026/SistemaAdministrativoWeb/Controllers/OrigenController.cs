@@ -199,7 +199,11 @@ public class OrigenController(
                     NombreOrigen = origenEditar.NombreOrigen,
                     ModuloOrigen = origenEditar.ModuloOrigen,
                     PermiteRegistroManual = origenEditar.PermiteRegistroManual,
-                    Estado = origenEditar.Estado
+                    Estado = origenEditar.Estado,
+                    UsuarioCreacion = origenEditar.UsuarioCreacion,
+                    FechaRegistro = origenEditar.FechaRegistro,
+                    UsuarioActualizacion = origenEditar.UsuarioActualizacion,
+                    FechaActualizacion = origenEditar.FechaActualizacion
                 }
         };
     }

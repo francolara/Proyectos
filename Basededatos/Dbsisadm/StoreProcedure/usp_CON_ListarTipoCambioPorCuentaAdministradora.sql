@@ -5,6 +5,8 @@
 -- =============================================
 -- Firma: FRANCO LARA - 29/06/2026 | Expone el mantenimiento de tipos de cambio por cuenta administradora para el periodo consultado.
 
+-- Firma: FRANCO LARA - 19/09/2026 | Expone la trazabilidad de los tipos de cambio para su edicion.
+
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ListarTipoCambioPorCuentaAdministradora
     @IdCuentaAdministradora INT,
     @Anio SMALLINT,
@@ -27,6 +29,9 @@ BEGIN
             tc.VentaSBS,
             tc.Fuente,
             tc.UsuarioRegistro,
+            tc.FechaRegistro,
+            tc.UsuarioActualizacion,
+            tc.FechaActualizacion,
             tc.Estado
         FROM dbo.CON_TipoCambio AS tc
         WHERE tc.IdCuentaAdministradora = @IdCuentaAdministradora

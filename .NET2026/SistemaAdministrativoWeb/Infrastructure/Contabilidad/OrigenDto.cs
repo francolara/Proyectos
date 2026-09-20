@@ -8,4 +8,8 @@ public sealed class OrigenDto
     public string ModuloOrigen { get; init; } = string.Empty;
     public bool PermiteRegistroManual { get; init; }
     public bool Estado { get; init; }
+    public string? UsuarioCreacion { get; init; }
+    public DateTime? FechaRegistro { get; init; }
+    public string? UsuarioActualizacion { get; init; }
+    public DateTime? FechaActualizacion { get; init; }
 }

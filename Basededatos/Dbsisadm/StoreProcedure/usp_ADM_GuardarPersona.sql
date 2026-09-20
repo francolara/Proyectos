@@ -4,6 +4,8 @@
 -- Description:   Inserta o actualiza personas por empresa, sincroniza cliente/proveedor y asigna ubigeo 150101 por defecto en altas operativas.
 -- =============================================
 
+-- Firma: FRANCO LARA - 19/09/2026 | Conserva la trazabilidad de alta y registra usuario y fecha al actualizar una persona.
+
 CREATE OR ALTER PROCEDURE dbo.usp_ADM_GuardarPersona
     @IdPersona INT = NULL,
     @IdEmpresa INT,
@@ -131,7 +133,8 @@ BEGIN
                 Direccion,
                 CodigoUbigeo,
                 Estado,
-                UsuarioRegistro
+                UsuarioRegistro,
+                FechaRegistro
             )
             VALUES
             (
@@ -148,7 +151,8 @@ BEGIN
                 @Direccion,
                 @CodigoUbigeo,
                 @Estado,
-                @UsuarioRegistro
+                @UsuarioRegistro,
+                SYSDATETIME()
             );
 
             SET @IdPersonaTrabajo = SCOPE_IDENTITY();
@@ -179,7 +183,8 @@ BEGIN
                 Direccion = @Direccion,
                 CodigoUbigeo = @CodigoUbigeo,
                 Estado = @Estado,
-                UsuarioRegistro = @UsuarioRegistro
+                FechaActualizacion = SYSDATETIME(),
+                UsuarioActualizacion = @UsuarioRegistro
             WHERE IdPersona = @IdPersona
               AND IdEmpresa = @IdEmpresa;
 

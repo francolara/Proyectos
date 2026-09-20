@@ -150,7 +150,11 @@ public sealed class CajaBancoRepository(IDbConnectionFactory connectionFactory) 
                 Glosa = reader.GetString(reader.GetOrdinal("Glosa")),
                 Observacion = reader.IsDBNull(reader.GetOrdinal("Observacion")) ? string.Empty : reader.GetString(reader.GetOrdinal("Observacion")),
                 ImporteTotal = reader.GetDecimal(reader.GetOrdinal("ImporteTotal")),
-                Activo = reader.GetBoolean(reader.GetOrdinal("Activo"))
+                Activo = reader.GetBoolean(reader.GetOrdinal("Activo")),
+                UsuarioCreacion = reader.IsDBNull(reader.GetOrdinal("UsuarioRegistro")) ? null : reader.GetString(reader.GetOrdinal("UsuarioRegistro")),
+                FechaRegistro = reader.IsDBNull(reader.GetOrdinal("FechaRegistro")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaRegistro")),
+                UsuarioActualizacion = reader.IsDBNull(reader.GetOrdinal("UsuarioActualizacion")) ? null : reader.GetString(reader.GetOrdinal("UsuarioActualizacion")),
+                FechaActualizacion = reader.IsDBNull(reader.GetOrdinal("FechaActualizacion")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaActualizacion"))
             };
         }
 
@@ -219,6 +223,10 @@ public sealed class CajaBancoRepository(IDbConnectionFactory connectionFactory) 
                 Observacion = movimiento.Observacion,
                 ImporteTotal = movimiento.ImporteTotal,
                 Activo = movimiento.Activo,
+                UsuarioCreacion = movimiento.UsuarioCreacion,
+                FechaRegistro = movimiento.FechaRegistro,
+                UsuarioActualizacion = movimiento.UsuarioActualizacion,
+                FechaActualizacion = movimiento.FechaActualizacion,
                 Detalles = detalles
             };
         }

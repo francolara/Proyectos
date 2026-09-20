@@ -15,6 +15,8 @@
 -- Description:   Incluye el asiento contable vinculado para consulta y edicion del movimiento bancario.
 -- =============================================
 
+-- Firma: FRANCO LARA - 19/09/2026 | Expone la trazabilidad del movimiento de caja y bancos para su formulario de edicion.
+
 CREATE OR ALTER PROCEDURE dbo.usp_BAN_ObtenerMovimientoBanco
     @IdMovimientoBanco INT,
     @IdEmpresa INT
@@ -52,6 +54,10 @@ BEGIN
             m.NumeroDocumento,
             m.Glosa,
             m.Observacion,
+            m.UsuarioRegistro,
+            m.FechaRegistro,
+            m.UsuarioActualizacion,
+            m.FechaActualizacion,
             m.ImporteTotal,
             a.NumeroAsiento,
             m.Activo

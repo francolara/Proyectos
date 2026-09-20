@@ -1,4 +1,5 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.CompraIndexViewModel
+@* Firma: FRANCO LARA - 19/09/2026 | Muestra la trazabilidad del registro al editar una compra. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Corrige la tarjeta visual de retencion en recibos por honorarios nuevos para que refleje el calculo inmediato en pantalla, igual que el importe neto total, y ajusta el modo oscuro en compras para mejorar contraste de toggles, tarjetas resumen y controles asociados del formulario. *@
 
 @* =============================================
@@ -452,6 +453,10 @@
                         </div>
                     </div>
 
+                    @if (Model.Formulario.IdCompra.HasValue)
+                    {
+                        @await Html.PartialAsync("_TrazabilidadRegistro", Model.Formulario)
+                    }
                     <div class="workspace-actions">
                         <button type="submit" class="btn btn-primary">Guardar compra</button>
                         <a asp-action="Index" asp-route-anio="@Model.AnioSeleccionado" asp-route-mes="@Model.MesSeleccionado" class="btn btn-outline-secondary">Cancelar</a>

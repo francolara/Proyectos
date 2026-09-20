@@ -51,6 +51,10 @@
                     </label>
                 </div>
 
+                @if (Model.Formulario.IdCentroCosto.HasValue)
+                {
+                    @await Html.PartialAsync("_TrazabilidadRegistro", Model.Formulario)
+                }
                 <div class="workspace-actions">
                     <button type="submit" class="btn btn-primary">Guardar centro de costo</button>
                     <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>

@@ -1258,6 +1258,10 @@ public class CompraController(
                     ImportePercepcion = compraEditar.ImportePercepcion,
                     SaldoPago = compraEditar.Saldo,
                     Observacion = compraEditar.Observacion,
+                    UsuarioCreacion = compraEditar.UsuarioCreacion,
+                    FechaRegistro = compraEditar.FechaRegistro,
+                    UsuarioActualizacion = compraEditar.UsuarioActualizacion,
+                    FechaActualizacion = compraEditar.FechaActualizacion,
                     Detalles = compraEditar.Detalles
                         .OrderBy(x => x.Item)
                         .Select(x => new CompraDetalleFormViewModel

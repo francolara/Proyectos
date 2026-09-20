@@ -4,6 +4,8 @@
 -- Description:   Lista los centros de costo configurados por empresa con filtro y paginacion.
 -- =============================================
 
+-- Firma: FRANCO LARA - 19/09/2026 | Expone la trazabilidad de los centros de costo para su edicion.
+
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ListarCentroCostoConfiguracionEmpresa
     @IdEmpresa INT,
     @SoloActivos BIT = 1,
@@ -28,7 +30,11 @@ BEGIN
                 c.IdEmpresa,
                 c.Codigo AS CodigoCentroCosto,
                 c.Nombre AS NombreCentroCosto,
-                c.Estado
+                c.Estado,
+                c.UsuarioRegistro,
+                c.FechaRegistro,
+                c.UsuarioActualizacion,
+                c.FechaActualizacion
             FROM dbo.CON_CentroCostoConfiguracionEmpresa AS c
             WHERE c.IdEmpresa = @IdEmpresa
               AND (@SoloActivos = 0 OR c.Estado = 1)
@@ -44,6 +50,10 @@ BEGIN
             b.CodigoCentroCosto,
             b.NombreCentroCosto,
             b.Estado,
+            b.UsuarioRegistro,
+            b.FechaRegistro,
+            b.UsuarioActualizacion,
+            b.FechaActualizacion,
             COUNT(1) OVER() AS TotalRegistros
         FROM Base AS b
         ORDER BY b.CodigoCentroCosto ASC

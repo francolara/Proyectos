@@ -114,6 +114,10 @@
                     </label>
                 </div>
 
+                @if (Model.Formulario.IdTipoCambio.HasValue)
+                {
+                    @await Html.PartialAsync("_TrazabilidadRegistro", Model.Formulario)
+                }
                 <div class="workspace-actions">
                     <button type="submit" class="btn btn-primary">Guardar tipo de cambio</button>
                     <a asp-action="Index" asp-route-anio="@Model.AnioSeleccionado" asp-route-mes="@Model.MesSeleccionado" class="btn btn-outline-secondary">Cancelar</a>

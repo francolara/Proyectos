@@ -21,6 +21,8 @@
 -- Firma: FRANCO LARA - 01/07/2026 | Expone GeneraDiferenciaPorAnalisis en el mantenimiento web del plan de cuentas para soportar la generacion de diferencia en cambio por cuenta.
 -- Firma: FRANCO LARA - 02/07/2026 | Corrige el filtro SoloMovimiento para que las ayudas web de plan de cuentas vuelvan a listar las cuentas operativas en compras, asientos y caja bancos.
 
+-- Firma: FRANCO LARA - 19/09/2026 | Expone la trazabilidad del plan de cuentas en el resultado final compartido por listados, ayudas y edicion.
+
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ListarPlanCuentaPorEmpresa
     @IdEmpresa INT,
     @SoloMovimiento BIT = 0,
@@ -66,7 +68,11 @@ BEGIN
                     ELSE 1
                 END AS BIT) AS EsUltimoNivel,
                 pc.RequiereCentroCosto,
-                pc.Estado
+                pc.Estado,
+                pc.UsuarioRegistro,
+                pc.FechaRegistro,
+                pc.UsuarioActualizacion,
+                pc.FechaActualizacion
             FROM dbo.CON_PlanCuenta AS pc
             WHERE pc.IdEmpresa = @IdEmpresa
               AND pc.Estado = 1
@@ -103,6 +109,10 @@ BEGIN
             b.EsUltimoNivel,
             b.RequiereCentroCosto,
             b.Estado,
+            b.UsuarioRegistro,
+            b.FechaRegistro,
+            b.UsuarioActualizacion,
+            b.FechaActualizacion,
             COUNT(1) OVER() AS TotalRegistros
         FROM Base AS b
         ORDER BY b.CodigoCuenta ASC

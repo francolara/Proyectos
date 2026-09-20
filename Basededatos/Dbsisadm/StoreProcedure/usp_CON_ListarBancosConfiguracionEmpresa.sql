@@ -5,6 +5,8 @@
 -- =============================================
 -- Firma: FRANCO LARA - 09/07/2026 | Expone periodo y saldos iniciales Debe/Haber de la cuenta corriente para su mantenimiento y reutilizacion en Caja y Bancos.
 
+-- Firma: FRANCO LARA - 19/09/2026 | Expone la trazabilidad de las cuentas corrientes para su edicion.
+
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ListarBancosConfiguracionEmpresa
     @IdEmpresa INT,
     @SoloActivos BIT = 0,
@@ -43,7 +45,9 @@ BEGIN
                 c.SaldoInicialHaber,
                 c.Activo,
                 c.FechaRegistro,
-                c.UsuarioRegistro
+                c.UsuarioRegistro,
+                c.FechaActualizacion,
+                c.UsuarioActualizacion
             FROM dbo.CON_BancosConfiguracionEmpresa AS c
             INNER JOIN dbo.CON_Bancos AS b
                 ON b.IdBanco = c.IdBanco
@@ -85,6 +89,8 @@ BEGIN
             b.Activo,
             b.FechaRegistro,
             b.UsuarioRegistro,
+            b.FechaActualizacion,
+            b.UsuarioActualizacion,
             COUNT(1) OVER() AS TotalRegistros
         FROM Base AS b
         ORDER BY b.NombreBanco ASC, b.NroCuentaCorriente ASC

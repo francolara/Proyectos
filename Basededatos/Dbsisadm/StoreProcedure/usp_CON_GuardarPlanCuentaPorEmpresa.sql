@@ -15,6 +15,8 @@
 -- =============================================
 -- Firma: FRANCO LARA - 02/07/2026 | Corrige la lectura de parametros de grado usando TipoParametro NA y normaliza las monedas S/D como alias validos de PEN/USD al guardar cuentas contables.
 
+-- Firma: FRANCO LARA - 19/09/2026 | Registra la trazabilidad de alta y actualizacion del plan de cuentas desde el procedimiento.
+
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarPlanCuentaPorEmpresa
     @IdPlanCuenta INT = NULL,
     @IdEmpresa INT,
@@ -175,7 +177,8 @@ BEGIN
                 GeneraDiferenciaPorAnalisis,
                 RequiereCentroCosto,
                 Estado,
-                UsuarioRegistro
+                UsuarioRegistro,
+                FechaRegistro
             )
             VALUES
             (
@@ -191,7 +194,8 @@ BEGIN
                 @GeneraDiferenciaPorAnalisis,
                 @RequiereCentroCosto,
                 @Estado,
-                @UsuarioRegistro
+                @UsuarioRegistro,
+                SYSDATETIME()
             );
 
             SET @IdPlanCuenta = SCOPE_IDENTITY();
@@ -226,7 +230,8 @@ BEGIN
                 GeneraDiferenciaPorAnalisis = @GeneraDiferenciaPorAnalisis,
                 RequiereCentroCosto = @RequiereCentroCosto,
                 Estado = @Estado,
-                UsuarioRegistro = @UsuarioRegistro
+                FechaActualizacion = SYSDATETIME(),
+                UsuarioActualizacion = @UsuarioRegistro
             WHERE IdPlanCuenta = @IdPlanCuenta
               AND IdEmpresa = @IdEmpresa;
         END;
@@ -255,7 +260,11 @@ BEGIN
                      ELSE 1
                  END AS BIT) AS EsUltimoNivel,
             pc.RequiereCentroCosto,
-            pc.Estado
+            pc.Estado,
+            pc.UsuarioRegistro,
+            pc.FechaRegistro,
+            pc.UsuarioActualizacion,
+            pc.FechaActualizacion
         FROM dbo.CON_PlanCuenta AS pc
         WHERE pc.IdPlanCuenta = @IdPlanCuenta;
 

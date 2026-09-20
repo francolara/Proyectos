@@ -17,6 +17,8 @@
 -- Firma: FRANCO LARA - 30/06/2026 | Permite recuperar detalles de ventas importadas sin cuenta contable asignada para completar la provision antes del asiento final.
 -- Firma: FRANCO LARA - 26/08/2026 | Restablece el contrato completo de cabecera requerido al consultar y editar comprobantes de venta.
 
+-- Firma: FRANCO LARA - 19/09/2026 | Expone la trazabilidad de la venta para su formulario de edicion.
+
 CREATE OR ALTER PROCEDURE dbo.usp_VEN_ObtenerVenta
     @IdVenta INT
 AS
@@ -60,6 +62,10 @@ BEGIN
             v.ImporteTotal,
             v.Saldo,
             v.Observacion,
+            v.UsuarioRegistro,
+            v.FechaRegistro,
+            v.UsuarioActualizacion,
+            v.FechaActualizacion,
             v.Estado
         FROM dbo.VEN_Venta AS v
         INNER JOIN dbo.ADM_Cliente AS c

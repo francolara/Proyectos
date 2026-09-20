@@ -9,6 +9,8 @@
 -- Description:   Ajusta el mantenimiento web para listar origenes con busqueda y paginacion server-side segun filtro.
 -- =============================================
 
+-- Firma: FRANCO LARA - 19/09/2026 | Expone la trazabilidad de los origenes para su edicion.
+
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ListarOrigenesActivos
     @IdEmpresa INT,
     @SoloActivos BIT = 1,
@@ -34,7 +36,11 @@ BEGIN
                 o.NombreOrigen,
                 o.ModuloOrigen,
                 o.PermiteRegistroManual,
-                o.Estado
+                o.Estado,
+                o.UsuarioRegistro,
+                o.FechaRegistro,
+                o.UsuarioActualizacion,
+                o.FechaActualizacion
             FROM dbo.CON_Origen AS o
             WHERE o.IdEmpresa = @IdEmpresa
               AND (@SoloActivos = 0 OR o.Estado = 1)
@@ -52,6 +58,10 @@ BEGIN
             b.ModuloOrigen,
             b.PermiteRegistroManual,
             b.Estado,
+            b.UsuarioRegistro,
+            b.FechaRegistro,
+            b.UsuarioActualizacion,
+            b.FechaActualizacion,
             COUNT(1) OVER() AS TotalRegistros
         FROM Base AS b
         ORDER BY b.CodigoOrigen ASC

@@ -3,6 +3,7 @@
 -- Create date:   17/06/2026
 -- Description:   Obtiene una persona de la empresa activa con su estado de cliente y proveedor.
 -- =============================================
+-- Firma: FRANCO LARA - 19/09/2026 | Expone usuario y fecha de registro y actualizacion para la edicion de personas.
 
 CREATE OR ALTER PROCEDURE dbo.usp_ADM_ObtenerPersona
     @IdEmpresa INT,
@@ -33,7 +34,11 @@ BEGIN
             di.CodigoProvincia,
             CAST(CASE WHEN c.IdCliente IS NULL THEN 0 ELSE 1 END AS BIT) AS EsCliente,
             CAST(CASE WHEN pv.IdProveedor IS NULL THEN 0 ELSE 1 END AS BIT) AS EsProveedor,
-            p.Estado
+            p.Estado,
+            p.UsuarioRegistro,
+            p.FechaRegistro,
+            p.UsuarioActualizacion,
+            p.FechaActualizacion
         FROM dbo.ADM_Persona AS p
         LEFT JOIN dbo.UbigeoDistritos AS di
             ON di.CodigoUbigeo = p.CodigoUbigeo

@@ -28,6 +28,8 @@
 -- Firma: FRANCO LARA - 03/07/2026 | Persiste DH por linea en asientos manuales, lo valida con Debe/Haber y lo hereda tambien a la expansion de cuentas destino.
 -- Firma: FRANCO LARA - 22/08/2026 | Limita el registro manual al calendario contable vigente 00-14.
 
+-- Firma: FRANCO LARA - 19/09/2026 | Conserva la trazabilidad de alta y registra usuario y fecha al actualizar un asiento manual.
+
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarAsientoManual
     @IdAsiento INT = NULL,
     @IdEmpresa INT,
@@ -595,7 +597,8 @@ BEGIN
                 Estado,
                 ReferenciaExterna,
                 Observacion,
-                UsuarioRegistro
+                UsuarioRegistro,
+                FechaRegistro
             )
             VALUES
             (
@@ -615,7 +618,8 @@ BEGIN
                 N'PROVISIONADO',
                 @ReferenciaExterna,
                 @Observacion,
-                @UsuarioRegistro
+                @UsuarioRegistro,
+                SYSDATETIME()
             );
 
             SET @IdAsientoTrabajo = SCOPE_IDENTITY();
@@ -660,7 +664,8 @@ BEGIN
                 Estado = N'PROVISIONADO',
                 ReferenciaExterna = @ReferenciaExterna,
                 Observacion = @Observacion,
-                UsuarioRegistro = @UsuarioRegistro
+                FechaActualizacion = SYSDATETIME(),
+                UsuarioActualizacion = @UsuarioRegistro
             WHERE IdAsiento = @IdAsientoTrabajo;
         END;
 

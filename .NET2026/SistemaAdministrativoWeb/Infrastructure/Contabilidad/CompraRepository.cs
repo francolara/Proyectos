@@ -468,7 +468,11 @@ public sealed class CompraRepository(IDbConnectionFactory connectionFactory) : I
                 FechaValidacionCpe = reader.IsDBNull(reader.GetOrdinal("FechaValidacionCpe")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaValidacionCpe")),
                 EstadoValidacionCpe = reader.IsDBNull(reader.GetOrdinal("EstadoValidacionCpe")) ? null : reader.GetString(reader.GetOrdinal("EstadoValidacionCpe")),
                 MensajeValidacionCpe = reader.IsDBNull(reader.GetOrdinal("MensajeValidacionCpe")) ? null : reader.GetString(reader.GetOrdinal("MensajeValidacionCpe")),
-                Estado = reader.GetString(reader.GetOrdinal("Estado"))
+                Estado = reader.GetString(reader.GetOrdinal("Estado")),
+                UsuarioCreacion = reader.IsDBNull(reader.GetOrdinal("UsuarioRegistro")) ? null : reader.GetString(reader.GetOrdinal("UsuarioRegistro")),
+                FechaRegistro = reader.IsDBNull(reader.GetOrdinal("FechaRegistro")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaRegistro")),
+                UsuarioActualizacion = reader.IsDBNull(reader.GetOrdinal("UsuarioActualizacion")) ? null : reader.GetString(reader.GetOrdinal("UsuarioActualizacion")),
+                FechaActualizacion = reader.IsDBNull(reader.GetOrdinal("FechaActualizacion")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaActualizacion"))
             };
         }
 

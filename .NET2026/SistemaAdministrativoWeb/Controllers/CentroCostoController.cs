@@ -146,7 +146,8 @@ public class CentroCostoController(
                 IdEmpresa = currentCompanyAccessor.EmpresaId.Value,
                 CodigoCentroCosto = formulario.CodigoCentroCosto.Trim().ToUpperInvariant(),
                 NombreCentroCosto = formulario.NombreCentroCosto.Trim(),
-                Estado = formulario.Estado
+                Estado = formulario.Estado,
+                UsuarioRegistro = User.Identity?.Name
             }, cancellationToken);
 
             TempData["CentroCostoOk"] = formulario.IdCentroCosto.HasValue
@@ -210,7 +211,11 @@ public class CentroCostoController(
                     IdCentroCosto = centroEditar.IdCentroCosto,
                     CodigoCentroCosto = centroEditar.CodigoCentroCosto,
                     NombreCentroCosto = centroEditar.NombreCentroCosto,
-                    Estado = centroEditar.Estado
+                    Estado = centroEditar.Estado,
+                    UsuarioCreacion = centroEditar.UsuarioCreacion,
+                    FechaRegistro = centroEditar.FechaRegistro,
+                    UsuarioActualizacion = centroEditar.UsuarioActualizacion,
+                    FechaActualizacion = centroEditar.FechaActualizacion
                 }
         };
     }

@@ -267,7 +267,11 @@ public sealed class PersonaRepository(IDbConnectionFactory connectionFactory) : 
             CodigoProvincia = reader.IsDBNull(reader.GetOrdinal("CodigoProvincia")) ? null : reader.GetString(reader.GetOrdinal("CodigoProvincia")),
             EsCliente = reader.GetBoolean(reader.GetOrdinal("EsCliente")),
             EsProveedor = reader.GetBoolean(reader.GetOrdinal("EsProveedor")),
-            Estado = reader.GetBoolean(reader.GetOrdinal("Estado"))
+            Estado = reader.GetBoolean(reader.GetOrdinal("Estado")),
+            UsuarioCreacion = reader.IsDBNull(reader.GetOrdinal("UsuarioRegistro")) ? null : reader.GetString(reader.GetOrdinal("UsuarioRegistro")),
+            FechaRegistro = reader.IsDBNull(reader.GetOrdinal("FechaRegistro")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaRegistro")),
+            UsuarioActualizacion = reader.IsDBNull(reader.GetOrdinal("UsuarioActualizacion")) ? null : reader.GetString(reader.GetOrdinal("UsuarioActualizacion")),
+            FechaActualizacion = reader.IsDBNull(reader.GetOrdinal("FechaActualizacion")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaActualizacion"))
         };
     }
 }

@@ -495,6 +495,10 @@ public class AsientoController(
             Estado = asiento.Estado,
             ReferenciaExterna = asiento.ReferenciaExterna,
             Observacion = asiento.Observacion,
+            UsuarioCreacion = asiento.UsuarioCreacion,
+            FechaRegistro = asiento.FechaRegistro,
+            UsuarioActualizacion = asiento.UsuarioActualizacion,
+            FechaActualizacion = asiento.FechaActualizacion,
             Detalles = asiento.Detalles
         };
     }
@@ -527,7 +531,11 @@ public class AsientoController(
             TotalImporteD = asiento.TotalImporteD,
             Estado = asiento.Estado,
             ReferenciaExterna = asiento.ReferenciaExterna,
-            Observacion = asiento.Observacion
+            Observacion = asiento.Observacion,
+            UsuarioCreacion = asiento.UsuarioCreacion,
+            FechaRegistro = asiento.FechaRegistro,
+            UsuarioActualizacion = asiento.UsuarioActualizacion,
+            FechaActualizacion = asiento.FechaActualizacion
         };
     }
 
@@ -753,6 +761,10 @@ public class AsientoController(
                     TipoCambio = asientoEditar.TipoCambio,
                     ReferenciaExterna = asientoEditar.ReferenciaExterna,
                     Observacion = asientoEditar.Observacion,
+                    UsuarioCreacion = asientoEditar.UsuarioCreacion,
+                    FechaRegistro = asientoEditar.FechaRegistro,
+                    UsuarioActualizacion = asientoEditar.UsuarioActualizacion,
+                    FechaActualizacion = asientoEditar.FechaActualizacion,
                     Detalles = asientoEditar.Detalles
                         .OrderBy(x => x.Item)
                         .Select(x => new AsientoDetalleFormViewModel

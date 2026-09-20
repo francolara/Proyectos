@@ -36,6 +36,8 @@
 -- Firma: FRANCO LARA - 04/07/2026 | Convierte los pagos de Caja y Bancos a la moneda del comprobante antes de afectar saldos, topa la aplicacion para no dejar compras/ventas/documentos auxiliares en negativo, guarda en ImporteAplicado solo el monto efectivamente consumido por cada saldo documentario y resuelve la moneda documental desde ADM_Moneda para esquemas donde compras/ventas guardan IdMoneda.
 -- Firma: FRANCO LARA - 06/07/2026 | Cuando un documento queda cancelado al 100 por ciento, agrega lineas analiticas de ajuste cambiario en soles y/o dolares usando las cuentas de ganancia/perdida de diferencia en cambio sin alterar el Debe/Haber del asiento bancario.
 
+-- Firma: FRANCO LARA - 19/09/2026 | Conserva la trazabilidad de alta y registra usuario y fecha al actualizar un movimiento de caja y bancos.
+
 CREATE OR ALTER PROCEDURE dbo.usp_BAN_GuardarMovimientoBanco
     @IdMovimientoBanco INT = NULL,
     @IdEmpresa INT,
@@ -1094,7 +1096,8 @@ BEGIN
                 Estado,
                 ReferenciaExterna,
                 Observacion,
-                UsuarioRegistro
+                UsuarioRegistro,
+                FechaRegistro
             )
             VALUES
             (
@@ -1114,7 +1117,8 @@ BEGIN
                 N'PROVISIONADO',
                 @ReferenciaExterna,
                 @Observacion,
-                @UsuarioRegistro
+                @UsuarioRegistro,
+                SYSDATETIME()
             );
 
             SET @IdAsientoTrabajo = SCOPE_IDENTITY();
@@ -1158,7 +1162,8 @@ BEGIN
                 Estado = N'PROVISIONADO',
                 ReferenciaExterna = @ReferenciaExterna,
                 Observacion = @Observacion,
-                UsuarioRegistro = @UsuarioRegistro
+                FechaActualizacion = SYSDATETIME(),
+                UsuarioActualizacion = @UsuarioRegistro
             WHERE IdAsiento = @IdAsientoTrabajo;
         END;
         ELSE IF @IdAsientoTrabajo IS NOT NULL
@@ -1201,7 +1206,8 @@ BEGIN
                 Observacion,
                 ImporteTotal,
                 Activo,
-                UsuarioRegistro
+                UsuarioRegistro,
+                FechaRegistro
             )
             VALUES
             (
@@ -1223,7 +1229,8 @@ BEGIN
                 NULLIF(LTRIM(RTRIM(@Observacion)), ''),
                 @ImporteTotal,
                 1,
-                NULLIF(LTRIM(RTRIM(@UsuarioRegistro)), '')
+                NULLIF(LTRIM(RTRIM(@UsuarioRegistro)), ''),
+                SYSDATETIME()
             );
 
             SET @IdMovimientoBanco = SCOPE_IDENTITY();
@@ -1247,7 +1254,8 @@ BEGIN
                 Glosa = LTRIM(RTRIM(@Glosa)),
                 Observacion = NULLIF(LTRIM(RTRIM(@Observacion)), ''),
                 ImporteTotal = @ImporteTotal,
-                UsuarioRegistro = NULLIF(LTRIM(RTRIM(@UsuarioRegistro)), '')
+                FechaActualizacion = SYSDATETIME(),
+                UsuarioActualizacion = NULLIF(LTRIM(RTRIM(@UsuarioRegistro)), '')
             WHERE IdMovimientoBanco = @IdMovimientoBanco
               AND IdEmpresa = @IdEmpresa;
 

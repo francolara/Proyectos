@@ -10,6 +10,8 @@
 -- =============================================
 -- Firma: FRANCO LARA - 25/08/2026 | Elimina Ejercicio del guardado porque la regla es unica por empresa y cuenta origen.
 
+-- Firma: FRANCO LARA - 19/09/2026 | Registra la trazabilidad de alta y actualizacion de la regla de cuenta destino desde el procedimiento.
+
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarCuentaDestinoRegla
     @IdEmpresa INT,
     @IdPlanCuentaOrigen INT,
@@ -102,7 +104,8 @@ BEGIN
                 IdPlanCuentaOrigen,
                 Activo,
                 Observacion,
-                UsuarioRegistro
+                UsuarioRegistro,
+                FechaRegistro
             )
             VALUES
             (
@@ -110,7 +113,8 @@ BEGIN
                 @IdPlanCuentaOrigen,
                 @Activo,
                 @Observacion,
-                @UsuarioRegistro
+                @UsuarioRegistro,
+                SYSDATETIME()
             );
 
             SET @IdCuentaDestinoRegla = SCOPE_IDENTITY();
@@ -120,7 +124,8 @@ BEGIN
             UPDATE dbo.CON_CuentaDestinoRegla
             SET Activo = @Activo,
                 Observacion = @Observacion,
-                UsuarioRegistro = @UsuarioRegistro
+                FechaActualizacion = SYSDATETIME(),
+                UsuarioActualizacion = @UsuarioRegistro
             WHERE IdCuentaDestinoRegla = @IdCuentaDestinoRegla;
 
             DELETE FROM dbo.CON_CuentaDestinoReglaDetalle

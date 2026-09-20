@@ -146,7 +146,11 @@ public sealed class PlanCuentaRepository(IDbConnectionFactory connectionFactory)
             GeneraDiferenciaPorAnalisis = reader.GetBoolean(reader.GetOrdinal("GeneraDiferenciaPorAnalisis")),
             EsUltimoNivel = reader.GetBoolean(reader.GetOrdinal("EsUltimoNivel")),
             RequiereCentroCosto = reader.GetBoolean(reader.GetOrdinal("RequiereCentroCosto")),
-            Estado = reader.GetBoolean(reader.GetOrdinal("Estado"))
+            Estado = reader.GetBoolean(reader.GetOrdinal("Estado")),
+            UsuarioCreacion = reader.IsDBNull(reader.GetOrdinal("UsuarioRegistro")) ? null : reader.GetString(reader.GetOrdinal("UsuarioRegistro")),
+            FechaRegistro = reader.IsDBNull(reader.GetOrdinal("FechaRegistro")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaRegistro")),
+            UsuarioActualizacion = reader.IsDBNull(reader.GetOrdinal("UsuarioActualizacion")) ? null : reader.GetString(reader.GetOrdinal("UsuarioActualizacion")),
+            FechaActualizacion = reader.IsDBNull(reader.GetOrdinal("FechaActualizacion")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaActualizacion"))
         };
     }
 }

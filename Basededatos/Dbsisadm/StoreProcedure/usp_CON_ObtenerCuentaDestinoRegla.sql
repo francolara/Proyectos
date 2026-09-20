@@ -9,6 +9,8 @@
 -- Description:   Simplifica la cabecera de cuentas destino para operar sin dependencia funcional del ejercicio.
 -- =============================================
 
+-- Firma: FRANCO LARA - 19/09/2026 | Expone la trazabilidad de la regla de cuenta destino para su edicion.
+
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ObtenerCuentaDestinoRegla
     @IdCuentaDestinoRegla INT
 AS
@@ -25,7 +27,11 @@ BEGIN
             po.CodigoCuenta AS CodigoCuentaOrigen,
             po.NombreCuenta AS NombreCuentaOrigen,
             r.Activo,
-            r.Observacion
+            r.Observacion,
+            r.UsuarioRegistro,
+            r.FechaRegistro,
+            r.UsuarioActualizacion,
+            r.FechaActualizacion
         FROM dbo.CON_CuentaDestinoRegla AS r
         INNER JOIN dbo.CON_PlanCuenta AS po
             ON po.IdPlanCuenta = r.IdPlanCuentaOrigen

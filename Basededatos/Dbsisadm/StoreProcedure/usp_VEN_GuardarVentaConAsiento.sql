@@ -33,6 +33,8 @@
 -- Firma: FRANCO LARA - 30/06/2026 | Guarda tipo documento por codigo en ventas, calcula equivalencias en soles y dolares por linea del asiento generado y crea el asiento principal cuando la venta fue importada en EN REVISION sin IdAsiento.
 -- Firma: FRANCO LARA - 25/08/2026 | Exige cuentas de documentos e impuestos configuradas por empresa, sin usar respaldos del maestro durante la provision.
 
+-- Firma: FRANCO LARA - 19/09/2026 | Conserva la trazabilidad de alta y registra usuario y fecha al actualizar una venta.
+
 CREATE OR ALTER PROCEDURE dbo.usp_VEN_GuardarVentaConAsiento
     @IdVenta INT = NULL,
     @IdEmpresa INT,
@@ -604,7 +606,8 @@ BEGIN
                 Estado,
                 ReferenciaExterna,
                 Observacion,
-                UsuarioRegistro
+                UsuarioRegistro,
+                FechaRegistro
             )
             VALUES
             (
@@ -624,7 +627,8 @@ BEGIN
                 N'PROVISIONADO',
                 CONCAT(@TipoComprobante, N' ', @Serie, N'-', @Numero),
                 @Observacion,
-                @UsuarioRegistro
+                @UsuarioRegistro,
+                SYSDATETIME()
             );
 
             SET @IdAsientoTrabajo = SCOPE_IDENTITY();
@@ -654,7 +658,8 @@ BEGIN
                 Saldo,
                 Observacion,
                 Estado,
-                UsuarioRegistro
+                UsuarioRegistro,
+                FechaRegistro
             )
             VALUES
             (
@@ -681,7 +686,8 @@ BEGIN
                 @ImporteTotal,
                 @Observacion,
                 N'PROVISIONADO',
-                @UsuarioRegistro
+                @UsuarioRegistro,
+                SYSDATETIME()
             );
 
             SET @IdVentaTrabajo = SCOPE_IDENTITY();
@@ -768,7 +774,8 @@ BEGIN
                     Estado,
                     ReferenciaExterna,
                     Observacion,
-                    UsuarioRegistro
+                    UsuarioRegistro,
+                    FechaRegistro
                 )
                 VALUES
                 (
@@ -788,7 +795,8 @@ BEGIN
                     N'PROVISIONADO',
                     CONCAT(@TipoComprobante, N' ', @Serie, N'-', @Numero),
                     @Observacion,
-                    @UsuarioRegistro
+                    @UsuarioRegistro,
+                    SYSDATETIME()
                 );
 
                 SET @IdAsientoTrabajo = SCOPE_IDENTITY();
@@ -816,7 +824,8 @@ BEGIN
                 ImporteTotal = @ImporteTotal,
                 Saldo = @ImporteTotal,
                 Observacion = @Observacion,
-                UsuarioRegistro = @UsuarioRegistro
+                FechaActualizacion = SYSDATETIME(),
+                UsuarioActualizacion = @UsuarioRegistro
             WHERE IdVenta = @IdVentaTrabajo;
 
             DELETE FROM dbo.CON_AsientoDetalle
@@ -833,7 +842,8 @@ BEGIN
                 Estado = N'PROVISIONADO',
                 ReferenciaExterna = CONCAT(@TipoComprobante, N' ', @Serie, N'-', @Numero),
                 Observacion = @Observacion,
-                UsuarioRegistro = @UsuarioRegistro
+                FechaActualizacion = SYSDATETIME(),
+                UsuarioActualizacion = @UsuarioRegistro
             WHERE IdAsiento = @IdAsientoTrabajo;
 
             DELETE FROM dbo.VEN_VentaDetalle

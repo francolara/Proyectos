@@ -140,7 +140,9 @@ public sealed class CuentaCorrienteRepository(IDbConnectionFactory connectionFac
             FechaRegistro = reader.GetDateTime(reader.GetOrdinal("FechaRegistro")),
             UsuarioRegistro = reader.IsDBNull(reader.GetOrdinal("UsuarioRegistro"))
                 ? string.Empty
-                : reader.GetString(reader.GetOrdinal("UsuarioRegistro"))
+                : reader.GetString(reader.GetOrdinal("UsuarioRegistro")),
+            FechaActualizacion = reader.IsDBNull(reader.GetOrdinal("FechaActualizacion")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaActualizacion")),
+            UsuarioActualizacion = reader.IsDBNull(reader.GetOrdinal("UsuarioActualizacion")) ? null : reader.GetString(reader.GetOrdinal("UsuarioActualizacion"))
         };
     }
 }

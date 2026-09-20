@@ -112,7 +112,11 @@ public sealed class CuentaDestinoReglaRepository(IDbConnectionFactory connection
                 CodigoCuentaOrigen = reader.GetString(reader.GetOrdinal("CodigoCuentaOrigen")),
                 NombreCuentaOrigen = reader.GetString(reader.GetOrdinal("NombreCuentaOrigen")),
                 Activo = reader.GetBoolean(reader.GetOrdinal("Activo")),
-                Observacion = reader.IsDBNull(reader.GetOrdinal("Observacion")) ? null : reader.GetString(reader.GetOrdinal("Observacion"))
+                Observacion = reader.IsDBNull(reader.GetOrdinal("Observacion")) ? null : reader.GetString(reader.GetOrdinal("Observacion")),
+                UsuarioCreacion = reader.IsDBNull(reader.GetOrdinal("UsuarioRegistro")) ? null : reader.GetString(reader.GetOrdinal("UsuarioRegistro")),
+                FechaRegistro = reader.IsDBNull(reader.GetOrdinal("FechaRegistro")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaRegistro")),
+                UsuarioActualizacion = reader.IsDBNull(reader.GetOrdinal("UsuarioActualizacion")) ? null : reader.GetString(reader.GetOrdinal("UsuarioActualizacion")),
+                FechaActualizacion = reader.IsDBNull(reader.GetOrdinal("FechaActualizacion")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaActualizacion"))
             };
         }
 

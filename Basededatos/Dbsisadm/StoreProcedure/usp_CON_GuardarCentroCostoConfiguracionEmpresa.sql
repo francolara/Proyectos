@@ -4,12 +4,15 @@
 -- Description:   Inserta o actualiza un centro de costo configurado por empresa validando codigo unico.
 -- =============================================
 
+-- Firma: FRANCO LARA - 19/09/2026 | Registra la trazabilidad de alta y actualizacion del centro de costo desde el procedimiento.
+
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarCentroCostoConfiguracionEmpresa
     @IdCentroCosto INT = NULL,
     @IdEmpresa INT,
     @CodigoCentroCosto VARCHAR(20),
     @NombreCentroCosto NVARCHAR(150),
-    @Estado BIT
+    @Estado BIT,
+    @UsuarioRegistro NVARCHAR(450) = NULL
 AS
 BEGIN
 
@@ -46,14 +49,18 @@ BEGIN
                 IdEmpresa,
                 Codigo,
                 Nombre,
-                Estado
+                Estado,
+                UsuarioRegistro,
+                FechaRegistro
             )
             VALUES
             (
                 @IdEmpresa,
                 @CodigoCentroCosto,
                 @NombreCentroCosto,
-                @Estado
+                @Estado,
+                @UsuarioRegistro,
+                SYSDATETIME()
             );
 
             SET @IdCentroCosto = SCOPE_IDENTITY();
@@ -74,7 +81,9 @@ BEGIN
             UPDATE dbo.CON_CentroCostoConfiguracionEmpresa
             SET Codigo = @CodigoCentroCosto,
                 Nombre = @NombreCentroCosto,
-                Estado = @Estado
+                Estado = @Estado,
+                FechaActualizacion = SYSDATETIME(),
+                UsuarioActualizacion = @UsuarioRegistro
             WHERE IdCentroCostoConfiguracionEmpresa = @IdCentroCosto
               AND IdEmpresa = @IdEmpresa;
         END;
@@ -84,7 +93,11 @@ BEGIN
             c.IdEmpresa,
             c.Codigo AS CodigoCentroCosto,
             c.Nombre AS NombreCentroCosto,
-            c.Estado
+            c.Estado,
+            c.UsuarioRegistro,
+            c.FechaRegistro,
+            c.UsuarioActualizacion,
+            c.FechaActualizacion
         FROM dbo.CON_CentroCostoConfiguracionEmpresa AS c
         WHERE c.IdCentroCostoConfiguracionEmpresa = @IdCentroCosto;
 

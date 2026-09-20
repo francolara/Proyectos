@@ -255,6 +255,8 @@ public class CuentaCorrienteController(
                     Activo = cuentaEditar.Activo,
                     FechaRegistro = cuentaEditar.FechaRegistro,
                     UsuarioRegistro = cuentaEditar.UsuarioRegistro,
+                    FechaActualizacion = cuentaEditar.FechaActualizacion,
+                    UsuarioActualizacion = cuentaEditar.UsuarioActualizacion,
                     Monedas = monedas.ToList()
                 }
         };

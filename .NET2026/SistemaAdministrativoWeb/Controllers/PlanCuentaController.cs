@@ -489,6 +489,10 @@ public class PlanCuentaController(
                     GeneraDiferenciaPorAnalisis = cuentaEditar.GeneraDiferenciaPorAnalisis,
                     RequiereCentroCosto = cuentaEditar.RequiereCentroCosto,
                     Estado = cuentaEditar.Estado,
+                    UsuarioCreacion = cuentaEditar.UsuarioCreacion,
+                    FechaRegistro = cuentaEditar.FechaRegistro,
+                    UsuarioActualizacion = cuentaEditar.UsuarioActualizacion,
+                    FechaActualizacion = cuentaEditar.FechaActualizacion,
                     PermiteConfigurarDestinos = cuentaEditar.EsUltimoNivel || cuentaEditar.AceptaMovimiento || cuentaDestinoEditar is not null,
                     ConfiguracionDestino = CrearConfiguracionDestinoViewModel(cuentaDestinoEditar)
                 }

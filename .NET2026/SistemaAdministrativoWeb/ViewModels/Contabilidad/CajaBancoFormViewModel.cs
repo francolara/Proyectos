@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SistemaAdministrativoWeb.ViewModels.Contabilidad;
 
-public sealed class CajaBancoFormViewModel
+public sealed class CajaBancoFormViewModel : IRegistroTrazable
 {
     public int? IdMovimientoBanco { get; set; }
     public int? NumeroMovimiento { get; set; }
@@ -47,6 +47,10 @@ public sealed class CajaBancoFormViewModel
 
     [Range(typeof(decimal), "0.01", "999999999999", ErrorMessage = "Ingrese un importe total mayor a cero.")]
     public decimal ImporteTotal { get; set; }
+    public string? UsuarioCreacion { get; set; }
+    public DateTime? FechaRegistro { get; set; }
+    public string? UsuarioActualizacion { get; set; }
+    public DateTime? FechaActualizacion { get; set; }
 
     public List<CajaBancoDetalleFormViewModel> Detalles { get; set; } = [];
 }

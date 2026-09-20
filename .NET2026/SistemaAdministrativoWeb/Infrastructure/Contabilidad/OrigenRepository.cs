@@ -31,7 +31,11 @@ public sealed class OrigenRepository(IDbConnectionFactory connectionFactory) : I
                 NombreOrigen = reader.GetString(reader.GetOrdinal("NombreOrigen")),
                 ModuloOrigen = reader.GetString(reader.GetOrdinal("ModuloOrigen")),
                 PermiteRegistroManual = reader.GetBoolean(reader.GetOrdinal("PermiteRegistroManual")),
-                Estado = reader.GetBoolean(reader.GetOrdinal("Estado"))
+                Estado = reader.GetBoolean(reader.GetOrdinal("Estado")),
+                UsuarioCreacion = reader.IsDBNull(reader.GetOrdinal("UsuarioRegistro")) ? null : reader.GetString(reader.GetOrdinal("UsuarioRegistro")),
+                FechaRegistro = reader.IsDBNull(reader.GetOrdinal("FechaRegistro")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaRegistro")),
+                UsuarioActualizacion = reader.IsDBNull(reader.GetOrdinal("UsuarioActualizacion")) ? null : reader.GetString(reader.GetOrdinal("UsuarioActualizacion")),
+                FechaActualizacion = reader.IsDBNull(reader.GetOrdinal("FechaActualizacion")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaActualizacion"))
             });
         }
 
@@ -68,7 +72,11 @@ public sealed class OrigenRepository(IDbConnectionFactory connectionFactory) : I
                 NombreOrigen = reader.GetString(reader.GetOrdinal("NombreOrigen")),
                 ModuloOrigen = reader.GetString(reader.GetOrdinal("ModuloOrigen")),
                 PermiteRegistroManual = reader.GetBoolean(reader.GetOrdinal("PermiteRegistroManual")),
-                Estado = reader.GetBoolean(reader.GetOrdinal("Estado"))
+                Estado = reader.GetBoolean(reader.GetOrdinal("Estado")),
+                UsuarioCreacion = reader.IsDBNull(reader.GetOrdinal("UsuarioRegistro")) ? null : reader.GetString(reader.GetOrdinal("UsuarioRegistro")),
+                FechaRegistro = reader.IsDBNull(reader.GetOrdinal("FechaRegistro")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaRegistro")),
+                UsuarioActualizacion = reader.IsDBNull(reader.GetOrdinal("UsuarioActualizacion")) ? null : reader.GetString(reader.GetOrdinal("UsuarioActualizacion")),
+                FechaActualizacion = reader.IsDBNull(reader.GetOrdinal("FechaActualizacion")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaActualizacion"))
             });
         }
 
@@ -113,7 +121,11 @@ public sealed class OrigenRepository(IDbConnectionFactory connectionFactory) : I
             NombreOrigen = reader.GetString(reader.GetOrdinal("NombreOrigen")),
             ModuloOrigen = reader.GetString(reader.GetOrdinal("ModuloOrigen")),
             PermiteRegistroManual = reader.GetBoolean(reader.GetOrdinal("PermiteRegistroManual")),
-            Estado = reader.GetBoolean(reader.GetOrdinal("Estado"))
+            Estado = reader.GetBoolean(reader.GetOrdinal("Estado")),
+            UsuarioCreacion = reader.IsDBNull(reader.GetOrdinal("UsuarioRegistro")) ? null : reader.GetString(reader.GetOrdinal("UsuarioRegistro")),
+            FechaRegistro = reader.IsDBNull(reader.GetOrdinal("FechaRegistro")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaRegistro")),
+            UsuarioActualizacion = reader.IsDBNull(reader.GetOrdinal("UsuarioActualizacion")) ? null : reader.GetString(reader.GetOrdinal("UsuarioActualizacion")),
+            FechaActualizacion = reader.IsDBNull(reader.GetOrdinal("FechaActualizacion")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaActualizacion"))
         };
     }
 

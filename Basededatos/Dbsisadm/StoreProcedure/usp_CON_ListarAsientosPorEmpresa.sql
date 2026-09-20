@@ -9,6 +9,7 @@
 -- Description:   Ajusta el manejo del periodo yyyyMM para evitar comparaciones con relleno fijo e incluye fecha de emision para formularios/listados del asiento.
 -- =============================================
 -- Firma: FRANCO LARA - 06/07/2026 | Expone en el listado de asientos los equivalentes por moneda desde CON_AsientoDetalle para mostrar la columna de Soles o Dolares segun la moneda del asiento.
+-- Firma: FRANCO LARA - 19/09/2026 | Incluye trazabilidad en el contrato compartido por listado y edicion de asientos.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ListarAsientosPorEmpresa
     @IdEmpresa INT,
@@ -69,7 +70,11 @@ BEGIN
                 END AS TotalImporteD,
                 a.Estado,
                 a.ReferenciaExterna,
-                a.Observacion
+                a.Observacion,
+                a.UsuarioRegistro,
+                a.FechaRegistro,
+                a.UsuarioActualizacion,
+                a.FechaActualizacion
             FROM dbo.CON_Asiento AS a
             INNER JOIN dbo.CON_Origen AS o
                 ON o.IdOrigen = a.IdOrigen
@@ -123,6 +128,10 @@ BEGIN
             b.Estado,
             b.ReferenciaExterna,
             b.Observacion,
+            b.UsuarioRegistro,
+            b.FechaRegistro,
+            b.UsuarioActualizacion,
+            b.FechaActualizacion,
             COUNT(1) OVER() AS TotalRegistros
         FROM Base AS b
         ORDER BY

@@ -5,6 +5,8 @@
 -- =============================================
 -- Firma: FRANCO LARA - 29/06/2026 | Permite mantener tipos de cambio manuales por fecha, moneda y cuenta administradora.
 
+-- Firma: FRANCO LARA - 19/09/2026 | Registra la trazabilidad de alta y actualizacion del tipo de cambio desde el procedimiento.
+
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarTipoCambio
     @IdTipoCambio INT = NULL,
     @IdCuentaAdministradora INT,
@@ -68,6 +70,7 @@ BEGIN
                 VentaSBS,
                 Fuente,
                 UsuarioRegistro,
+                FechaRegistro,
                 Estado
             )
             VALUES
@@ -81,6 +84,7 @@ BEGIN
                 @VentaSBS,
                 @Fuente,
                 @UsuarioRegistro,
+                SYSDATETIME(),
                 @Estado
             );
 
@@ -96,7 +100,8 @@ BEGIN
                 CompraSBS = @CompraSBS,
                 VentaSBS = @VentaSBS,
                 Fuente = @Fuente,
-                UsuarioRegistro = @UsuarioRegistro,
+                FechaActualizacion = SYSDATETIME(),
+                UsuarioActualizacion = @UsuarioRegistro,
                 Estado = @Estado
             WHERE IdTipoCambio = @IdTipoCambio
               AND IdCuentaAdministradora = @IdCuentaAdministradora;
@@ -118,6 +123,9 @@ BEGIN
             tc.VentaSBS,
             tc.Fuente,
             tc.UsuarioRegistro,
+            tc.FechaRegistro,
+            tc.UsuarioActualizacion,
+            tc.FechaActualizacion,
             tc.Estado
         FROM dbo.CON_TipoCambio AS tc
         WHERE tc.IdTipoCambio = @IdTipoCambio;

@@ -36,6 +36,8 @@
 -- Firma: FRANCO LARA - 30/06/2026 | Agrega retencion de renta de 4ta para recibos por honorarios, genera el pendiente COM_CompraRetencion y acredita la cuenta R4TA en el asiento principal de la compra.
 -- Firma: FRANCO LARA - 25/08/2026 | Exige cuentas de documentos e impuestos configuradas por empresa, sin usar respaldos del maestro durante la provision.
 
+-- Firma: FRANCO LARA - 19/09/2026 | Conserva la trazabilidad de alta y registra usuario y fecha al actualizar una compra.
+
 CREATE OR ALTER PROCEDURE dbo.usp_COM_GuardarCompraConAsiento
     @IdCompra INT = NULL,
     @IdEmpresa INT,
@@ -1310,7 +1312,8 @@ BEGIN
                 Estado,
                 ReferenciaExterna,
                 Observacion,
-                UsuarioRegistro
+                UsuarioRegistro,
+                FechaRegistro
             )
             VALUES
             (
@@ -1330,7 +1333,8 @@ BEGIN
                 N'PROVISIONADO',
                 CONCAT(@TipoComprobante, N' ', @Serie, N'-', @Numero),
                 @Observacion,
-                @UsuarioRegistro
+                @UsuarioRegistro,
+                SYSDATETIME()
             );
 
             SET @IdAsientoTrabajo = SCOPE_IDENTITY();
@@ -1372,7 +1376,8 @@ BEGIN
                 ImportePercepcion,
                 Observacion,
                 Estado,
-                UsuarioRegistro
+                UsuarioRegistro,
+                FechaRegistro
             )
             VALUES
             (
@@ -1411,7 +1416,8 @@ BEGIN
                 CASE WHEN @TienePercepcion = 1 THEN @ImportePercepcion ELSE 0 END,
                 @Observacion,
                 N'PROVISIONADO',
-                @UsuarioRegistro
+                @UsuarioRegistro,
+                SYSDATETIME()
             );
 
             SET @IdCompraTrabajo = SCOPE_IDENTITY();
@@ -1517,7 +1523,8 @@ BEGIN
                     Estado,
                     ReferenciaExterna,
                     Observacion,
-                    UsuarioRegistro
+                    UsuarioRegistro,
+                    FechaRegistro
                 )
                 VALUES
                 (
@@ -1537,7 +1544,8 @@ BEGIN
                     N'PROVISIONADO',
                     CONCAT(@TipoComprobante, N' ', @Serie, N'-', @Numero),
                     @Observacion,
-                    @UsuarioRegistro
+                    @UsuarioRegistro,
+                    SYSDATETIME()
                 );
 
                 SET @IdAsientoTrabajo = SCOPE_IDENTITY();
@@ -1601,7 +1609,8 @@ BEGIN
                 ImportePercepcion = CASE WHEN @TienePercepcion = 1 THEN @ImportePercepcion ELSE 0 END,
                 Observacion = @Observacion,
                 Estado = N'PROVISIONADO',
-                UsuarioRegistro = @UsuarioRegistro
+                FechaActualizacion = SYSDATETIME(),
+                UsuarioActualizacion = @UsuarioRegistro
             WHERE IdCompra = @IdCompraTrabajo;
 
             DELETE FROM dbo.CON_AsientoDetalle
@@ -1618,7 +1627,8 @@ BEGIN
                 Estado = N'PROVISIONADO',
                 ReferenciaExterna = CONCAT(@TipoComprobante, N' ', @Serie, N'-', @Numero),
                 Observacion = @Observacion,
-                UsuarioRegistro = @UsuarioRegistro
+                FechaActualizacion = SYSDATETIME(),
+                UsuarioActualizacion = @UsuarioRegistro
             WHERE IdAsiento = @IdAsientoTrabajo;
 
             DELETE FROM dbo.COM_CompraDetalle
@@ -1762,7 +1772,8 @@ BEGIN
                     Estado,
                     ReferenciaExterna,
                     Observacion,
-                    UsuarioRegistro
+                    UsuarioRegistro,
+                    FechaRegistro
                 )
                 VALUES
                 (
@@ -1782,7 +1793,8 @@ BEGIN
                     N'PROVISIONADO',
                     CONCAT(N'DET ', @TipoComprobante, N' ', @Serie, N'-', @Numero),
                     @Observacion,
-                    @UsuarioRegistro
+                    @UsuarioRegistro,
+                    SYSDATETIME()
                 );
 
                 SET @IdAsientoDetraccionTrabajo = SCOPE_IDENTITY();
@@ -1848,7 +1860,8 @@ BEGIN
                     Estado = N'PROVISIONADO',
                     ReferenciaExterna = CONCAT(N'DET ', @TipoComprobante, N' ', @Serie, N'-', @Numero),
                     Observacion = @Observacion,
-                    UsuarioRegistro = @UsuarioRegistro
+                    FechaActualizacion = SYSDATETIME(),
+                    UsuarioActualizacion = @UsuarioRegistro
                 WHERE IdAsiento = @IdAsientoDetraccionTrabajo;
 
                 UPDATE dbo.COM_CompraDetraccion
@@ -1960,7 +1973,8 @@ BEGIN
                     Estado,
                     ReferenciaExterna,
                     Observacion,
-                    UsuarioRegistro
+                    UsuarioRegistro,
+                    FechaRegistro
                 )
                 VALUES
                 (
@@ -1980,7 +1994,8 @@ BEGIN
                     N'PROVISIONADO',
                     CONCAT(N'PER ', @TipoComprobante, N' ', @Serie, N'-', @Numero),
                     @Observacion,
-                    @UsuarioRegistro
+                    @UsuarioRegistro,
+                    SYSDATETIME()
                 );
 
                 SET @IdAsientoPercepcionTrabajo = SCOPE_IDENTITY();
@@ -2048,7 +2063,8 @@ BEGIN
                     Estado = N'PROVISIONADO',
                     ReferenciaExterna = CONCAT(N'PER ', @TipoComprobante, N' ', @Serie, N'-', @Numero),
                     Observacion = @Observacion,
-                    UsuarioRegistro = @UsuarioRegistro
+                    FechaActualizacion = SYSDATETIME(),
+                    UsuarioActualizacion = @UsuarioRegistro
                 WHERE IdAsiento = @IdAsientoPercepcionTrabajo;
 
                 UPDATE dbo.COM_CompraPercepcion

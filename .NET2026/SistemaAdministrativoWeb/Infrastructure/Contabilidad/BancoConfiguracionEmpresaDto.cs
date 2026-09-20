@@ -21,4 +21,6 @@ public sealed class BancoConfiguracionEmpresaDto
     public bool Activo { get; init; }
     public DateTime FechaRegistro { get; init; }
     public string UsuarioRegistro { get; init; } = string.Empty;
+    public DateTime? FechaActualizacion { get; init; }
+    public string? UsuarioActualizacion { get; init; }
 }

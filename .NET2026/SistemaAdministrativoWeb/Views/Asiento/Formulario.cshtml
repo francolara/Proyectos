@@ -1,4 +1,5 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.AsientoIndexViewModel
+@* Firma: FRANCO LARA - 19/09/2026 | Muestra la trazabilidad del registro al editar un asiento. *@
 
 @* =============================================
    Author:        FRANCO LARA
@@ -355,6 +356,10 @@
                         </div>
                     </div>
 
+                    @if (Model.Formulario.IdAsiento.HasValue)
+                    {
+                        @await Html.PartialAsync("_TrazabilidadRegistro", Model.Formulario)
+                    }
                     <div class="workspace-actions">
                         @if (Model.Formulario.PermiteRegistroManual)
                         {

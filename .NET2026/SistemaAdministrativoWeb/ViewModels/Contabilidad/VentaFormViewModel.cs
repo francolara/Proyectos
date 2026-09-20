@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SistemaAdministrativoWeb.ViewModels.Contabilidad;
 
-public sealed class VentaFormViewModel
+public sealed class VentaFormViewModel : IRegistroTrazable
 {
     public int? IdVenta { get; set; }
 
@@ -67,6 +67,10 @@ public sealed class VentaFormViewModel
 
     [StringLength(500, ErrorMessage = "La observacion no puede exceder 500 caracteres.")]
     public string? Observacion { get; set; }
+    public string? UsuarioCreacion { get; set; }
+    public DateTime? FechaRegistro { get; set; }
+    public string? UsuarioActualizacion { get; set; }
+    public DateTime? FechaActualizacion { get; set; }
 
     public List<VentaDetalleFormViewModel> Detalles { get; set; } =
     [

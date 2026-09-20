@@ -12,5 +12,8 @@ public sealed class TipoCambioDto
     public decimal VentaSbs { get; init; }
     public string Fuente { get; init; } = string.Empty;
     public string? UsuarioRegistro { get; init; }
+    public DateTime? FechaRegistro { get; init; }
+    public string? UsuarioActualizacion { get; init; }
+    public DateTime? FechaActualizacion { get; init; }
     public bool Estado { get; init; }
 }

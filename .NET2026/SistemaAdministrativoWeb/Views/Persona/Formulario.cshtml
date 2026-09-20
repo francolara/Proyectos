@@ -1,4 +1,5 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.PersonaIndexViewModel
+@* Firma: FRANCO LARA - 19/09/2026 | Muestra la trazabilidad del registro al editar una persona. *@
 @* Firma: FRANCO LARA - 29/06/2026 | Agrega consulta Migo por RUC o DNI en el registro de persona para autollenar nombres o razon social, direccion y ubigeo cuando aplique. *@
 
 @{
@@ -157,6 +158,10 @@
                     </label>
                 </div>
 
+                @if (Model.Formulario.IdPersona.HasValue)
+                {
+                    @await Html.PartialAsync("_TrazabilidadRegistro", Model.Formulario)
+                }
                 <div class="workspace-actions">
                     <button type="submit" class="btn btn-primary">Guardar persona</button>
                     <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>

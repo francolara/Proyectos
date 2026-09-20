@@ -112,7 +112,11 @@ public sealed class AsientoRepository(IDbConnectionFactory connectionFactory) : 
                 TotalHaber = resumen.TotalHaber,
                 Estado = resumen.Estado,
                 ReferenciaExterna = resumen.ReferenciaExterna,
-                Observacion = resumen.Observacion
+                Observacion = resumen.Observacion,
+                UsuarioCreacion = resumen.UsuarioCreacion,
+                FechaRegistro = resumen.FechaRegistro,
+                UsuarioActualizacion = resumen.UsuarioActualizacion,
+                FechaActualizacion = resumen.FechaActualizacion
             };
         }
 
@@ -236,7 +240,11 @@ public sealed class AsientoRepository(IDbConnectionFactory connectionFactory) : 
             TotalImporteD = reader.IsDBNull(reader.GetOrdinal("TotalImporteD")) ? 0m : reader.GetDecimal(reader.GetOrdinal("TotalImporteD")),
             Estado = reader.GetString(reader.GetOrdinal("Estado")),
             ReferenciaExterna = reader.IsDBNull(reader.GetOrdinal("ReferenciaExterna")) ? null : reader.GetString(reader.GetOrdinal("ReferenciaExterna")),
-            Observacion = reader.IsDBNull(reader.GetOrdinal("Observacion")) ? null : reader.GetString(reader.GetOrdinal("Observacion"))
+            Observacion = reader.IsDBNull(reader.GetOrdinal("Observacion")) ? null : reader.GetString(reader.GetOrdinal("Observacion")),
+            UsuarioCreacion = reader.IsDBNull(reader.GetOrdinal("UsuarioRegistro")) ? null : reader.GetString(reader.GetOrdinal("UsuarioRegistro")),
+            FechaRegistro = reader.IsDBNull(reader.GetOrdinal("FechaRegistro")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaRegistro")),
+            UsuarioActualizacion = reader.IsDBNull(reader.GetOrdinal("UsuarioActualizacion")) ? null : reader.GetString(reader.GetOrdinal("UsuarioActualizacion")),
+            FechaActualizacion = reader.IsDBNull(reader.GetOrdinal("FechaActualizacion")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaActualizacion"))
         };
     }
 

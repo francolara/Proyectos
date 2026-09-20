@@ -3,7 +3,7 @@ using SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 
 namespace SistemaAdministrativoWeb.ViewModels.Contabilidad;
 
-public sealed class CuentaCorrienteFormViewModel
+public sealed class CuentaCorrienteFormViewModel : IRegistroTrazable
 {
     public int? IdBancoConfiguracionEmpresa { get; set; }
 
@@ -41,7 +41,10 @@ public sealed class CuentaCorrienteFormViewModel
     public bool Activo { get; set; } = true;
 
     public DateTime? FechaRegistro { get; set; }
-    public string UsuarioRegistro { get; set; } = string.Empty;
+    public string? UsuarioCreacion { get; set; }
+    public string UsuarioRegistro { get => UsuarioCreacion ?? string.Empty; set => UsuarioCreacion = value; }
+    public string? UsuarioActualizacion { get; set; }
+    public DateTime? FechaActualizacion { get; set; }
 
     public List<MonedaDto> Monedas { get; set; } = [];
 }

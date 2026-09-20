@@ -17,6 +17,8 @@
 -- Firma: FRANCO LARA - 03/07/2026 | Devuelve DH en el detalle para exponer el sentido contable explicito por linea.
 -- Firma: FRANCO LARA - 06/07/2026 | Expone tambien TotalImporteS y TotalImporteD consolidados en la cabecera del asiento para reutilizar el resumen del listado y formulario.
 
+-- Firma: FRANCO LARA - 19/09/2026 | Expone la trazabilidad del asiento para su formulario de edicion.
+
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ObtenerAsiento
     @IdAsiento INT
 AS
@@ -57,7 +59,11 @@ BEGIN
             END AS TotalImporteD,
             a.Estado,
             a.ReferenciaExterna,
-            a.Observacion
+            a.Observacion,
+            a.UsuarioRegistro,
+            a.FechaRegistro,
+            a.UsuarioActualizacion,
+            a.FechaActualizacion
         FROM dbo.CON_Asiento AS a
         INNER JOIN dbo.CON_Origen AS o
             ON o.IdOrigen = a.IdOrigen

@@ -5,6 +5,8 @@
 -- =============================================
 -- Firma: FRANCO LARA - 29/06/2026 | Devuelve el registro puntual del mantenimiento de tipos de cambio.
 
+-- Firma: FRANCO LARA - 19/09/2026 | Expone la trazabilidad del tipo de cambio para su edicion.
+
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ObtenerTipoCambio
     @IdTipoCambio INT,
     @IdCuentaAdministradora INT
@@ -26,6 +28,9 @@ BEGIN
             tc.VentaSBS,
             tc.Fuente,
             tc.UsuarioRegistro,
+            tc.FechaRegistro,
+            tc.UsuarioActualizacion,
+            tc.FechaActualizacion,
             tc.Estado
         FROM dbo.CON_TipoCambio AS tc
         WHERE tc.IdTipoCambio = @IdTipoCambio

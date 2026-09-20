@@ -906,6 +906,10 @@ public class VentaController(
                     Redondeo = ventaEditar.Redondeo,
                     ImporteTotal = ventaEditar.ImporteTotal,
                     Observacion = ventaEditar.Observacion,
+                    UsuarioCreacion = ventaEditar.UsuarioCreacion,
+                    FechaRegistro = ventaEditar.FechaRegistro,
+                    UsuarioActualizacion = ventaEditar.UsuarioActualizacion,
+                    FechaActualizacion = ventaEditar.FechaActualizacion,
                     Detalles = ventaEditar.Detalles
                         .OrderBy(x => x.Item)
                         .Select(x => new VentaDetalleFormViewModel

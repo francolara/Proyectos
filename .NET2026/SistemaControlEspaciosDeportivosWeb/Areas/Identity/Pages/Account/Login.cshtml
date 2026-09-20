@@ -1,5 +1,6 @@
 @page
 @model SistemaControlEspaciosDeportivosWeb.Areas.Identity.Pages.Account.LoginModel
+@* Firma: FRANCO LARA - 19/09/2026 | El inicio de sesión muestra el indicador de carga del panel administrativo y un spinner en el botón mientras se validan las credenciales. *@
 @* Firma: FRANCO LARA - 18/09/2026 | Adapta el inicio de sesión a una experiencia deportiva que conserva la proporción del banner sin recortes. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Oculta el reenvio de confirmacion cuando IdentityBehavior no requiere validar el correo. *@
 @inject Microsoft.Extensions.Options.IOptions<SistemaControlEspaciosDeportivosWeb.Services.SedeImagenStorageSettings> SedeImagenStorageOptions
@@ -166,11 +167,46 @@
 
             let isSubmitting = false;
 
+            const showLoginLoadingOverlay = () => {
+                const overlayId = 'login-loading-overlay';
+                let overlay = document.getElementById(overlayId);
+
+                if (!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.id = overlayId;
+                    overlay.className = 'workspace-loading-overlay';
+                    overlay.setAttribute('aria-hidden', 'true');
+                    overlay.innerHTML = [
+                        '<div class="workspace-loading-box" role="status" aria-live="polite" aria-busy="true">',
+                        '  <span class="workspace-loading-spinner"></span>',
+                        '  <strong>Ingresando...</strong>',
+                        '  <small>Espere mientras validamos sus credenciales.</small>',
+                        '</div>'
+                    ].join('');
+                    document.body.appendChild(overlay);
+                }
+
+                overlay.classList.add('is-visible');
+                overlay.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('workspace-loading-active');
+            };
+
             if (loginForm) {
                 loginForm.addEventListener('submit', (event) => {
                     if (isSubmitting) {
                         event.preventDefault();
                         return;
+                    }
+
+                    if (typeof loginForm.checkValidity === 'function' && !loginForm.checkValidity()) {
+                        return;
+                    }
+
+                    if (window.jQuery) {
+                        const jqueryForm = window.jQuery(loginForm);
+                        if (typeof jqueryForm.valid === 'function' && !jqueryForm.valid()) {
+                            return;
+                        }
                     }
 
                     isSubmitting = true;
@@ -182,8 +218,11 @@
                     });
 
                     if (loginSubmit) {
-                        loginSubmit.textContent = 'Ingresando...';
+                        loginSubmit.setAttribute('aria-busy', 'true');
+                        loginSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span><span>Ingresando...</span>';
                     }
+
+                    showLoginLoadingOverlay();
                 });
             }
 

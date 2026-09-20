@@ -1,4 +1,5 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.VentaIndexViewModel
+@* Firma: FRANCO LARA - 19/09/2026 | Muestra la trazabilidad del registro al editar una venta. *@
 
 @* =============================================
    Author:        FRANCO LARA
@@ -276,6 +277,10 @@
                         </div>
                     </div>
 
+                    @if (Model.Formulario.IdVenta.HasValue)
+                    {
+                        @await Html.PartialAsync("_TrazabilidadRegistro", Model.Formulario)
+                    }
                     <div class="workspace-actions">
                         <button type="submit" class="btn btn-primary">Guardar venta</button>
                         <a asp-action="Index" asp-route-anio="@Model.AnioSeleccionado" asp-route-mes="@Model.MesSeleccionado" class="btn btn-outline-secondary">Cancelar</a>
