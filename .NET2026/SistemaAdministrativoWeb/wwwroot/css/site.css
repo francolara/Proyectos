@@ -7477,3 +7477,25 @@ html[data-theme="dark"] .voucher-header {
   color: #ffffff;
   box-shadow: 0 0 0 .2rem rgba(70, 194, 255, .18);
 }
+
+/* Firma: FRANCO LARA - 22/09/2026 | Compacta el pie de pagina publico y lo mantiene al final visible de las pantallas cortas, incluidas autenticacion y seleccion de empresa. */
+.app-public-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-public-main {
+  flex: 1 0 auto;
+}
+
+.app-public-footer {
+  flex-shrink: 0;
+  padding: 1rem 0 1.25rem;
+}
+
+@media (max-width: 767.98px) {
+  .app-public-footer {
+    padding-bottom: 1.25rem;
+  }
+}
