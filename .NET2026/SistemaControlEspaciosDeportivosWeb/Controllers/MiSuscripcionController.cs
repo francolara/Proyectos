@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using SistemaControlEspaciosDeportivosWeb.Configuration;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
 using System.Security.Claims;
@@ -7,7 +9,8 @@ namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
 public class MiSuscripcionController(
     IModuloPermisoService moduloPermisoService,
-    ISportCenterStoredProcedureService spService) : ModuloControllerBase(moduloPermisoService)
+    ISportCenterStoredProcedureService spService,
+    IOptions<BusinessInformationOptions> businessInformationOptions) : ModuloControllerBase(moduloPermisoService)
 {
     public async Task<IActionResult> Index(int? negocioId)
     {
@@ -47,6 +50,7 @@ public class MiSuscripcionController(
         var limites = await spService.NegocioObtenerLimitesOperativosAsync(resolvedNegocioId.Value);
         var contactoEmail = (await spService.ParametrosGlobalesObtenerValorAsync("HOME_PORTAL_CONTACTO_EMAIL")) ?? string.Empty;
         var contactoTelefono = (await spService.ParametrosGlobalesObtenerValorAsync("HOME_PORTAL_CONTACTO_TELEFONO")) ?? string.Empty;
+        var informacionEmpresa = businessInformationOptions.Value;
 
         DateTime? fechaVencimiento = null;
         if (suscripcion is not null)
@@ -72,6 +76,12 @@ public class MiSuscripcionController(
             TipoPlan = limites.TipoPlan,
             ContactoPlataformaEmail = contactoEmail,
             ContactoPlataformaTelefono = contactoTelefono,
+            BancoPago = informacionEmpresa.PaymentBankName,
+            MonedaCuentaPago = informacionEmpresa.PaymentAccountCurrency,
+            NumeroCuentaPago = informacionEmpresa.PaymentAccountNumber,
+            NumeroCuentaInterbancariaPago = informacionEmpresa.PaymentInterbankAccountNumber,
+            RazonSocialPago = informacionEmpresa.LegalName,
+            RucPago = informacionEmpresa.Ruc,
             FechaVencimiento = fechaVencimiento,
             DiasParaVencer = diasParaVencer,
             EsModoGratuito = suscripcion?.EsPrueba == true,

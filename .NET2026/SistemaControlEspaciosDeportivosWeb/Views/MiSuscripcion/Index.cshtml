@@ -1,4 +1,5 @@
 ﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.MiSuscripcionIndexViewModel
+@* Firma: FRANCO LARA - 22/09/2026 | Incorpora las cuentas bancarias BCP para el pago de la suscripcion, con razon social, RUC, botones compactos de copiado alineados a la derecha, aviso de envio de constancia y nombres comerciales de planes consistentes con el portal público. *@
 @{
     ViewData["Title"] = "Mi suscripcion";
     var sus = Model.Suscripcion;
@@ -50,7 +51,7 @@ else
             </article>
             <article class="kpi-card">
                 <p class="kpi-card-label">Plan</p>
-                <h2 class="kpi-card-value">@Model.TipoPlan</h2>
+                <h2 class="kpi-card-value">@Model.NombrePlanVisible</h2>
             </article>
             <article class="kpi-card">
                 <p class="kpi-card-label">Vence</p>
@@ -79,14 +80,14 @@ else
                 <span class="sc-suscripcion-info-icon"><i class="bi bi-award"></i></span>
                 <div class="sc-suscripcion-info-copy">
                     <small>Plan contratado</small>
-                    <strong>@Model.TipoPlan</strong>
+                    <strong>@Model.NombrePlanVisible</strong>
                     <span>@(Model.EsPlanBasico ? "Plan ideal para operar reservas, pagos y administracion esencial." : "Plan completo con herramientas comerciales y comprobantes habilitados.")</span>
                 </div>
             </article>
             <article class="sc-suscripcion-info-card">
                 <span class="sc-suscripcion-info-icon"><i class="bi bi-check2-square"></i></span>
                 <div class="sc-suscripcion-info-copy">
-                    <small>Basico</small>
+                    <small>Esencial</small>
                     <strong>Operacion esencial</strong>
                     <span>Incluye reservas, pagos, clientes, sedes, espacios, usuarios y reportes.</span>
                 </div>
@@ -94,11 +95,15 @@ else
             <article class="sc-suscripcion-info-card">
                 <span class="sc-suscripcion-info-icon"><i class="bi bi-rocket-takeoff"></i></span>
                 <div class="sc-suscripcion-info-copy">
-                    <small>Full</small>
+                    <small>Pro</small>
                     <strong>Comercial avanzado</strong>
                     <span>Habilita promociones, cupones y comprobantes para escalar tus ventas.</span>
                 </div>
             </article>
+        </div>
+        <div class="alert alert-info mt-3 mb-0" role="note">
+            <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+            Luego de realizar el pago, envía tu constancia por WhatsApp indicando el nombre de tu negocio.
         </div>
     </section>
 
@@ -132,6 +137,48 @@ else
         </div>
     </section>
 
+    <section class="content-card mb-3">
+        <h2 class="section-title mb-3"><i class="bi bi-bank me-1"></i>Cuentas bancarias</h2>
+        <div class="sc-suscripcion-limites-grid">
+            <article class="sc-suscripcion-info-card">
+                <span class="sc-suscripcion-info-icon"><i class="bi bi-bank"></i></span>
+                <div class="sc-suscripcion-info-copy">
+                    <small>Banco</small>
+                    <strong>@Model.BancoPago</strong>
+                    <span>Cuenta en @Model.MonedaCuentaPago.</span>
+                </div>
+            </article>
+            <article class="sc-suscripcion-info-card">
+                <span class="sc-suscripcion-info-icon"><i class="bi bi-credit-card"></i></span>
+                <div class="sc-suscripcion-info-copy">
+                    <small>Número de cuenta</small>
+                    <div class="d-flex align-items-center justify-content-between gap-2">
+                        <strong class="text-break">@Model.NumeroCuentaPago</strong>
+                        <button type="button" class="btn btn-outline-primary btn-sm subscription-copy-button" data-copy-value="@Model.NumeroCuentaPago" data-copy-label="Copiar número de cuenta" aria-label="Copiar número de cuenta" title="Copiar número de cuenta"><i class="bi bi-copy" aria-hidden="true"></i></button>
+                    </div>
+                </div>
+            </article>
+            <article class="sc-suscripcion-info-card">
+                <span class="sc-suscripcion-info-icon"><i class="bi bi-arrow-left-right"></i></span>
+                <div class="sc-suscripcion-info-copy">
+                    <small>Cuenta interbancaria (CCI)</small>
+                    <div class="d-flex align-items-center justify-content-between gap-2">
+                        <strong class="text-break">@Model.NumeroCuentaInterbancariaPago</strong>
+                        <button type="button" class="btn btn-outline-primary btn-sm subscription-copy-button" data-copy-value="@Model.NumeroCuentaInterbancariaPago" data-copy-label="Copiar CCI" aria-label="Copiar CCI" title="Copiar CCI"><i class="bi bi-copy" aria-hidden="true"></i></button>
+                    </div>
+                </div>
+            </article>
+            <article class="sc-suscripcion-info-card">
+                <span class="sc-suscripcion-info-icon"><i class="bi bi-building-check"></i></span>
+                <div class="sc-suscripcion-info-copy">
+                    <small>Titular</small>
+                    <strong>@Model.RazonSocialPago</strong>
+                    <span>RUC: @Model.RucPago</span>
+                </div>
+            </article>
+        </div>
+    </section>
+
     <section class="content-card">
         <h2 class="section-title mb-3"><i class="bi bi-headset me-1"></i>Contacto de soporte de plataforma</h2>
         <div class="sc-suscripcion-soporte-grid">
@@ -156,4 +203,28 @@ else
 }
 
 </div>
+
+@section Scripts {
+    <script>
+        (() => {
+            document.querySelectorAll('.subscription-copy-button').forEach((button) => {
+                button.addEventListener('click', async () => {
+                    try {
+                        await navigator.clipboard.writeText(button.dataset.copyValue || '');
+                        button.innerHTML = '<i class="bi bi-check2" aria-hidden="true"></i>';
+                        button.setAttribute('aria-label', 'Dato copiado');
+                        button.title = 'Dato copiado';
+                        window.setTimeout(() => {
+                            button.innerHTML = '<i class="bi bi-copy" aria-hidden="true"></i>';
+                            button.setAttribute('aria-label', button.dataset.copyLabel || 'Copiar');
+                            button.title = button.dataset.copyLabel || 'Copiar';
+                        }, 1800);
+                    } catch {
+                        button.focus();
+                    }
+                });
+            });
+        })();
+    </script>
+}
 

@@ -8,6 +8,10 @@ public sealed class BusinessInformationOptions
     public string Slogan { get; set; } = "Tu contabilidad en la nube, simple y segura.";
     public string LegalName { get; set; } = "FRALSE TECH S.A.C.";
     public string Ruc { get; set; } = "20616070186";
+    public string PaymentBankName { get; set; } = "BCP";
+    public string PaymentAccountCurrency { get; set; } = "Soles";
+    public string PaymentAccountNumber { get; set; } = "1947382729017";
+    public string PaymentInterbankAccountNumber { get; set; } = "00219400738272901799";
     public string Address { get; set; } = "Quimper 459, Villa María del Triunfo";
     public string City { get; set; } = "Lima";
     public string Country { get; set; } = "Perú";

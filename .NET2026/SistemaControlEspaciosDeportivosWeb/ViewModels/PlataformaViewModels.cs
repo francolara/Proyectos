@@ -28,20 +28,20 @@ public class PlataformaIndexViewModel
 
 public class PlataformaPortalConfigViewModel
 {
-    public string? BeneficiosTitulo { get; set; } = "Todo lo que necesitas para gestionar tus canchas deportivas";
-    public string? BeneficiosSubtitulo { get; set; } = "SportCenter integra reservas, sedes, pagos y reportes en una sola plataforma para crecer tu operacion.";
-    public string? Beneficio1Titulo { get; set; } = "Sistema de reservas";
-    public string? Beneficio1Detalle { get; set; } = "Controla la disponibilidad por horario con agenda visual y registro de clientes en segundos.";
-    public string? Beneficio2Titulo { get; set; } = "Multiples sedes";
-    public string? Beneficio2Detalle { get; set; } = "Administra distintos complejos deportivos desde un solo panel operativo.";
-    public string? Beneficio3Titulo { get; set; } = "Pagos seguros";
-    public string? Beneficio3Detalle { get; set; } = "Gestiona adelantos, saldos y comprobantes con trazabilidad por reserva.";
-    public string? Beneficio4Titulo { get; set; } = "Promociones especiales";
-    public string? Beneficio4Detalle { get; set; } = "Crea descuentos por sede, dia y horario para mejorar ocupacion en horas clave.";
-    public string? Beneficio5Titulo { get; set; } = "Estadisticas detalladas";
-    public string? Beneficio5Detalle { get; set; } = "Analiza ingresos, ocupacion y rendimiento para tomar decisiones con datos.";
-    public string? Beneficio6Titulo { get; set; } = "Mayor visibilidad";
-    public string? Beneficio6Detalle { get; set; } = "Publica tu negocio en el portal y recibe solicitudes online de nuevos clientes.";
+    public string? BeneficiosTitulo { get; set; } = "Gestiona todo tu complejo deportivo desde un solo lugar";
+    public string? BeneficiosSubtitulo { get; set; } = "Reservas, tarifas, clientes, cobros y reportes para operar con control total.";
+    public string? Beneficio1Titulo { get; set; } = "Reservas sin cruces";
+    public string? Beneficio1Detalle { get; set; } = "Evita horarios duplicados y bloquea automaticamente los espacios compartidos.";
+    public string? Beneficio2Titulo { get; set; } = "Tarifas inteligentes";
+    public string? Beneficio2Detalle { get; set; } = "Define precios por espacio y turno, con tarifas especiales para domingos y feriados.";
+    public string? Beneficio3Titulo { get; set; } = "Cobros y comprobantes";
+    public string? Beneficio3Detalle { get; set; } = "Registra adelantos y saldos, y emite comprobantes electronicos por cada reserva.";
+    public string? Beneficio4Titulo { get; set; } = "Promociones y cupones";
+    public string? Beneficio4Detalle { get; set; } = "Crea descuentos y cupones para impulsar tus horarios de menor demanda.";
+    public string? Beneficio5Titulo { get; set; } = "Clientes y reportes";
+    public string? Beneficio5Detalle { get; set; } = "Revisa ingresos diarios, cancelaciones y el consumo de cada cliente.";
+    public string? Beneficio6Titulo { get; set; } = "Multiples deportes y espacios";
+    public string? Beneficio6Detalle { get; set; } = "Administra sedes, canchas y disciplinas deportivas desde un solo panel.";
 
     public string? CtaTitulo { get; set; } = "Unete a la comunidad de SportCenter";
     public string? CtaSubtitulo { get; set; } = "Registra tu club deportivo y comienza a gestionar tus canchas de manera eficiente.";
@@ -260,6 +260,12 @@ public class MiSuscripcionIndexViewModel : ModuloBaseViewModel
     public string TipoPlan { get; set; } = "Basico";
     public string ContactoPlataformaEmail { get; set; } = string.Empty;
     public string ContactoPlataformaTelefono { get; set; } = string.Empty;
+    public string BancoPago { get; set; } = string.Empty;
+    public string MonedaCuentaPago { get; set; } = string.Empty;
+    public string NumeroCuentaPago { get; set; } = string.Empty;
+    public string NumeroCuentaInterbancariaPago { get; set; } = string.Empty;
+    public string RazonSocialPago { get; set; } = string.Empty;
+    public string RucPago { get; set; } = string.Empty;
     public DateTime? FechaVencimiento { get; set; }
     public int? DiasParaVencer { get; set; }
     public bool EsModoGratuito { get; set; }
@@ -267,6 +273,14 @@ public class MiSuscripcionIndexViewModel : ModuloBaseViewModel
     public int EspaciosPermitidos { get; set; } = 6;
     public int UsuariosPermitidos { get; set; } = 3;
     public bool EsPlanBasico => string.Equals(TipoPlan, "Basico", StringComparison.OrdinalIgnoreCase);
+    public string NombrePlanVisible => EsModoGratuito
+        ? "Prueba"
+        : (TipoPlan ?? string.Empty).Trim().ToUpperInvariant() switch
+        {
+            "BASICO" => "Esencial",
+            "FULL" => "Pro",
+            _ => TipoPlan
+        };
 }
 
 public class PlataformaReferencialesExternosViewModel

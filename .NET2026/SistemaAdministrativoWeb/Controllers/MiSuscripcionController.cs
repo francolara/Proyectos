@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using SistemaAdministrativoWeb.Configuration;
 using SistemaAdministrativoWeb.Infrastructure.Empresas;
 using SistemaAdministrativoWeb.Infrastructure.Security;
 using SistemaAdministrativoWeb.Infrastructure.Suscripciones;
@@ -12,7 +14,8 @@ namespace SistemaAdministrativoWeb.Controllers;
 [AllowRestrictedSubscription]
 public class MiSuscripcionController(
     ICurrentCompanyAccessor currentCompanyAccessor,
-    ISubscriptionAccessService subscriptionAccessService) : Controller
+    ISubscriptionAccessService subscriptionAccessService,
+    IOptions<BusinessInformationOptions> businessInformationOptions) : Controller
 {
     [HttpGet]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
@@ -23,6 +26,7 @@ public class MiSuscripcionController(
         }
 
         ViewData["AdminShell"] = true;
+        var informacionEmpresa = businessInformationOptions.Value;
 
         var evaluacion = await subscriptionAccessService.EvaluateAsync(User, cancellationToken);
         var contexto = evaluacion.LoginContext;
@@ -41,6 +45,12 @@ public class MiSuscripcionController(
             NombreCuenta = contexto.NombreCuenta ?? "Cuenta administradora",
             CorreoPrincipal = contexto.CorreoPrincipal ?? string.Empty,
             TelefonoPrincipal = contexto.TelefonoPrincipal,
+            BancoPago = informacionEmpresa.PaymentBankName,
+            MonedaCuentaPago = informacionEmpresa.PaymentAccountCurrency,
+            NumeroCuentaPago = informacionEmpresa.PaymentAccountNumber,
+            NumeroCuentaInterbancariaPago = informacionEmpresa.PaymentInterbankAccountNumber,
+            RazonSocialPago = informacionEmpresa.LegalName,
+            RucPago = informacionEmpresa.Ruc,
             TipoPlan = evaluacion.PlanDisplay,
             EstadoSuscripcion = evaluacion.StatusDisplay,
             EsPrueba = contexto.EsPrueba == true,

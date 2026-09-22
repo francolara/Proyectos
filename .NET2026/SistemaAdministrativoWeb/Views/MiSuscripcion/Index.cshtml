@@ -3,6 +3,7 @@
 @* Firma: FRANCO LARA - 25/07/2026 | Mantiene un ancho de lectura controlado, simplifica las tarjetas y muestra visualmente el plan y estado efectivo, incluyendo alertas de gracia o bloqueo por vencimiento. *@
 @* Firma: FRANCO LARA - 31/07/2026 | Adopta el patron global reutilizable de titulos y subtitulos, centra los KPI, agrega iconos a los datos de la cuenta e incorpora los canales de soporte. *@
 @* Firma: FRANCO LARA - 03/09/2026 | Actualiza el correo visible y el enlace del canal de soporte comercial. *@
+@* Firma: FRANCO LARA - 22/09/2026 | Incorpora las cuentas bancarias BCP para el pago de la suscripcion, con razon social, RUC, botones compactos de copiado alineados a la derecha y aviso de envio de constancia. *@
 @{
     ViewData["Title"] = "Mi suscripción";
     ViewData["AdminShell"] = true;
@@ -145,6 +146,60 @@
         </div>
     </section>
 
+    <section class="workspace-section" aria-labelledby="subscription-bank-accounts-title">
+        <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+            {
+                Id = "subscription-bank-accounts-title",
+                Category = "Pagos",
+                Title = "Cuentas bancarias",
+                Description = "Datos para realizar el pago de tu suscripcion mediante BCP.",
+                IconClass = "bi bi-bank"
+            })" />
+
+        <div class="subscription-limit-grid subscription-limit-grid-compact">
+            <article class="dashboard-indicator-card">
+                <div class="dashboard-indicator-icon"><i class="bi bi-bank"></i></div>
+                <div class="dashboard-indicator-copy">
+                    <span>Banco</span>
+                    <strong>@Model.BancoPago</strong>
+                    <small>Cuenta en @Model.MonedaCuentaPago.</small>
+                </div>
+            </article>
+            <article class="dashboard-indicator-card">
+                <div class="dashboard-indicator-icon"><i class="bi bi-credit-card"></i></div>
+                <div class="dashboard-indicator-copy">
+                    <span>Número de cuenta</span>
+                    <div class="d-flex align-items-center justify-content-between gap-2">
+                        <strong class="text-break">@Model.NumeroCuentaPago</strong>
+                        <button type="button" class="btn btn-outline-primary btn-sm subscription-copy-button" data-copy-value="@Model.NumeroCuentaPago" data-copy-label="Copiar número de cuenta" aria-label="Copiar número de cuenta" title="Copiar número de cuenta"><i class="bi bi-copy" aria-hidden="true"></i></button>
+                    </div>
+                </div>
+            </article>
+            <article class="dashboard-indicator-card">
+                <div class="dashboard-indicator-icon"><i class="bi bi-arrow-left-right"></i></div>
+                <div class="dashboard-indicator-copy">
+                    <span>Cuenta interbancaria (CCI)</span>
+                    <div class="d-flex align-items-center justify-content-between gap-2">
+                        <strong class="text-break">@Model.NumeroCuentaInterbancariaPago</strong>
+                        <button type="button" class="btn btn-outline-primary btn-sm subscription-copy-button" data-copy-value="@Model.NumeroCuentaInterbancariaPago" data-copy-label="Copiar CCI" aria-label="Copiar CCI" title="Copiar CCI"><i class="bi bi-copy" aria-hidden="true"></i></button>
+                    </div>
+                </div>
+            </article>
+            <article class="dashboard-indicator-card">
+                <div class="dashboard-indicator-icon"><i class="bi bi-building-check"></i></div>
+                <div class="dashboard-indicator-copy">
+                    <span>Titular</span>
+                    <strong>@Model.RazonSocialPago</strong>
+                    <small>RUC: @Model.RucPago</small>
+                </div>
+            </article>
+        </div>
+        <div class="alert alert-info mt-3 mb-0" role="note">
+            <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+            Luego de realizar el pago, envía tu constancia por WhatsApp indicando el nombre de tu negocio.
+        </div>
+    </section>
+
     <section class="workspace-section subscription-support-section" aria-labelledby="subscription-support-title">
         <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
             {
@@ -176,3 +231,27 @@
     </section>
 
 </section>
+
+@section Scripts {
+    <script>
+        (() => {
+            document.querySelectorAll('.subscription-copy-button').forEach((button) => {
+                button.addEventListener('click', async () => {
+                    try {
+                        await navigator.clipboard.writeText(button.dataset.copyValue || '');
+                        button.innerHTML = '<i class="bi bi-check2" aria-hidden="true"></i>';
+                        button.setAttribute('aria-label', 'Dato copiado');
+                        button.title = 'Dato copiado';
+                        window.setTimeout(() => {
+                            button.innerHTML = '<i class="bi bi-copy" aria-hidden="true"></i>';
+                            button.setAttribute('aria-label', button.dataset.copyLabel || 'Copiar');
+                            button.title = button.dataset.copyLabel || 'Copiar';
+                        }, 1800);
+                    } catch {
+                        button.focus();
+                    }
+                });
+            });
+        })();
+    </script>
+}

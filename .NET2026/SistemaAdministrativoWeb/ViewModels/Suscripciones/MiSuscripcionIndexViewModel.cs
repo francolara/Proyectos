@@ -10,6 +10,12 @@ public sealed class MiSuscripcionIndexViewModel
     public string NombreCuenta { get; init; } = string.Empty;
     public string CorreoPrincipal { get; init; } = string.Empty;
     public string? TelefonoPrincipal { get; init; }
+    public string BancoPago { get; init; } = string.Empty;
+    public string MonedaCuentaPago { get; init; } = string.Empty;
+    public string NumeroCuentaPago { get; init; } = string.Empty;
+    public string NumeroCuentaInterbancariaPago { get; init; } = string.Empty;
+    public string RazonSocialPago { get; init; } = string.Empty;
+    public string RucPago { get; init; } = string.Empty;
     public string TipoPlan { get; init; } = "TRIAL";
     public string EstadoSuscripcion { get; init; } = "TRIAL";
     public bool EsPrueba { get; init; }
