@@ -1,15 +1,14 @@
 @using FralseTech.Web.ViewModels
 @inject IConfiguration Configuration
 @* Firma: FRANCO LARA - 18/09/2026 | Rediseña la cabecera, usa el logo local con encuadre verificable, corrige la navegación móvil, actualiza el pie de página y las acciones de contacto. *@
+@* Firma: FRANCO LARA - 23/09/2026 | Sustituye el logo de cabecera y pie por la versión transparente blanco/cian oficial y amplía su tamaño en 60 %. *@
 @{
     var pageTitle = ViewData["Title"] as string ?? FralseTechSiteContent.GetDefaultPageTitle();
     var metaDescription = ViewData["MetaDescription"] as string ?? FralseTechSiteContent.GetDefaultMetaDescription();
     var canonicalUrl = ViewData["CanonicalUrl"] as string ?? FralseTechSiteContent.GetDefaultCanonicalUrl();
     var structuredDataJson = ViewData["StructuredDataJson"] as string ?? FralseTechSiteContent.GetStructuredDataJson();
     var landingPage = Model as LandingPageViewModel ?? FralseTechSiteContent.BuildLandingPage(Configuration);
-    var logoFallbackUrl = Url.Content("~/images/logo-fralse-tech.png") ?? "/images/logo-fralse-tech.png";
-    // El archivo local conserva el encuadre completo de la marca; algunos recursos remotos contienen un lienzo excesivo.
-    var logoUrl = logoFallbackUrl;
+    var logoUrl = "https://branding.fralsetech.com/Logo/Logo_LogoFralseTech_blanco_cianSF.webp";
 }
 <!DOCTYPE html>
 <html lang="es">
@@ -27,6 +26,7 @@
     <meta property="og:locale" content="es_PE" />
     <link rel="icon" type="image/x-icon" href="@Url.Content("~/favicon.ico")" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="preconnect" href="https://branding.fralsetech.com" crossorigin />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <script type="application/ld+json">@Html.Raw(structuredDataJson)</script>
