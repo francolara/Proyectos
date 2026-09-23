@@ -88,7 +88,9 @@ public static class FralseTechSiteContent
     private const string ContactSubject = "Consulta desde fralsetech.com";
     private const string PublicBaseUrlKey = "FRALSECONT_SedeImagenStorage:PublicBaseUrl";
     private const string BucketNameKey = "FRALSECONT_SedeImagenStorage:BucketName";
-    private const string AssetVersionKey = "SedeImagenStorage:AssetVersion";
+    private const string HeroImagePathKey = "SedeImagenStorage:HeroImagePath";
+    private const string FralseContImagePathKey = "SedeImagenStorage:FralseContImagePath";
+    private const string LaZonaDeportivaImagePathKey = "SedeImagenStorage:LaZonaDeportivaImagePath";
     private const string LogoImagePath = "Logo/LogoFralseTechSF.webp";
     private const string HeroImagePath = "Banner/oficinaFralseTech.webp";
     private const string FralseContImagePath = "Banner/bannerfralsecont.webp";
@@ -106,12 +108,12 @@ public static class FralseTechSiteContent
         var structuredDataLogoUrl = string.IsNullOrWhiteSpace(cloudflareLogoUrl)
             ? $"{SiteUrl}/images/logo-fralse-tech.png"
             : cloudflareLogoUrl;
-        var cloudflareHeroImageUrl = BuildPublicAssetUrl(configuration, HeroImagePath);
+        var cloudflareHeroImageUrl = BuildPublicAssetUrl(configuration, GetAssetPath(configuration, HeroImagePathKey, HeroImagePath));
         var heroImageUrl = string.IsNullOrWhiteSpace(cloudflareHeroImageUrl)
             ? "/images/oficina.png"
             : cloudflareHeroImageUrl;
-        var fralseContImageUrl = BuildPublicAssetUrl(configuration, FralseContImagePath);
-        var laZonaDeportivaImageUrl = BuildPublicAssetUrl(configuration, LaZonaDeportivaImagePath);
+        var fralseContImageUrl = BuildPublicAssetUrl(configuration, GetAssetPath(configuration, FralseContImagePathKey, FralseContImagePath));
+        var laZonaDeportivaImageUrl = BuildPublicAssetUrl(configuration, GetAssetPath(configuration, LaZonaDeportivaImagePathKey, LaZonaDeportivaImagePath));
 
         return new LandingPageViewModel
         {
@@ -314,10 +316,13 @@ public static class FralseTechSiteContent
         }
 
         var url = $"{publicBaseUrl}/{relativePath}";
-        var assetVersion = configuration[AssetVersionKey]?.Trim();
-        return string.IsNullOrWhiteSpace(assetVersion)
-            ? url
-            : $"{url}?v={Uri.EscapeDataString(assetVersion)}";
+        return url;
+    }
+
+    private static string GetAssetPath(IConfiguration configuration, string configurationKey, string fallbackPath)
+    {
+        var configuredPath = configuration[configurationKey]?.Trim();
+        return string.IsNullOrWhiteSpace(configuredPath) ? fallbackPath : configuredPath;
     }
 
     private static string BuildMailToUrl(string subject) =>
