@@ -1,5 +1,6 @@
 @model FralseTech.Web.ViewModels.LandingPageViewModel
 @* Firma: FRANCO LARA - 18/09/2026 | Rediseña la página principal con composición tecnológica, productos editoriales y respuesta móvil prioritaria. *@
+@* Firma: FRANCO LARA - 23/09/2026 | Elimina el marco circular decorativo de las imágenes de productos. *@
 @{
     ViewData["Title"] = Model.PageTitle;
     ViewData["MetaDescription"] = Model.MetaDescription;
@@ -86,7 +87,6 @@
                         </div>
                     </div>
                     <figure class="product-showcase__visual">
-                        <span class="product-showcase__glow" aria-hidden="true"></span>
                         <img src="@product.ImageUrl" alt="@product.ImageAlt" width="1200" height="900" loading="lazy" decoding="async" />
                     </figure>
                 </article>
