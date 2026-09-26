@@ -7499,3 +7499,294 @@ html[data-theme="dark"] .voucher-header {
     padding-bottom: 1.25rem;
   }
 }
+
+/* Firma: FRANCO LARA - 25/09/2026 | Alinea Mi suscripcion de AdmContable con la jerarquia ligera de La Zona Deportiva: resumen compacto, encabezados sin banda verde, datos bancarios completos y paleta oscura verde; extiende la cabecera pública a todo el ancho. */
+.app-public-header .container {
+  width: 100%;
+  max-width: none;
+  padding-inline: clamp(1.25rem, 4vw, 5rem);
+}
+
+.subscription-shell.dashboard-shell-contained-reading {
+  max-width: 1040px;
+  gap: 0.85rem;
+}
+
+.subscription-shell .dashboard-hero {
+  min-height: 0;
+  padding: 1rem 1.15rem;
+  border-radius: 0.95rem;
+  background: linear-gradient(110deg, #06614c 0%, #07815f 100%);
+  box-shadow: 0 14px 28px rgba(7, 92, 70, 0.14);
+}
+
+.subscription-shell .dashboard-hero p {
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.subscription-shell .dashboard-status-card {
+  min-width: 9.5rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.7rem;
+  box-shadow: none;
+}
+
+.subscription-shell .dashboard-status-card span {
+  font-size: 0.65rem;
+}
+
+.subscription-shell .dashboard-status-card strong {
+  margin-top: 0.16rem;
+  font-size: 0.78rem;
+}
+
+.subscription-shell .dashboard-metrics {
+  gap: 0.55rem;
+}
+
+.subscription-shell .dashboard-metric-card {
+  position: relative;
+  min-height: 4.35rem;
+  padding: 0.65rem 0.7rem;
+  overflow: hidden;
+  border: 1px solid #d6e0eb;
+  border-radius: 0.78rem;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(30, 58, 95, 0.07);
+}
+
+.subscription-shell .dashboard-metric-card::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: #2d7ef7;
+  content: "";
+}
+
+.subscription-shell .dashboard-metric-card:nth-child(2)::before { background: #30a8e8; }
+.subscription-shell .dashboard-metric-card:nth-child(3)::before { background: #1f9dca; }
+.subscription-shell .dashboard-metric-card:nth-child(4)::before { background: #f2ae18; }
+
+.subscription-shell .dashboard-metric-card > span {
+  color: #5d7190;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.subscription-shell .dashboard-metric-card strong {
+  margin-top: 0.22rem;
+  color: #08234a;
+  font-size: 0.92rem;
+}
+
+.subscription-shell .workspace-section {
+  overflow: hidden;
+  border: 1px solid #d6e0eb;
+  border-radius: 0.95rem;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(30, 58, 95, 0.07);
+}
+
+.subscription-shell .app-section-head {
+  justify-content: flex-start;
+  padding: 0.58rem 0.65rem 0;
+  border: 0 !important;
+  background: transparent !important;
+  background-image: none !important;
+}
+
+.subscription-shell .app-section-head p {
+  display: none;
+}
+
+.subscription-shell .app-section-heading {
+  gap: 0.36rem;
+  padding: 0.34rem 0.68rem;
+  border: 1px solid #b9d8ff;
+  border-radius: 999px;
+  background: #eef6ff;
+}
+
+.subscription-shell .app-section-icon {
+  width: auto;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #1468dd;
+  font-size: 0.72rem;
+}
+
+.subscription-shell .app-section-eyebrow {
+  display: none;
+}
+
+.subscription-shell .app-section-head h2 {
+  color: #1455af;
+  font-size: 0.66rem;
+  font-weight: 850;
+  letter-spacing: 0.055em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.subscription-shell .subscription-info-grid,
+.subscription-shell .subscription-limit-grid,
+.subscription-shell .subscription-support-grid {
+  gap: 0.65rem;
+  padding: 0.72rem;
+}
+
+.subscription-shell .subscription-info-card,
+.subscription-shell .dashboard-indicator-card,
+.subscription-shell .subscription-support-card {
+  min-height: 5.25rem;
+  padding: 0.72rem;
+  border: 1px solid #d5e2f7;
+  border-radius: 0.78rem;
+  background: linear-gradient(145deg, #ffffff 0%, #f4f8ff 100%);
+  box-shadow: none;
+}
+
+.subscription-shell .dashboard-indicator-card {
+  gap: 0.65rem;
+}
+
+.subscription-shell .dashboard-indicator-icon,
+.subscription-shell .subscription-contact-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.62rem;
+  font-size: 0.82rem;
+}
+
+.subscription-shell .subscription-info-label,
+.subscription-shell .dashboard-indicator-copy span {
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+}
+
+.subscription-shell .subscription-info-card strong,
+.subscription-shell .dashboard-indicator-copy strong,
+.subscription-shell .subscription-support-card strong {
+  margin-top: 0.17rem;
+  color: #08234a;
+  font-size: 0.92rem;
+}
+
+.subscription-shell .dashboard-indicator-copy small,
+.subscription-shell .subscription-info-card small,
+.subscription-shell .subscription-support-card small {
+  margin-top: 0.2rem;
+  font-size: 0.68rem;
+  line-height: 1.3;
+}
+
+.subscription-shell .subscription-copy-button {
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0.3rem;
+  border-radius: 0.5rem;
+}
+
+.subscription-shell .subscription-bank-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.subscription-shell .subscription-bank-number {
+  min-width: 0;
+  white-space: nowrap;
+  font-size: 0.8rem !important;
+  letter-spacing: 0.015em;
+}
+
+.subscription-shell .subscription-support-section {
+  background: #ffffff;
+}
+
+.subscription-shell .subscription-support-card:hover,
+.subscription-shell .subscription-support-card:focus-visible {
+  border-color: #84b8fa;
+  background: #ffffff;
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.1);
+}
+
+.subscription-shell .alert-info {
+  margin: 0 0.72rem 0.72rem !important;
+  padding: 0.65rem 0.75rem;
+  border-color: #8bd8ec;
+  border-radius: 0.6rem;
+  background: #e0f7ff;
+  color: #075b77;
+  font-size: 0.72rem;
+}
+
+html[data-theme="dark"] .subscription-shell .dashboard-metric-card,
+html[data-theme="dark"] .subscription-shell .workspace-section,
+html[data-theme="dark"] .subscription-shell .subscription-info-card,
+html[data-theme="dark"] .subscription-shell .dashboard-indicator-card,
+html[data-theme="dark"] .subscription-shell .subscription-support-card,
+html[data-theme="dark"] .subscription-shell .subscription-support-section {
+  border-color: #28564a;
+  background: #0d201b;
+}
+
+html[data-theme="dark"] .subscription-shell .app-section-heading {
+  border-color: #2c6858;
+  background: #102a23;
+}
+
+html[data-theme="dark"] .subscription-shell .app-section-head h2,
+html[data-theme="dark"] .subscription-shell .app-section-icon {
+  color: #91e7c9;
+}
+
+html[data-theme="dark"] .subscription-shell .dashboard-metric-card strong,
+html[data-theme="dark"] .subscription-shell .subscription-info-card strong,
+html[data-theme="dark"] .subscription-shell .dashboard-indicator-copy strong,
+html[data-theme="dark"] .subscription-shell .subscription-support-card strong {
+  color: #f1fff8;
+}
+
+html[data-theme="dark"] .subscription-shell .dashboard-indicator-copy span,
+html[data-theme="dark"] .subscription-shell .subscription-info-label,
+html[data-theme="dark"] .subscription-shell .dashboard-indicator-copy small,
+html[data-theme="dark"] .subscription-shell .subscription-info-card small,
+html[data-theme="dark"] .subscription-shell .subscription-support-card small {
+  color: #9bc4b6;
+}
+
+html[data-theme="dark"] .subscription-shell .dashboard-indicator-icon,
+html[data-theme="dark"] .subscription-shell .subscription-contact-icon {
+  border-color: #286a59;
+  background: #123a30;
+  color: #8fe4c7;
+}
+
+html[data-theme="dark"] .subscription-shell .alert-info {
+  border-color: #168a7b;
+  background: #0b3430;
+  color: #8bece1;
+}
+
+@media (max-width: 575.98px) {
+  .subscription-shell .dashboard-hero {
+    gap: 0.7rem;
+  }
+
+  .subscription-shell .dashboard-status-card {
+    width: 100%;
+  }
+
+  .subscription-shell .dashboard-metrics,
+  .subscription-shell .subscription-info-grid-compact,
+  .subscription-shell .subscription-limit-grid-compact,
+  .subscription-shell .subscription-bank-grid,
+  .subscription-shell .subscription-support-grid {
+    grid-template-columns: 1fr;
+  }
+}

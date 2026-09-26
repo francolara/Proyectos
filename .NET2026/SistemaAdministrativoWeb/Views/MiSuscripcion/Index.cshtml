@@ -4,6 +4,7 @@
 @* Firma: FRANCO LARA - 31/07/2026 | Adopta el patron global reutilizable de titulos y subtitulos, centra los KPI, agrega iconos a los datos de la cuenta e incorpora los canales de soporte. *@
 @* Firma: FRANCO LARA - 03/09/2026 | Actualiza el correo visible y el enlace del canal de soporte comercial. *@
 @* Firma: FRANCO LARA - 22/09/2026 | Incorpora las cuentas bancarias BCP para el pago de la suscripcion, con razon social, RUC, botones compactos de copiado alineados a la derecha y aviso de envio de constancia. *@
+@* Firma: FRANCO LARA - 25/09/2026 | Ajusta la presentacion de Mi suscripcion al estilo de lectura de La Zona Deportiva y preserva visibles los números completos de cuenta y CCI. *@
 @{
     ViewData["Title"] = "Mi suscripción";
     ViewData["AdminShell"] = true;
@@ -156,7 +157,7 @@
                 IconClass = "bi bi-bank"
             })" />
 
-        <div class="subscription-limit-grid subscription-limit-grid-compact">
+        <div class="subscription-limit-grid subscription-limit-grid-compact subscription-bank-grid">
             <article class="dashboard-indicator-card">
                 <div class="dashboard-indicator-icon"><i class="bi bi-bank"></i></div>
                 <div class="dashboard-indicator-copy">
@@ -170,7 +171,7 @@
                 <div class="dashboard-indicator-copy">
                     <span>Número de cuenta</span>
                     <div class="d-flex align-items-center justify-content-between gap-2">
-                        <strong class="text-break">@Model.NumeroCuentaPago</strong>
+                        <strong class="text-break subscription-bank-number">@Model.NumeroCuentaPago</strong>
                         <button type="button" class="btn btn-outline-primary btn-sm subscription-copy-button" data-copy-value="@Model.NumeroCuentaPago" data-copy-label="Copiar número de cuenta" aria-label="Copiar número de cuenta" title="Copiar número de cuenta"><i class="bi bi-copy" aria-hidden="true"></i></button>
                     </div>
                 </div>
@@ -180,7 +181,7 @@
                 <div class="dashboard-indicator-copy">
                     <span>Cuenta interbancaria (CCI)</span>
                     <div class="d-flex align-items-center justify-content-between gap-2">
-                        <strong class="text-break">@Model.NumeroCuentaInterbancariaPago</strong>
+                        <strong class="text-break subscription-bank-number">@Model.NumeroCuentaInterbancariaPago</strong>
                         <button type="button" class="btn btn-outline-primary btn-sm subscription-copy-button" data-copy-value="@Model.NumeroCuentaInterbancariaPago" data-copy-label="Copiar CCI" aria-label="Copiar CCI" title="Copiar CCI"><i class="bi bi-copy" aria-hidden="true"></i></button>
                     </div>
                 </div>

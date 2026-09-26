@@ -4,6 +4,7 @@
 @* Firma: FRANCO LARA - 01/09/2026 | Presenta los listados de reservas con titulos operativos y directos. *@
 @* Firma: FRANCO LARA - 07/09/2026 | Usa la fecha y hora operativa de Peru en filtros, pagos y disponibilidad del calendario. *@
 @* Firma: FRANCO LARA - 17/09/2026 | Reduce el bloque de promociones y agrega trazabilidad de registro y actualizacion en el pop-up de reservas. *@
+@* Firma: FRANCO LARA - 25/09/2026 | Al guardar o actualizar desde el pop-up, actualiza tambien el listado de reservas registradas conservando sus filtros activos. *@
 @{
     ViewData["Title"] = "Reservas";
     var ahoraNegocio = BusinessClock.LocalNow;
@@ -1998,6 +1999,16 @@ else
                 });
             }
 
+            function refrescarListadoReservasRegistradas() {
+                const card = document.querySelector(listadoCardSelector);
+                const form = card?.querySelector('form.sc-listado-filtro-form');
+                if (!form) return;
+
+                const query = buildQueryStringFromForm(form, null);
+                const url = query ? `${form.action}?${query}` : form.action;
+                void renderListadoGeneralPorAjax(url);
+            }
+
             function abrirModalNuevaReserva(fechaIso, horaInicio, horaFin, espacioId) {
                 limpiarErrorModal();
                 limpiarDisponibilidadModal();
@@ -3094,6 +3105,7 @@ else
                         throw new Error(payload.mensaje || 'No se pudo guardar la reserva.');
                     }
                     reservaModal.hide();
+                    refrescarListadoReservasRegistradas();
                     if (calendar) {
                         calendar.refetchEvents();
                         limpiarCacheResumenDia();
@@ -3194,6 +3206,5 @@ else
         })();
     </script>
 }
-
 
 

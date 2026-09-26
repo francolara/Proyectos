@@ -208,7 +208,8 @@
         inicialesNegocio = "SC";
 
     var currentAction = (ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty).ToUpperInvariant();
-    var adminContentMode = currentController is "AYUDA" or "MISUSCRIPCION"
+    // Firma: FRANCO LARA - 25/09/2026 | Mantiene Mi suscripcion en lectura controlada y extiende Ayuda operativa al ancho completo del espacio administrativo.
+    var adminContentMode = currentController is "MISUSCRIPCION"
         ? "reading"
         : currentController is "CONFIGURACION" or "ONBOARDING" or "CUENTA"
           || (currentController == "PLATAFORMA" && currentAction == "PORTALWEB")

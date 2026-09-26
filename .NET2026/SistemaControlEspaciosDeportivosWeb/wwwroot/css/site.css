@@ -3757,9 +3757,12 @@ html[data-theme="dark"] .form-check-input:checked {
 .home-plan-limits i { display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; margin-top: -.12rem; border: 1px solid rgba(22, 128, 60, .16); border-radius: .45rem; background: rgba(22, 128, 60, .08); color: #16803c; font-size: .82rem; }
 .home-plan-includes { margin: auto 0 0; padding: .8rem 0 0 1.05rem; border-top: 1px solid #e2e8f0; color: #3f5677; font-size: .88rem; }
 .home-plan-includes li + li { margin-top: .35rem; }
-.home-platform-legal { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .65rem 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #d8e5f5; color: #54708f; font-size: .84rem; text-align: center; }
-.home-platform-legal a { color: #1d4ed8; font-weight: 700; text-decoration: none; }
-.home-platform-legal a:hover { text-decoration: underline; }
+/* Firma: FRANCO LARA - 25/09/2026 | Convierte los accesos legales del pie público en enlaces visuales con icono, foco accesible y respuesta al pasar el cursor. */
+.home-platform-legal { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .55rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #d8e5f5; color: #54708f; font-size: .82rem; text-align: center; }
+.home-platform-legal-link { display: inline-flex; align-items: center; justify-content: center; gap: .42rem; min-height: 2.35rem; padding: .46rem .78rem; border: 1px solid #cdddf2; border-radius: 999px; background: rgba(255, 255, 255, .72); color: #1d4ed8; font-weight: 700; line-height: 1.15; text-decoration: none; transition: transform .18s ease, background-color .18s ease, border-color .18s ease, box-shadow .18s ease, color .18s ease; }
+.home-platform-legal-link i { font-size: .95rem; }
+.home-platform-legal-link:hover { transform: translateY(-2px); border-color: #2563eb; background: #2563eb; box-shadow: 0 .45rem 1rem rgba(37, 99, 235, .18); color: #fff; }
+.home-platform-legal-link:focus-visible { outline: 3px solid rgba(37, 99, 235, .32); outline-offset: 3px; }
 
 .legal-page { min-height: 100%; padding: 3rem 1rem; background: linear-gradient(180deg, #eef6ff 0%, #f8fbff 100%); }
 .legal-page--privacy { background: linear-gradient(180deg, #e9f3ff 0%, #f8fbff 100%); }
@@ -3795,6 +3798,8 @@ html[data-theme="dark"] .home-plan-price small { color: #9fb0ca; }
 html[data-theme="dark"] .home-plan-limits i { border-color: rgba(74, 222, 128, .24); background: rgba(22, 163, 74, .14); color: #86efac; }
 html[data-theme="dark"] .home-plan-includes { border-color: var(--sc-border-soft); }
 html[data-theme="dark"] .home-platform-legal { border-color: var(--sc-border-soft); color: #9fb0ca; }
+html[data-theme="dark"] .home-platform-legal-link { border-color: #355274; background: rgba(20, 35, 58, .72); color: #93c5fd; }
+html[data-theme="dark"] .home-platform-legal-link:hover { border-color: #60a5fa; background: #2563eb; color: #fff; }
 html[data-theme="dark"] .legal-page { background: #07111f; }
 html[data-theme="dark"] .legal-container { border-color: var(--sc-border-soft); background: #111c2f; color: #cbd5e1; }
 html[data-theme="dark"] .legal-container h1, html[data-theme="dark"] .legal-container h2 { color: #f8fbff; }

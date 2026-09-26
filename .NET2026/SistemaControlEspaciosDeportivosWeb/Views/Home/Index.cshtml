@@ -7,6 +7,7 @@
 @* Firma: FRANCO LARA - 21/07/2026 | Renombra los planes, muestra sus beneficios, ubica preguntas frecuentes debajo de la tarjeta Esencial y reorganiza el pie público. *@
 @* Firma: FRANCO LARA - 02/09/2026 | Actualiza el mensaje prellenado de la burbuja de WhatsApp para solicitar información de afiliación y gestión de reservas. *@
 @* Firma: FRANCO LARA - 18/09/2026 | Moderniza la búsqueda, resultados, tarjetas, planes, cierre comercial y pie público con composición adaptable a cada monitor, sin alterar cabecera, banners ni presentación del logo. *@
+@* Firma: FRANCO LARA - 25/09/2026 | Muestra el precio del plan de prueba con dos decimales, igual que los demás importes comerciales. *@
 
 @{
     ViewData["Title"] = "Portal deportivo";
@@ -700,7 +701,7 @@
             <div class="home-plan-column">
               <article class="home-plan-card home-plan-card--free">
                 <h3>Prueba</h3>
-                <p class="home-plan-price"><span>S/</span>0 <small>por 15 días</small></p>
+                <p class="home-plan-price"><span>S/</span>0.00 <small>por 15 días</small></p>
                 <p class="home-plan-description">Conoce la plataforma y organiza la operación de tu primer espacio deportivo.</p>
                 <a class="home-plan-button home-plan-button--free" asp-area="Identity" asp-page="/Account/Register" asp-route-TipoRegistro="club" asp-route-plan="PRUEBA">Comenzar prueba</a>
                 <ul class="home-plan-limits">
@@ -824,9 +825,9 @@
                 <p class="home-platform-powered">Powered by Fralse Tech S.A.C. · RUC 20616070186</p>
             </div>
             <div class="col-12 home-platform-legal">
-                <a asp-controller="Legal" asp-action="Terminos">Términos y condiciones</a>
-                <a asp-controller="Legal" asp-action="Privacidad">Política de privacidad</a>
-                <a asp-controller="Legal" asp-action="Cancelaciones">Cancelaciones y devoluciones</a>
+                <a class="home-platform-legal-link" asp-controller="Legal" asp-action="Terminos"><i class="bi bi-file-earmark-text"></i><span>Términos y condiciones</span></a>
+                <a class="home-platform-legal-link" asp-controller="Legal" asp-action="Privacidad"><i class="bi bi-shield-check"></i><span>Política de privacidad</span></a>
+                <a class="home-platform-legal-link" asp-controller="Legal" asp-action="Cancelaciones"><i class="bi bi-arrow-counterclockwise"></i><span>Cancelaciones y devoluciones</span></a>
             </div>
         </div>
     </div>
