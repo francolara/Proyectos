@@ -7441,7 +7441,7 @@ html[data-theme="dark"] .voucher-header {
 .nubecont-plans-grid { gap: 1rem; }
 .nubecont-plan-card { padding: 1.6rem; border: 1px solid #dbe3ee; border-radius: .9rem; background: #fff; box-shadow: none; }
 .nubecont-plan-card--entrepreneur { border-color: #b8d3f6; background: #f5f9ff; box-shadow: none; }
-.nubecont-plan-card--recommended { border-color: #187cf3; background: #0b65cf; box-shadow: 0 1.6rem 3.2rem rgba(18, 110, 229, .2); transform: translateY(-.6rem); }
+.nubecont-plan-card--recommended { border-color: #187cf3; background: #0b65cf; box-shadow: 0 1.6rem 3.2rem rgba(18, 110, 229, .2); transform: none; }
 .nubecont-plan-card--recommended .nubecont-plan-name, .nubecont-plan-card--recommended .nubecont-plan-price, .nubecont-plan-card--recommended .nubecont-plan-currency, .nubecont-plan-card--recommended .nubecont-plan-description, .nubecont-plan-card--recommended .nubecont-plan-period, .nubecont-plan-card--recommended .nubecont-plan-features, .nubecont-plan-card--recommended .nubecont-plan-details summary { color: #fff; }
 .nubecont-plan-card--recommended .nubecont-plan-features i { color: #77e2ff; }
 .nubecont-plan-card--recommended .nubecont-plan-details { border-color: rgba(255,255,255,.25); }
