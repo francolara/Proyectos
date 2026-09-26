@@ -1,9 +1,15 @@
 ﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.MiSuscripcionIndexViewModel
 @* Firma: FRANCO LARA - 22/09/2026 | Incorpora las cuentas bancarias BCP para el pago de la suscripcion, con razon social, RUC, botones compactos de copiado alineados a la derecha, aviso de envio de constancia y nombres comerciales de planes consistentes con el portal público. *@
+@* Firma: FRANCO LARA - 25/09/2026 | Ajusta los iconos de la suscripcion al estilo verde de la plataforma administrativa y convierte el canal telefonico de soporte en acceso directo a WhatsApp. *@
 @{
     ViewData["Title"] = "Mi suscripcion";
     var sus = Model.Suscripcion;
     var dias = Model.DiasParaVencer;
+    var telefonoSoporte = Model.ContactoPlataformaTelefono?.Trim() ?? string.Empty;
+    var numeroWhatsAppSoporte = new string(telefonoSoporte.Where(char.IsDigit).ToArray());
+    var enlaceWhatsAppSoporte = string.IsNullOrWhiteSpace(numeroWhatsAppSoporte)
+        ? string.Empty
+        : $"https://wa.me/{numeroWhatsAppSoporte}?text={Uri.EscapeDataString("Hola, necesito soporte con La Zona Deportiva.")}";
     var badgeClass = "text-bg-secondary";
     if (dias.HasValue)
     {
@@ -190,14 +196,28 @@ else
                     <span>Canal principal para consultas, ampliaciones y soporte operativo.</span>
                 </div>
             </article>
-            <article class="sc-suscripcion-info-card">
-                <span class="sc-suscripcion-info-icon"><i class="bi bi-telephone"></i></span>
-                <div class="sc-suscripcion-info-copy">
-                    <small>Telefono</small>
-                    <strong>@(!string.IsNullOrWhiteSpace(Model.ContactoPlataformaTelefono) ? Model.ContactoPlataformaTelefono : "No configurado")</strong>
-                    <span>Linea de atencion para coordinaciones directas con plataforma.</span>
-                </div>
-            </article>
+            @if (!string.IsNullOrWhiteSpace(enlaceWhatsAppSoporte))
+            {
+                <a class="sc-suscripcion-info-card sc-suscripcion-info-card-link" href="@enlaceWhatsAppSoporte" target="_blank" rel="noopener noreferrer" aria-label="Contactar al soporte por WhatsApp al @telefonoSoporte">
+                    <span class="sc-suscripcion-info-icon"><i class="bi bi-whatsapp"></i></span>
+                    <span class="sc-suscripcion-info-copy">
+                        <small>WhatsApp</small>
+                        <strong>@telefonoSoporte</strong>
+                        <span>Linea de atencion para coordinaciones directas con plataforma.</span>
+                    </span>
+                </a>
+            }
+            else
+            {
+                <article class="sc-suscripcion-info-card">
+                    <span class="sc-suscripcion-info-icon"><i class="bi bi-whatsapp"></i></span>
+                    <div class="sc-suscripcion-info-copy">
+                        <small>WhatsApp</small>
+                        <strong>No configurado</strong>
+                        <span>Linea de atencion para coordinaciones directas con plataforma.</span>
+                    </div>
+                </article>
+            }
         </div>
     </section>
 }

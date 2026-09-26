@@ -2923,10 +2923,29 @@ html[data-theme="dark"] .form-check-input:checked {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(145deg, #e6f0ff 0%, #dbeafe 100%);
-  border: 1px solid #bfdbfe;
-  color: #1d4ed8;
+  background: linear-gradient(145deg, #dcfce7 0%, #bbf7d0 100%);
+  border: 1px solid #86efac;
+  color: #15803d;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.sc-suscripcion-info-card-link {
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.sc-suscripcion-info-card-link:hover,
+.sc-suscripcion-info-card-link:focus-visible {
+  border-color: #4ade80;
+  color: inherit;
+  box-shadow: 0 14px 26px rgba(21, 128, 61, 0.14);
+  transform: translateY(-2px);
+}
+
+.sc-suscripcion-info-card-link:focus-visible {
+  outline: 3px solid rgba(34, 197, 94, 0.25);
+  outline-offset: 2px;
 }
 
 .sc-suscripcion-info-icon i {
@@ -6884,9 +6903,16 @@ html[data-theme="dark"] .sc-suscripcion-info-card {
 }
 
 html[data-theme="dark"] .sc-suscripcion-info-icon {
-  background: linear-gradient(145deg, rgba(31, 56, 98, 0.96) 0%, rgba(20, 36, 66, 0.98) 100%);
-  border-color: rgba(118, 162, 232, 0.34);
+  background: #123a30;
+  border-color: #286a59;
+  color: #8fe4c7;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="dark"] .sc-suscripcion-info-card-link:hover,
+html[data-theme="dark"] .sc-suscripcion-info-card-link:focus-visible {
+  border-color: #3d8d77;
+  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.28);
 }
 
 html[data-theme="dark"] .sc-suscripcion-info-copy small,
