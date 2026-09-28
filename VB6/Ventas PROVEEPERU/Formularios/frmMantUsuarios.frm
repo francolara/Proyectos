@@ -1,6 +1,6 @@
 VERSION 5.00
 Object = "{6A24B331-7634-11D3-A5B0-0050044A7E1A}#1.5#0"; "DXDBGrid.dll"
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "mscomctl.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "MSCOMCTL.OCX"
 Object = "{F41D1D30-7878-4923-8CB3-6CCACDC9C9DE}#1.0#0"; "CATControls.ocx"
 Begin VB.Form frmMantUsuarios 
    Appearance      =   0  'Flat
@@ -142,7 +142,27 @@ Begin VB.Form frmMantUsuarios
       TabIndex        =   9
       Top             =   675
       Width           =   8325
+      Begin VB.CheckBox Check1 
+         Alignment       =   1  'Right Justify
+         Caption         =   "Confirmación de Compra"
+         BeginProperty Font 
+            Name            =   "Arial"
+            Size            =   8.25
+            Charset         =   0
+            Weight          =   400
+            Underline       =   0   'False
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         Height          =   315
+         Left            =   5520
+         TabIndex        =   40
+         Tag             =   "NIndCompra"
+         Top             =   3150
+         Width           =   2160
+      End
       Begin VB.CheckBox chkIndJefe 
+         Alignment       =   1  'Right Justify
          Caption         =   "Jefe"
          BeginProperty Font 
             Name            =   "Arial"
@@ -154,10 +174,10 @@ Begin VB.Form frmMantUsuarios
             Strikethrough   =   0   'False
          EndProperty
          Height          =   315
-         Left            =   7470
+         Left            =   6990
          TabIndex        =   7
          Tag             =   "NindJefe"
-         Top             =   4275
+         Top             =   2910
          Width           =   690
       End
       Begin VB.Frame Frame2 
@@ -1423,7 +1443,7 @@ Dim rsg As New ADODB.Recordset
 Dim rsdatos  As New ADODB.Recordset
 Dim sql As String
 
-    csql = "SELECT v.indJefe,v.idusuario,v.idPerfil,varUsuario,varPass,v.serieetiquetera, v.ImpresoraLetras " & _
+    csql = "SELECT ISNULL(v.IndCompra,0) AS IndCompra,v.indJefe,v.idusuario,v.idPerfil,varUsuario,varPass,v.serieetiquetera, v.ImpresoraLetras " & _
            "FROM usuarios v " & _
            "WHERE v.idEmpresa = '" & glsEmpresa & "' AND v.idusuario = '" & strCodUsu & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
@@ -1502,7 +1522,7 @@ Public Sub EjecutaSQLFormUsuario(F As Form, tipoOperacion As Integer, indEmpresa
 On Error GoTo Err
 Dim C As Object
 Dim csql As String
-Dim strCampo As String
+Dim StrCampo As String
 Dim strTipoDato As String
 Dim strCampos As String
 Dim strValores As String
@@ -1524,10 +1544,10 @@ Dim indTrans As Boolean
         If TypeOf C Is CATTextBox Or TypeOf C Is DTPicker Or TypeOf C Is CheckBox Then
             If C.Tag <> "" Then
                 strTipoDato = left(C.Tag, 1)
-                strCampo = right(C.Tag, Len(C.Tag) - 1)
+                StrCampo = right(C.Tag, Len(C.Tag) - 1)
                 Select Case tipoOperacion
                     Case 0 'inserta
-                        strCampos = strCampos & strCampo & ","
+                        strCampos = strCampos & StrCampo & ","
                         
                         Select Case strTipoDato
                             Case "N"
@@ -1538,7 +1558,7 @@ Dim indTrans As Boolean
                                 strValores = strValores & "'" & Format(C.Value, "yyyy-mm-dd") & "',"
                         End Select
                     Case 1
-                        If UCase(strCampoCod) <> UCase(strCampo) Then
+                        If UCase(strCampoCod) <> UCase(StrCampo) Then
                             Select Case strTipoDato
                                 Case "N"
                                     strValores = C.Value
@@ -1547,7 +1567,7 @@ Dim indTrans As Boolean
                                 Case "F"
                                     strValores = "'" & Format(C.Value, "yyyy-mm-dd") & "'"
                             End Select
-                            strCampos = strCampos & strCampo & "=" & strValores & ","
+                            strCampos = strCampos & StrCampo & "=" & strValores & ","
                         Else
                             strValCod = C.Value
                         End If
@@ -1584,9 +1604,9 @@ Dim indTrans As Boolean
             For i = 0 To g.Columns.Count - 1
                 If UCase(left(g.Columns(i).ObjectName, 1)) = "W" Then
                     strTipoDato = Mid(g.Columns(i).ObjectName, 2, 1)
-                    strCampo = Mid(g.Columns(i).ObjectName, 3)
+                    StrCampo = Mid(g.Columns(i).ObjectName, 3)
                     
-                    strCampos = strCampos & strCampo & ","
+                    strCampos = strCampos & StrCampo & ","
                     
                     Select Case strTipoDato
                         Case "N"

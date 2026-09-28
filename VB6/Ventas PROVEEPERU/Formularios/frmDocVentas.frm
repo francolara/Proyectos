@@ -8,8 +8,8 @@ Begin VB.Form frmDocVentas
    BorderStyle     =   3  'Fixed Dialog
    Caption         =   "Ventas"
    ClientHeight    =   9570
-   ClientLeft      =   3585
-   ClientTop       =   2385
+   ClientLeft      =   4260
+   ClientTop       =   3165
    ClientWidth     =   15465
    BeginProperty Font 
       Name            =   "Arial"
@@ -1301,13 +1301,13 @@ Begin VB.Form frmDocVentas
       End
    End
    Begin MSComctlLib.Toolbar Toolbar1 
-      Height          =   660
+      Height          =   1800
       Left            =   120
       TabIndex        =   159
       Top             =   0
       Width           =   15270
       _ExtentX        =   26935
-      _ExtentY        =   1164
+      _ExtentY        =   3175
       ButtonWidth     =   3043
       ButtonHeight    =   1005
       AllowCustomize  =   0   'False
@@ -1474,7 +1474,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5520
-         Picture         =   "frmDocVentas.frx":1CFC4
+         Picture         =   "frmDocVentas.frx":1D565
          Style           =   1  'Graphical
          TabIndex        =   214
          Top             =   1560
@@ -1505,7 +1505,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":1D34E
+         Container       =   "frmDocVentas.frx":1D8EF
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -1532,7 +1532,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":1D36A
+         Container       =   "frmDocVentas.frx":1D90B
          Vacio           =   -1  'True
       End
       Begin VB.CheckBox ChkfContado 
@@ -1566,7 +1566,7 @@ Begin VB.Form frmDocVentas
             EndProperty
             Height          =   315
             Left            =   4710
-            Picture         =   "frmDocVentas.frx":1D386
+            Picture         =   "frmDocVentas.frx":1D927
             Style           =   1  'Graphical
             TabIndex        =   210
             Top             =   360
@@ -1594,7 +1594,7 @@ Begin VB.Form frmDocVentas
             FontSize        =   8.25
             ForeColor       =   -2147483640
             MaxLength       =   8
-            Container       =   "frmDocVentas.frx":1D710
+            Container       =   "frmDocVentas.frx":1DCB1
             Estilo          =   1
             Vacio           =   -1  'True
             EnterTab        =   -1  'True
@@ -1621,7 +1621,7 @@ Begin VB.Form frmDocVentas
             FontName        =   "Arial"
             FontSize        =   8.25
             ForeColor       =   -2147483640
-            Container       =   "frmDocVentas.frx":1D72C
+            Container       =   "frmDocVentas.frx":1DCCD
             Vacio           =   -1  'True
          End
       End
@@ -1678,7 +1678,7 @@ Begin VB.Form frmDocVentas
             FontSize        =   8.25
             ForeColor       =   -2147483640
             MaxLength       =   8
-            Container       =   "frmDocVentas.frx":1D748
+            Container       =   "frmDocVentas.frx":1DCE9
             Text            =   "------- "
             Decimales       =   2
             TextoInicio     =   "0"
@@ -1709,7 +1709,7 @@ Begin VB.Form frmDocVentas
             FontSize        =   8.25
             ForeColor       =   -2147483640
             MaxLength       =   8
-            Container       =   "frmDocVentas.frx":1D764
+            Container       =   "frmDocVentas.frx":1DD05
             Text            =   "------- "
             Decimales       =   2
             TextoInicio     =   "0"
@@ -1740,7 +1740,7 @@ Begin VB.Form frmDocVentas
             FontSize        =   8.25
             ForeColor       =   -2147483640
             MaxLength       =   8
-            Container       =   "frmDocVentas.frx":1D780
+            Container       =   "frmDocVentas.frx":1DD21
             Text            =   "------- "
             Decimales       =   2
             TextoInicio     =   "0"
@@ -1771,7 +1771,7 @@ Begin VB.Form frmDocVentas
             FontSize        =   8.25
             ForeColor       =   -2147483640
             MaxLength       =   8
-            Container       =   "frmDocVentas.frx":1D79C
+            Container       =   "frmDocVentas.frx":1DD3D
             Text            =   "------- "
             Decimales       =   2
             TextoInicio     =   "0"
@@ -1802,7 +1802,7 @@ Begin VB.Form frmDocVentas
             FontSize        =   8.25
             ForeColor       =   -2147483640
             MaxLength       =   8
-            Container       =   "frmDocVentas.frx":1D7B8
+            Container       =   "frmDocVentas.frx":1DD59
             Text            =   "------- "
             Decimales       =   2
             TextoInicio     =   "0"
@@ -1845,7 +1845,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11370
-         Picture         =   "frmDocVentas.frx":1D7D4
+         Picture         =   "frmDocVentas.frx":1DD75
          Style           =   1  'Graphical
          TabIndex        =   181
          Top             =   1935
@@ -1876,7 +1876,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":1DB5E
+         Container       =   "frmDocVentas.frx":1E0FF
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_AlmacenDestino 
@@ -1903,7 +1903,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":1DB7A
+         Container       =   "frmDocVentas.frx":1E11B
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -1931,7 +1931,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":1DB96
+         Container       =   "frmDocVentas.frx":1E137
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_SucursalDestino 
@@ -1958,14 +1958,14 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":1DBB2
+         Container       =   "frmDocVentas.frx":1E153
          Estilo          =   1
          EnterTab        =   -1  'True
       End
       Begin VB.CommandButton cmbAyudaAlmacenDestino 
          Height          =   315
          Left            =   11400
-         Picture         =   "frmDocVentas.frx":1DBCE
+         Picture         =   "frmDocVentas.frx":1E16F
          Style           =   1  'Graphical
          TabIndex        =   174
          Top             =   4500
@@ -1975,7 +1975,7 @@ Begin VB.Form frmDocVentas
       Begin VB.CommandButton cmbAyudaSucursalDestino 
          Height          =   315
          Left            =   11385
-         Picture         =   "frmDocVentas.frx":1DF58
+         Picture         =   "frmDocVentas.frx":1E4F9
          Style           =   1  'Graphical
          TabIndex        =   173
          Top             =   4155
@@ -2006,7 +2006,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5520
-         Picture         =   "frmDocVentas.frx":1E2E2
+         Picture         =   "frmDocVentas.frx":1E883
          Style           =   1  'Graphical
          TabIndex        =   171
          Top             =   1260
@@ -2058,7 +2058,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":1E66C
+         Container       =   "frmDocVentas.frx":1EC0D
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -2085,7 +2085,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":1E688
+         Container       =   "frmDocVentas.frx":1EC29
       End
       Begin VB.CommandButton cmbcontactosclientes 
          BeginProperty Font 
@@ -2099,7 +2099,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5445
-         Picture         =   "frmDocVentas.frx":1E6A4
+         Picture         =   "frmDocVentas.frx":1EC45
          Style           =   1  'Graphical
          TabIndex        =   157
          Top             =   3690
@@ -2109,7 +2109,7 @@ Begin VB.Form frmDocVentas
       Begin VB.CommandButton btnvt 
          Height          =   315
          Left            =   9600
-         Picture         =   "frmDocVentas.frx":1EA2E
+         Picture         =   "frmDocVentas.frx":1EFCF
          Style           =   1  'Graphical
          TabIndex        =   144
          Top             =   3840
@@ -2139,7 +2139,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5460
-         Picture         =   "frmDocVentas.frx":1EDB8
+         Picture         =   "frmDocVentas.frx":1F359
          Style           =   1  'Graphical
          TabIndex        =   138
          Top             =   600
@@ -2158,7 +2158,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11385
-         Picture         =   "frmDocVentas.frx":1F142
+         Picture         =   "frmDocVentas.frx":1F6E3
          Style           =   1  'Graphical
          TabIndex        =   135
          Top             =   495
@@ -2190,7 +2190,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":1F4CC
+         Container       =   "frmDocVentas.frx":1FA6D
          Text            =   "0.00"
          Decimales       =   2
          Estilo          =   4
@@ -2221,7 +2221,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   255
-         Container       =   "frmDocVentas.frx":1F4E8
+         Container       =   "frmDocVentas.frx":1FA89
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -2250,7 +2250,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   255
-         Container       =   "frmDocVentas.frx":1F504
+         Container       =   "frmDocVentas.frx":1FAA5
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -2267,7 +2267,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5460
-         Picture         =   "frmDocVentas.frx":1F520
+         Picture         =   "frmDocVentas.frx":1FAC1
          Style           =   1  'Graphical
          TabIndex        =   121
          Top             =   4170
@@ -2298,7 +2298,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":1F8AA
+         Container       =   "frmDocVentas.frx":1FE4B
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -2326,7 +2326,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":1F8C6
+         Container       =   "frmDocVentas.frx":1FE67
          Vacio           =   -1  'True
       End
       Begin VB.CommandButton cmbAyudaVendedorCampo 
@@ -2341,7 +2341,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5460
-         Picture         =   "frmDocVentas.frx":1F8E2
+         Picture         =   "frmDocVentas.frx":1FE83
          Style           =   1  'Graphical
          TabIndex        =   113
          Top             =   4500
@@ -2360,7 +2360,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11340
-         Picture         =   "frmDocVentas.frx":1FC6C
+         Picture         =   "frmDocVentas.frx":2020D
          Style           =   1  'Graphical
          TabIndex        =   109
          Top             =   3840
@@ -2391,7 +2391,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":1FFF6
+         Container       =   "frmDocVentas.frx":20597
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -2419,7 +2419,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":20012
+         Container       =   "frmDocVentas.frx":205B3
          Vacio           =   -1  'True
       End
       Begin MSComCtl2.DTPicker dtp_IniTraslado 
@@ -2442,7 +2442,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   140443649
+         Format          =   132513793
          CurrentDate     =   38955
       End
       Begin VB.CommandButton cmbAyudaMotivoNCD 
@@ -2457,7 +2457,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11340
-         Picture         =   "frmDocVentas.frx":2002E
+         Picture         =   "frmDocVentas.frx":205CF
          Style           =   1  'Graphical
          TabIndex        =   91
          Top             =   4320
@@ -2489,7 +2489,7 @@ Begin VB.Form frmDocVentas
          ForeColor       =   -2147483640
          Locked          =   -1  'True
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":203B8
+         Container       =   "frmDocVentas.frx":20959
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -2517,7 +2517,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":203D4
+         Container       =   "frmDocVentas.frx":20975
          Vacio           =   -1  'True
       End
       Begin VB.CommandButton cmbAyudaMotivoTraslado 
@@ -2532,7 +2532,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11325
-         Picture         =   "frmDocVentas.frx":203F0
+         Picture         =   "frmDocVentas.frx":20991
          Style           =   1  'Graphical
          TabIndex        =   86
          Top             =   4425
@@ -2551,7 +2551,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11325
-         Picture         =   "frmDocVentas.frx":2077A
+         Picture         =   "frmDocVentas.frx":20D1B
          Style           =   1  'Graphical
          TabIndex        =   74
          Top             =   4050
@@ -2570,7 +2570,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11400
-         Picture         =   "frmDocVentas.frx":20B04
+         Picture         =   "frmDocVentas.frx":210A5
          Style           =   1  'Graphical
          TabIndex        =   73
          Top             =   1500
@@ -2589,7 +2589,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11400
-         Picture         =   "frmDocVentas.frx":20E8E
+         Picture         =   "frmDocVentas.frx":2142F
          Style           =   1  'Graphical
          TabIndex        =   72
          Top             =   1200
@@ -2608,7 +2608,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11400
-         Picture         =   "frmDocVentas.frx":21218
+         Picture         =   "frmDocVentas.frx":217B9
          Style           =   1  'Graphical
          TabIndex        =   71
          Top             =   1800
@@ -2639,7 +2639,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":215A2
+         Container       =   "frmDocVentas.frx":21B43
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -2667,7 +2667,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":215BE
+         Container       =   "frmDocVentas.frx":21B5F
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
       End
@@ -2683,7 +2683,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5445
-         Picture         =   "frmDocVentas.frx":215DA
+         Picture         =   "frmDocVentas.frx":21B7B
          Style           =   1  'Graphical
          TabIndex        =   32
          Top             =   3375
@@ -2702,7 +2702,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5445
-         Picture         =   "frmDocVentas.frx":21964
+         Picture         =   "frmDocVentas.frx":21F05
          Style           =   1  'Graphical
          TabIndex        =   30
          Top             =   3075
@@ -2721,7 +2721,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5445
-         Picture         =   "frmDocVentas.frx":21CEE
+         Picture         =   "frmDocVentas.frx":2228F
          Style           =   1  'Graphical
          TabIndex        =   26
          Top             =   2400
@@ -2740,7 +2740,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5440
-         Picture         =   "frmDocVentas.frx":22078
+         Picture         =   "frmDocVentas.frx":22619
          Style           =   1  'Graphical
          TabIndex        =   19
          Top             =   870
@@ -2767,7 +2767,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   140443649
+         Format          =   132513793
          CurrentDate     =   38955
       End
       Begin MSComctlLib.ImageList imgDocVentas 
@@ -2783,67 +2783,67 @@ Begin VB.Form frmDocVentas
          BeginProperty Images {2C247F25-8591-11D1-B16A-00C0F0283628} 
             NumListImages   =   16
             BeginProperty ListImage1 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":22402
+               Picture         =   "frmDocVentas.frx":229A3
                Key             =   ""
             EndProperty
             BeginProperty ListImage2 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":2279C
+               Picture         =   "frmDocVentas.frx":22D3D
                Key             =   ""
             EndProperty
             BeginProperty ListImage3 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":22BEE
+               Picture         =   "frmDocVentas.frx":2318F
                Key             =   ""
             EndProperty
             BeginProperty ListImage4 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":22F88
+               Picture         =   "frmDocVentas.frx":23529
                Key             =   ""
             EndProperty
             BeginProperty ListImage5 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":23322
+               Picture         =   "frmDocVentas.frx":238C3
                Key             =   ""
             EndProperty
             BeginProperty ListImage6 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":236BC
+               Picture         =   "frmDocVentas.frx":23C5D
                Key             =   ""
             EndProperty
             BeginProperty ListImage7 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":23A56
+               Picture         =   "frmDocVentas.frx":23FF7
                Key             =   ""
             EndProperty
             BeginProperty ListImage8 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":23DF0
+               Picture         =   "frmDocVentas.frx":24391
                Key             =   ""
             EndProperty
             BeginProperty ListImage9 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":2418A
+               Picture         =   "frmDocVentas.frx":2472B
                Key             =   ""
             EndProperty
             BeginProperty ListImage10 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":24524
+               Picture         =   "frmDocVentas.frx":24AC5
                Key             =   ""
             EndProperty
             BeginProperty ListImage11 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":248BE
+               Picture         =   "frmDocVentas.frx":24E5F
                Key             =   ""
             EndProperty
             BeginProperty ListImage12 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":25580
+               Picture         =   "frmDocVentas.frx":25B21
                Key             =   ""
             EndProperty
             BeginProperty ListImage13 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":2591A
+               Picture         =   "frmDocVentas.frx":25EBB
                Key             =   ""
             EndProperty
             BeginProperty ListImage14 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":25D6C
+               Picture         =   "frmDocVentas.frx":2630D
                Key             =   ""
             EndProperty
             BeginProperty ListImage15 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":26106
+               Picture         =   "frmDocVentas.frx":266A7
                Key             =   ""
             EndProperty
             BeginProperty ListImage16 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":26B18
+               Picture         =   "frmDocVentas.frx":270B9
                Key             =   ""
             EndProperty
          EndProperty
@@ -2872,7 +2872,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   4
-         Container       =   "frmDocVentas.frx":271EA
+         Container       =   "frmDocVentas.frx":2778B
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -2901,7 +2901,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          Locked          =   -1  'True
-         Container       =   "frmDocVentas.frx":27206
+         Container       =   "frmDocVentas.frx":277A7
          Estilo          =   1
          Vacio           =   -1  'True
       End
@@ -2929,7 +2929,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":27222
+         Container       =   "frmDocVentas.frx":277C3
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -2958,7 +2958,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":2723E
+         Container       =   "frmDocVentas.frx":277DF
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_EmpTrans 
@@ -2985,7 +2985,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":2725A
+         Container       =   "frmDocVentas.frx":277FB
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3014,7 +3014,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":27276
+         Container       =   "frmDocVentas.frx":27817
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_Vehiculo 
@@ -3041,7 +3041,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":27292
+         Container       =   "frmDocVentas.frx":27833
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3070,7 +3070,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":272AE
+         Container       =   "frmDocVentas.frx":2784F
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_Almacen 
@@ -3097,7 +3097,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":272CA
+         Container       =   "frmDocVentas.frx":2786B
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3124,7 +3124,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":272E6
+         Container       =   "frmDocVentas.frx":27887
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_Vendedor 
@@ -3151,7 +3151,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":27302
+         Container       =   "frmDocVentas.frx":278A3
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3179,7 +3179,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":2731E
+         Container       =   "frmDocVentas.frx":278BF
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_Moneda 
@@ -3206,7 +3206,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":2733A
+         Container       =   "frmDocVentas.frx":278DB
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3234,7 +3234,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":27356
+         Container       =   "frmDocVentas.frx":278F7
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txt_RUC 
@@ -3262,7 +3262,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":27372
+         Container       =   "frmDocVentas.frx":27913
          EnterTab        =   -1  'True
       End
       Begin CATControls.CATTextBox txt_Direccion 
@@ -3289,7 +3289,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   255
-         Container       =   "frmDocVentas.frx":2738E
+         Container       =   "frmDocVentas.frx":2792F
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3317,7 +3317,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   255
-         Container       =   "frmDocVentas.frx":273AA
+         Container       =   "frmDocVentas.frx":2794B
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3345,7 +3345,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   255
-         Container       =   "frmDocVentas.frx":273C6
+         Container       =   "frmDocVentas.frx":27967
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3373,7 +3373,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   45
-         Container       =   "frmDocVentas.frx":273E2
+         Container       =   "frmDocVentas.frx":27983
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3402,7 +3402,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   10
-         Container       =   "frmDocVentas.frx":273FE
+         Container       =   "frmDocVentas.frx":2799F
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3431,7 +3431,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":2741A
+         Container       =   "frmDocVentas.frx":279BB
          Estilo          =   3
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3460,7 +3460,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":27436
+         Container       =   "frmDocVentas.frx":279D7
          Text            =   "0"
          Estilo          =   4
          EnterTab        =   -1  'True
@@ -3489,7 +3489,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   128
-         Container       =   "frmDocVentas.frx":27452
+         Container       =   "frmDocVentas.frx":279F3
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3518,7 +3518,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   128
-         Container       =   "frmDocVentas.frx":2746E
+         Container       =   "frmDocVentas.frx":27A0F
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3546,7 +3546,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   128
-         Container       =   "frmDocVentas.frx":2748A
+         Container       =   "frmDocVentas.frx":27A2B
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3574,7 +3574,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   128
-         Container       =   "frmDocVentas.frx":274A6
+         Container       =   "frmDocVentas.frx":27A47
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3603,7 +3603,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":274C2
+         Container       =   "frmDocVentas.frx":27A63
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3630,7 +3630,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":274DE
+         Container       =   "frmDocVentas.frx":27A7F
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_MotivoTraslado 
@@ -3658,7 +3658,7 @@ Begin VB.Form frmDocVentas
          ForeColor       =   -2147483640
          Locked          =   -1  'True
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":274FA
+         Container       =   "frmDocVentas.frx":27A9B
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3685,13 +3685,13 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":27516
+         Container       =   "frmDocVentas.frx":27AB7
          Vacio           =   -1  'True
       End
       Begin DXDBGRIDLibCtl.dxDBGrid gDocReferencia 
          Height          =   1200
          Left            =   5985
-         OleObjectBlob   =   "frmDocVentas.frx":27532
+         OleObjectBlob   =   "frmDocVentas.frx":27AD3
          TabIndex        =   22
          Top             =   2160
          Visible         =   0   'False
@@ -3721,7 +3721,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":2AA60
+         Container       =   "frmDocVentas.frx":2B001
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
       End
@@ -3749,7 +3749,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":2AA7C
+         Container       =   "frmDocVentas.frx":2B01D
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3778,7 +3778,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":2AA98
+         Container       =   "frmDocVentas.frx":2B039
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txt_OrdenCompra 
@@ -3805,7 +3805,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   25
-         Container       =   "frmDocVentas.frx":2AAB4
+         Container       =   "frmDocVentas.frx":2B055
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3834,7 +3834,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":2AAD0
+         Container       =   "frmDocVentas.frx":2B071
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3861,7 +3861,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":2AAEC
+         Container       =   "frmDocVentas.frx":2B08D
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_FormaPago 
@@ -3888,7 +3888,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":2AB08
+         Container       =   "frmDocVentas.frx":2B0A9
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3916,7 +3916,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":2AB24
+         Container       =   "frmDocVentas.frx":2B0C5
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtvtcodigo 
@@ -3943,7 +3943,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":2AB40
+         Container       =   "frmDocVentas.frx":2B0E1
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3970,7 +3970,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":2AB5C
+         Container       =   "frmDocVentas.frx":2B0FD
          Estilo          =   1
          Vacio           =   -1  'True
       End
@@ -3998,7 +3998,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":2AB78
+         Container       =   "frmDocVentas.frx":2B119
          EnterTab        =   -1  'True
       End
       Begin CATControls.CATTextBox txtvtdireccion 
@@ -4025,7 +4025,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   255
-         Container       =   "frmDocVentas.frx":2AB94
+         Container       =   "frmDocVentas.frx":2B135
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -4049,7 +4049,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   140443649
+         Format          =   132513793
          CurrentDate     =   38955
       End
       Begin CATControls.CATTextBox txtgls_contacto 
@@ -4075,7 +4075,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":2ABB0
+         Container       =   "frmDocVentas.frx":2B151
       End
       Begin CATControls.CATTextBox Txt_ProvCliente 
          Height          =   285
@@ -4101,7 +4101,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":2ABCC
+         Container       =   "frmDocVentas.frx":2B16D
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
       End
@@ -4128,7 +4128,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":2ABE8
+         Container       =   "frmDocVentas.frx":2B189
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
       End
@@ -4155,7 +4155,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":2AC04
+         Container       =   "frmDocVentas.frx":2B1A5
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox TxtCodSucursalDestino 
@@ -4182,7 +4182,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":2AC20
+         Container       =   "frmDocVentas.frx":2B1C1
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -4210,7 +4210,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":2AC3C
+         Container       =   "frmDocVentas.frx":2B1DD
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
       End
@@ -4238,7 +4238,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":2AC58
+         Container       =   "frmDocVentas.frx":2B1F9
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
       End
@@ -7759,6 +7759,7 @@ Dim pmodificacorrelativo    As String
     rsg.Fields.Append "Factor", adDouble, 14, adFldIsNullable
     rsg.Fields.Append "Afecto", adInteger, 4, adFldIsNullable
     rsg.Fields.Append "Cantidad", adDouble, 14, adFldIsNullable
+    rsg.Fields.Append "Comprado", adInteger, 4, adFldIsNullable 'll 280926
     rsg.Fields.Append "Cantidad2", adDouble, 14, adFldIsNullable
     rsg.Fields.Append "VVUnit", adDouble, 14, adFldIsNullable
     rsg.Fields.Append "IGVUnit", adDouble, 14, adFldIsNullable
@@ -7821,6 +7822,7 @@ Dim pmodificacorrelativo    As String
     rsg.Fields("Factor") = 1
     rsg.Fields("Afecto") = 1
     rsg.Fields("Cantidad") = 0
+    rsg.Fields("Comprado") = 0 'll 280926
     rsg.Fields("Cantidad2") = 0
     rsg.Fields("VVUnit") = 0
     rsg.Fields("IGVUnit") = 0
@@ -7969,6 +7971,7 @@ Private Sub gdetalle_OnAfterDatasetAction(ByVal Action As DXDBGRIDLibCtl.ExDatas
         gDetalle.Columns.ColumnByFieldName("Afecto").Value = 1
         gDetalle.Columns.ColumnByFieldName("Cantidad").Value = 0
         gDetalle.Columns.ColumnByFieldName("Cantidad").Value = 0
+        gDetalle.Columns.ColumnByFieldName("Comprado").Value = 0 'll 280926
         gDetalle.Columns.ColumnByFieldName("Cantidad2").Value = 0
         gDetalle.Columns.ColumnByFieldName("VVUnit").Value = 0
         gDetalle.Columns.ColumnByFieldName("IGVUnit").Value = 0
@@ -10155,6 +10158,7 @@ On Error GoTo Err
                         gDetalle.Columns.ColumnByFieldName("Factor").Value = 1
                         gDetalle.Columns.ColumnByFieldName("Afecto").Value = 1
                         gDetalle.Columns.ColumnByFieldName("Cantidad").Value = 0
+                        gDetalle.Columns.ColumnByFieldName("Comprado").Value = 0 'll 280926
                         gDetalle.Columns.ColumnByFieldName("VVUnit").Value = 0
                         gDetalle.Columns.ColumnByFieldName("IGVUnit").Value = 0
                         gDetalle.Columns.ColumnByFieldName("PVUnit").Value = 0
@@ -11027,6 +11031,7 @@ On Error GoTo Err
                 gDetalle.Columns.ColumnByFieldName("idProducto").DisableEditor = False
                 gDetalle.Columns.ColumnByFieldName("Afecto").DisableEditor = False
                 gDetalle.Columns.ColumnByFieldName("Cantidad").DisableEditor = False
+                gDetalle.Columns.ColumnByFieldName("Comprado").DisableEditor = False 'll 280926
                 gDetalle.Columns.ColumnByFieldName("VVUnit").DisableEditor = False
                 gDetalle.Columns.ColumnByFieldName("IGVUnit").DisableEditor = False
                 gDetalle.Columns.ColumnByFieldName("PVUnit").DisableEditor = False
@@ -11894,19 +11899,19 @@ On Error GoTo Err
             If StrMsgError <> "" Then GoTo Err
         
         Case 22:  'Importar Atenciones
-            CIdAtencion = ""
-            
-            FrmImportaAtenciones.MostrarForm StrMsgError, CIdAtencion, txtCod_Cliente.Text
-            If StrMsgError <> "" Then GoTo Err
-            
-            Unload FrmImportaAtenciones
-            
-            If Len(Trim(CIdAtencion)) > 0 Then
-            
-                MostrarAtencion StrMsgError, CIdAtencion
-                If StrMsgError <> "" Then GoTo Err
-            
-            End If
+'            CIdAtencion = ""
+'
+'            FrmImportaAtenciones.MostrarForm StrMsgError, CIdAtencion, txtCod_Cliente.Text
+'            If StrMsgError <> "" Then GoTo Err
+'
+'            Unload FrmImportaAtenciones
+'
+'            If Len(Trim(CIdAtencion)) > 0 Then
+'
+'                MostrarAtencion StrMsgError, CIdAtencion
+'                If StrMsgError <> "" Then GoTo Err
+'
+'            End If
         Case 23:  'Documento Electrnico
 
 '            If strTipoDoc = "86" Then
@@ -13463,6 +13468,7 @@ Dim RsC                             As New ADODB.Recordset
     rsg.Fields.Append "Factor", adDouble, 14, adFldIsNullable
     rsg.Fields.Append "Afecto", adInteger, 4, adFldIsNullable
     rsg.Fields.Append "Cantidad", adDouble, 14, adFldIsNullable
+    rsg.Fields.Append "Comprado", adInteger, 4, adFldIsNullable 'll 280926
     rsg.Fields.Append "Cantidad2", adDouble, 14, adFldIsNullable
     rsg.Fields.Append "VVUnit", adDouble, 14, adFldIsNullable
     rsg.Fields.Append "IGVUnit", adDouble, 14, adFldIsNullable
@@ -13527,6 +13533,7 @@ Dim RsC                             As New ADODB.Recordset
         rsg.Fields("Factor") = 1
         rsg.Fields("Afecto") = 1
         rsg.Fields("Cantidad") = 0
+        rsg.Fields("Comprado") = 0 'll 280926
         rsg.Fields("Cantidad2") = 0
         rsg.Fields("VVUnit") = 0
         rsg.Fields("IGVUnit") = 0
@@ -13580,6 +13587,7 @@ Dim RsC                             As New ADODB.Recordset
             rsg.Fields("Factor") = "" & rst.Fields("Factor")
             rsg.Fields("Afecto") = "" & rst.Fields("Afecto")
             rsg.Fields("Cantidad") = "" & rst.Fields("Cantidad")
+            rsg.Fields("Comprado") = "" & rst.Fields("Comprado") 'll 280926
             rsg.Fields("Cantidad2") = "" & rst.Fields("Cantidad2")
             rsg.Fields("VVUnit") = "" & rst.Fields("VVUnit")
             rsg.Fields("IGVUnit") = "" & rst.Fields("IGVUnit")
@@ -16464,6 +16472,7 @@ Dim StrCodfPagoAnt  As String
     rsg.Fields.Append "Factor", adDouble, 14, adFldIsNullable
     rsg.Fields.Append "Afecto", adInteger, 4, adFldIsNullable
     rsg.Fields.Append "Cantidad", adDouble, 14, adFldIsNullable
+    rsg.Fields.Append "Comprado", adInteger, 4, adFldIsNullable 'll 280926
     rsg.Fields.Append "Cantidad2", adDouble, 14, adFldIsNullable
     rsg.Fields.Append "VVUnit", adDouble, 14, adFldIsNullable
     rsg.Fields.Append "IGVUnit", adDouble, 14, adFldIsNullable
@@ -16615,6 +16624,7 @@ Dim StrCodfPagoAnt  As String
         rsg.Fields("Factor") = 1
         rsg.Fields("Afecto") = 1
         rsg.Fields("Cantidad") = 0
+        rsg.Fields("Comprado") = 0 'll 280926
         rsg.Fields("Cantidad2") = 0
         rsg.Fields("VVUnit") = 0
         rsg.Fields("IGVUnit") = 0
@@ -16673,6 +16683,7 @@ Dim StrCodfPagoAnt  As String
             rsg.Fields("Factor") = "" & rsdd.Fields("Factor")
             rsg.Fields("Afecto") = "" & rsdd.Fields("Afecto")
             rsg.Fields("Cantidad") = "" & rsdd.Fields("Cantidad")
+            rsg.Fields("Comprado") = 0 'll 280926
             rsg.Fields("Cantidad2") = "" & rsdd.Fields("Cantidad2")
             rsg.Fields("VVUnit") = "" & rsdd.Fields("VVUnit")
             rsg.Fields("IGVUnit") = "" & rsdd.Fields("IGVUnit")
@@ -16862,6 +16873,7 @@ Dim StrCodfPagoAnt  As String
     rsg.Fields.Append "Factor", adDouble, 14, adFldIsNullable
     rsg.Fields.Append "Afecto", adInteger, 4, adFldIsNullable
     rsg.Fields.Append "Cantidad", adDouble, 14, adFldIsNullable
+    rsg.Fields.Append "Comprado", adInteger, 4, adFldIsNullable 'll 280926
     rsg.Fields.Append "Cantidad2", adDouble, 14, adFldIsNullable
     rsg.Fields.Append "VVUnit", adDouble, 14, adFldIsNullable
     rsg.Fields.Append "IGVUnit", adDouble, 14, adFldIsNullable
@@ -16994,6 +17006,7 @@ Dim StrCodfPagoAnt  As String
         rsg.Fields("Factor") = 1
         rsg.Fields("Afecto") = 1
         rsg.Fields("Cantidad") = 0
+        rsg.Fields("Comprado") = 0 'll 280926
         rsg.Fields("Cantidad2") = 0
         rsg.Fields("VVUnit") = 0
         rsg.Fields("IGVUnit") = 0
@@ -17053,6 +17066,7 @@ Dim StrCodfPagoAnt  As String
             rsg.Fields("GlsUM") = "" & rsdd.Fields("GlsUM")
             rsg.Fields("Factor") = "" & rsdd.Fields("Factor")
             rsg.Fields("Afecto") = "" & rsdd.Fields("Afecto")
+            rsg.Fields("Comprado") = 0 'll 280926
             rsg.Fields("idTipoProducto") = "" & rsdd.Fields("idTipoProducto")
             rsg.Fields("idMoneda") = "" & rsdd.Fields("idMoneda")
             rsg.Fields("idDocumentoImp") = strTipoDocImportado
@@ -19065,6 +19079,7 @@ Dim strCliApi                   As String
     rsg.Fields.Append "Factor", adDouble, 14, adFldIsNullable
     rsg.Fields.Append "Afecto", adInteger, 4, adFldIsNullable
     rsg.Fields.Append "Cantidad", adDouble, 14, adFldIsNullable
+    rsg.Fields.Append "Comprado", adInteger, 4, adFldIsNullable 'll 280926
     rsg.Fields.Append "Cantidad2", adDouble, 14, adFldIsNullable
     rsg.Fields.Append "VVUnit", adDouble, 14, adFldIsNullable
     rsg.Fields.Append "IGVUnit", adDouble, 14, adFldIsNullable
@@ -19188,6 +19203,7 @@ Dim strCliApi                   As String
             rsg.Fields("Factor") = 1
             rsg.Fields("Afecto") = 1
             rsg.Fields("Cantidad") = 0
+            rsg.Fields("Comprado") = 0 'll 280926
             rsg.Fields("Cantidad2") = 0
             rsg.Fields("VVUnit") = 0
             rsg.Fields("IGVUnit") = 0
@@ -19246,6 +19262,7 @@ Dim strCliApi                   As String
                 rsg.Fields("GlsUM") = "" & rsdd.Fields("GlsUM")
                 rsg.Fields("Factor") = "" & rsdd.Fields("Factor")
                 rsg.Fields("Afecto") = "" & rsdd.Fields("Afecto")
+                rsg.Fields("Comprado") = 0 'll 280926
                 rsg.Fields("idTipoProducto") = "" & rsdd.Fields("idTipoProducto")
                 rsg.Fields("idMoneda") = "" & rsdd.Fields("idMoneda")
                 rsg.Fields("idDocumentoImp") = strTipoDocImportado
@@ -19428,6 +19445,7 @@ Dim strCliApi                   As String
             rsg.Fields("GlsUM") = "" & rst.Fields("GlsUM")
             rsg.Fields("Factor") = "01"
             rsg.Fields("Afecto") = "01"
+            rsg.Fields("Comprado") = 0 'll 280926
             rsg.Fields("idTipoProducto") = "" & rst.Fields("idTipoProducto")
             rsg.Fields("idMoneda") = "" & rst.Fields("idMoneda")
             rsg.Fields("CodigoRapido") = "" & rst.Fields("CodigoRapido")
@@ -20205,6 +20223,7 @@ Private Sub Activa_Desc_Grid(SwColum As Boolean)
     gDetalle.Columns.ColumnByFieldName("GlsUM").DisableEditor = True
     gDetalle.Columns.ColumnByFieldName("Factor").DisableEditor = SwColum
     gDetalle.Columns.ColumnByFieldName("Afecto").DisableEditor = SwColum
+    gDetalle.Columns.ColumnByFieldName("Comprado").DisableEditor = SwColum 'll 280926
     gDetalle.Columns.ColumnByFieldName("cantidad").DisableEditor = SwColum
     gDetalle.Columns.ColumnByFieldName("VVUnit").DisableEditor = SwColum
     gDetalle.Columns.ColumnByFieldName("IGVUnit").DisableEditor = SwColum
@@ -20386,141 +20405,141 @@ Err:
     If StrMsgError = "" Then StrMsgError = Err.Description
 End Sub
 
-Private Sub MostrarAtencion(StrMsgError As String, PIdAtencion As String)
-On Error GoTo Err
-Dim CSqlC                           As String
-Dim RsC                             As New ADODB.Recordset
-Dim RsD                             As New ADODB.Recordset
-Dim rsg                             As New ADODB.Recordset
-    
-    CSqlC = "Select A.IdAtencion,A.IdCliente,B.GlsPlanTarifario,Date_Format(A.Fecha,'%d/%m/%Y') Fecha,ConCat(A.GlsApellidos,' ',A.GlsNombres) GlsPaciente," & _
-            "A.IdCodigoUnico,A.GlsNumero_Poliza,A.GlsDX_Cliente,D.GlsMedico,D.IdCMP,E.GlsTipoServicio,B.TotalVenta," & _
-            "IfNull(F.GlsPlanTarifario,'') GlsPlanTarifario2," & _
-            "Cast(((((Time_Format(A.TiempoDemora,'%h') * 60) + Time_Format(A.TiempoDemora,'%i')) * IfNull(F.TotalVenta,0)) / 60) As Decimal(14,2)) TotalVenta2 " & _
-            "From RegistroAtenciones A " & _
-            "Inner Join PlanesTarifarios B " & _
-                "On A.IdEmpresa = B.IdEmpresa And A.Item_Tarifario = B.IdPlanTarifario " & _
-            "Inner Join Medicos D " & _
-                "On A.IdEmpresa = D.IdEmpresa And A.IdMedico_Origen = D.IdMedico " & _
-            "Inner Join TiposServicios E " & _
-                "On A.IdEmpresa = E.IdEmpresa And A.IdTipoServicio = E.IdTipoServicio " & _
-            "Left Join PlanesTarifarios F " & _
-                "On A.IdEmpresa = F.IdEmpresa And A.Item_Tarifario2 = F.IdPlanTarifario " & _
-            "Where A.IdEmpresa = '" & glsEmpresa & "' And A.IdAtencion = '" & PIdAtencion & "'"
-            
-    RsC.Open CSqlC, Cn, adOpenStatic, adLockOptimistic
-    
-    If Not RsC.EOF Then
-    
-        txtCod_Cliente.Text = Trim("" & RsC.Fields("IdCliente"))
-        dtp_Emision.Value = Trim("" & RsC.Fields("Fecha"))
-        
-        rsg.Fields.Append "Item", adInteger, , adFldRowID
-        rsg.Fields.Append "numOrdenCompra", adVarChar, 30, adFldIsNullable
-        rsg.Fields.Append "idProducto", adVarChar, 20, adFldIsNullable
-        rsg.Fields.Append "idCodFabricante", adVarChar, 30, adFldIsNullable
-        rsg.Fields.Append "GlsProducto", adVarChar, 800, adFldIsNullable
-        rsg.Fields.Append "idMarca", adChar, 8, adFldIsNullable
-        rsg.Fields.Append "GlsMarca", adVarChar, 185, adFldIsNullable
-        rsg.Fields.Append "idUM", adChar, 8, adFldIsNullable
-        rsg.Fields.Append "GlsUM", adVarChar, 185, adFldIsNullable
-        rsg.Fields.Append "Factor", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "Afecto", adInteger, 4, adFldIsNullable
-        rsg.Fields.Append "Cantidad", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "Cantidad2", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "VVUnit", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "IGVUnit", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "PVUnit", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "TotalVVBruto", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "TotalPVBruto", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "PorDcto", adVarChar, 20, adFldIsNullable
-        rsg.Fields.Append "DctoVV", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "DctoPV", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "TotalVVNeto", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "TotalIGVNeto", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "TotalPVNeto", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "idTipoProducto", adChar, 5, adFldIsNullable
-        rsg.Fields.Append "idMoneda", adChar, 3, adFldIsNullable
-        rsg.Fields.Append "idDocumentoImp", adVarChar, 2, adFldIsNullable
-        rsg.Fields.Append "idDocVentasImp", adVarChar, 8, adFldIsNullable
-        rsg.Fields.Append "idSerieImp", adVarChar, 4, adFldIsNullable
-        rsg.Fields.Append "NumLote", adVarChar, 30, adFldIsNullable
-        rsg.Fields.Append "IdLote", adVarChar, 30, adFldIsNullable
-        rsg.Fields.Append "FecVencProd", adVarChar, 30, adFldIsNullable
-        rsg.Fields.Append "idUsuarioDcto", adVarChar, 8, adFldIsNullable
-        rsg.Fields.Append "VVUnitLista", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "PVUnitLista", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "VVUnitNeto", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "PVUnitNeto", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "CodigoRapido", adVarChar, 30, adFldIsNullable
-        rsg.Fields.Append "idTallaPeso", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "CantidadAnt", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "Simbolo1", adVarChar, 30, adFldIsNullable
-        rsg.Fields.Append "Simbolo2", adVarChar, 30, adFldIsNullable
-        rsg.Fields.Append "Simbolo3", adVarChar, 30, adFldIsNullable
-        rsg.Fields.Append "ItemPro", adInteger, , adFldRowID
-        rsg.Fields.Append "IdCentroCosto", adVarChar, 8, adFldIsNullable
-        rsg.Fields.Append "GlsPlaca", adVarChar, 15, adFldIsNullable
-        rsg.Fields.Append "IdSucursalPres", adVarChar, 8, adFldIsNullable
-        rsg.Fields.Append "IdDocumentoPres", adVarChar, 2, adFldIsNullable
-        rsg.Fields.Append "IdSeriePres", adVarChar, 4, adFldIsNullable
-        rsg.Fields.Append "IdDocVentasPres", adVarChar, 8, adFldIsNullable
-        rsg.Fields.Append "IdUPCliente", adVarChar, 8, adFldIsNullable
-        rsg.Fields.Append "IvapUnit", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "TotalIvapNeto", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "GlsProveedor", adVarChar, 150, adFldIsNullable
-        rsg.Fields.Append "CostoS", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "CostoSInc", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "CostoD", adDouble, 14, adFldIsNullable
-        rsg.Fields.Append "Margen", adInteger, adFldIsNullable
-        rsg.Fields.Append "VVunitG", adDouble, 14, adFldIsNullable
-        
-        rsg.Open
-        
-        InsertaDetalleAtencion StrMsgError, 1, rsg, RsC
-        If StrMsgError <> "" Then GoTo Err
-        
-        If Len(Trim("" & RsC.Fields("GlsPlanTarifario2"))) > 0 Then
-            
-            InsertaDetalleAtencion StrMsgError, 2, rsg, RsC
-            If StrMsgError <> "" Then GoTo Err
-        
-        End If
-        
-        mostrarDatosGridSQL gDetalle, rsg, StrMsgError
-        If StrMsgError <> "" Then GoTo Err
-        
-        calcularTotales StrMsgError
-        If StrMsgError <> "" Then GoTo Err
-        
-        RsD.Fields.Append "Item", adInteger, , adFldRowID
-        RsD.Fields.Append "idDocumento", adChar, 2, adFldIsNullable
-        RsD.Fields.Append "GlsDocumento", adVarChar, 185, adFldIsNullable
-        RsD.Fields.Append "idSerie", adChar, 4, adFldIsNullable
-        RsD.Fields.Append "idNumDOc", adChar, 8, adFldIsNullable
-        RsD.Fields.Append "IndImportado", adChar, 1, adFldIsNullable
-        
-        RsD.Open , , adOpenKeyset, adLockOptimistic
-        
-        RsD.AddNew
-        RsD.Fields("Item") = "" & RsD.RecordCount
-        RsD.Fields("idDocumento") = "80"
-        RsD.Fields("GlsDocumento") = traerCampo("documentos", "GlsDocumento", "idDocumento", "80", False)
-        RsD.Fields("idSerie") = "999"
-        RsD.Fields("idNumDOc") = "" & RsC.Fields("IdAtencion")
-        RsD.Fields("IndImportado") = "1"
-                    
-        mostrarDatosGridSQL gDocReferencia, RsD, StrMsgError
-        If StrMsgError <> "" Then GoTo Err
-    
-    End If
-    
-    RsC.Close: Set RsC = Nothing
-    
-    Exit Sub
-Err:
-    If StrMsgError = "" Then StrMsgError = Err.Description
-End Sub
+'Private Sub MostrarAtencion(StrMsgError As String, PIdAtencion As String)
+'On Error GoTo Err
+'Dim CSqlC                           As String
+'Dim RsC                             As New ADODB.Recordset
+'Dim RsD                             As New ADODB.Recordset
+'Dim rsg                             As New ADODB.Recordset
+'
+'    CSqlC = "Select A.IdAtencion,A.IdCliente,B.GlsPlanTarifario,Date_Format(A.Fecha,'%d/%m/%Y') Fecha,ConCat(A.GlsApellidos,' ',A.GlsNombres) GlsPaciente," & _
+'            "A.IdCodigoUnico,A.GlsNumero_Poliza,A.GlsDX_Cliente,D.GlsMedico,D.IdCMP,E.GlsTipoServicio,B.TotalVenta," & _
+'            "IfNull(F.GlsPlanTarifario,'') GlsPlanTarifario2," & _
+'            "Cast(((((Time_Format(A.TiempoDemora,'%h') * 60) + Time_Format(A.TiempoDemora,'%i')) * IfNull(F.TotalVenta,0)) / 60) As Decimal(14,2)) TotalVenta2 " & _
+'            "From RegistroAtenciones A " & _
+'            "Inner Join PlanesTarifarios B " & _
+'                "On A.IdEmpresa = B.IdEmpresa And A.Item_Tarifario = B.IdPlanTarifario " & _
+'            "Inner Join Medicos D " & _
+'                "On A.IdEmpresa = D.IdEmpresa And A.IdMedico_Origen = D.IdMedico " & _
+'            "Inner Join TiposServicios E " & _
+'                "On A.IdEmpresa = E.IdEmpresa And A.IdTipoServicio = E.IdTipoServicio " & _
+'            "Left Join PlanesTarifarios F " & _
+'                "On A.IdEmpresa = F.IdEmpresa And A.Item_Tarifario2 = F.IdPlanTarifario " & _
+'            "Where A.IdEmpresa = '" & glsEmpresa & "' And A.IdAtencion = '" & PIdAtencion & "'"
+'
+'    RsC.Open CSqlC, Cn, adOpenStatic, adLockOptimistic
+'
+'    If Not RsC.EOF Then
+'
+'        txtCod_Cliente.Text = Trim("" & RsC.Fields("IdCliente"))
+'        dtp_Emision.Value = Trim("" & RsC.Fields("Fecha"))
+'
+'        rsg.Fields.Append "Item", adInteger, , adFldRowID
+'        rsg.Fields.Append "numOrdenCompra", adVarChar, 30, adFldIsNullable
+'        rsg.Fields.Append "idProducto", adVarChar, 20, adFldIsNullable
+'        rsg.Fields.Append "idCodFabricante", adVarChar, 30, adFldIsNullable
+'        rsg.Fields.Append "GlsProducto", adVarChar, 800, adFldIsNullable
+'        rsg.Fields.Append "idMarca", adChar, 8, adFldIsNullable
+'        rsg.Fields.Append "GlsMarca", adVarChar, 185, adFldIsNullable
+'        rsg.Fields.Append "idUM", adChar, 8, adFldIsNullable
+'        rsg.Fields.Append "GlsUM", adVarChar, 185, adFldIsNullable
+'        rsg.Fields.Append "Factor", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "Afecto", adInteger, 4, adFldIsNullable
+'        rsg.Fields.Append "Cantidad", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "Cantidad2", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "VVUnit", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "IGVUnit", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "PVUnit", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "TotalVVBruto", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "TotalPVBruto", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "PorDcto", adVarChar, 20, adFldIsNullable
+'        rsg.Fields.Append "DctoVV", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "DctoPV", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "TotalVVNeto", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "TotalIGVNeto", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "TotalPVNeto", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "idTipoProducto", adChar, 5, adFldIsNullable
+'        rsg.Fields.Append "idMoneda", adChar, 3, adFldIsNullable
+'        rsg.Fields.Append "idDocumentoImp", adVarChar, 2, adFldIsNullable
+'        rsg.Fields.Append "idDocVentasImp", adVarChar, 8, adFldIsNullable
+'        rsg.Fields.Append "idSerieImp", adVarChar, 4, adFldIsNullable
+'        rsg.Fields.Append "NumLote", adVarChar, 30, adFldIsNullable
+'        rsg.Fields.Append "IdLote", adVarChar, 30, adFldIsNullable
+'        rsg.Fields.Append "FecVencProd", adVarChar, 30, adFldIsNullable
+'        rsg.Fields.Append "idUsuarioDcto", adVarChar, 8, adFldIsNullable
+'        rsg.Fields.Append "VVUnitLista", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "PVUnitLista", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "VVUnitNeto", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "PVUnitNeto", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "CodigoRapido", adVarChar, 30, adFldIsNullable
+'        rsg.Fields.Append "idTallaPeso", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "CantidadAnt", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "Simbolo1", adVarChar, 30, adFldIsNullable
+'        rsg.Fields.Append "Simbolo2", adVarChar, 30, adFldIsNullable
+'        rsg.Fields.Append "Simbolo3", adVarChar, 30, adFldIsNullable
+'        rsg.Fields.Append "ItemPro", adInteger, , adFldRowID
+'        rsg.Fields.Append "IdCentroCosto", adVarChar, 8, adFldIsNullable
+'        rsg.Fields.Append "GlsPlaca", adVarChar, 15, adFldIsNullable
+'        rsg.Fields.Append "IdSucursalPres", adVarChar, 8, adFldIsNullable
+'        rsg.Fields.Append "IdDocumentoPres", adVarChar, 2, adFldIsNullable
+'        rsg.Fields.Append "IdSeriePres", adVarChar, 4, adFldIsNullable
+'        rsg.Fields.Append "IdDocVentasPres", adVarChar, 8, adFldIsNullable
+'        rsg.Fields.Append "IdUPCliente", adVarChar, 8, adFldIsNullable
+'        rsg.Fields.Append "IvapUnit", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "TotalIvapNeto", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "GlsProveedor", adVarChar, 150, adFldIsNullable
+'        rsg.Fields.Append "CostoS", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "CostoSInc", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "CostoD", adDouble, 14, adFldIsNullable
+'        rsg.Fields.Append "Margen", adInteger, adFldIsNullable
+'        rsg.Fields.Append "VVunitG", adDouble, 14, adFldIsNullable
+'
+'        rsg.Open
+'
+'        InsertaDetalleAtencion StrMsgError, 1, rsg, RsC
+'        If StrMsgError <> "" Then GoTo Err
+'
+'        If Len(Trim("" & RsC.Fields("GlsPlanTarifario2"))) > 0 Then
+'
+'            InsertaDetalleAtencion StrMsgError, 2, rsg, RsC
+'            If StrMsgError <> "" Then GoTo Err
+'
+'        End If
+'
+'        mostrarDatosGridSQL gDetalle, rsg, StrMsgError
+'        If StrMsgError <> "" Then GoTo Err
+'
+'        calcularTotales StrMsgError
+'        If StrMsgError <> "" Then GoTo Err
+'
+'        RsD.Fields.Append "Item", adInteger, , adFldRowID
+'        RsD.Fields.Append "idDocumento", adChar, 2, adFldIsNullable
+'        RsD.Fields.Append "GlsDocumento", adVarChar, 185, adFldIsNullable
+'        RsD.Fields.Append "idSerie", adChar, 4, adFldIsNullable
+'        RsD.Fields.Append "idNumDOc", adChar, 8, adFldIsNullable
+'        RsD.Fields.Append "IndImportado", adChar, 1, adFldIsNullable
+'
+'        RsD.Open , , adOpenKeyset, adLockOptimistic
+'
+'        RsD.AddNew
+'        RsD.Fields("Item") = "" & RsD.RecordCount
+'        RsD.Fields("idDocumento") = "80"
+'        RsD.Fields("GlsDocumento") = traerCampo("documentos", "GlsDocumento", "idDocumento", "80", False)
+'        RsD.Fields("idSerie") = "999"
+'        RsD.Fields("idNumDOc") = "" & RsC.Fields("IdAtencion")
+'        RsD.Fields("IndImportado") = "1"
+'
+'        mostrarDatosGridSQL gDocReferencia, RsD, StrMsgError
+'        If StrMsgError <> "" Then GoTo Err
+'
+'    End If
+'
+'    RsC.Close: Set RsC = Nothing
+'
+'    Exit Sub
+'Err:
+'    If StrMsgError = "" Then StrMsgError = Err.Description
+'End Sub
 
 Private Sub InsertaDetalleAtencion(StrMsgError As String, NItem As Integer, rsg As ADODB.Recordset, RsC As ADODB.Recordset)
 On Error GoTo Err
