@@ -48,6 +48,7 @@ Public glsSistemaAccess As String
 Public glsCodPeriodoINV As String
 
 Public indAdmin As Boolean
+Public indCompraUsuario As Boolean
 Public strArregloMes(1 To 12) As String
 
 Public glsIGV As Double

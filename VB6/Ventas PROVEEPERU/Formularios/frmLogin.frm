@@ -433,6 +433,7 @@ Dim NMontoTC    As Integer
                 glsSucursal = right(cbxSucursal.Text, 8)
                 
                 indAdmin = True
+                indCompraUsuario = True
                 Unload Me
                 frmPrincipal.Show
             Else
@@ -494,6 +495,12 @@ Dim NMontoTC    As Integer
         
         'comprobar si la contraseña es correcta
         If txtpassword.Text = clave Then
+            ' =============================================
+            ' Author:        FRANCO LARA
+            ' Create date:   28/09/2026
+            ' Description:   Carga el permiso de compra al iniciar sesion.
+            ' =============================================
+            indCompraUsuario = (Val(traerCampo("usuarios", "ISNULL(IndCompra,0)", "idUsuario", glsUser, True)) = 1)
 '''            If Val(txt_TCFact.Value) > 0 Then
 '''            If Val(txt_TCCompra.Value) > 0 Then
 '''                If Val(txt_TCVenta.Value) > 0 Then

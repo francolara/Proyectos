@@ -8,8 +8,8 @@ Begin VB.Form frmDocVentas
    BorderStyle     =   3  'Fixed Dialog
    Caption         =   "Ventas"
    ClientHeight    =   9570
-   ClientLeft      =   4260
-   ClientTop       =   3165
+   ClientLeft      =   5370
+   ClientTop       =   2655
    ClientWidth     =   15465
    BeginProperty Font 
       Name            =   "Arial"
@@ -1301,13 +1301,13 @@ Begin VB.Form frmDocVentas
       End
    End
    Begin MSComctlLib.Toolbar Toolbar1 
-      Height          =   1800
+      Height          =   660
       Left            =   120
       TabIndex        =   159
       Top             =   0
       Width           =   15270
       _ExtentX        =   26935
-      _ExtentY        =   3175
+      _ExtentY        =   1164
       ButtonWidth     =   3043
       ButtonHeight    =   1005
       AllowCustomize  =   0   'False
@@ -2442,7 +2442,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   132513793
+         Format          =   131989505
          CurrentDate     =   38955
       End
       Begin VB.CommandButton cmbAyudaMotivoNCD 
@@ -2767,7 +2767,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   132513793
+         Format          =   131989505
          CurrentDate     =   38955
       End
       Begin MSComctlLib.ImageList imgDocVentas 
@@ -4049,7 +4049,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   132513793
+         Format          =   131989505
          CurrentDate     =   38955
       End
       Begin CATControls.CATTextBox txtgls_contacto 
@@ -10115,6 +10115,16 @@ On Error GoTo Err
     If KeyCode = 46 Then
         If gDetalle.Count > 0 Then
             If gDetalle.Columns.ColumnByFieldName("idProducto").DisableEditor = False Then
+                ' =============================================
+                ' Author:        FRANCO LARA
+                ' Create date:   28/09/2026
+                ' Description:   Restringe la eliminacion de lineas marcadas como compra segun el permiso del usuario.
+                ' =============================================
+                If Val("" & gDetalle.Columns.ColumnByFieldName("Comprado").Value) = 1 And Not indCompraUsuario Then
+                    MsgBox "No tiene permiso para eliminar una linea marcada como comprado.", vbInformation, App.Title
+                    KeyCode = 0
+                    Exit Sub
+                End If
                 If MsgBox("Seguro de eliminar el registro?", vbInformation + vbYesNo, App.Title) = vbYes Then
                     If Trim(STR_STOCK_POR_LOTE & "") = "S" Then
                         If rsTempLotes.State = 1 Then
@@ -11031,7 +11041,7 @@ On Error GoTo Err
                 gDetalle.Columns.ColumnByFieldName("idProducto").DisableEditor = False
                 gDetalle.Columns.ColumnByFieldName("Afecto").DisableEditor = False
                 gDetalle.Columns.ColumnByFieldName("Cantidad").DisableEditor = False
-                gDetalle.Columns.ColumnByFieldName("Comprado").DisableEditor = False 'll 280926
+                gDetalle.Columns.ColumnByFieldName("Comprado").DisableEditor = Not indCompraUsuario 'll 280926
                 gDetalle.Columns.ColumnByFieldName("VVUnit").DisableEditor = False
                 gDetalle.Columns.ColumnByFieldName("IGVUnit").DisableEditor = False
                 gDetalle.Columns.ColumnByFieldName("PVUnit").DisableEditor = False
@@ -20223,7 +20233,7 @@ Private Sub Activa_Desc_Grid(SwColum As Boolean)
     gDetalle.Columns.ColumnByFieldName("GlsUM").DisableEditor = True
     gDetalle.Columns.ColumnByFieldName("Factor").DisableEditor = SwColum
     gDetalle.Columns.ColumnByFieldName("Afecto").DisableEditor = SwColum
-    gDetalle.Columns.ColumnByFieldName("Comprado").DisableEditor = SwColum 'll 280926
+    gDetalle.Columns.ColumnByFieldName("Comprado").DisableEditor = (SwColum Or Not indCompraUsuario) 'll 280926
     gDetalle.Columns.ColumnByFieldName("cantidad").DisableEditor = SwColum
     gDetalle.Columns.ColumnByFieldName("VVUnit").DisableEditor = SwColum
     gDetalle.Columns.ColumnByFieldName("IGVUnit").DisableEditor = SwColum

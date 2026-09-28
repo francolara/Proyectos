@@ -2305,7 +2305,7 @@ Begin VB.Form frmDocVentas_Vista
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   132710401
+         Format          =   142868481
          CurrentDate     =   38955
       End
       Begin VB.CommandButton cmbAyudaMotivoNCD 
@@ -2630,7 +2630,7 @@ Begin VB.Form frmDocVentas_Vista
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   132710401
+         Format          =   142868481
          CurrentDate     =   38955
       End
       Begin MSComctlLib.ImageList imgDocVentas 
@@ -3912,7 +3912,7 @@ Begin VB.Form frmDocVentas_Vista
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   132710401
+         Format          =   142868481
          CurrentDate     =   38955
       End
       Begin CATControls.CATTextBox txtgls_contacto 
@@ -4693,13 +4693,13 @@ Begin VB.Form frmDocVentas_Vista
       End
    End
    Begin MSComctlLib.Toolbar Toolbar1 
-      Height          =   1800
+      Height          =   660
       Left            =   120
       TabIndex        =   159
       Top             =   30
       Width           =   15270
       _ExtentX        =   26935
-      _ExtentY        =   3175
+      _ExtentY        =   1164
       ButtonWidth     =   3043
       ButtonHeight    =   1005
       AllowCustomize  =   0   'False
