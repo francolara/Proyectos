@@ -484,7 +484,8 @@
                                 <a class="@menuClass("MiSuscripcion")" href="@menuUrl("MiSuscripcion")"><i class="bi bi-credit-card-2-front"></i><span>Mi suscripcion</span></a>
                                 @if (!bloquearModulosPorSuscripcion)
                                 {
-                                    <a class="@menuClass("Ayuda")" href="@menuUrl("Ayuda")"><i class="bi bi-life-preserver"></i><span>Ayuda</span></a>
+                                    <a class="@menuClassAction("Ayuda", "Index")" href="@menuUrl("Ayuda")"><i class="bi bi-life-preserver"></i><span>Ayuda</span></a>
+                                    <a class="@menuClassAction("Ayuda", "MapaOperativo")" href="@Url.Action("MapaOperativo", "Ayuda", new { negocioId = adminNegocioId })"><i class="bi bi-diagram-3"></i><span>Mapa operativo</span></a>
                                 }
                             </div>
                         </div>

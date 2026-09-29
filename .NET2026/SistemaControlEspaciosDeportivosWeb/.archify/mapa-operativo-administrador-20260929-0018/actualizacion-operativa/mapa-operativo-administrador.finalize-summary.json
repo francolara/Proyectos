@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "running",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\.archify\\mapa-operativo-administrador-20260929-0018\\candidate.json",
+    "sha256": "f8399aab41f3e593637176d373ae371ed8fbc5c7d263695254f8cf2915189d42",
+    "bytes": 11655
+  },
+  "artifact": {
+    "path": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\.archify\\mapa-operativo-administrador-20260929-0018\\mapa-operativo-administrador.html"
+  },
+  "gates": {
+    "validate": "not-run",
+    "deliver": "not-run",
+    "check": "not-run",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\.archify\\mapa-operativo-administrador-20260929-0018\\actualizacion-operativa\\mapa-operativo-administrador.finalize.json",
+    "summaryReceipt": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\.archify\\mapa-operativo-administrador-20260929-0018\\actualizacion-operativa\\mapa-operativo-administrador.finalize-summary.json"
+  },
+  "visualReview": "not-requested"
+}

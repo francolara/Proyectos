@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "600e5191-f2d3-4fbe-b84f-d81ab3f3ed26",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\.archify\\mapa-operativo-administrador-20260929-0018\\candidate.json",
+  "output": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\.archify\\mapa-operativo-administrador-20260929-0018\\mapa-operativo-administrador.html",
+  "specification": {
+    "sha256": "93c02a801bd96e207c21baf02595e2def30240ebca6af1917709a88f2760e641",
+    "bytes": 11517
+  },
+  "artifact": {
+    "sha256": "782fdbdedc85e9b132d433e37c932ff8ab68413c674012a9ce95dc1ddf1cd75e",
+    "bytes": 789138
+  }
+}

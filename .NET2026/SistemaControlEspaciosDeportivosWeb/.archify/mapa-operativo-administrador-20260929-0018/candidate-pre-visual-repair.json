@@ -1,0 +1,277 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Mapa operativo del administrador",
+    "subtitle": "La Zona Deportiva · desde la configuración hasta el cierre operativo",
+    "output": ".archify/mapa-operativo-administrador-20260929-0018/mapa-operativo-administrador.html",
+    "animation": "none",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/francolara/Proyectos.git",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "0aa90224b6ad7fa9d15e6640c651f4ada1cc2841"
+    },
+    "views": [
+      {
+        "id": "preparar",
+        "label": "1. Preparar el negocio",
+        "focus": ["configuracion", "maestros", "sedes", "espacios"],
+        "note": "Complete estos cuatro módulos antes de abrir la agenda."
+      },
+      {
+        "id": "operar",
+        "label": "2. Registrar una reserva",
+        "focus": ["clientes", "promociones", "cupones", "reservas"],
+        "note": "Identifique al cliente, valide disponibilidad y aplique beneficios antes de guardar."
+      },
+      {
+        "id": "cobrar",
+        "label": "3. Cobrar y emitir",
+        "focus": ["reservas", "pagos", "comprobantes"],
+        "note": "El pago actualiza el saldo y puede cambiar el estado de la reserva."
+      },
+      {
+        "id": "supervisar",
+        "label": "4. Supervisar la operación",
+        "focus": ["usuarios", "dashboard", "reportes", "reservas", "pagos"],
+        "note": "Controle permisos, alertas, ocupación, reservas e ingresos."
+      },
+      {
+        "id": "publica",
+        "label": "5. Reserva pública",
+        "focus": ["cliente_web", "reserva_publica", "cupones", "reservas", "notificaciones"],
+        "note": "La reserva web entra al mismo control operativo del negocio."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "configuracion",
+      "type": "security",
+      "label": "Configuración",
+      "sublabel": "Complejo, confirmación y emisión",
+      "tag": "Primero",
+      "icon": "briefcase",
+      "pos": [10, 120],
+      "size": [184, 78],
+      "sources": [{ "path": ".NET2026/SistemaControlEspaciosDeportivosWeb/MANUAL_USUARIO_ADMIN_NEGOCIO.md", "line": 292, "end_line": 311 }]
+    },
+    {
+      "id": "maestros",
+      "type": "database",
+      "label": "Maestros",
+      "sublabel": "Deporte, suelo, moneda, pagos y series",
+      "tag": "Datos base",
+      "icon": "database",
+      "pos": [233, 120],
+      "size": [184, 78],
+      "sources": [{ "path": ".NET2026/SistemaControlEspaciosDeportivosWeb/MANUAL_USUARIO_ADMIN_NEGOCIO.md", "line": 66, "end_line": 86 }]
+    },
+    {
+      "id": "sedes",
+      "type": "backend",
+      "label": "Sedes",
+      "sublabel": "Dirección, horarios, servicios y contacto",
+      "tag": "Dónde se atiende",
+      "icon": "briefcase",
+      "pos": [456, 120],
+      "size": [184, 78],
+      "sources": [{ "path": ".NET2026/SistemaControlEspaciosDeportivosWeb/MANUAL_USUARIO_ADMIN_NEGOCIO.md", "line": 88, "end_line": 106 }]
+    },
+    {
+      "id": "espacios",
+      "type": "backend",
+      "label": "Espacios deportivos",
+      "sublabel": "Cancha, tarifa y estado operativo",
+      "tag": "Qué se reserva",
+      "icon": "calendar",
+      "pos": [677, 120],
+      "size": [184, 78],
+      "sources": [{ "path": ".NET2026/SistemaControlEspaciosDeportivosWeb/MANUAL_USUARIO_ADMIN_NEGOCIO.md", "line": 108, "end_line": 126 }]
+    },
+    {
+      "id": "clientes",
+      "type": "external",
+      "label": "Clientes",
+      "sublabel": "Documento y contacto para seguimiento",
+      "tag": "Quién reserva",
+      "icon": "person",
+      "pos": [10, 320],
+      "size": [184, 78],
+      "sources": [{ "path": ".NET2026/SistemaControlEspaciosDeportivosWeb/MANUAL_USUARIO_ADMIN_NEGOCIO.md", "line": 128, "end_line": 144 }]
+    },
+    {
+      "id": "promociones",
+      "type": "messagebus",
+      "label": "Promociones",
+      "sublabel": "Descuentos por vigencia y alcance",
+      "tag": "Opcional",
+      "icon": "flag",
+      "pos": [233, 320],
+      "size": [184, 78],
+      "sources": [{ "path": ".NET2026/SistemaControlEspaciosDeportivosWeb/MANUAL_USUARIO_ADMIN_NEGOCIO.md", "line": 238, "end_line": 253 }]
+    },
+    {
+      "id": "cupones",
+      "type": "messagebus",
+      "label": "Cupones",
+      "sublabel": "Código, vigencia, usos y alcance",
+      "tag": "Solo al crear",
+      "icon": "flag",
+      "pos": [456, 320],
+      "size": [184, 78],
+      "sources": [{ "path": ".NET2026/SistemaControlEspaciosDeportivosWeb/MANUAL_USUARIO_ADMIN_NEGOCIO.md", "line": 255, "end_line": 277 }]
+    },
+    {
+      "id": "reservas",
+      "type": "frontend",
+      "label": "Reservas",
+      "sublabel": "Agenda, estado, adelantos y cupón",
+      "tag": "Centro operativo",
+      "icon": "calendar",
+      "pos": [677, 320],
+      "size": [204, 84],
+      "sources": [{ "path": ".NET2026/SistemaControlEspaciosDeportivosWeb/MANUAL_USUARIO_ADMIN_NEGOCIO.md", "line": 146, "end_line": 185 }]
+    },
+    {
+      "id": "pagos",
+      "type": "database",
+      "label": "Pagos",
+      "sublabel": "Adelantos, saldos, forma de pago y referencia",
+      "tag": "Actualiza saldo",
+      "icon": "database",
+      "pos": [10, 520],
+      "size": [184, 78],
+      "sources": [{ "path": ".NET2026/SistemaControlEspaciosDeportivosWeb/MANUAL_USUARIO_ADMIN_NEGOCIO.md", "line": 187, "end_line": 203 }]
+    },
+    {
+      "id": "comprobantes",
+      "type": "backend",
+      "label": "Comprobantes",
+      "sublabel": "Documentos por cliente y reserva",
+      "tag": "Después del cobro",
+      "icon": "briefcase",
+      "pos": [233, 520],
+      "size": [184, 78],
+      "sources": [{ "path": ".NET2026/SistemaControlEspaciosDeportivosWeb/MANUAL_USUARIO_ADMIN_NEGOCIO.md", "line": 205, "end_line": 219 }]
+    },
+    {
+      "id": "usuarios",
+      "type": "security",
+      "label": "Usuarios",
+      "sublabel": "Altas, roles y permisos por módulo",
+      "tag": "Acceso controlado",
+      "icon": "security",
+      "pos": [456, 520],
+      "size": [184, 78],
+      "sources": [{ "path": ".NET2026/SistemaControlEspaciosDeportivosWeb/MANUAL_USUARIO_ADMIN_NEGOCIO.md", "line": 221, "end_line": 236 }]
+    },
+    {
+      "id": "dashboard",
+      "type": "cloud",
+      "label": "Dashboard",
+      "sublabel": "Indicadores, alertas y accesos rápidos del turno",
+      "tag": "Revisión diaria",
+      "icon": "frontend",
+      "pos": [677, 520],
+      "size": [184, 78],
+      "sources": [{ "path": ".NET2026/SistemaControlEspaciosDeportivosWeb/MANUAL_USUARIO_ADMIN_NEGOCIO.md", "line": 43, "end_line": 64 }]
+    },
+    {
+      "id": "reportes",
+      "type": "cloud",
+      "label": "Reportes",
+      "sublabel": "Ingresos, ocupación y reservas",
+      "tag": "Cierre y análisis",
+      "icon": "frontend",
+      "pos": [10, 720],
+      "size": [204, 78],
+      "sources": [{ "path": ".NET2026/SistemaControlEspaciosDeportivosWeb/MANUAL_USUARIO_ADMIN_NEGOCIO.md", "line": 279, "end_line": 290 }]
+    },
+    {
+      "id": "cliente_web",
+      "type": "external",
+      "label": "Cliente web",
+      "sublabel": "Busca disponibilidad desde el portal público",
+      "tag": "Canal externo",
+      "icon": "person",
+      "pos": [233, 720],
+      "size": [184, 78],
+      "sources": [{ "path": ".NET2026/SistemaControlEspaciosDeportivosWeb/MANUAL_USUARIO_ADMIN_NEGOCIO.md", "line": 328, "end_line": 335 }]
+    },
+    {
+      "id": "reserva_publica",
+      "type": "frontend",
+      "label": "Reserva pública",
+      "sublabel": "Una hora, cupón y horario válido",
+      "tag": "Genera reserva",
+      "icon": "calendar",
+      "pos": [456, 720],
+      "size": [184, 78],
+      "sources": [{ "path": ".NET2026/SistemaControlEspaciosDeportivosWeb/MANUAL_USUARIO_ADMIN_NEGOCIO.md", "line": 328, "end_line": 335 }]
+    },
+    {
+      "id": "notificaciones",
+      "type": "messagebus",
+      "label": "Notificaciones",
+      "sublabel": "Aviso al panel ante una reserva web nueva",
+      "tag": "Atención rápida",
+      "icon": "messagebus",
+      "pos": [677, 720],
+      "size": [184, 72],
+      "sources": [{ "path": ".NET2026/SistemaControlEspaciosDeportivosWeb/MANUAL_USUARIO_ADMIN_NEGOCIO.md", "line": 25, "end_line": 40 }]
+    }
+  ],
+  "connections": [
+    { "id": "config-maestros", "from": "configuracion", "to": "maestros", "variant": "security" },
+    { "id": "maestros-sedes", "from": "maestros", "to": "sedes", "variant": "default" },
+    { "id": "sedes-espacios", "from": "sedes", "to": "espacios", "variant": "emphasis" },
+    { "id": "espacios-reservas", "from": "espacios", "to": "reservas", "label": "agenda y tarifa", "variant": "emphasis", "fromSide": "bottom", "toSide": "top" },
+    { "id": "clientes-reservas", "from": "clientes", "to": "reservas", "label": "titular", "variant": "default" },
+    { "id": "promociones-reservas", "from": "promociones", "to": "reservas", "label": "descuento", "variant": "dashed" },
+    { "id": "cupones-reservas", "from": "cupones", "to": "reservas", "variant": "dashed" },
+    { "id": "reservas-pagos", "from": "reservas", "to": "pagos", "variant": "emphasis" },
+    { "id": "pagos-comprobantes", "from": "pagos", "to": "comprobantes", "variant": "emphasis" },
+    { "id": "config-comprobantes", "from": "configuracion", "to": "comprobantes", "label": "fiscal", "variant": "security" },
+    { "id": "maestros-comprobantes", "from": "maestros", "to": "comprobantes", "label": "serie", "variant": "dashed" },
+    { "id": "usuarios-operacion", "from": "usuarios", "to": "reservas", "label": "permiso", "variant": "security" },
+    { "id": "reservas-dashboard", "from": "reservas", "to": "dashboard", "label": "estados", "variant": "dashed", "fromSide": "bottom", "toSide": "top" },
+    { "id": "pagos-reportes", "from": "pagos", "to": "reportes", "label": "ingresos", "variant": "dashed", "fromSide": "bottom", "toSide": "top" },
+    { "id": "cliente-publica", "from": "cliente_web", "to": "reserva_publica", "variant": "default" },
+    { "id": "cupon-publica", "from": "cupones", "to": "reserva_publica", "label": "cupón", "variant": "dashed" },
+    { "id": "publica-reservas", "from": "reserva_publica", "to": "reservas", "label": "valida", "variant": "emphasis" },
+    { "id": "publica-notificaciones", "from": "reserva_publica", "to": "notificaciones", "label": "avisa", "variant": "dashed" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Cómo usar este mapa",
+      "items": [
+        "Empiece por la vista 1 si el negocio aún no está listo para operar.",
+        "Seleccione un módulo para enfocar sus entradas y salidas.",
+        "Use el buscador para encontrar rápidamente una pestaña del panel."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Datos operativos obligatorios",
+      "items": [
+        "Configuración: nombre comercial, documento y moneda; los comprobantes electrónicos requieren datos fiscales completos.",
+        "Sede: nombre, dirección, ubigeo, horario y al menos un servicio.",
+        "Espacio: sede, deporte, suelo, código, nombre y una tarifa válida sin cruces."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Reglas que no se deben omitir",
+      "items": [
+        "Un cupón se valida solamente al crear la reserva y debe respetar vigencia y límite de usos.",
+        "El pago acumulado determina el saldo y puede llevar la reserva a Pagada.",
+        "La reserva pública dura una hora y pasa por las validaciones operativas del negocio."
+      ]
+    }
+  ]
+}

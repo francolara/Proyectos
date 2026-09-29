@@ -27,4 +27,11 @@
     <None Remove="out-temp\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include=".archify\mapa-operativo-administrador-20260929-0018\guia-operativa-interactiva.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

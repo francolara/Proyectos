@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "browser-check",
+  "evidenceKind": "automated-browser",
+  "status": "fail",
+  "visualReview": "not-requested",
+  "provenance": "mismatch",
+  "deliveryReceiptId": "f21130fe-f203-470a-b92b-6dae72e6475b",
+  "artifact": {
+    "path": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\.archify\\mapa-operativo-administrador-20260929-0018\\mapa-operativo-administrador.html",
+    "sha256": "50263dcf4de11e41094af550e6e47ba86698c63be0c3acd4d034ee0995ff9012",
+    "bytes": 805411
+  },
+  "error": "The artifact bytes do not match their delivery provenance.",
+  "diagnostics": [
+    {
+      "code": "delivery/provenance-mismatch",
+      "severity": "error",
+      "message": "The artifact bytes do not match their delivery provenance.",
+      "subject": {
+        "artifact": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\.archify\\mapa-operativo-administrador-20260929-0018\\mapa-operativo-administrador.html",
+        "provenance": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\.archify\\mapa-operativo-administrador-20260929-0018\\mapa-operativo-administrador.delivery.json"
+      },
+      "evidence": {
+        "expectedSha256": "782fdbdedc85e9b132d433e37c932ff8ab68413c674012a9ce95dc1ddf1cd75e",
+        "actualSha256": "50263dcf4de11e41094af550e6e47ba86698c63be0c3acd4d034ee0995ff9012",
+        "expectedBytes": 789138,
+        "actualBytes": 805411
+      },
+      "supportedFixes": [
+        "restore the delivered artifact or rerun deliver to create a matching artifact and provenance pair"
+      ]
+    }
+  ],
+  "containment": {
+    "status": "fail",
+    "policy": "fit-or-reader-declared-readable-vertical-scroll",
+    "viewports": []
+  },
+  "captures": {
+    "status": "not-requested",
+    "screenshots": [],
+    "contactSheet": null
+  },
+  "sidecars": {
+    "directory": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\.archify\\mapa-operativo-administrador-20260929-0018\\subdiagramas-check",
+    "receipt": "mapa-operativo-administrador.browser-check.json",
+    "files": []
+  }
+}
