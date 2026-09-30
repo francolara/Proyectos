@@ -45,4 +45,11 @@
     <None Remove="tmp_build_sisadm\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include=".archify\mapa-operativo-contable-20260929-1645\mapa-operativo-administrador.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
