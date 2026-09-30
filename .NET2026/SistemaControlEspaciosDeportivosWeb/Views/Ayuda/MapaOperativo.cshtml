@@ -1,10 +1,10 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ModuloBaseViewModel
-@* Firma: FRANCO LARA - 29/09/2026 | Integra el mapa operativo interactivo dentro del panel administrativo con el permiso de Ayuda. *@
+@* Firma: FRANCO LARA - 29/09/2026 | Integra el mapa operativo interactivo dentro del panel administrativo con el permiso de Ayuda y lo muestra en presentación horizontal, sin altura sobrante. *@
 @{
     ViewData["Title"] = "Mapa operativo";
     ViewData["AdminShell"] = true;
     ViewData["AdminNegocioId"] = Model.NegocioId;
-    var contenidoMapaUrl = Url.Action("ContenidoMapaOperativo", "Ayuda", new { negocioId = Model.NegocioId });
+    var contenidoMapaUrl = Url.Action("ContenidoMapaOperativo", "Ayuda", new { negocioId = Model.NegocioId, present = 1, revision = "20260929-2235" });
 }
 
 <section class="admin-page-frame sport-map-page">
@@ -20,46 +20,13 @@
         </a>
     </header>
 
-    <section class="sport-map-frame-card" aria-label="Mapa operativo interactivo">
+    <section class="sport-map-frame-card" style="height:calc(100dvh - 15rem);min-height:35rem" aria-label="Mapa operativo interactivo">
         <iframe class="sport-map-frame"
                 data-sport-map-frame
                 src="@contenidoMapaUrl"
                 title="Mapa operativo interactivo"
                 loading="eager"
-                referrerpolicy="same-origin"></iframe>
+                referrerpolicy="same-origin"
+                style="height:100%"></iframe>
     </section>
 </section>
-
-@section Scripts {
-<script>
-(() => {
-    const frame = document.querySelector('[data-sport-map-frame]');
-    if (!frame) return;
-
-    const ajustarAltura = () => {
-        const documento = frame.contentDocument;
-        if (!documento) return;
-
-        const altura = Math.max(
-            documento.documentElement.scrollHeight,
-            documento.body?.scrollHeight || 0,
-            760);
-
-        frame.style.height = `${altura}px`;
-    };
-
-    frame.addEventListener('load', () => {
-        ajustarAltura();
-        window.setTimeout(ajustarAltura, 150);
-        window.setTimeout(ajustarAltura, 700);
-
-        const documento = frame.contentDocument;
-        if (documento?.documentElement && 'ResizeObserver' in window) {
-            new ResizeObserver(ajustarAltura).observe(documento.documentElement);
-        }
-    });
-
-    window.addEventListener('resize', ajustarAltura);
-})();
-</script>
-}

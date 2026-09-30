@@ -4988,7 +4988,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <!-- Main Diagram -->
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
-      <svg viewBox="0 0 945 866" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="signal-flow" data-quality-profile="showcase" data-reader-fit="intrinsic-height" data-reader-min-text="7.5" data-reader-primary-text="14">
+      <svg viewBox="0 80 945 740" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="signal-flow" data-quality-profile="showcase" data-reader-fit="intrinsic-height" data-reader-min-text="7.5" data-reader-primary-text="14">
         <title id="archify-diagram-title">MAPA OPERATIVO</title>
         <desc id="archify-diagram-description">La Zona Deportiva · desde la configuración hasta el cierre operativo</desc>
         <!-- Definitions -->
@@ -13958,7 +13958,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     });
   </script>
   <style id="guia-operativa-estilos">
-    #guia-operativa-panel { position: fixed; top:50%; left:50%; transform:translate(-50%,-50%); width: min(1040px, 94vw); max-height: 90vh; z-index: 10000; display: none; overflow-y: auto; background: #071f1c; color: #eefbf7; border: 1px solid #35c6a1; border-radius: 18px; box-shadow: 0 24px 80px rgba(0,0,0,.5); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    #guia-operativa-panel { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width: min(1248px, 94vw); max-height:calc(100% - 32px); z-index: 10000; display: none; overflow-y: auto; background: #071f1c; color: #eefbf7; border: 1px solid #35c6a1; border-radius: 18px; box-shadow: 0 24px 80px rgba(0,0,0,.5); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
     #guia-operativa-panel.abierto { display:block; }
     #guia-operativa-panel .guia-cabecera { position: sticky; top: 0; z-index: 1; padding: 22px 24px 16px; background: linear-gradient(135deg,#064f45,#08735f); border-bottom: 1px solid rgba(255,255,255,.16); }
     #guia-operativa-panel .guia-etiqueta { margin:0 0 7px; color:#9ff4d4; font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
@@ -14008,7 +14008,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     #guia-operativa-panel .indicador.aviso { border-color:#fbbf24; } #guia-operativa-panel .indicador.aviso b { color:#fde68a; }
     #guia-operativa-panel .indicador.resultado { border-color:#22d3ee; } #guia-operativa-panel .indicador.resultado b { color:#67e8f9; }
     #guia-operativa-panel .indicador.accion { border-color:#4ade80; } #guia-operativa-panel .indicador.accion b { color:#86efac; }
-    @media (max-width: 760px) { #guia-operativa-panel { top:50%; left:50%; transform:translate(-50%,-50%); width:94vw; max-height:96vh; } #guia-operativa-panel .diagrama-modulo, #guia-operativa-panel .indicadores, #guia-operativa-panel .guia-leyenda { grid-template-columns:1fr; } #guia-operativa-panel .paso { min-height:auto; } #guia-operativa-panel .paso:not(:last-child)::after { content:'↓'; right:50%; top:auto; bottom:-22px; transform:translateX(50%); } }
+    @media (max-width: 760px) { #guia-operativa-panel { top:50%; left:50%; transform:translate(-50%,-50%); width:94vw; max-height:calc(100% - 16px); } #guia-operativa-panel .diagrama-modulo, #guia-operativa-panel .indicadores, #guia-operativa-panel .guia-leyenda { grid-template-columns:1fr; } #guia-operativa-panel .paso { min-height:auto; } #guia-operativa-panel .paso:not(:last-child)::after { content:'↓'; right:50%; top:auto; bottom:-22px; transform:translateX(50%); } }
     [data-node-id] { cursor: pointer; }
   </style>
   <aside id="guia-operativa-panel" aria-label="Ficha operativa del módulo" aria-live="polite">
@@ -14054,6 +14054,38 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       notificaciones: { regla:'Las notificaciones dependen de que la sede tenga canales de contacto y la operación genere un evento atendible.', efecto:'Una reserva CLIENTE_WEB genera aviso al negocio para que el equipo intervenga antes de perder la disponibilidad.', aviso:'Actualizar correo, WhatsApp y horarios de sede evita alertas que no llegan o que se atienden tarde.' }
     };
     const panel = document.getElementById('guia-operativa-panel');
+    const contenedorMapa = document.querySelector('.diagram-container');
+    if (contenedorMapa && panel.parentElement !== contenedorMapa) contenedorMapa.append(panel);
+    let cuadroReubicacion;
+    const centrarPanelEnVista = () => {
+      if (!panel.classList.contains('abierto') || !contenedorMapa) return;
+
+      const marco = window.frameElement;
+      if (!marco || window.self === window.top) {
+        panel.style.top = '50%';
+        panel.style.maxHeight = 'calc(100% - 32px)';
+        return;
+      }
+
+      const marcoRect = marco.getBoundingClientRect();
+      const mapaRect = contenedorMapa.getBoundingClientRect();
+      const altoVisible = window.parent.innerHeight;
+      const margen = 16;
+      panel.style.maxHeight = `${Math.max(240, altoVisible - margen * 2)}px`;
+      const mitadPanel = panel.offsetHeight / 2;
+      const centroRespectoAlMapa = altoVisible / 2 - marcoRect.top - mapaRect.top;
+      const minimo = mitadPanel + margen;
+      const maximo = Math.max(minimo, contenedorMapa.clientHeight - mitadPanel - margen);
+
+      panel.style.top = `${Math.min(maximo, Math.max(minimo, centroRespectoAlMapa))}px`;
+    };
+    const programarCentradoPanel = () => {
+      window.cancelAnimationFrame(cuadroReubicacion);
+      cuadroReubicacion = window.requestAnimationFrame(centrarPanelEnVista);
+    };
+    window.addEventListener('resize', programarCentradoPanel);
+    if (window.parent !== window) window.parent.addEventListener('scroll', programarCentradoPanel, { passive: true });
+    new MutationObserver(programarCentradoPanel).observe(panel, { attributes: true, attributeFilter: ['class'] });
     const titulo = document.getElementById('guia-titulo');
     const subtitulo = document.getElementById('guia-subtitulo');
     const contenido = document.getElementById('guia-contenido');
@@ -14118,12 +14150,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     traducirInterfaz();
     traducirEtiquetasLeyenda();
     new MutationObserver(() => { traducirInterfaz(); traducirEtiquetasLeyenda(); }).observe(document.body, { childList:true, subtree:true, characterData:true });
-    // El visor integrado conserva su propio zoom. Al abrirlo desde el panel,
-    // parte en 75 % sin deshabilitar los controles de zoom de Archify.
-    if (window.self !== window.top && window.Archify?.view?.zoomOut) {
-      window.requestAnimationFrame(() => window.Archify.view.zoomOut());
-    }
   })();
   </script>
+<style id="sin-interaccion-de-lineas">
+  .relationship-hit-overlay,
+  .relationship-hit-target,
+  .relationship-hit-rail { pointer-events: none !important; }
+</style>
 </body>
 </html>

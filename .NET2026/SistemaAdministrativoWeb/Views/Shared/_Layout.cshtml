@@ -14,6 +14,7 @@
 @* Firma: FRANCO LARA - 27/08/2026 | Agrega al panel SuperAdmin el acceso y las pestañas laterales de Plan de cuentas, Cuentas destino, Asignaciones, Origenes y Configuracion de maestros contables. *@
 @* Firma: FRANCO LARA - 31/08/2026 | Versiona el logotipo remoto con la clave global de recursos para evitar cache obsoleta. *@
 @* Firma: FRANCO LARA - 02/09/2026 | Publica el favicon corporativo, declara el sitemap de rutas publicas y simplifica el mensaje institucional a Sistema contable web. *@
+@* Firma: FRANCO LARA - 29/09/2026 | Incorpora Mapa Operativo debajo de Ayuda en el menú administrativo y mantiene resaltado el acceso activo. *@
 <!DOCTYPE html>
 @{
     var adminShell = ViewData["AdminShell"] as bool? ?? false;
@@ -278,7 +279,8 @@
                                 }
                                 @if (canAyuda)
                                 {
-                                <a class="app-sidebar-link @(IsActiveController("Ayuda") ? "active" : string.Empty)" asp-controller="Ayuda" asp-action="Index"><i class="bi bi-life-preserver"></i><span>Ayuda</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Ayuda") && string.Equals(currentAction, "Index", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Ayuda" asp-action="Index"><i class="bi bi-life-preserver"></i><span>Ayuda</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Ayuda") && string.Equals(currentAction, "MapaOperativo", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Ayuda" asp-action="MapaOperativo"><i class="bi bi-diagram-3"></i><span>Mapa Operativo</span></a>
                                 }
                             </div>
                         </div>

@@ -1,0 +1,20 @@
+@* Firma: FRANCO LARA - 29/09/2026 | Integra el mapa operativo contable generado con Archify dentro de Ayuda y lo muestra en modo presentación, sin recortes ni barras de desplazamiento internas. *@
+@{
+    ViewData["Title"] = "Mapa operativo";
+    ViewData["AdminShell"] = true;
+    var contenidoMapaUrl = Url.Action("ContenidoMapaOperativo", "Ayuda", new { present = 1, revision = "20260929-1801" });
+}
+
+<section class="dashboard-shell">
+    <section class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Ayuda operativa</span>
+            <h1 class="app-page-title"><i class="bi bi-diagram-3" aria-hidden="true"></i><span>Mapa operativo contable</span></h1>
+            <p>Explore la relación entre empresa activa, configuración, registros, asientos, procesos y reportes.</p>
+        </div>
+        <a class="btn btn-outline-light" asp-action="Index"><i class="bi bi-arrow-left" aria-hidden="true"></i> Volver a ayuda</a>
+    </section>
+    <section style="height:calc(100dvh - 15rem);min-height:35rem;overflow:hidden;border:1px solid var(--bs-border-color);border-radius:1rem;background:#071f1c">
+        <iframe src="@contenidoMapaUrl" title="Mapa operativo contable" style="display:block;width:100%;height:100%;border:0"></iframe>
+    </section>
+</section>

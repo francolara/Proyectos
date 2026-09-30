@@ -33,4 +33,26 @@ public class AyudaController(
 
         return View(AyudaCatalogoFactory.Crear(modulo));
     }
+
+    // Firma: FRANCO LARA - 29/09/2026 | Publica el mapa operativo contable interactivo desde el módulo de Ayuda.
+    [HttpGet]
+    public IActionResult MapaOperativo()
+    {
+        ViewData["AdminShell"] = true;
+        return View();
+    }
+
+    [HttpGet]
+    public IActionResult ContenidoMapaOperativo()
+    {
+        var rutaMapa = Path.Combine(
+            Directory.GetCurrentDirectory(),
+            ".archify",
+            "mapa-operativo-contable-20260929-1645",
+            "mapa-operativo-administrador.html");
+
+        return System.IO.File.Exists(rutaMapa)
+            ? PhysicalFile(rutaMapa, "text/html")
+            : NotFound("No se encontró el archivo del mapa operativo contable.");
+    }
 }

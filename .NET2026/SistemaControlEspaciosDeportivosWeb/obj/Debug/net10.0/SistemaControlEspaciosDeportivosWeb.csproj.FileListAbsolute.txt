@@ -16015,10 +16015,47 @@ C:\Users\Franco Lara\AppData\Local\Temp\zonadeportiva-filtros-build\SistemaContr
 C:\Users\Franco Lara\AppData\Local\Temp\zonadeportiva-filtros-build\SistemaControlEspaciosDeportivosWeb.runtimeconfig.json
 C:\Users\Franco Lara\AppData\Local\Temp\zonadeportiva-filtros-build\SistemaControlEspaciosDeportivosWeb.dll
 C:\Users\Franco Lara\AppData\Local\Temp\zonadeportiva-filtros-build\SistemaControlEspaciosDeportivosWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\web.config
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\dotnet-tools.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\.archify\mapa-operativo-administrador-20260929-0018\guia-operativa-interactiva.html
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\SistemaControlEspaciosDeportivosWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\SistemaControlEspaciosDeportivosWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\SistemaControlEspaciosDeportivosWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\SistemaControlEspaciosDeportivosWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\SistemaControlEspaciosDeportivosWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\SistemaControlEspaciosDeportivosWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\SistemaControlEspaciosDeportivosWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\web.config
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\dotnet-tools.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\.archify\mapa-operativo-administrador-20260929-0018\guia-operativa-interactiva.html
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\SistemaControlEspaciosDeportivosWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\SistemaControlEspaciosDeportivosWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\SistemaControlEspaciosDeportivosWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\SistemaControlEspaciosDeportivosWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\SistemaControlEspaciosDeportivosWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\SistemaControlEspaciosDeportivosWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\SistemaControlEspaciosDeportivosWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\web.config
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\dotnet-tools.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\.archify\mapa-operativo-administrador-20260929-0018\guia-operativa-interactiva.html
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\SistemaControlEspaciosDeportivosWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\SistemaControlEspaciosDeportivosWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\SistemaControlEspaciosDeportivosWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\SistemaControlEspaciosDeportivosWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\SistemaControlEspaciosDeportivosWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\SistemaControlEspaciosDeportivosWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\SistemaControlEspaciosDeportivosWeb.pdb
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\web.config
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\appsettings.Development.json
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\appsettings.json
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\dotnet-tools.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\.archify\mapa-operativo-administrador-20260929-0018\guia-operativa-interactiva.html
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\SistemaControlEspaciosDeportivosWeb.staticwebassets.runtime.json
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\SistemaControlEspaciosDeportivosWeb.staticwebassets.endpoints.json
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\SistemaControlEspaciosDeportivosWeb.exe
@@ -16247,6 +16284,7 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlE
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\compressed\yfc7ypekbg-{0}-mlv21k5csn-mlv21k5csn.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\compressed\zp4r0czzpx-{0}-f5n4eih7ji-f5n4eih7ji.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\compressed\fdmqcrxzoz-{0}-rwdmmkbwsf-rwdmmkbwsf.gz
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\compressed\vnbh1609s7-{0}-zpnif53xe0-zpnif53xe0.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\compressed\nbd5rqjso4-{0}-imho8yh6il-imho8yh6il.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\compressed\376ed26qh3-{0}-j6erohxcak-j6erohxcak.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\compressed\9mwl8mstqz-{0}-e6v4e6idkw-e6v4e6idkw.gz
@@ -16317,47 +16355,10 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlE
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\staticwebassets.development.json
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\staticwebassets.build.endpoints.json
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\swae.build.ex.cache
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\SistemaC.2FBB00DC.Up2Date
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\SistemaControlEspaciosDeportivosWeb.dll
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\refint\SistemaControlEspaciosDeportivosWeb.dll
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\SistemaControlEspaciosDeportivosWeb.pdb
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\SistemaControlEspaciosDeportivosWeb.genruntimeconfig.cache
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\ref\SistemaControlEspaciosDeportivosWeb.dll
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\.archify\mapa-operativo-administrador-20260929-0018\guia-operativa-interactiva.html
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\compressed\vnbh1609s7-{0}-zpnif53xe0-zpnif53xe0.gz
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\web.config
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\appsettings.Development.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\appsettings.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\dotnet-tools.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\.archify\mapa-operativo-administrador-20260929-0018\guia-operativa-interactiva.html
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\SistemaControlEspaciosDeportivosWeb.staticwebassets.runtime.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\SistemaControlEspaciosDeportivosWeb.staticwebassets.endpoints.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\SistemaControlEspaciosDeportivosWeb.exe
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\SistemaControlEspaciosDeportivosWeb.deps.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\SistemaControlEspaciosDeportivosWeb.runtimeconfig.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\SistemaControlEspaciosDeportivosWeb.dll
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-2d629892c4804263870bb00df1d75b4e\SistemaControlEspaciosDeportivosWeb.pdb
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\web.config
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\appsettings.Development.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\appsettings.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\dotnet-tools.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\.archify\mapa-operativo-administrador-20260929-0018\guia-operativa-interactiva.html
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\SistemaControlEspaciosDeportivosWeb.staticwebassets.runtime.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\SistemaControlEspaciosDeportivosWeb.staticwebassets.endpoints.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\SistemaControlEspaciosDeportivosWeb.exe
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\SistemaControlEspaciosDeportivosWeb.deps.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\SistemaControlEspaciosDeportivosWeb.runtimeconfig.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\SistemaControlEspaciosDeportivosWeb.dll
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-7fa6e18c-a620-4e67-8426-8de23c303e59\SistemaControlEspaciosDeportivosWeb.pdb
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\web.config
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\appsettings.Development.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\appsettings.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\dotnet-tools.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\.archify\mapa-operativo-administrador-20260929-0018\guia-operativa-interactiva.html
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\SistemaControlEspaciosDeportivosWeb.staticwebassets.runtime.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\SistemaControlEspaciosDeportivosWeb.staticwebassets.endpoints.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\SistemaControlEspaciosDeportivosWeb.exe
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\SistemaControlEspaciosDeportivosWeb.deps.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\SistemaControlEspaciosDeportivosWeb.runtimeconfig.json
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\SistemaControlEspaciosDeportivosWeb.dll
-C:\Users\Franco Lara\AppData\Local\Temp\sport-map-build-23c22edb-bff0-4b90-b135-3cbd07560119\SistemaControlEspaciosDeportivosWeb.pdb

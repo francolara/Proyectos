@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "MAPA OPERATIVO CONTABLE",
+    "subtitle": "SisAdm · desde la cuenta administradora hasta los controles contables",
+    "output": ".archify/mapa-operativo-contable-20260929-1645/mapa-operativo-contable.html",
+    "quality_profile": "showcase",
+    "visual_preset": "signal-flow",
+    "repository": {
+      "url": "https://github.com/francolara/Proyectos.git",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "95315d20205f5c5be9522b3ec3c60f53874f494d"
+    }
+  },
+  "components": [
+    { "id": "cuenta", "type": "security", "label": "Cuenta administradora", "sublabel": "Usuarios, roles y suscripción", "icon": "security", "pos": [40, 300], "size": [170, 72], "sources": [{ "path": ".NET2026/SistemaAdministrativoWeb/DOCUMENTACION_BD_Y_FUNCIONALIDADES.md", "line": 188, "end_line": 207, "label": "Modelo multiempresa" }] },
+    { "id": "empresa", "type": "frontend", "label": "Empresa activa", "sublabel": "Contexto de trabajo en sesión", "icon": "briefcase", "pos": [330, 300], "size": [170, 72], "sources": [{ "path": ".NET2026/SistemaAdministrativoWeb/Infrastructure/Empresas/SessionCurrentCompanyAccessor.cs", "line": 3, "end_line": 31, "label": "Sesión de empresa" }] },
+    { "id": "configuracion", "type": "backend", "label": "Configuración contable", "sublabel": "Provisiones, documentos e impuestos", "icon": "backend", "pos": [600, 300], "size": [190, 76], "sources": [{ "path": ".NET2026/SistemaAdministrativoWeb/DOCUMENTACION_BD_Y_FUNCIONALIDADES.md", "line": 511, "end_line": 571, "label": "Configuración por empresa" }] },
+    { "id": "maestros", "type": "database", "label": "Maestros contables", "sublabel": "Plan, orígenes y cuentas destino", "icon": "database", "pos": [600, 500], "size": [190, 76], "sources": [{ "path": ".NET2026/SistemaAdministrativoWeb/DOCUMENTACION_BD_Y_FUNCIONALIDADES.md", "line": 373, "end_line": 510, "label": "Mantenimientos contables" }] },
+    { "id": "compras", "type": "backend", "label": "Compras", "sublabel": "Provisión, XML y validación CPE", "icon": "backend", "pos": [880, 130], "size": [180, 76], "sources": [{ "path": ".NET2026/SistemaAdministrativoWeb/DOCUMENTACION_BD_Y_FUNCIONALIDADES.md", "line": 629, "end_line": 662, "label": "Módulo Compras" }] },
+    { "id": "ventas", "type": "backend", "label": "Ventas", "sublabel": "Provisión, XML y cliente", "icon": "backend", "pos": [880, 300], "size": [180, 76], "sources": [{ "path": ".NET2026/SistemaAdministrativoWeb/DOCUMENTACION_BD_Y_FUNCIONALIDADES.md", "line": 663, "end_line": 691, "label": "Módulo Ventas" }] },
+    { "id": "bancos", "type": "backend", "label": "Caja y bancos", "sublabel": "Movimientos y transferencias", "icon": "backend", "pos": [880, 470], "size": [180, 76], "sources": [{ "path": ".NET2026/SistemaAdministrativoWeb/DOCUMENTACION_BD_Y_FUNCIONALIDADES.md", "line": 692, "end_line": 752, "label": "Operación bancaria" }] },
+    { "id": "asientos", "type": "database", "label": "Asientos contables", "sublabel": "Manual y automático por periodo", "icon": "database", "pos": [1160, 300], "size": [190, 76], "sources": [{ "path": ".NET2026/SistemaAdministrativoWeb/DOCUMENTACION_BD_Y_FUNCIONALIDADES.md", "line": 595, "end_line": 628, "label": "Módulo Asientos" }] },
+    { "id": "procesos", "type": "cloud", "label": "Procesos de cierre", "sublabel": "DIF, AJU, apertura y cierre", "icon": "clock", "pos": [1440, 130], "size": [190, 76], "sources": [{ "path": ".NET2026/SistemaAdministrativoWeb/DOCUMENTACION_BD_Y_FUNCIONALIDADES.md", "line": 755, "end_line": 800, "label": "Procesos contables" }] },
+    { "id": "reportes", "type": "frontend", "label": "Reportes contables", "sublabel": "Diario, mayor, balance y PLE", "icon": "frontend", "pos": [1440, 470], "size": [190, 76], "sources": [{ "path": ".NET2026/SistemaAdministrativoWeb/DOCUMENTACION_BD_Y_FUNCIONALIDADES.md", "line": 335, "end_line": 372, "label": "Reportes HTML" }] },
+    { "id": "migo", "type": "external", "label": "API Migo", "sublabel": "Tipo de cambio, RUC/DNI y CPE", "icon": "external", "pos": [600, 680], "size": [190, 76], "sources": [{ "path": ".NET2026/SistemaAdministrativoWeb/DOCUMENTACION_BD_Y_FUNCIONALIDADES.md", "line": 47, "end_line": 85, "label": "Integración Migo" }] },
+    { "id": "db", "type": "database", "label": "SQL Server · Dbsisadm", "sublabel": "ADO.NET y stored procedures", "icon": "database", "pos": [1160, 680], "size": [220, 76], "sources": [{ "path": ".NET2026/SistemaAdministrativoWeb/Infrastructure/Data/SqlConnectionFactory.cs", "line": 5, "end_line": 14, "label": "Conexión SQL" }] }
+  ],
+  "connections": [
+    { "id": "cuenta-empresa", "from": "cuenta", "to": "empresa", "label": "autoriza empresas", "variant": "security" },
+    { "id": "empresa-config", "from": "empresa", "to": "configuracion", "label": "contexto activo" },
+    { "id": "empresa-maestros", "from": "empresa", "to": "maestros", "label": "catálogos" },
+    { "id": "config-compras", "from": "configuracion", "to": "compras", "label": "reglas COM", "variant": "emphasis" },
+    { "id": "config-ventas", "from": "configuracion", "to": "ventas", "label": "VEN" },
+    { "id": "config-bancos", "from": "configuracion", "to": "bancos", "label": "ING/EGR" },
+    { "id": "maestros-compras", "from": "maestros", "to": "compras", "label": "cuentas e impuestos" },
+    { "id": "maestros-ventas", "from": "maestros", "to": "ventas" },
+    { "id": "maestros-bancos", "from": "maestros", "to": "bancos", "label": "cuentas y bancos" },
+    { "id": "compras-asientos", "from": "compras", "to": "asientos", "label": "provisión automática", "variant": "emphasis" },
+    { "id": "ventas-asientos", "from": "ventas", "to": "asientos", "label": "provisión", "variant": "emphasis" },
+    { "id": "bancos-asientos", "from": "bancos", "to": "asientos", "label": "ING/EGR", "variant": "emphasis" },
+    { "id": "asientos-procesos", "from": "asientos", "to": "procesos", "label": "cierre" },
+    { "id": "asientos-reportes", "from": "asientos", "to": "reportes", "label": "movimientos" },
+    { "id": "procesos-reportes", "from": "procesos", "to": "reportes", "label": "cierre validado", "variant": "dashed" },
+    { "id": "migo-config", "from": "migo", "to": "configuracion", "label": "tipo de cambio", "variant": "dashed", "fromSide": "top", "toSide": "bottom" },
+    { "id": "migo-compras", "from": "migo", "to": "compras", "label": "RUC/DNI y CPE", "variant": "dashed" },
+    { "id": "operacion-db", "from": "asientos", "to": "db", "label": "persistencia SP", "fromSide": "bottom", "toSide": "top" },
+    { "id": "bancos-db", "from": "bancos", "to": "db", "label": "movimientos", "fromSide": "bottom", "toSide": "left" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Contexto", "items": ["La empresa activa limita la operación contable.", "Cada registro se asocia a IdEmpresa."] },
+    { "dot": "emerald", "title": "Registro", "items": ["Compras, ventas y bancos generan asientos según configuración.", "Los maestros definen cuentas, orígenes y reglas de destino."] },
+    { "dot": "amber", "title": "Control", "items": ["Los procesos trabajan por periodo o ejercicio.", "Los reportes validan movimientos, saldos y cierre."] }
+  ]
+}

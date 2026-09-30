@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "4d644cc3-a78f-454d-9037-126e76f59629",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaAdministrativoWeb\\.archify\\mapa-operativo-contable-20260929-1645\\candidate-administrador.json",
+  "output": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaAdministrativoWeb\\.archify\\mapa-operativo-contable-20260929-1645\\mapa-operativo-administrador.html",
+  "specification": {
+    "sha256": "ddad5527e374bf668f9b8ce3a4376dd65d2b7bcc21de98f6ed5628047524a28f",
+    "bytes": 6865
+  },
+  "artifact": {
+    "sha256": "61b7f330f07c7b455e18c7b2270ffab59f901e7b3ac1b0683f04c7ed52b73592",
+    "bytes": 779449
+  }
+}

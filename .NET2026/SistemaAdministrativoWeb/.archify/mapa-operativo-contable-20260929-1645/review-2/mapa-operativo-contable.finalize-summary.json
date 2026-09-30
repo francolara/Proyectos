@@ -1,0 +1,258 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaAdministrativoWeb\\.archify\\mapa-operativo-contable-20260929-1645\\candidate.json",
+    "sha256": "465cd128546ef37408ada8a962ddb5fe9527c0ce793f4030d4c7870ca126f292",
+    "bytes": 7259
+  },
+  "artifact": {
+    "path": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaAdministrativoWeb\\.archify\\mapa-operativo-contable-20260929-1645\\mapa-operativo-contable.html",
+    "sha256": "fb34a791e74317819dbe1ebbd801d063b72874d33df4f9f45ef2ff6c9d84d23a",
+    "bytes": 782629
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaAdministrativoWeb\\.archify\\mapa-operativo-contable-20260929-1645\\review-2\\mapa-operativo-contable.finalize.json",
+    "summaryReceipt": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaAdministrativoWeb\\.archify\\mapa-operativo-contable-20260929-1645\\review-2\\mapa-operativo-contable.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaAdministrativoWeb\\.archify\\mapa-operativo-contable-20260929-1645\\review-2\\mapa-operativo-contable.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.0.1",
+    "availableVersion": "3.0.1",
+    "releaseNotes": null,
+    "checkedAt": "2026-09-28T23:38:20.076Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 3434,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "resolvedCrossovers": 5,
+      "routesOverSuggestedBends": 6
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [
+        {
+          "left": {
+            "id": "empresa-config",
+            "from": "empresa",
+            "to": "configuracion",
+            "label": "contexto activo",
+            "collectionIndex": 1,
+            "artifactIndex": 2
+          },
+          "right": {
+            "id": "migo-config",
+            "from": "migo",
+            "to": "configuracion",
+            "label": "tipo de cambio",
+            "collectionIndex": 15,
+            "artifactIndex": 16
+          },
+          "point": [
+            596,
+            329
+          ],
+          "sharedNode": "configuracion"
+        },
+        {
+          "left": {
+            "id": "config-ventas",
+            "from": "configuracion",
+            "to": "ventas",
+            "label": "VEN",
+            "collectionIndex": 4,
+            "artifactIndex": 5
+          },
+          "right": {
+            "id": "maestros-compras",
+            "from": "maestros",
+            "to": "compras",
+            "label": "cuentas e impuestos",
+            "collectionIndex": 6,
+            "artifactIndex": 7
+          },
+          "point": [
+            827,
+            276
+          ]
+        },
+        {
+          "left": {
+            "id": "config-bancos",
+            "from": "configuracion",
+            "to": "bancos",
+            "label": "ING/EGR",
+            "collectionIndex": 5,
+            "artifactIndex": 6
+          },
+          "right": {
+            "id": "maestros-ventas",
+            "from": "maestros",
+            "to": "ventas",
+            "label": "",
+            "collectionIndex": 7,
+            "artifactIndex": 8
+          },
+          "point": [
+            856,
+            501
+          ]
+        },
+        {
+          "left": {
+            "id": "ventas-asientos",
+            "from": "ventas",
+            "to": "asientos",
+            "label": "provisión",
+            "collectionIndex": 10,
+            "artifactIndex": 11
+          },
+          "right": {
+            "id": "bancos-asientos",
+            "from": "bancos",
+            "to": "asientos",
+            "label": "ING/EGR",
+            "collectionIndex": 11,
+            "artifactIndex": 12
+          },
+          "point": [
+            1136,
+            399.99999999999983
+          ],
+          "sharedNode": "asientos"
+        },
+        {
+          "left": {
+            "id": "migo-config",
+            "from": "migo",
+            "to": "configuracion",
+            "label": "tipo de cambio",
+            "collectionIndex": 15,
+            "artifactIndex": 16
+          },
+          "right": {
+            "id": "migo-compras",
+            "from": "migo",
+            "to": "compras",
+            "label": "RUC/DNI y CPE",
+            "collectionIndex": 16,
+            "artifactIndex": 17
+          },
+          "point": [
+            596,
+            138
+          ],
+          "sharedNode": "migo"
+        }
+      ],
+      "detours": [
+        {
+          "relationship": {
+            "id": "config-ventas",
+            "from": "configuracion",
+            "to": "ventas",
+            "label": "VEN",
+            "collectionIndex": 4,
+            "artifactIndex": 5
+          },
+          "bends": 3,
+          "stretch": 1.222
+        },
+        {
+          "relationship": {
+            "id": "maestros-compras",
+            "from": "maestros",
+            "to": "compras",
+            "label": "cuentas e impuestos",
+            "collectionIndex": 6,
+            "artifactIndex": 7
+          },
+          "bends": 4,
+          "stretch": 1
+        },
+        {
+          "relationship": {
+            "id": "maestros-bancos",
+            "from": "maestros",
+            "to": "bancos",
+            "label": "cuentas y bancos",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "bends": 3,
+          "stretch": 1.287
+        },
+        {
+          "relationship": {
+            "id": "ventas-asientos",
+            "from": "ventas",
+            "to": "asientos",
+            "label": "provisión",
+            "collectionIndex": 10,
+            "artifactIndex": 11
+          },
+          "bends": 3,
+          "stretch": 1.22
+        },
+        {
+          "relationship": {
+            "id": "migo-config",
+            "from": "migo",
+            "to": "configuracion",
+            "label": "tipo de cambio",
+            "collectionIndex": 15,
+            "artifactIndex": 16
+          },
+          "bends": 4,
+          "stretch": 1.186
+        },
+        {
+          "relationship": {
+            "id": "bancos-db",
+            "from": "bancos",
+            "to": "db",
+            "label": "movimientos",
+            "collectionIndex": 18,
+            "artifactIndex": 19
+          },
+          "bends": 3,
+          "stretch": 1
+        }
+      ],
+      "truncated": false
+    },
+    "hints": [
+      "empresa → configuracion and migo → configuracion cross next to configuracion: move node empresa or migo so the two reach configuracion from different sides (for example one level with it, one directly above or below it).",
+      "configuracion → ventas crosses maestros → compras: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "configuracion → bancos crosses maestros → ventas: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "ventas → asientos and bancos → asientos cross next to asientos: move node ventas or bancos so the two reach asientos from different sides (for example one level with it, one directly above or below it).",
+      "migo → configuracion and migo → compras cross next to migo: move node configuracion or compras so the two reach migo from different sides (for example one level with it, one directly above or below it).",
+      "configuracion → ventas needs 3 bends: move node configuracion or ventas so they share a row or column with matching centers, or sit diagonally with a clear corner.",
+      "maestros → compras needs 4 bends: move node maestros or compras so they share a row or column with matching centers, or sit diagonally with a clear corner.",
+      "maestros → bancos needs 3 bends: move node maestros or bancos so they share a row or column with matching centers, or sit diagonally with a clear corner."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}
