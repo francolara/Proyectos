@@ -35,6 +35,9 @@
     var totalMontoPendiente = Model.ReservasConSaldoPendiente.Sum(x => x.MontoTotal);
     var reservasPendientes48h = Model.ReservasPendientesConfirmacion.Count;
     var reservasSaldoPendiente = Model.ReservasConSaldoPendiente.Count;
+    var cobranzaVisualBase = Math.Max(Model.MontoReservadoPeriodo, Model.IngresosPeriodo + totalSaldoPendiente);
+    var cobranzaVisualPct = cobranzaVisualBase > 0m ? Math.Min(100m, (Model.IngresosPeriodo * 100m) / cobranzaVisualBase) : 0m;
+    var cobranzaVisualCss = cobranzaVisualPct.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
 
     var acciones = new List<(string Label, string Icon, string Href)>
     {
@@ -143,6 +146,7 @@
         </section>
 
     @* Firma: FRANCO LARA - 16/07/2026 | Dashboard usa solo el flujo oficial de reservas, elimina el alta rapida duplicada y abre una impresion ejecutiva independiente. *@
+    @* Firma: FRANCO LARA - 30/09/2026 | Agrega visuales interactivos de torres y distribucion de cobranza con acceso al detalle diario. *@
     <section class="sc-dash-actions no-print">
         @for (var i = 0; i < acciones.Count; i++)
         {
@@ -213,12 +217,16 @@
                         @foreach (var item in Model.SerieIngresosPorDia.OrderBy(x => x.Fecha))
                         {
                             var height = Math.Max(8m, Math.Round((item.Valor / maxIngreso) * 100m, 2));
-                            <div class="sc-dash-bar-col" title="@($"{item.Fecha:dd/MM}: {Model.MonedaSimbolo} {item.Valor:N2}")">
+                            <button type="button" class="sc-dash-bar-col sc-visual-trigger"
+                                    data-detail-title="Cobros del @item.Fecha.ToString("dd/MM/yyyy")"
+                                    data-detail-value="@Model.MonedaSimbolo @item.Valor.ToString("N2")"
+                                    data-detail-meta="Fecha real de pago. Selecciona ver pagos para revisar los movimientos registrados ese dia."
+                                    data-detail-link="@Url.Action("Index", "Pagos", new { negocioId = Model.NegocioSeleccionadoId, fechaDesde = item.Fecha.ToString("yyyy-MM-dd"), fechaHasta = item.Fecha.ToString("yyyy-MM-dd") })">
                                 <div class="sc-dash-bar-track">
                                     <div class="sc-dash-bar-fill" style="height:@height.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%"></div>
                                 </div>
                                 <small>@item.Fecha.ToString("dd/MM")</small>
-                            </div>
+                            </button>
                         }
                     </div>
                 }
@@ -239,13 +247,17 @@
                         @foreach (var item in Model.SerieReservasPorDia.OrderBy(x => x.Fecha))
                         {
                             var width = Math.Max(4m, Math.Round((item.Valor / maxReserva) * 100m, 2));
-                            <div class="sc-dash-line-item">
+                            <button type="button" class="sc-dash-line-item sc-visual-trigger"
+                                    data-detail-title="Reservas del @item.Fecha.ToString("dd/MM/yyyy")"
+                                    data-detail-value="@item.Valor.ToString("N0") reserva(s)"
+                                    data-detail-meta="Actividad operativa por fecha de juego."
+                                    data-detail-link="@Url.Action("Index", "Reservas", new { negocioId = Model.NegocioSeleccionadoId, listadoDesde = item.Fecha.ToString("yyyy-MM-dd"), listadoHasta = item.Fecha.ToString("yyyy-MM-dd"), sedeId = Model.SedeId })">
                                 <span>@item.Fecha.ToString("dd/MM")</span>
                                 <div class="sc-dash-line-track">
                                     <div class="sc-dash-line-fill" style="width:@width.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%"></div>
                                 </div>
                                 <strong>@item.Valor.ToString("N0")</strong>
-                            </div>
+                            </button>
                         }
                     </div>
                 }
@@ -307,6 +319,14 @@
                     <h3><i class="bi bi-heart-pulse me-1"></i>Salud operativa</h3>
                     <p>Variables clave para el turno actual.</p>
                 </div>
+                <button type="button" class="sc-dash-donut-card sc-visual-trigger"
+                        data-detail-title="Distribucion de cobranza"
+                        data-detail-value="@cobranzaVisualPct.ToString("N1")% cobrado"
+                        data-detail-meta="Cobrado: @Model.MonedaSimbolo @Model.IngresosPeriodo.ToString("N2") · Saldo por gestionar: @Model.MonedaSimbolo @totalSaldoPendiente.ToString("N2")"
+                        data-detail-link="@Url.Action("Index", "Pagos", new { negocioId = Model.NegocioSeleccionadoId, fechaDesde = Model.FechaDesde.ToString("yyyy-MM-dd"), fechaHasta = Model.FechaHasta.ToString("yyyy-MM-dd") })">
+                    <span class="sc-dash-donut" style="--sc-donut-value:@cobranzaVisualCss%"><span><strong>@cobranzaVisualPct.ToString("N0")%</strong><small>cobrado</small></span></span>
+                    <span class="sc-dash-donut-copy"><strong>Cobranza del periodo</strong><small>Haz clic para revisar pagos y movimientos.</small></span>
+                </button>
                 <div class="sc-dash-health-list">
                     <div class="sc-dash-health-item">
                         <span>Salud general</span>
@@ -699,5 +719,31 @@
         </section>
         *@
 
+        <div class="modal fade" id="visualDetailModal" tabindex="-1" aria-labelledby="visualDetailModalTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content sc-visual-detail-modal">
+                    <div class="modal-header"><div><div class="sc-report-snapshot-kicker">Detalle del indicador</div><h2 class="modal-title fs-5" id="visualDetailModalTitle"></h2></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+                    <div class="modal-body"><div class="sc-visual-detail-value" data-detail-output="value"></div><p class="mb-0 text-muted" data-detail-output="meta"></p></div>
+                    <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button><a class="btn btn-primary" data-detail-output="link" href="#">Ver detalle</a></div>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
+
+<script>
+    (function () {
+        const modalElement = document.getElementById('visualDetailModal');
+        if (!modalElement || !window.bootstrap) return;
+        const modal = new bootstrap.Modal(modalElement);
+        const title = modalElement.querySelector('#visualDetailModalTitle');
+        const value = modalElement.querySelector('[data-detail-output="value"]');
+        const meta = modalElement.querySelector('[data-detail-output="meta"]');
+        const link = modalElement.querySelector('[data-detail-output="link"]');
+        const openDetail = (element) => { title.textContent = element.dataset.detailTitle; value.textContent = element.dataset.detailValue; meta.textContent = element.dataset.detailMeta; link.href = element.dataset.detailLink || '#'; modal.show(); };
+        document.querySelectorAll('.sc-visual-trigger').forEach((element) => {
+            element.addEventListener('click', () => openDetail(element));
+            element.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openDetail(element); } });
+        });
+    })();
+</script>

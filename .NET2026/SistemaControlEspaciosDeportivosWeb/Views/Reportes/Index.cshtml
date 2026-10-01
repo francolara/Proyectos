@@ -39,6 +39,11 @@
     var totalSaldoPendiente = Model.ResumenActual.SaldoPendiente;
     var totalHorasOperativas = Model.Ocupacion.Sum(x => x.HorasReservadas);
     var totalCobradoAsociado = Model.Ocupacion.Sum(x => x.MontoCobrado);
+    var cobranzaVisualPct = Math.Min(100m, Porcentaje(cobradoActual, reservadoActual));
+    var cobranzaVisualCss = cobranzaVisualPct.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+    var reservasAtendidas = Model.ResumenActual.TotalConfirmadas + Model.ResumenActual.TotalPagadas;
+    var operacionVisualPct = Model.ResumenActual.TotalReservas > 0 ? Math.Min(100m, (reservasAtendidas * 100m) / Model.ResumenActual.TotalReservas) : 0m;
+    var operacionVisualCss = operacionVisualPct.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
 
     var topEspacios = Model.Ocupacion
         .OrderByDescending(x => x.CantidadReservas)
@@ -171,6 +176,8 @@
     @* Firma: Codex - 18/06/2026 | Reportes reorganizados en tabs de cobros y datos operativos para separar lectura comercial y operativa. *@
     @* Firma: FRANCO LARA - 15/07/2026 | Reportes: impresion HTML profesional desde la vista principal y reemplazo del acceso Excel por impresion directa. *@
     @* Firma: FRANCO LARA - 16/07/2026 | Imprimir abre un documento ejecutivo independiente con detalle separado de pagos y reservas. *@
+    @* Firma: FRANCO LARA - 30/09/2026 | Agrega torres clicables y distribuciones visuales de cobranza y operacion para acceso amigable al detalle. *@
+    @* Firma: FRANCO LARA - 01/10/2026 | Reemplaza los listados planos por exploradores maestro-detalle de cobros, reservas y operacion por espacio, y corrige la activacion del panel de detalle. *@
     <section class="sc-report-tabs no-print" aria-label="Cambiar bloque de reportes">
         <button type="button" class="sc-report-tab is-active" data-report-tab-trigger="cobros" aria-pressed="true">
             <span class="sc-report-tab-icon sc-report-tab-icon--cobros"><i class="bi bi-cash-coin"></i></span>
@@ -295,6 +302,15 @@
                 </div>
                 <p class="sc-report-section-intro">Cada torre representa el ingreso total cobrado por dia dentro del rango consultado.</p>
 
+                <button type="button" class="sc-report-donut-summary sc-visual-trigger"
+                        data-detail-title="Nivel de cobranza del periodo"
+                        data-detail-value="@cobranzaVisualPct.ToString("N1")% cobrado"
+                        data-detail-meta="Cobrado: S/ @cobradoActual.ToString("N2") · Reservado: S/ @reservadoActual.ToString("N2") · Saldo pendiente: S/ @totalSaldoPendiente.ToString("N2")"
+                        data-detail-link="@Url.Action("Index", "Pagos", new { negocioId = Model.NegocioId, fechaDesde = Model.FechaDesde.ToString("yyyy-MM-dd"), fechaHasta = Model.FechaHasta.ToString("yyyy-MM-dd") })">
+                    <span class="sc-dash-donut" style="--sc-donut-value:@cobranzaVisualCss%"><span><strong>@cobranzaVisualPct.ToString("N0")%</strong><small>cobrado</small></span></span>
+                    <span><strong>Cobranza frente a lo reservado</strong><small>La dona resume el avance; haz clic para abrir los pagos del periodo.</small></span>
+                </button>
+
                 @if (Model.Ingresos.Count == 0)
                 {
                     <div class="empty-state">
@@ -308,7 +324,11 @@
                         @foreach (var item in Model.Ingresos.OrderBy(x => x.Fecha))
                         {
                             var height = Math.Max(18m, Math.Round((item.Ingresos / maxIngresoDia) * 100m, 2));
-                            <article class="sc-report-tower-col">
+                            <button type="button" class="sc-report-tower-col sc-visual-trigger"
+                                    data-detail-title="Cobros del @item.Fecha.ToString("dd/MM/yyyy")"
+                                    data-detail-value="S/ @item.Ingresos.ToString("N2")"
+                                    data-detail-meta="@item.CantidadReservas reserva(s) cobradas en la fecha real de pago."
+                                    data-detail-link="@Url.Action("Index", "Pagos", new { negocioId = Model.NegocioId, fechaDesde = item.Fecha.ToString("yyyy-MM-dd"), fechaHasta = item.Fecha.ToString("yyyy-MM-dd") })">
                                 <div class="sc-report-tower-wrap">
                                     <div class="sc-report-tower-value">S/ @item.Ingresos.ToString("N2")</div>
                                     <div class="sc-report-tower-track">
@@ -321,7 +341,7 @@
                                     <strong>@item.Fecha.ToString("dd/MM")</strong>
                                     <span>@item.CantidadReservas reserva(s)</span>
                                 </div>
-                            </article>
+                            </button>
                         }
                     </div>
                 }
@@ -352,45 +372,38 @@
                 }
                 else
                 {
-                    <div class="sc-report-snapshot-list">
-                        @foreach (var item in Model.Ingresos)
-                        {
-                            var width = Math.Max(10m, Math.Round((item.Ingresos / maxIngresoDia) * 100m, 2));
-                            <article class="sc-report-snapshot-card sc-report-snapshot-card--cobro">
-                                <div class="sc-report-snapshot-head">
-                                    <div>
-                                        <div class="sc-report-snapshot-kicker">Fecha de pago</div>
-                                        <h3>@item.Fecha.ToString("dd/MM/yyyy")</h3>
-                                    </div>
-                                    <span class="sc-report-snapshot-badge"><i class="bi bi-cash-coin"></i>Pago</span>
-                                </div>
-
-                                <div class="sc-report-snapshot-body">
-                                    <div class="sc-report-snapshot-emphasis">
-                                        <span>Ingreso del dia</span>
-                                        <strong>S/ @item.Ingresos.ToString("N2")</strong>
-                                        <div class="sc-report-snapshot-progress">
-                                            <span style="width:@width.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%"></span>
+                    <div class="sc-report-master-detail" data-master-detail="cobros">
+                        <aside class="sc-report-master-list" aria-label="Fechas con cobros">
+                            <div class="sc-report-master-list-head"><strong>Fechas con cobros</strong><span>@Model.Ingresos.Count dia(s)</span></div>
+                            @foreach (var item in Model.Ingresos.OrderByDescending(x => x.Fecha))
+                            {
+                                var target = $"cobro-{item.Fecha:yyyyMMdd}";
+                                <button type="button" class="sc-report-master-item @(item == Model.Ingresos.OrderByDescending(x => x.Fecha).First() ? "is-active" : string.Empty)" data-master-target="@target">
+                                    <span><strong>@item.Fecha.ToString("dd/MM/yyyy")</strong><small>@item.CantidadReservas cobro(s)</small></span>
+                                    <b>S/ @item.Ingresos.ToString("N2")</b>
+                                </button>
+                            }
+                        </aside>
+                        <div class="sc-report-detail-stage">
+                            @foreach (var item in Model.Ingresos.OrderByDescending(x => x.Fecha))
+                            {
+                                var target = $"cobro-{item.Fecha:yyyyMMdd}";
+                                var pagosDelDia = Model.DetallePagos.Where(x => DateOnly.FromDateTime(x.FechaPago) == item.Fecha).OrderByDescending(x => x.Monto).ToList();
+                                <section class="sc-report-detail-pane" data-master-pane="@target">
+                                    <header class="sc-report-detail-head"><div><span>Detalle de cobros</span><h3>@item.Fecha.ToString("dddd dd 'de' MMMM", new System.Globalization.CultureInfo("es-PE"))</h3></div><strong>S/ @item.Ingresos.ToString("N2")</strong></header>
+                                    <div class="sc-report-detail-kpis"><div><span>Pagos</span><strong>@pagosDelDia.Count</strong></div><div><span>Reservas cobradas</span><strong>@item.CantidadReservas</strong></div><div><span>Participacion</span><strong>@Porcentaje(item.Ingresos, cobradoActual).ToString("N2")%</strong></div></div>
+                                    @if (pagosDelDia.Any())
+                                    {
+                                        <div class="sc-report-detail-list">
+                                            @foreach (var pago in pagosDelDia.Take(12))
+                                            { <article><div><strong>@pago.Cliente</strong><span>@pago.Sede · @pago.Espacio</span><small>@pago.FormaPago · Reserva #@pago.ReservaId</small></div><b>S/ @pago.Monto.ToString("N2")</b></article> }
                                         </div>
-                                    </div>
-                                    <div class="sc-report-snapshot-metrics">
-                                        <div><span>Reservas cobradas</span><strong>@item.CantidadReservas</strong></div>
-                                        <div><span>Participacion del periodo</span><strong>@Porcentaje(item.Ingresos, cobradoActual).ToString("N2")%</strong></div>
-                                    </div>
-                                </div>
-
-                                <div class="sc-report-snapshot-actions">
-                                    <a class="btn btn-sm btn-cobrar"
-                                       asp-controller="Pagos"
-                                       asp-action="Index"
-                                       asp-route-negocioId="@Model.NegocioId"
-                                       asp-route-fechaDesde="@item.Fecha.ToString("yyyy-MM-dd")"
-                                       asp-route-fechaHasta="@item.Fecha.ToString("yyyy-MM-dd")">
-                                        Ver pagos del dia
-                                    </a>
-                                </div>
-                            </article>
-                        }
+                                    }
+                                    else { <div class="sc-report-detail-empty">No se encontraron movimientos individuales para esta fecha.</div> }
+                                    <a class="btn btn-sm btn-cobrar" asp-controller="Pagos" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@item.Fecha.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@item.Fecha.ToString("yyyy-MM-dd")">Ver pagos del dia</a>
+                                </section>
+                            }
+                        </div>
                     </div>
 
                     <div class="sc-report-total-strip mt-3">
@@ -520,6 +533,15 @@
                 </div>
                 <p class="sc-report-section-intro">Cada torre representa la cantidad de reservas por dia. Debajo se muestra el monto reservado asociado a esa fecha operativa.</p>
 
+                <button type="button" class="sc-report-donut-summary sc-report-donut-summary--operacion sc-visual-trigger"
+                        data-detail-title="Reservas atendidas del periodo"
+                        data-detail-value="@operacionVisualPct.ToString("N1")% confirmadas o pagadas"
+                        data-detail-meta="@reservasAtendidas reserva(s) atendidas de @Model.ResumenActual.TotalReservas. Pendientes: @Model.ResumenActual.TotalPendientes · No asistio: @Model.ResumenActual.TotalNoShow."
+                        data-detail-link="@Url.Action("Index", "Reservas", new { negocioId = Model.NegocioId, listadoDesde = Model.FechaDesde.ToString("yyyy-MM-dd"), listadoHasta = Model.FechaHasta.ToString("yyyy-MM-dd"), sedeId = Model.SedeId })">
+                    <span class="sc-dash-donut" style="--sc-donut-value:@operacionVisualCss%"><span><strong>@operacionVisualPct.ToString("N0")%</strong><small>atendidas</small></span></span>
+                    <span><strong>Reservas confirmadas o pagadas</strong><small>Haz clic para revisar las reservas operativas del rango.</small></span>
+                </button>
+
                 @if (Model.ReservasPorDia.Count == 0)
                 {
                     <div class="empty-state">
@@ -533,7 +555,11 @@
                         @foreach (var item in Model.ReservasPorDia.OrderBy(x => x.Fecha))
                         {
                             var height = Math.Max(18m, Math.Round((item.CantidadReservas / maxReservasDia) * 100m, 2));
-                            <article class="sc-report-tower-col">
+                            <button type="button" class="sc-report-tower-col sc-visual-trigger"
+                                    data-detail-title="Operacion del @item.Fecha.ToString("dd/MM/yyyy")"
+                                    data-detail-value="@item.CantidadReservas reserva(s) · S/ @item.MontoReservado.ToString("N2")"
+                                    data-detail-meta="Demanda por fecha de uso del espacio deportivo."
+                                    data-detail-link="@Url.Action("Index", "Reservas", new { negocioId = Model.NegocioId, listadoDesde = item.Fecha.ToString("yyyy-MM-dd"), listadoHasta = item.Fecha.ToString("yyyy-MM-dd"), sedeId = Model.SedeId })">
                                 <div class="sc-report-tower-wrap sc-report-tower-wrap--operacion">
                                     <div class="sc-report-tower-value">@item.CantidadReservas reserva(s)</div>
                                     <div class="sc-report-tower-track">
@@ -546,7 +572,7 @@
                                     <strong>@item.Fecha.ToString("dd/MM")</strong>
                                     <span>Reservado: S/ @item.MontoReservado.ToString("N2")</span>
                                 </div>
-                            </article>
+                            </button>
                         }
                     </div>
                 }
@@ -577,49 +603,38 @@
                 }
                 else
                 {
-                    <div class="sc-report-snapshot-list">
-                        @foreach (var item in Model.Ocupacion)
-                        {
-                            var width = Math.Max(8m, Math.Round((item.MontoReservado / maxTopReservado) * 100m, 2));
-                            <article class="sc-report-snapshot-card sc-report-snapshot-card--operacion">
-                                <div class="sc-report-snapshot-head">
-                                    <div>
-                                        <div class="sc-report-snapshot-kicker">Espacio</div>
-                                        <h3>@item.Espacio</h3>
-                                    </div>
-                                    <span class="sc-report-snapshot-badge"><i class="bi bi-geo-alt"></i>@item.Sede</span>
-                                </div>
-
-                                <div class="sc-report-snapshot-body">
-                                    <div class="sc-report-snapshot-emphasis">
-                                        <span>Reservado en el periodo</span>
-                                        <strong>S/ @item.MontoReservado.ToString("N2")</strong>
-                                        <div class="sc-report-snapshot-progress">
-                                            <span style="width:@width.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%"></span>
+                    <div class="sc-report-master-detail" data-master-detail="espacios">
+                        <aside class="sc-report-master-list" aria-label="Espacios deportivos">
+                            <div class="sc-report-master-list-head"><strong>Espacios deportivos</strong><span>@Model.Ocupacion.Count espacio(s)</span></div>
+                            @foreach (var item in Model.Ocupacion.OrderByDescending(x => x.MontoReservado))
+                            {
+                                var target = $"espacio-{item.EspacioDeportivoId}";
+                                <button type="button" class="sc-report-master-item @(item == Model.Ocupacion.OrderByDescending(x => x.MontoReservado).First() ? "is-active" : string.Empty)" data-master-target="@target">
+                                    <span><strong>@item.Espacio</strong><small>@item.Sede · @item.CantidadReservas reserva(s)</small></span>
+                                    <b>S/ @item.MontoReservado.ToString("N2")</b>
+                                </button>
+                            }
+                        </aside>
+                        <div class="sc-report-detail-stage">
+                            @foreach (var item in Model.Ocupacion.OrderByDescending(x => x.MontoReservado))
+                            {
+                                var target = $"espacio-{item.EspacioDeportivoId}";
+                                var reservasEspacio = Model.DetalleReservas.Where(x => string.Equals(x.Sede, item.Sede, StringComparison.OrdinalIgnoreCase) && string.Equals(x.Espacio, item.Espacio, StringComparison.OrdinalIgnoreCase)).OrderBy(x => x.Fecha).ThenBy(x => x.HoraInicio).ToList();
+                                <section class="sc-report-detail-pane" data-master-pane="@target">
+                                    <header class="sc-report-detail-head"><div><span>Actividad del espacio</span><h3>@item.Espacio <small>@item.Sede</small></h3></div><strong>S/ @item.MontoReservado.ToString("N2")</strong></header>
+                                    <div class="sc-report-detail-kpis"><div><span>Reservas</span><strong>@item.CantidadReservas</strong></div><div><span>Horas</span><strong>@item.HorasReservadas.ToString("N2")</strong></div><div><span>Cobrado</span><strong>S/ @item.MontoCobrado.ToString("N2")</strong></div></div>
+                                    @if (reservasEspacio.Any())
+                                    {
+                                        <div class="sc-report-detail-list">
+                                            @foreach (var reserva in reservasEspacio.Take(12))
+                                            { <article><div><strong>@reserva.Cliente</strong><span>@reserva.Fecha.ToString("dd/MM/yyyy") · @reserva.HoraInicio.ToString("HH:mm") - @reserva.HoraFin.ToString("HH:mm")</span><small>@reserva.Estado · Saldo S/ @reserva.SaldoPendiente.ToString("N2")</small></div><b>S/ @reserva.Total.ToString("N2")</b></article> }
                                         </div>
-                                    </div>
-                                    <div class="sc-report-snapshot-metrics">
-                                        <div><span>Reservas</span><strong>@item.CantidadReservas</strong></div>
-                                        <div><span>Horas</span><strong>@item.HorasReservadas.ToString("N2")</strong></div>
-                                        <div><span>Cobrado asociado</span><strong>S/ @item.MontoCobrado.ToString("N2")</strong></div>
-                                        <div><span>Participacion</span><strong>@Porcentaje(item.MontoReservado, reservadoActual).ToString("N2")%</strong></div>
-                                    </div>
-                                </div>
-
-                                <div class="sc-report-snapshot-actions">
-                                    <a class="btn btn-sm btn-accion-filtro"
-                                       asp-controller="Reservas"
-                                       asp-action="Index"
-                                       asp-route-negocioId="@Model.NegocioId"
-                                       asp-route-listadoDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")"
-                                       asp-route-listadoHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")"
-                                       asp-route-sedeId="@item.SedeId"
-                                       asp-route-espacioDeportivoId="@item.EspacioDeportivoId">
-                                        Reservas
-                                    </a>
-                                </div>
-                            </article>
-                        }
+                                    }
+                                    else { <div class="sc-report-detail-empty">No se encontraron reservas individuales para este espacio.</div> }
+                                    <a class="btn btn-sm btn-accion-filtro" asp-controller="Reservas" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-listadoDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@item.SedeId" asp-route-espacioDeportivoId="@item.EspacioDeportivoId">Ver reservas del espacio</a>
+                                </section>
+                            }
+                        </div>
                     </div>
 
                     <div class="sc-report-total-strip mt-3">
@@ -647,46 +662,38 @@
                 }
                 else
                 {
-                    <div class="sc-report-snapshot-list">
-                        @foreach (var item in Model.ReservasPorDia)
-                        {
-                            var width = Math.Max(8m, Math.Round((item.CantidadReservas / maxReservasDia) * 100m, 2));
-                            <article class="sc-report-snapshot-card sc-report-snapshot-card--operacion">
-                                <div class="sc-report-snapshot-head">
-                                    <div>
-                                        <div class="sc-report-snapshot-kicker">Fecha operativa</div>
-                                        <h3>@item.Fecha.ToString("dd/MM/yyyy")</h3>
-                                    </div>
-                                    <span class="sc-report-snapshot-badge"><i class="bi bi-calendar-week"></i>Reserva</span>
-                                </div>
-
-                                <div class="sc-report-snapshot-body">
-                                    <div class="sc-report-snapshot-emphasis">
-                                        <span>Reservado del dia</span>
-                                        <strong>S/ @item.MontoReservado.ToString("N2")</strong>
-                                        <div class="sc-report-snapshot-progress">
-                                            <span style="width:@width.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%"></span>
+                    <div class="sc-report-master-detail" data-master-detail="reservas">
+                        <aside class="sc-report-master-list" aria-label="Fechas con reservas">
+                            <div class="sc-report-master-list-head"><strong>Fechas con reservas</strong><span>@Model.ReservasPorDia.Count dia(s)</span></div>
+                            @foreach (var item in Model.ReservasPorDia.OrderByDescending(x => x.Fecha))
+                            {
+                                var target = $"reserva-{item.Fecha:yyyyMMdd}";
+                                <button type="button" class="sc-report-master-item @(item == Model.ReservasPorDia.OrderByDescending(x => x.Fecha).First() ? "is-active" : string.Empty)" data-master-target="@target">
+                                    <span><strong>@item.Fecha.ToString("dd/MM/yyyy")</strong><small>@item.CantidadReservas reserva(s)</small></span>
+                                    <b>S/ @item.MontoReservado.ToString("N2")</b>
+                                </button>
+                            }
+                        </aside>
+                        <div class="sc-report-detail-stage">
+                            @foreach (var item in Model.ReservasPorDia.OrderByDescending(x => x.Fecha))
+                            {
+                                var target = $"reserva-{item.Fecha:yyyyMMdd}";
+                                var reservasDelDia = Model.DetalleReservas.Where(x => x.Fecha == item.Fecha).OrderBy(x => x.HoraInicio).ToList();
+                                <section class="sc-report-detail-pane" data-master-pane="@target">
+                                    <header class="sc-report-detail-head"><div><span>Detalle operativo</span><h3>@item.Fecha.ToString("dddd dd 'de' MMMM", new System.Globalization.CultureInfo("es-PE"))</h3></div><strong>@item.CantidadReservas reserva(s)</strong></header>
+                                    <div class="sc-report-detail-kpis"><div><span>Reservado</span><strong>S/ @item.MontoReservado.ToString("N2")</strong></div><div><span>Participacion</span><strong>@Porcentaje(item.MontoReservado, reservadoActual).ToString("N2")%</strong></div><div><span>Clientes</span><strong>@reservasDelDia.Select(x => x.Cliente).Distinct().Count()</strong></div></div>
+                                    @if (reservasDelDia.Any())
+                                    {
+                                        <div class="sc-report-detail-list">
+                                            @foreach (var reserva in reservasDelDia.Take(12))
+                                            { <article><div><strong>@reserva.Cliente</strong><span>@reserva.Sede · @reserva.Espacio</span><small>@reserva.HoraInicio.ToString("HH:mm") - @reserva.HoraFin.ToString("HH:mm") · @reserva.Estado</small></div><b>S/ @reserva.Total.ToString("N2")</b></article> }
                                         </div>
-                                    </div>
-                                    <div class="sc-report-snapshot-metrics">
-                                        <div><span>Reservas</span><strong>@item.CantidadReservas</strong></div>
-                                        <div><span>Participacion del periodo</span><strong>@Porcentaje(item.MontoReservado, reservadoActual).ToString("N2")%</strong></div>
-                                    </div>
-                                </div>
-
-                                <div class="sc-report-snapshot-actions">
-                                    <a class="btn btn-sm btn-accion-filtro"
-                                       asp-controller="Reservas"
-                                       asp-action="Index"
-                                       asp-route-negocioId="@Model.NegocioId"
-                                       asp-route-listadoDesde="@item.Fecha.ToString("yyyy-MM-dd")"
-                                       asp-route-listadoHasta="@item.Fecha.ToString("yyyy-MM-dd")"
-                                       asp-route-sedeId="@Model.SedeId">
-                                        Ver reservas del dia
-                                    </a>
-                                </div>
-                            </article>
-                        }
+                                    }
+                                    else { <div class="sc-report-detail-empty">No se encontraron reservas individuales para esta fecha.</div> }
+                                    <a class="btn btn-sm btn-accion-filtro" asp-controller="Reservas" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-listadoDesde="@item.Fecha.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@item.Fecha.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId">Ver reservas del dia</a>
+                                </section>
+                            }
+                        </div>
                     </div>
 
                     <div class="sc-report-total-strip mt-3">
@@ -905,6 +912,16 @@
     *@
 </div>
 
+<div class="modal fade" id="visualDetailModal" tabindex="-1" aria-labelledby="visualDetailModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content sc-visual-detail-modal">
+            <div class="modal-header"><div><div class="sc-report-snapshot-kicker">Detalle del indicador</div><h2 class="modal-title fs-5" id="visualDetailModalTitle"></h2></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+            <div class="modal-body"><div class="sc-visual-detail-value" data-detail-output="value"></div><p class="mb-0 text-muted" data-detail-output="meta"></p></div>
+            <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button><a class="btn btn-primary" data-detail-output="link" href="#">Ver detalle</a></div>
+        </div>
+    </div>
+</div>
+
 <script>
     (function () {
         const triggers = Array.from(document.querySelectorAll('[data-report-tab-trigger]'));
@@ -928,6 +945,30 @@
 
         triggers.forEach((trigger) => {
             trigger.addEventListener('click', () => activate(trigger.getAttribute('data-report-tab-trigger')));
+        });
+
+        const modalElement = document.getElementById('visualDetailModal');
+        if (modalElement && window.bootstrap) {
+            const modal = new bootstrap.Modal(modalElement);
+            const title = modalElement.querySelector('#visualDetailModalTitle');
+            const value = modalElement.querySelector('[data-detail-output="value"]');
+            const meta = modalElement.querySelector('[data-detail-output="meta"]');
+            const link = modalElement.querySelector('[data-detail-output="link"]');
+            const openDetail = (element) => { title.textContent = element.dataset.detailTitle; value.textContent = element.dataset.detailValue; meta.textContent = element.dataset.detailMeta; link.href = element.dataset.detailLink || '#'; modal.show(); };
+            document.querySelectorAll('.sc-visual-trigger').forEach((element) => {
+                element.addEventListener('click', () => openDetail(element));
+            });
+        }
+
+        document.querySelectorAll('[data-master-detail]').forEach((container) => {
+            const items = Array.from(container.querySelectorAll('[data-master-target]'));
+            const panes = Array.from(container.querySelectorAll('[data-master-pane]'));
+            const activate = (target) => {
+                items.forEach((item) => item.classList.toggle('is-active', item.dataset.masterTarget === target));
+                panes.forEach((pane) => pane.classList.toggle('is-active', pane.dataset.masterPane === target));
+            };
+            items.forEach((item) => item.addEventListener('click', () => activate(item.dataset.masterTarget)));
+            if (items.length) activate(items[0].dataset.masterTarget);
         });
     })();
 </script>

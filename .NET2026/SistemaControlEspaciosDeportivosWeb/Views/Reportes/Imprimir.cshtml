@@ -23,8 +23,13 @@
         .Select(x => new { Estado = x.Key, Cantidad = x.Count(), Total = x.Sum(y => y.Total), Saldo = x.Sum(y => y.SaldoPendiente) })
         .OrderByDescending(x => x.Cantidad)
         .ToList();
+    var reservasAtendidas = Model.ResumenActual.TotalConfirmadas + Model.ResumenActual.TotalPagadas;
+    var reservasAtendidasPct = Model.ResumenActual.TotalReservas > 0 ? Math.Min(100m, reservasAtendidas * 100m / Model.ResumenActual.TotalReservas) : 0m;
+    var cobranzaPctCss = Math.Min(100m, porcentajeCobranza).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+    var reservasAtendidasPctCss = reservasAtendidasPct.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
 }
 @* Firma: FRANCO LARA - 16/07/2026 | Documento ejecutivo independiente y multipagina para imprimir resumen, pagos y reservas. *@
+@* Firma: FRANCO LARA - 30/09/2026 | Incorpora el resumen visual de cobranza y operacion en la impresion ejecutiva. *@
 <!doctype html>
 <html lang="es">
 <head>
@@ -146,6 +151,14 @@
         .metric strong { display: block; margin: 7px 0 3px; color: var(--navy); font-size: 18px; }
         .metric small { color: var(--muted); }
 
+        .visual-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin: 0 0 16px; }
+        .visual-card { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border: 1px solid var(--line); background: linear-gradient(135deg, #f6fbff, #f8fcfa); }
+        .visual-donut { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(var(--green) 0 var(--value), #dce5ee var(--value) 100%); }
+        .visual-donut.operacion { background: conic-gradient(var(--blue) 0 var(--value), #dce5ee var(--value) 100%); }
+        .visual-donut span { width: 37px; height: 37px; display: grid; place-items: center; border-radius: 50%; background: #fff; color: var(--navy); font-size: 10px; font-weight: 800; }
+        .visual-card strong { display: block; color: var(--navy); font-size: 12px; }
+        .visual-card small { display: block; margin-top: 3px; color: var(--muted); }
+
         .executive-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -252,6 +265,11 @@
                 <article class="metric amber"><span>Saldo pendiente</span><strong>S/ @totalPendiente.ToString("N2")</strong><small>@Model.DetalleReservas.Count(x => x.SaldoPendiente > 0 && x.EstadoCodigo != 5) reservas con saldo</small></article>
                 <article class="metric"><span>Nivel de cobranza</span><strong>@porcentajeCobranza.ToString("N1")%</strong><small>Sobre el monto reservado</small></article>
                 <article class="metric"><span>Ticket promedio</span><strong>S/ @ticketPromedio.ToString("N2")</strong><small>Por reserva cobrada</small></article>
+            </section>
+
+            <section class="visual-summary" aria-label="Panorama visual del periodo">
+                <article class="visual-card"><span class="visual-donut" style="--value:@cobranzaPctCss%"><span>@porcentajeCobranza.ToString("N0")%</span></span><div><strong>Cobranza frente a lo reservado</strong><small>S/ @totalCobrado.ToString("N2") cobrados de S/ @totalReservado.ToString("N2") reservados.</small></div></article>
+                <article class="visual-card"><span class="visual-donut operacion" style="--value:@reservasAtendidasPctCss%"><span>@reservasAtendidasPct.ToString("N0")%</span></span><div><strong>Reservas confirmadas o pagadas</strong><small>@reservasAtendidas de @Model.ResumenActual.TotalReservas reservas del periodo.</small></div></article>
             </section>
 
             <section class="executive-grid">

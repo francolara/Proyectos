@@ -16,7 +16,8 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
         if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje))
             return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Acceso denegado." });
 
-        var vm = await ConstruirReporteAsync(baseVm, fechaDesde, fechaHasta, sedeId, preset, incluirDetalle: false);
+        // El explorador maestro-detalle de Reportes muestra clientes, espacios y movimientos del elemento seleccionado.
+        var vm = await ConstruirReporteAsync(baseVm, fechaDesde, fechaHasta, sedeId, preset, incluirDetalle: true);
         return View(vm);
     }
 
