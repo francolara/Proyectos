@@ -6,6 +6,7 @@ readonly COMPOSE_FILE="/srv/fralse/compose/apps.compose.yml"
 readonly GHCR_OVERRIDE="/srv/fralse/compose/ghcr.override.yml"
 readonly LOCK_FILE="/var/lock/fralse-deploy.lock"
 readonly LOG_FILE="/var/log/fralse-deploy.log"
+readonly DIAGNOSTICS_DIR="$HOME/deploy-logs"
 readonly HEALTH_ATTEMPTS=30
 readonly HEALTH_INTERVAL=2
 
@@ -125,6 +126,35 @@ health_check() {
     return 1
 }
 
+capture_failed_container_diagnostics() {
+    local service="$1" container container_name timestamp diagnostics_file
+
+    mkdir -p "$DIAGNOSTICS_DIR" || true
+    find "$DIAGNOSTICS_DIR" -type f -name '*-fallo-*.log' -mtime +30 -delete || true
+
+    container="$(docker compose -f "$COMPOSE_FILE" ps -q --all "$service" 2>/dev/null || true)"
+    if [[ -z "$container" ]]; then
+        echo "No se pudo identificar el contenedor fallido de $service para capturar diagnóstico." >&2
+        return 0
+    fi
+
+    container_name="$(docker inspect "$container" --format '{{.Name}}' 2>/dev/null | sed 's#^/##' || true)"
+    [[ -n "$container_name" ]] || container_name="$container"
+    timestamp="$(date '+%Y%m%d-%H%M%S')"
+    diagnostics_file="$DIAGNOSTICS_DIR/${service}-fallo-${timestamp}.log"
+
+    {
+        printf 'Servicio: %s\nContenedor: %s\nCapturado: %s\n\n' "$service" "$container_name" "$(date --iso-8601=seconds)"
+        printf '%s\n' '=== docker logs --timestamps --tail 500 ==='
+        docker logs --timestamps --tail 500 "$container_name" || true
+        printf '\n%s\n' '=== docker inspect --format {{json .State}} ==='
+        docker inspect "$container_name" --format '{{json .State}}' || true
+    } > "$diagnostics_file" 2>&1 || true
+
+    echo "Diagnóstico del contenedor fallido ($diagnostics_file):" >&2
+    cat "$diagnostics_file" >&2 || true
+}
+
 capture_previous_image_ids
 write_rollback_override
 
@@ -152,9 +182,13 @@ if ! docker compose -f "$COMPOSE_FILE" -f "$GHCR_OVERRIDE" up -d --no-deps --for
 fi
 
 for service in "${SERVICES[@]}"; do
-    if ! health_check "$service"; then
+    if health_check "$service"; then
+        continue
+    else
+        health_check_status=$?
+        capture_failed_container_diagnostics "$service"
         rollback || true
-        exit 1
+        exit "$health_check_status"
     fi
 done
 
