@@ -1,4 +1,4 @@
-
+﻿
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Reservas_Crear]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -15,6 +15,9 @@ GO
 -- Firma: FRANCO LARA - 06/06/2026 | Valida cruces usando el espacio reservado y sus espacios compartidos activos.
 -- Firma: FRANCO LARA - 08/06/2026 | Distingue bloqueo directo y espacios compuestos para evitar sobrebloqueos por propagacion en cadena.
 -- Firma: FRANCO LARA - 07/09/2026 | Evalua fecha de pago y vigencia de cupones con la fecha operativa de Peru, independiente del hosting.
+-- Firma: FRANCO LARA - 01/10/2026 | Asigna correlativos visibles por negocio a la reserva y al pago inicial opcional.
+-- Firma: FRANCO LARA - 06/10/2026 | Conserva CodigoMoneda en reserva, pago inicial y uso de cupon.
+-- Firma: FRANCO LARA - 08/10/2026 | Permite suprimir el result set del Id cuando el procedimiento es invocado por otro flujo que consume @ReservaId OUTPUT.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Reservas_Crear]
     @NegocioId INT,
     @EspacioDeportivoId INT,
@@ -33,6 +36,7 @@ CREATE OR ALTER PROCEDURE [dbo].[Sp_Reservas_Crear]
     @CodigoCupon NVARCHAR(30) = NULL,
     @CanalOrigen NVARCHAR(20) = N'ADMIN',
     @ReservaId INT = NULL OUTPUT,
+    @DevolverResultado BIT = 1,
     @Usuario NVARCHAR(200)
 AS
 BEGIN
@@ -80,6 +84,7 @@ BEGIN
         DECLARE @PorcentajeAdelantoMinimo DECIMAL(5,2);
         DECLARE @PagoMinimoRequerido DECIMAL(10,2);
         DECLARE @EstadoCalculado INT;
+        DECLARE @CodigoMoneda NVARCHAR(10);
 
         DECLARE @SedeId INT, @HoraApertura TIME, @HoraCierre TIME;
         DECLARE @AtiendeLunes BIT, @AtiendeMartes BIT, @AtiendeMiercoles BIT, @AtiendeJueves BIT, @AtiendeViernes BIT, @AtiendeSabado BIT, @AtiendeDomingo BIT;
@@ -107,6 +112,14 @@ BEGIN
 
         IF @SedeId IS NULL
             RAISERROR('El espacio deportivo no esta disponible para este negocio.', 16, 1);
+
+        SELECT @CodigoMoneda = n.CodigoMoneda
+        FROM dbo.Negocios n
+        WHERE n.Id = @NegocioId
+          AND n.Activo = 1;
+
+        IF @CodigoMoneda IS NULL
+            RAISERROR('El negocio debe configurar una moneda valida antes de crear reservas.', 16, 1);
 
         IF EXISTS (SELECT 1 FROM dbo.SedeFechasInhabilitadas sfi WHERE sfi.SedeId = @SedeId AND sfi.Fecha = @Fecha AND sfi.Activo = 1)
             RAISERROR('La sede no atiende en la fecha seleccionada.', 16, 1);
@@ -212,6 +225,7 @@ BEGIN
               AND c.FechaInicio <= @HoyCupon
               AND c.FechaFin >= @HoyCupon
               AND c.CantidadUsosActuales < c.CantidadMaxUsos
+              AND c.CodigoMoneda = @CodigoMoneda
               AND (c.SedeId IS NULL OR c.SedeId = @SedeId)
               AND (c.EspacioDeportivoId IS NULL OR c.EspacioDeportivoId = @EspacioDeportivoId);
 
@@ -255,15 +269,18 @@ BEGIN
 
         BEGIN TRANSACTION;
 
+        DECLARE @NumeroReservaPorNegocio INT;
+        EXEC dbo.Sp_NegocioCorrelativos_ObtenerSiguiente @NegocioId, N'RESERVA', @Usuario, @NumeroReservaPorNegocio OUTPUT;
+
         INSERT INTO dbo.Reservas
         (
-            EspacioDeportivoId, ClienteId, Fecha, HoraInicio, HoraFin, Estado,
-            Total, Adelanto, Saldo, Comentario, CodigoCuponAplicado, DescuentoCupon, CanalOrigen, FechaRegistro, UsuarioCreacion
+            NumeroPorNegocio, EspacioDeportivoId, ClienteId, Fecha, HoraInicio, HoraFin, Estado,
+            Total, Adelanto, Saldo, CodigoMoneda, Comentario, CodigoCuponAplicado, DescuentoCupon, CanalOrigen, FechaRegistro, UsuarioCreacion
         )
         VALUES
         (
-            @EspacioDeportivoId, @ClienteId, @Fecha, @HoraInicio, @HoraFin, @EstadoCalculado,
-            @Total, @Adelanto, (@Total - @Adelanto), NULLIF(LTRIM(RTRIM(@Comentario)), N''), @CodigoCupon, @DescuentoCupon, COALESCE(NULLIF(LTRIM(RTRIM(@CanalOrigen)), N''), N'ADMIN'), SYSUTCDATETIME(), @Usuario
+            @NumeroReservaPorNegocio, @EspacioDeportivoId, @ClienteId, @Fecha, @HoraInicio, @HoraFin, @EstadoCalculado,
+            @Total, @Adelanto, (@Total - @Adelanto), @CodigoMoneda, NULLIF(LTRIM(RTRIM(@Comentario)), N''), @CodigoCupon, @DescuentoCupon, COALESCE(NULLIF(LTRIM(RTRIM(@CanalOrigen)), N''), N'ADMIN'), SYSUTCDATETIME(), @Usuario
         );
 
         DECLARE @Id INT = SCOPE_IDENTITY();
@@ -271,14 +288,17 @@ BEGIN
 
         IF @RegistrarPago = 1 AND @Adelanto > 0
         BEGIN
+            DECLARE @NumeroPagoPorNegocio INT;
+            EXEC dbo.Sp_NegocioCorrelativos_ObtenerSiguiente @NegocioId, N'PAGO', @Usuario, @NumeroPagoPorNegocio OUTPUT;
+
             INSERT INTO dbo.Pagos
             (
-                ReservaId, FechaPago, Monto, FormaPago, NumeroOperacion, Observacion,
+                NumeroPorNegocio, ReservaId, FechaPago, Monto, CodigoMoneda, FormaPago, NumeroOperacion, Observacion,
                 FechaCreacion, UsuarioCreacion
             )
             VALUES
             (
-                @Id, @FechaPago, @Adelanto, @FormaPagoId, @NumeroOperacion, N'Pago registrado al crear reserva.',
+                @NumeroPagoPorNegocio, @Id, @FechaPago, @Adelanto, @CodigoMoneda, @FormaPagoId, @NumeroOperacion, N'Pago registrado al crear reserva.',
                 SYSUTCDATETIME(), @Usuario
             );
         END
@@ -293,11 +313,11 @@ BEGIN
 
             INSERT INTO dbo.CuponesUso
             (
-                CuponId, ReservaId, ClienteId, MontoAntes, MontoDescuento, MontoFinal, CanalOrigen, FechaUso, UsuarioCreacion
+                CuponId, ReservaId, ClienteId, MontoAntes, MontoDescuento, MontoFinal, CodigoMoneda, CanalOrigen, FechaUso, UsuarioCreacion
             )
             VALUES
             (
-                @CuponId, @Id, @ClienteId, @TotalOriginal, @DescuentoCupon, @Total, COALESCE(NULLIF(LTRIM(RTRIM(@CanalOrigen)), N''), N'ADMIN'), SYSUTCDATETIME(), @Usuario
+                @CuponId, @Id, @ClienteId, @TotalOriginal, @DescuentoCupon, @Total, @CodigoMoneda, COALESCE(NULLIF(LTRIM(RTRIM(@CanalOrigen)), N''), N'ADMIN'), SYSUTCDATETIME(), @Usuario
             );
         END
 
@@ -309,7 +329,7 @@ BEGIN
         BEGIN
             DECLARE @MensajeNotificacion NVARCHAR(300);
             DECLARE @UrlNotificacion NVARCHAR(300);
-            SET @MensajeNotificacion = N'Reserva #' + CONVERT(NVARCHAR(20), @Id) + N' creada desde portal cliente.';
+            SET @MensajeNotificacion = N'Reserva R-' + RIGHT(N'000000' + CONVERT(NVARCHAR(20), @NumeroReservaPorNegocio), 6) + N' creada desde portal cliente.';
             SET @UrlNotificacion = N'/Reservas?negocioId=' + CONVERT(NVARCHAR(20), @NegocioId);
             EXEC dbo.Sp_Notificaciones_Crear
                 @NegocioId = @NegocioId,
@@ -324,7 +344,8 @@ BEGIN
 
 
         COMMIT TRANSACTION;
-        SELECT @Id;
+        IF @DevolverResultado = 1
+            SELECT @Id AS ReservaId;
     END TRY
     BEGIN CATCH
         IF XACT_STATE() <> 0

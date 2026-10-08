@@ -1,4 +1,4 @@
-﻿
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -10,6 +10,8 @@ GO
 -- Firma: Codex - 12/04/2026 | Incluye bandera de bloqueo por comprobante activo y referencia del ultimo comprobante principal (ultimo generado por Id) para forzar edicion solo lectura en pagos cuando ya se emitio documento.
 -- Firma: Codex - 12/04/2026 | Usa abreviatura del documento (TiposDocumentoComprobanteSuperMaestro.Abreviatura) en ReferenciaComprobante.
 -- Firma: FRANCO LARA - 17/09/2026 | Incluye trazabilidad de cada pago para su visualizacion durante la edicion.
+-- Firma: FRANCO LARA - 01/10/2026 | Muestra correlativos visibles por negocio para la reserva y el detalle de pagos.
+-- Firma: FRANCO LARA - 06/10/2026 | Presenta y expone CodigoMoneda historico de la reserva y usa codigos SUNAT canonicos.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Pagos_ObtenerPorId]
     @NegocioId INT,
     @Id INT
@@ -20,7 +22,7 @@ BEGIN
     BEGIN TRY
         SELECT
             r.Id AS ReservaId,
-            CONCAT(N'#', CONVERT(NVARCHAR(20), r.Id)) AS ReservaCodigo,
+            CONCAT(N'R-', RIGHT(N'000000' + CONVERT(NVARCHAR(20), r.NumeroPorNegocio), 6)) AS ReservaCodigo,
             s.Nombre AS Sede,
             e.Nombre AS Espacio,
             c.NombresORazonSocial AS Cliente,
@@ -30,7 +32,7 @@ BEGIN
             r.Total AS TotalReserva,
             COALESCE(SUM(p.Monto), 0) AS TotalPagado,
             (r.Total - COALESCE(SUM(p.Monto), 0)) AS SaldoPendiente,
-            COALESCE(ms.Simbolo, N'S/') AS MonedaSimbolo,
+            COALESCE(ms.Simbolo, r.CodigoMoneda) AS MonedaSimbolo,
             CAST(ISNULL(n.PoliticaConfirmacionPago, 0) AS INT) AS PoliticaConfirmacionPago,
             n.PorcentajeAdelantoMinimo,
             CAST(
@@ -46,11 +48,10 @@ BEGIN
                       (
                           SELECT 1
                           FROM dbo.ComprobantesElectronicos nc
-                          INNER JOIN dbo.NegociosTiposDocumentoComprobante ntdNc ON ntdNc.Id = nc.TipoComprobante
                           WHERE nc.NegocioId = cex.NegocioId
                             AND nc.ComprobanteReferenciaId = cex.Id
                             AND nc.Estado <> 5
-                            AND ntdNc.CodigoSunat = N'07'
+                            AND nc.CodigoTipoComprobante = N'07'
                       )
                 ) THEN 1 ELSE 0 END
             AS BIT) AS TieneComprobanteActivo,
@@ -59,15 +60,14 @@ BEGIN
                 (
                     SELECT TOP (1)
                         CASE
-                            WHEN ntd.CodigoSunat IN (N'01', N'03') AND EXISTS
+                            WHEN ce.CodigoTipoComprobante IN (N'01', N'03') AND EXISTS
                             (
                                 SELECT 1
                                 FROM dbo.ComprobantesElectronicos nrel
-                                INNER JOIN dbo.NegociosTiposDocumentoComprobante ntdRel ON ntdRel.Id = nrel.TipoComprobante
                                 WHERE nrel.NegocioId = ce.NegocioId
                                   AND nrel.ComprobanteReferenciaId = ce.Id
                                   AND nrel.Estado <> 5
-                                  AND ntdRel.CodigoSunat IN (N'07', N'08')
+                                  AND nrel.CodigoTipoComprobante IN (N'07', N'08')
                             ) THEN N''
                             ELSE CONCAT(
                                 COALESCE(tdsm.Abreviatura, tdsm.Nombre, N'Comp.'),
@@ -77,29 +77,29 @@ BEGIN
                                 FORMAT(ce.Numero, '00000000'))
                         END
                     FROM dbo.ComprobantesElectronicos ce
-                    INNER JOIN dbo.NegociosTiposDocumentoComprobante ntd ON ntd.Id = ce.TipoComprobante
-                    LEFT JOIN dbo.TiposDocumentoComprobanteSuperMaestro tdsm ON tdsm.CodigoSunat = ntd.CodigoSunat
+                    LEFT JOIN dbo.TiposDocumentoComprobanteSuperMaestro tdsm ON tdsm.CodigoSunat = ce.CodigoTipoComprobante
                     WHERE ce.NegocioId = @NegocioId
                       AND ce.ReservaId = r.Id
                       AND ce.ComprobanteReferenciaId IS NULL
                       AND ce.Estado <> 5
-                      AND ntd.CodigoSunat IN (N'01', N'03', N'RI')
+                      AND ce.CodigoTipoComprobante IN (N'01', N'03', N'RI')
                     ORDER BY ce.Id DESC
                 ),
                 N''
-            ) AS ReferenciaComprobante
+            ) AS ReferenciaComprobante,
+            r.CodigoMoneda
         FROM dbo.Reservas r
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         INNER JOIN dbo.Clientes c ON c.Id = r.ClienteId
         INNER JOIN dbo.Negocios n ON n.Id = s.NegocioId
-        LEFT JOIN dbo.Monedas m ON m.Id = n.MonedaId
-        LEFT JOIN dbo.MonedasSuperMaestro ms ON ms.Id = m.MonedaSuperId
+        LEFT JOIN dbo.MonedasSuperMaestro ms ON ms.Codigo = r.CodigoMoneda
         LEFT JOIN dbo.Pagos p ON p.ReservaId = r.Id
         WHERE r.Id = @Id
           AND s.NegocioId = @NegocioId
         GROUP BY
             r.Id,
+            r.NumeroPorNegocio,
             s.Nombre,
             e.Nombre,
             c.NombresORazonSocial,
@@ -107,6 +107,7 @@ BEGIN
             r.HoraInicio,
             r.HoraFin,
             r.Total,
+            r.CodigoMoneda,
             ms.Simbolo,
             n.PoliticaConfirmacionPago,
             n.PorcentajeAdelantoMinimo;
@@ -122,7 +123,8 @@ BEGIN
             p.UsuarioCreacion,
             CAST(p.FechaCreacion AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time' AS DATETIME2) AS FechaRegistro,
             p.UsuarioActualizacion,
-            CAST(p.FechaActualizacion AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time' AS DATETIME2) AS FechaActualizacion
+            CAST(p.FechaActualizacion AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time' AS DATETIME2) AS FechaActualizacion,
+            p.NumeroPorNegocio
         FROM dbo.Pagos p
         INNER JOIN dbo.FormasPago fp ON fp.Id = p.FormaPago
         INNER JOIN dbo.Reservas r ON r.Id = p.ReservaId

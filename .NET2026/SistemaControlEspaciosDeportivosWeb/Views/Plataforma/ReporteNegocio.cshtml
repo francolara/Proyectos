@@ -12,6 +12,7 @@
     var estadoClase = item.EstadoSuscripcion == 3 ? "bad" : item.EstadoSuscripcion is 1 or 2 ? "ok" : "warn";
 }
 @* Firma: FRANCO LARA - 21/07/2026 | Reporte HTML imprimible de información, límites, cobros e historial por complejo deportivo. *@
+@* Firma: FRANCO LARA - 06/10/2026 | Presenta cobros con moneda canonica y evita totalizar monedas distintas. *@
 <!doctype html>
 <html lang="es">
 <head>
@@ -44,7 +45,7 @@
             <section class="metrics" aria-label="Resumen comercial">
                 <article class="metric"><span>Estado del contrato</span><strong>@item.EstadoSuscripcionNombre</strong><small>@(item.Activo ? "Complejo activo" : "Complejo inactivo")</small></article>
                 <article class="metric green"><span>Plan comercial</span><strong>@plan</strong><small>@(item.EsPrueba ? "Periodo de prueba" : item.TipoCobro ?? "Sin periodicidad")</small></article>
-                <article class="metric"><span>Cobrado acumulado</span><strong>S/ @item.MontoTotalCobrado.ToString("N2")</strong><small>@item.CantidadCobrosRegistrados cobro(s)</small></article>
+                <article class="metric"><span>Cobrado acumulado</span><strong>@(item.CobrosEsMultimoneda ? "Varias monedas" : string.IsNullOrWhiteSpace(item.CobrosCodigoMoneda) ? "Sin cobros pagados" : $"{item.CobrosMonedaSimbolo} {item.MontoTotalCobrado:N2}")</strong><small>@item.CantidadCobrosRegistrados cobro(s)</small></article>
                 <article class="metric amber"><span>Vigencia</span><strong>@(item.EsPrueba ? "Prueba" : item.TipoCobro ?? "-")</strong><small>@vigencia</small></article>
             </section>
 
@@ -64,7 +65,7 @@
                 <div class="info-item"><span>Fin de gracia</span><strong>@(item.FechaFinGracia?.ToString("dd/MM/yyyy") ?? "-")</strong></div>
             </section>
 
-            <header class="section-heading"><div><span class="section-kicker">Sección 01</span><h2>Cobros de suscripción</h2></div><p>@item.HistorialCobros.Count registros mostrados<br />Total pagado: S/ @item.MontoTotalCobrado.ToString("N2")</p></header>
+            <header class="section-heading"><div><span class="section-kicker">Sección 01</span><h2>Cobros de suscripción</h2></div><p>@item.HistorialCobros.Count registros mostrados<br />Total pagado: @(item.CobrosEsMultimoneda ? "Varias monedas; ver detalle" : string.IsNullOrWhiteSpace(item.CobrosCodigoMoneda) ? "Sin cobros pagados" : $"{item.CobrosMonedaSimbolo} {item.MontoTotalCobrado:N2}")</p></header>
             @if (item.HistorialCobros.Count == 0)
             {
                 <div class="empty">No existen cobros registrados para este complejo deportivo.</div>
@@ -84,7 +85,7 @@
                             <td>S: @(pago.SedesPermitidasObjetivo?.ToString() ?? "-") · E: @(pago.EspaciosPermitidosObjetivo?.ToString() ?? "-") · U: @(pago.UsuariosPermitidosObjetivo?.ToString() ?? "-")</td>
                             <td>@(pago.OperacionNumero ?? "-")<br /><span class="muted">@(pago.EntidadFinanciera ?? "-")</span></td>
                             <td>@(pago.AplicadoSuscripcion ? "Aplicado" : pago.AplicarAlConfirmar ? "Por aplicar" : "No aplica")</td>
-                            <td class="text-end strong nowrap">@pago.Moneda @pago.Monto.ToString("N2")</td>
+                            <td class="text-end strong nowrap">@pago.MonedaSimbolo @pago.Monto.ToString("N2") (@pago.CodigoMoneda)</td>
                         </tr>
                     }
                     </tbody>

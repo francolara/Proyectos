@@ -342,7 +342,7 @@ Dim rstCtrlPre            As New ADODB.Recordset
 '            csql = "UPDATE c  SET c.estDocImportado = 'S' from docVentas c inner join docVentasDet d ON c.idEmpresa = d.idEmpresa AND c.idSucursal = d.idSucursal AND c.idDocumento = d.idDocumento AND c.idDocVentas = d.idDocVentas AND c.idSerie = d.idSerie " & _
 '                   "WHERE  " & _
 '                   " d.idEmpresa = '" & glsEmpresa & "' AND d.idSucursal = '" & glsSucursal & "' AND d.idDocumento = '" & rst.Fields("idDocumentoImp") & "' AND d.idDocVentas = '" & rst.Fields("idDocVentasImp") & "' AND d.idSerie = '" & rst.Fields("idSerieImp") & "'" & _
-'                   "AND (SELECT count(x.idDocVentas) FROM docVentasDet x WHERE x.idEmpresa = d.idEmpresa AND x.idSucursal = d.idSucursal AND x.idDocumento = d.idDocumento AND x.idDocVentas = d.idDocVentas AND x.idSerie = d.idSerie AND x.estDocImportado <> 'S') = 0"
+'                   "AND (SELECT count(x.idDocVentas) FROM docVentasDet x WHERE x.idEmpresa = d.idEmpresa AND x.idSucursal = d.idSucursal AND x.idDocumento = d.idDocumento AND x.idDocVentas = d.idDocVentas AND x.idSerie = d.idSerie AND ISNULL(x.estDocImportado,'') <> 'S') = 0"
 '            Cn.Execute csql
 '
 '            rst.MoveNext
@@ -968,7 +968,7 @@ Dim strCodAlmacen    As String
                     csql = "UPDATE C  SET c.estDocImportado = 'S' FROM docVentas c,docVentasDet d " & _
                            "WHERE c.idEmpresa = d.idEmpresa AND c.idSucursal = d.idSucursal AND c.idDocumento = d.idDocumento AND c.idDocVentas = d.idDocVentas AND c.idSerie = d.idSerie " & _
                            "AND d.idEmpresa = '" & glsEmpresa & "' AND d.idSucursal = '" & glsSucursal & "' AND d.idDocumento = '" & rstcab.Fields("idDocumentoImp") & "' AND d.idDocVentas = '" & rstcab.Fields("idDocVentasImp") & "' AND d.idSerie = '" & rstcab.Fields("idSerieImp") & "'" & _
-                           "AND (SELECT count(x.idDocVentas) FROM docVentasDet x WHERE x.idEmpresa = d.idEmpresa AND x.idSucursal = d.idSucursal AND x.idDocumento = d.idDocumento AND x.idDocVentas = d.idDocVentas AND x.idSerie = d.idSerie AND x.estDocImportado <> 'S') = 0"
+                           "AND (SELECT count(x.idDocVentas) FROM docVentasDet x WHERE x.idEmpresa = d.idEmpresa AND x.idSucursal = d.idSucursal AND x.idDocumento = d.idDocumento AND x.idDocVentas = d.idDocVentas AND x.idSerie = d.idSerie AND ISNULL(x.estDocImportado,'') <> 'S') = 0"
                     Cn.Execute csql
                     
                     rstcab.MoveNext

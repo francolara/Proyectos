@@ -1,18 +1,20 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.EspaciosIndexViewModel
 @* Firma: FRANCO LARA - 01/09/2026 | Presenta el listado con un titulo operativo y directo. *@
+@* Firma: FRANCO LARA - 01/10/2026 | Muestra el correlativo visible de espacio por negocio. *@
+@* Firma: FRANCO LARA - 08/10/2026 | Unifica los estados no activos bajo la etiqueta Inactivo y retira mantenimiento de la interfaz. *@
 @{
     ViewData["Title"] = "Espacios";
     var totalEspacios = Model.Espacios.Count;
     var totalActivos = Model.Espacios.Count(e => string.Equals(e.Estado, "Activo", StringComparison.OrdinalIgnoreCase));
-    var totalMantenimiento = Model.Espacios.Count(e => string.Equals(e.Estado, "EnMantenimiento", StringComparison.OrdinalIgnoreCase) || string.Equals(e.Estado, "En mantenimiento", StringComparison.OrdinalIgnoreCase));
-    var totalInactivos = Math.Max(0, totalEspacios - totalActivos - totalMantenimiento);
+    var totalInactivos = Math.Max(0, totalEspacios - totalActivos);
+
+    string estadoVisible(string estado) =>
+        string.Equals(estado, "Activo", StringComparison.OrdinalIgnoreCase) ? "Activo" : "Inactivo";
 
     string estadoClase(string estado)
     {
         if (string.Equals(estado, "Activo", StringComparison.OrdinalIgnoreCase))
             return "bg-success-subtle text-success-emphasis border border-success-subtle";
-        if (string.Equals(estado, "EnMantenimiento", StringComparison.OrdinalIgnoreCase) || string.Equals(estado, "En mantenimiento", StringComparison.OrdinalIgnoreCase))
-            return "bg-warning-subtle text-warning-emphasis border border-warning-subtle";
         return "bg-danger-subtle text-danger-emphasis border border-danger-subtle";
     }
 }
@@ -64,10 +66,6 @@
             <h3 class="kpi-card-value">@totalActivos</h3>
         </article>
         <article class="kpi-card">
-            <p class="kpi-card-label">En mantenimiento</p>
-            <h3 class="kpi-card-value">@totalMantenimiento</h3>
-        </article>
-        <article class="kpi-card">
             <p class="kpi-card-label">Inactivos</p>
             <h3 class="kpi-card-value">@totalInactivos</h3>
         </article>
@@ -111,12 +109,12 @@
                     <tbody>
                         @foreach (var item in Model.Espacios)
                         {
-                            <tr data-search="@($"{item.Codigo} {item.Nombre} {item.SedeNombre} {item.TipoDeporteNombre} {item.TipoSueloNombre} {(item.TieneIluminacion ? "iluminacion si" : "iluminacion no")} {(item.Techada ? "techado si" : "techado no")} {(item.TieneEspaciosCompartidos ? "espacio compartido" : "sin espacio compartido")} {item.Estado} {item.TarifaResumen}".ToLowerInvariant())">
+                            <tr data-search="@($"{item.Codigo} {item.Nombre} {item.SedeNombre} {item.TipoDeporteNombre} {item.TipoSueloNombre} {(item.TieneIluminacion ? "iluminacion si" : "iluminacion no")} {(item.Techada ? "techado si" : "techado no")} {(item.TieneEspaciosCompartidos ? "espacio compartido" : "sin espacio compartido")} {estadoVisible(item.Estado)} {item.TarifaResumen}".ToLowerInvariant())">
                                 <td>
                                     <div class="sc-espacio-main">
                                         <span class="sc-espacio-code">@item.Codigo</span>
                                         <div class="sc-espacio-name">@item.Nombre</div>
-                                        <small class="text-muted">ID: @item.Id</small>
+                                        <small class="text-muted">@item.CodigoVisible</small>
                                     </div>
                                 </td>
                                 <td>
@@ -142,7 +140,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="badge @estadoClase(item.Estado) sc-estado-pill">@item.Estado</span>
+                                    <span class="badge @estadoClase(item.Estado) sc-estado-pill">@estadoVisible(item.Estado)</span>
                                 </td>
                                 <td class="text-end">
                                     @if (Model.PuedeEditar)

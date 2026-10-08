@@ -6,6 +6,7 @@ public class Pago
     public int ReservaId { get; set; }
     public DateTime FechaPago { get; set; } = DateTime.UtcNow;
     public decimal Monto { get; set; }
+    public string CodigoMoneda { get; set; } = "PEN";
     public FormaPago FormaPago { get; set; }
     public string? NumeroOperacion { get; set; }
     public string? Observacion { get; set; }

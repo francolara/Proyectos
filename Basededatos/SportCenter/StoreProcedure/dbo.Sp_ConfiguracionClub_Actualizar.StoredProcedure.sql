@@ -1,4 +1,4 @@
-﻿
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -13,6 +13,7 @@ GO
 -- Firma: Codex - 06/05/2026 | Se agrega persistencia de EnviarComprobanteAutomatico desde configuracion del negocio.
 -- Firma: Codex - 08/05/2026 | Se retira validacion de documentos en Maestros para emision; la gestion se controla desde la opcion Maestros.
 -- Firma: FRANCO LARA - 09/06/2026 | Se agrega persistencia de HorasMaximasReservaCliente para controlar la duracion maxima en la reserva publica.
+-- Firma: FRANCO LARA - 06/10/2026 | Actualiza y valida exclusivamente CodigoMoneda canonico; retira la escritura del identificador local heredado.
 CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Actualizar
     @NegocioId INT,
     @NombreComercial NVARCHAR(200),
@@ -21,7 +22,7 @@ CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Actualizar
     @NumeroDocumentoFiscal NVARCHAR(20) = NULL,
     @DireccionFiscal NVARCHAR(250) = NULL,
     @CodigoUbigeo CHAR(6) = NULL,
-    @MonedaId INT,
+    @CodigoMoneda NVARCHAR(10),
     @PoliticaConfirmacionPago TINYINT = 0,
     @PorcentajeAdelantoMinimo DECIMAL(5,2) = NULL,
     @EmisionComprobantesElectronicos BIT = 0,
@@ -49,8 +50,16 @@ BEGIN
         SET @CodigoUbigeoNormalizado = NULLIF(LTRIM(RTRIM(@CodigoUbigeo)), '');
         SET @PorcentajeAdelantoNormalizado = @PorcentajeAdelantoMinimo;
         SET @LogoUrlNormalizado = NULLIF(LTRIM(RTRIM(@LogoUrl)), N'');
+        SET @CodigoMoneda = NULLIF(UPPER(LTRIM(RTRIM(@CodigoMoneda))), N'');
 
-        IF NOT EXISTS (SELECT 1 FROM dbo.Monedas WHERE Id = @MonedaId AND Activo = 1)
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM dbo.Monedas m
+            WHERE m.NegocioId = @NegocioId
+              AND m.Codigo = @CodigoMoneda
+              AND m.Activo = 1
+        )
             RAISERROR('La moneda seleccionada no es valida.', 16, 1);
 
         IF @TipoDocumentoFiscal IS NULL
@@ -110,7 +119,7 @@ BEGIN
             n.DireccionFiscal = @DireccionFiscalNormalizada,
             n.CodigoUbigeo = @CodigoUbigeoNormalizado,
             n.DocumentoFiscal = NULLIF(@NumeroDocumentoFiscal, N''),
-            n.MonedaId = @MonedaId,
+            n.CodigoMoneda = @CodigoMoneda,
             n.PoliticaConfirmacionPago = @PoliticaConfirmacionPago,
             n.PorcentajeAdelantoMinimo = @PorcentajeAdelantoNormalizado,
             n.EmisionComprobantesElectronicos = @EmisionComprobantesElectronicos,

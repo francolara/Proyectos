@@ -25,7 +25,6 @@ public partial class SportCenterStoredProcedureService
             TipoDocumento = dr.IsDBNull(3) ? "1" : dr.GetString(3),
             NumeroDocumento = dr.IsDBNull(4) ? null : dr.GetString(4),
             DireccionFiscal = dr.IsDBNull(5) ? null : dr.GetString(5),
-            MonedaId = dr.IsDBNull(6) ? 1 : dr.GetInt32(6),
             CodigoUbigeo = dr.IsDBNull(7) ? null : dr.GetString(7),
             PoliticaConfirmacionPago = dr.FieldCount > 8 && !dr.IsDBNull(8) ? Convert.ToInt32(dr.GetValue(8)) : 0,
             PorcentajeAdelantoMinimo = dr.FieldCount > 9 && !dr.IsDBNull(9) ? Convert.ToDecimal(dr.GetValue(9)) : null,
@@ -39,7 +38,9 @@ public partial class SportCenterStoredProcedureService
             MinutosCancelacionNoConfirmada = dr.FieldCount > 17 && !dr.IsDBNull(17) ? Convert.ToInt32(dr.GetValue(17)) : null,
             SedesPermitidas = dr.FieldCount > 18 && !dr.IsDBNull(18) ? Convert.ToInt32(dr.GetValue(18)) : 2,
             EspaciosPermitidos = dr.FieldCount > 19 && !dr.IsDBNull(19) ? Convert.ToInt32(dr.GetValue(19)) : 6,
-            HorasMaximasReservaCliente = dr.FieldCount > 20 && !dr.IsDBNull(20) ? Convert.ToInt32(dr.GetValue(20)) : 1
+            HorasMaximasReservaCliente = dr.FieldCount > 20 && !dr.IsDBNull(20) ? Convert.ToInt32(dr.GetValue(20)) : 1,
+            CodigoMoneda = dr.FieldCount > 21 && !dr.IsDBNull(21) ? dr.GetString(21) : string.Empty,
+            MonedaSimbolo = dr.FieldCount > 22 && !dr.IsDBNull(22) ? dr.GetString(22) : string.Empty
         };
     }
 
@@ -57,7 +58,7 @@ public partial class SportCenterStoredProcedureService
             AddParam(cmd, "@NumeroDocumentoFiscal", model.NumeroDocumento, SqlDbType.NVarChar);
             AddParam(cmd, "@DireccionFiscal", model.DireccionFiscal, SqlDbType.NVarChar);
             AddParam(cmd, "@CodigoUbigeo", model.CodigoUbigeo, SqlDbType.Char);
-            AddParam(cmd, "@MonedaId", model.MonedaId, SqlDbType.Int);
+            AddParam(cmd, "@CodigoMoneda", model.CodigoMoneda?.Trim().ToUpperInvariant(), SqlDbType.NVarChar);
             AddParam(cmd, "@PoliticaConfirmacionPago", model.PoliticaConfirmacionPago, SqlDbType.TinyInt);
             AddParam(cmd, "@PorcentajeAdelantoMinimo", model.PorcentajeAdelantoMinimo, SqlDbType.Decimal);
             AddParam(cmd, "@EmisionComprobantesElectronicos", model.EmisionComprobantesElectronicos, SqlDbType.Bit);
@@ -89,7 +90,7 @@ public partial class SportCenterStoredProcedureService
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
         {
-            list.Add(new SelectListItem(dr.GetString(1), dr.GetInt32(0).ToString()));
+            list.Add(new SelectListItem(dr.GetString(1), dr.GetString(2)));
         }
         return list;
     }
@@ -741,7 +742,7 @@ END";
         }
     }
 
-    public async Task<(List<PlataformaNegocioSuscripcionPagoViewModel> Pagos, int CantidadPagos, decimal MontoTotalPagado, DateTime? UltimaFechaPago, decimal? UltimoMonto, string? UltimoTipoPago)> PlataformaNegocioPagosSuscripcionAsync(int negocioId, int top = 8)
+    public async Task<(List<PlataformaNegocioSuscripcionPagoViewModel> Pagos, int CantidadPagos, decimal MontoTotalPagado, DateTime? UltimaFechaPago, decimal? UltimoMonto, string? UltimoTipoPago, int CantidadMonedasPago, string? CodigoMonedaResumen, string? MonedaSimboloResumen)> PlataformaNegocioPagosSuscripcionAsync(int negocioId, int top = 8)
     {
         var list = new List<PlataformaNegocioSuscripcionPagoViewModel>();
         await using var cn = CreateConnection();
@@ -768,6 +769,15 @@ END";
 
         var ultimoTipoParam = cmd.Parameters.Add("@UltimoTipoPago", SqlDbType.NVarChar, 30);
         ultimoTipoParam.Direction = ParameterDirection.Output;
+
+        var cantidadMonedasParam = cmd.Parameters.Add("@CantidadMonedasPago", SqlDbType.Int);
+        cantidadMonedasParam.Direction = ParameterDirection.Output;
+
+        var codigoMonedaResumenParam = cmd.Parameters.Add("@CodigoMonedaResumen", SqlDbType.NVarChar, 10);
+        codigoMonedaResumenParam.Direction = ParameterDirection.Output;
+
+        var monedaSimboloResumenParam = cmd.Parameters.Add("@MonedaSimboloResumen", SqlDbType.NVarChar, 10);
+        monedaSimboloResumenParam.Direction = ParameterDirection.Output;
 
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
@@ -800,7 +810,9 @@ END";
                 TipoPlanObjetivo = dr.IsDBNull(23) ? null : dr.GetString(23),
                 SedesPermitidasObjetivo = dr.IsDBNull(24) ? null : Convert.ToInt32(dr.GetValue(24)),
                 EspaciosPermitidosObjetivo = dr.IsDBNull(25) ? null : Convert.ToInt32(dr.GetValue(25)),
-                UsuariosPermitidosObjetivo = dr.IsDBNull(26) ? null : Convert.ToInt32(dr.GetValue(26))
+                UsuariosPermitidosObjetivo = dr.IsDBNull(26) ? null : Convert.ToInt32(dr.GetValue(26)),
+                CodigoMoneda = dr.IsDBNull(27) ? string.Empty : dr.GetString(27),
+                MonedaSimbolo = dr.IsDBNull(28) ? string.Empty : dr.GetString(28)
             });
         }
         await dr.CloseAsync();
@@ -811,7 +823,10 @@ END";
             totalParam.Value == DBNull.Value ? 0 : Convert.ToDecimal(totalParam.Value),
             ultimaFechaParam.Value == DBNull.Value ? null : Convert.ToDateTime(ultimaFechaParam.Value),
             ultimoMontoParam.Value == DBNull.Value ? null : Convert.ToDecimal(ultimoMontoParam.Value),
-            ultimoTipoParam.Value == DBNull.Value ? null : Convert.ToString(ultimoTipoParam.Value)
+            ultimoTipoParam.Value == DBNull.Value ? null : Convert.ToString(ultimoTipoParam.Value),
+            cantidadMonedasParam.Value is int cantidadMonedas ? cantidadMonedas : 0,
+            codigoMonedaResumenParam.Value == DBNull.Value ? null : Convert.ToString(codigoMonedaResumenParam.Value),
+            monedaSimboloResumenParam.Value == DBNull.Value ? null : Convert.ToString(monedaSimboloResumenParam.Value)
         );
     }
 

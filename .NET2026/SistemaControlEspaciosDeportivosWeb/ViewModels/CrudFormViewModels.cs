@@ -161,10 +161,10 @@ public class EspacioFormViewModel
     public int SedeId { get; set; }
 
     [Range(1, int.MaxValue, ErrorMessage = "Debes seleccionar un deporte.")]
-    public int TipoDeporteId { get; set; }
+    public int TipoDeporteSuperId { get; set; }
 
     [Range(1, int.MaxValue, ErrorMessage = "Debes seleccionar un tipo de suelo.")]
-    public int TipoSueloId { get; set; }
+    public int TipoSueloSuperId { get; set; }
 
     [Required(ErrorMessage = "Este campo es obligatorio.")]
     [StringLength(20, ErrorMessage = "El campo {0} excede la longitud permitida.")]
@@ -205,7 +205,7 @@ public class EspacioFormViewModel
     public List<string> FotosUrls { get; set; } = new();
     public List<string> FotosEliminarUrls { get; set; } = new();
     public List<IFormFile>? ImagenesArchivos { get; set; }
-    public int? MonedaIdConfigurada { get; set; }
+    public string CodigoMonedaConfigurada { get; set; } = string.Empty;
     public string MonedaEtiqueta { get; set; } = string.Empty;
     public bool PuedeEditarTarifas { get; set; }
 
@@ -234,6 +234,7 @@ public class EspacioTarifaFeriadoRangoViewModel
 public class ReservaFormViewModel
 {
     public int Id { get; set; }
+    public int NumeroPorNegocio { get; set; }
     public int NegocioId { get; set; }
     public string NegocioNombre { get; set; } = string.Empty;
     public string RolActual { get; set; } = string.Empty;
@@ -255,6 +256,8 @@ public class ReservaFormViewModel
 
     [Range(0, 999999, ErrorMessage = "El campo {0} debe estar entre {1} y {2}.")]
     public decimal Total { get; set; }
+    public string CodigoMoneda { get; set; } = string.Empty;
+    public string MonedaSimbolo { get; set; } = string.Empty;
     public bool PuedeModificarPrecio { get; set; }
 
     [Range(0, 999999, ErrorMessage = "El campo {0} debe estar entre {1} y {2}.")]
@@ -345,14 +348,18 @@ public class PagoFormViewModel
     public decimal? PagadoReserva { get; set; }
     public decimal? SaldoReserva { get; set; }
     public string MonedaSimbolo { get; set; } = "S/";
+    public string CodigoMoneda { get; set; } = "PEN";
     public int PoliticaConfirmacionPago { get; set; }
     public decimal? PorcentajeAdelantoMinimo { get; set; }
     public List<PagoPrevioItemViewModel> PagosPrevios { get; set; } = new();
 }
 
+// Firma: Codex - 01/10/2026 | Incorpora el correlativo visible del pago para formularios de pagos y comprobantes.
 public class PagoPrevioItemViewModel
 {
     public int PagoId { get; set; }
+    public int NumeroPorNegocio { get; set; }
+    public string CodigoVisible => $"P-{NumeroPorNegocio:D6}";
     public DateTime FechaPago { get; set; }
     public decimal Monto { get; set; }
     public string FormaPago { get; set; } = string.Empty;
@@ -375,9 +382,6 @@ public class ComprobanteFormViewModel : IRegistroTrazable
     public int ReservaId { get; set; }
 
     [Required(ErrorMessage = "Este campo es obligatorio.")]
-    public TipoComprobante TipoComprobante { get; set; } = TipoComprobante.Boleta;
-
-    [Required(ErrorMessage = "Este campo es obligatorio.")]
     [StringLength(4, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string Serie { get; set; } = "B001";
 
@@ -385,7 +389,8 @@ public class ComprobanteFormViewModel : IRegistroTrazable
     public int Numero { get; set; }
 
     public DateTime FechaEmision { get; set; } = DateTime.Now;
-    public TipoMoneda TipoMoneda { get; set; } = TipoMoneda.PEN;
+    [StringLength(10)]
+    public string CodigoMoneda { get; set; } = string.Empty;
 
     [Range(0, 999999, ErrorMessage = "El campo {0} debe estar entre {1} y {2}.")]
     public decimal SubTotal { get; set; }
@@ -470,6 +475,7 @@ public class ComprobanteReservaContextoViewModel
     public decimal TotalPagado { get; set; }
     public decimal SaldoPendiente { get; set; }
     public string MonedaSimbolo { get; set; } = "S/";
+    public string CodigoMoneda { get; set; } = "PEN";
     public int PorcentajeIgvConfigurado { get; set; } = 18;
     public List<PagoPrevioItemViewModel> PagosReserva { get; set; } = new();
     public List<SelectListItem> DocumentosDisponibles { get; set; } = new();
@@ -481,7 +487,8 @@ public class ComprobanteVisualizacionViewModel
     public int Id { get; set; }
     public int NegocioId { get; set; }
     public int ReservaId { get; set; }
-    public int TipoComprobante { get; set; }
+    public int NumeroReservaPorNegocio { get; set; }
+    public string CodigoReserva => $"R-{NumeroReservaPorNegocio:D6}";
     public string CodigoDocumentoComprobante { get; set; } = string.Empty;
     public string TipoDocumentoNombre { get; set; } = string.Empty;
     public bool EsTributario { get; set; }

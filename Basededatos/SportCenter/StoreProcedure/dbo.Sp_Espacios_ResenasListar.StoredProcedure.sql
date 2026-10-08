@@ -10,6 +10,7 @@ GO
 -- =============================================
 -- Firma:         FRANCO LARA - 11/06/2026 | Permite al administrador del negocio revisar, responder y moderar resenas desde el listado de espacios.
 -- Firma:         FRANCO LARA - 11/06/2026 | Aplica paginacion SQL y devuelve KPIs globales para la gestion administrativa del espacio.
+-- Firma:         Codex - 01/10/2026 | Incluye el correlativo visible de la reserva por negocio.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Espacios_ResenasListar]
     @NegocioId INT,
     @EspacioDeportivoId INT,
@@ -59,7 +60,8 @@ BEGIN
             rr.FechaCreacion,
             r.Fecha,
             r.HoraInicio,
-            r.HoraFin
+            r.HoraFin,
+            r.NumeroPorNegocio AS NumeroReservaPorNegocio
         FROM dbo.ReservasUsuariosPublicosResenas rr
         INNER JOIN dbo.Reservas r ON r.Id = rr.ReservaId
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId

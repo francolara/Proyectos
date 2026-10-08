@@ -48,7 +48,8 @@ public partial class SportCenterStoredProcedureService
                 FechaCreacion = dr.GetDateTime(10),
                 ReservaFecha = DateOnly.FromDateTime(dr.GetDateTime(11)),
                 HoraInicio = TimeOnly.FromTimeSpan(dr.GetTimeSpan(12)),
-                HoraFin = TimeOnly.FromTimeSpan(dr.GetTimeSpan(13))
+                HoraFin = TimeOnly.FromTimeSpan(dr.GetTimeSpan(13)),
+                NumeroReservaPorNegocio = ReadRequiredInt32(dr, 14, "NumeroReservaPorNegocio")
             });
         }
 

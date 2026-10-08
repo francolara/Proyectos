@@ -1,4 +1,4 @@
-﻿
+
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Home_BuscarEspaciosDisponibles]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -19,6 +19,7 @@ GO
 -- Firma: Codex - 29/04/2026 | Agrega paginacion SQL real para Home con @Pagina/@TamanoPagina y salida @TotalRegistros para evitar paginacion en memoria; en referenciales externos retorna Codigo vacio para no exponer identificadores tecnicos en tarjetas publicas.
 -- Firma: FRANCO LARA - 08/06/2026 | Expone fotos propias del espacio deportivo para priorizarlas en las tarjetas del Home, completa con fotos de la sede cuando existan y propaga las nuevas columnas en la tabla temporal de paginacion.
 -- Firma: FRANCO LARA - 09/06/2026 | Limita el home publico a espacios de negocios con suscripcion publica habilitada (EstadoSuscripcion = 1 o 2), ocultando pendientes, vencidos y suspendidos en tarjetas y resultados directos.
+-- Firma: FRANCO LARA - 06/10/2026 | Expone moneda canonica y resuelve deporte/suelo desde los identificadores globales persistidos por el espacio.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Home_BuscarEspaciosDisponibles]
     @Fecha DATE,
     @HoraInicio TIME,
@@ -79,23 +80,30 @@ BEGIN
                                 .STDistance(geography::Point(CONVERT(float, s.Latitud), CONVERT(float, s.Longitud), 4326)) / 1000.0
                          AS DECIMAL(10,2))
                     ELSE NULL
-                END AS DistanciaKm
+                END AS DistanciaKm,
+                tarifaMin.CodigoMoneda,
+                tarifaMin.MonedaSimbolo
             FROM dbo.EspaciosDeportivos e
             INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
             INNER JOIN dbo.Negocios n ON n.Id = s.NegocioId
             LEFT JOIN dbo.NegociosSuscripcion ns ON ns.NegocioId = n.Id
-            INNER JOIN dbo.TiposDeporte td ON td.Id = e.TipoDeporteId
-            LEFT JOIN dbo.TiposSuelo ts ON ts.Id = e.TipoSueloId
+            INNER JOIN dbo.TiposDeporteSuperMaestro td ON td.Id = e.TipoDeporteSuperId
+            LEFT JOIN dbo.TiposSueloSuperMaestro ts ON ts.Id = e.TipoSueloSuperId
             LEFT JOIN dbo.UbigeoDistritos dist ON dist.CodigoUbigeo = s.CodigoUbigeo
             LEFT JOIN dbo.UbigeoProvincias prov ON prov.CodigoProvincia = dist.CodigoProvincia
             LEFT JOIN dbo.UbigeoDepartamentos dep ON dep.CodigoDepartamento = dist.CodigoDepartamento
             LEFT JOIN dbo.SedeConfiguracionNotificacion scn ON scn.SedeId = s.Id
             OUTER APPLY
             (
-                SELECT MIN(t.Precio) AS TarifaDesde
+                SELECT TOP (1)
+                    t.Precio AS TarifaDesde,
+                    t.CodigoMoneda,
+                    COALESCE(ms.Simbolo, t.CodigoMoneda) AS MonedaSimbolo
                 FROM dbo.Tarifas t
+                LEFT JOIN dbo.MonedasSuperMaestro ms ON ms.Codigo = t.CodigoMoneda
                 WHERE t.EspacioDeportivoId = e.Id
                   AND t.Activa = 1
+                ORDER BY t.Precio, t.Id
             ) tarifaMin
             WHERE e.Estado = 1
               AND COALESCE(e.AdministracionPrivada, 0) = 0
@@ -104,7 +112,7 @@ BEGIN
               AND COALESCE(ns.EstadoSuscripcion, 0) IN (1, 2)
               AND (
                     @TipoDeporteId IS NULL
-                    OR td.TipoDeporteSuperId = @TipoDeporteId
+                    OR e.TipoDeporteSuperId = @TipoDeporteId
                   )
               AND (@NegocioId IS NULL OR n.Id = @NegocioId)
               AND (@CodigoDepartamento IS NULL OR (s.CodigoUbigeo IS NOT NULL AND LEFT(s.CodigoUbigeo, 2) = @CodigoDepartamento))
@@ -164,7 +172,9 @@ BEGIN
                                 .STDistance(geography::Point(CONVERT(float, he.LatitudReferencia), CONVERT(float, he.LongitudReferencia), 4326)) / 1000.0
                          AS DECIMAL(10,2))
                     ELSE NULL
-                END AS DistanciaKm
+                END AS DistanciaKm,
+                CAST(N'PEN' AS NVARCHAR(10)) AS CodigoMoneda,
+                CAST(N'S/' AS NVARCHAR(10)) AS MonedaSimbolo
             FROM dbo.HomeEspaciosReferencialesExternos he
             INNER JOIN dbo.TiposDeporteSuperMaestro tsm ON tsm.Id = he.TipoDeporteSuperId
             LEFT JOIN dbo.UbigeoDistritos distEx ON distEx.CodigoUbigeo = he.CodigoUbigeo
@@ -206,7 +216,9 @@ BEGIN
             EspacioFotosUrlsCsv,
             SedeFotoPrincipalUrl,
             SedeFotosUrlsCsv,
-            DistanciaKm
+            DistanciaKm,
+            CodigoMoneda,
+            MonedaSimbolo
             FROM Resultados
             WHERE
                 @BuscarCercaDeMi = 0
@@ -242,7 +254,9 @@ BEGIN
             EspacioFotosUrlsCsv,
             SedeFotoPrincipalUrl,
             SedeFotosUrlsCsv,
-            DistanciaKm
+            DistanciaKm,
+            CodigoMoneda,
+            MonedaSimbolo
         INTO #Filtrados
         FROM Filtrados;
 
@@ -276,7 +290,9 @@ BEGIN
                 EspacioFotosUrlsCsv,
                 SedeFotoPrincipalUrl,
                 SedeFotosUrlsCsv,
-                DistanciaKm
+                DistanciaKm,
+                CodigoMoneda,
+                MonedaSimbolo
             FROM #Filtrados
             ORDER BY
                 CASE WHEN @BuscarCercaDeMi = 1 THEN DistanciaKm ELSE NULL END,
@@ -314,7 +330,9 @@ BEGIN
                 EspacioFotosUrlsCsv,
                 SedeFotoPrincipalUrl,
                 SedeFotosUrlsCsv,
-                DistanciaKm
+                DistanciaKm,
+                CodigoMoneda,
+                MonedaSimbolo
             FROM #Filtrados
             ORDER BY
                 CASE WHEN @BuscarCercaDeMi = 1 THEN DistanciaKm ELSE NULL END,

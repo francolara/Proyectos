@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -9,6 +9,7 @@ GO
 -- Firma: Codex - 06/04/2026 | Se agrega filtro opcional por estado activo/inactivo para consulta backend.
 -- Firma: Codex - 06/04/2026 | Se elimina dependencia de NegocioClientes y se usa Clientes.NegocioId.
 -- Firma: Codex - 07/04/2026 | Se agrega paginacion backend, filtro de busqueda y KPIs globales (activos/inactivos) para listado robusto.
+-- Firma: FRANCO LARA - 01/10/2026 | Expone el correlativo visible de cliente por negocio y permite buscarlo como C-000000.
 CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_Listar
     @NegocioId INT,
     @Activo BIT = NULL,
@@ -25,6 +26,13 @@ BEGIN
         SET @Pagina = CASE WHEN ISNULL(@Pagina, 0) < 1 THEN 1 ELSE @Pagina END;
         SET @TamanoPagina = CASE WHEN ISNULL(@TamanoPagina, 0) < 1 THEN 20 ELSE @TamanoPagina END;
         SET @Buscar = NULLIF(LTRIM(RTRIM(@Buscar)), N'');
+        DECLARE @BuscarNumeroCliente INT = TRY_CONVERT(
+            INT,
+            CASE
+                WHEN UPPER(LEFT(@Buscar, 2)) = N'C-' THEN SUBSTRING(@Buscar, 3, 200)
+                ELSE NULL
+            END
+        );
 
         SELECT
             @TotalActivos = COUNT(1)
@@ -45,6 +53,8 @@ BEGIN
           AND (@Activo IS NULL OR c.Activo = @Activo)
           AND (
                 @Buscar IS NULL
+                OR CONVERT(NVARCHAR(20), c.NumeroPorNegocio) LIKE N'%' + @Buscar + N'%'
+                OR (@BuscarNumeroCliente IS NOT NULL AND c.NumeroPorNegocio = @BuscarNumeroCliente)
                 OR c.NombresORazonSocial LIKE N'%' + @Buscar + N'%'
                 OR ISNULL(c.NombreEquipo, N'') LIKE N'%' + @Buscar + N'%'
                 OR ISNULL(c.NumeroDocumento, N'') LIKE N'%' + @Buscar + N'%'
@@ -60,13 +70,16 @@ BEGIN
             c.NumeroDocumento,
             c.Telefono,
             c.Correo,
-            c.Activo
+            c.Activo,
+            c.NumeroPorNegocio
         FROM dbo.Clientes c
         LEFT JOIN dbo.TiposDocumentoIdentidadSunat td ON td.CodigoSunat = c.TipoDocumento
         WHERE c.NegocioId = @NegocioId
           AND (@Activo IS NULL OR c.Activo = @Activo)
           AND (
                 @Buscar IS NULL
+                OR CONVERT(NVARCHAR(20), c.NumeroPorNegocio) LIKE N'%' + @Buscar + N'%'
+                OR (@BuscarNumeroCliente IS NOT NULL AND c.NumeroPorNegocio = @BuscarNumeroCliente)
                 OR c.NombresORazonSocial LIKE N'%' + @Buscar + N'%'
                 OR ISNULL(c.NombreEquipo, N'') LIKE N'%' + @Buscar + N'%'
                 OR ISNULL(c.NumeroDocumento, N'') LIKE N'%' + @Buscar + N'%'

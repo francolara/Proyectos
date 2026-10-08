@@ -3,6 +3,8 @@
 public class ReservaRecordatorioPendienteViewModel
 {
     public int ReservaId { get; set; }
+    public int NumeroPorNegocio { get; set; }
+    public string CodigoVisible => $"R-{NumeroPorNegocio:D6}";
     public int NegocioId { get; set; }
     public string Cliente { get; set; } = string.Empty;
     public string Correo { get; set; } = string.Empty;
@@ -18,6 +20,8 @@ public class ReservaRecordatorioPendienteViewModel
 public class ReservaEmailContextViewModel
 {
     public int ReservaId { get; set; }
+    public int NumeroPorNegocio { get; set; }
+    public string CodigoVisible => $"R-{NumeroPorNegocio:D6}";
     public int NegocioId { get; set; }
     public string Negocio { get; set; } = string.Empty;
     public int Estado { get; set; }

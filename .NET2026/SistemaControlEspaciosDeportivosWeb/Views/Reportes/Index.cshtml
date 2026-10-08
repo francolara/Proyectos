@@ -1,3 +1,6 @@
+@* Firma: Codex - 01/10/2026 | Muestra codigos visibles de reservas y pagos por negocio. *@
+@* Firma: FRANCO LARA - 02/10/2026 | Estandariza como Buscar la accion de consulta de filtros. *@
+@* Firma: FRANCO LARA - 06/10/2026 | Filtra todos los importes por moneda canonica y muestra el simbolo seleccionado. *@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReportesIndexViewModel
 @{
     ViewData["Title"] = "Reportes";
@@ -106,6 +109,7 @@
                asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")"
                asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")"
                asp-route-sedeId="@Model.SedeId"
+               asp-route-codigoMoneda="@Model.CodigoMoneda"
                asp-route-preset="custom"
                target="_blank"
                rel="noopener">
@@ -121,11 +125,11 @@
         <input type="hidden" name="negocioId" value="@Model.NegocioId" />
         <h2 class="section-title mb-3"><i class="bi bi-funnel me-1 text-primary"></i>Filtros del reporte</h2>
         <div class="row g-3 align-items-end">
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">Desde</label>
                 <input type="date" class="form-control" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">Hasta</label>
                 <input type="date" class="form-control" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
             </div>
@@ -149,8 +153,24 @@
                     <input type="hidden" name="sedeId" value="@Model.SedeId.Value" />
                 }
             </div>
-            <div class="col-md-3 d-grid">
-                <button type="submit" class="btn btn-primary btn-accion-filtro"><i class="bi bi-funnel"></i> Consultar</button>
+            <div class="col-md-3">
+                <label class="form-label">Moneda</label>
+                <select class="form-select" name="codigoMoneda">
+                    @foreach (var moneda in Model.MonedasFiltro)
+                    {
+                        if (moneda.Selected)
+                        {
+                            <option value="@moneda.Value" selected="selected">@moneda.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@moneda.Value">@moneda.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button type="submit" class="btn btn-primary btn-accion-filtro"><i class="bi bi-search"></i> Buscar</button>
             </div>
         </div>
 
@@ -161,14 +181,15 @@
                    asp-action="Index"
                    asp-route-negocioId="@Model.NegocioId"
                    asp-route-preset="@p.Codigo"
-                   asp-route-sedeId="@Model.SedeId">
+                   asp-route-sedeId="@Model.SedeId"
+                   asp-route-codigoMoneda="@Model.CodigoMoneda">
                     @p.Label
                 </a>
             }
         </div>
 
         <div class="small text-muted mt-2">
-            Sede: <strong>@sedesTexto</strong> | Periodo actual: <strong>@Model.FechaDesde.ToString("dd/MM/yyyy") - @Model.FechaHasta.ToString("dd/MM/yyyy")</strong>
+            Sede: <strong>@sedesTexto</strong> | Moneda: <strong>@Model.CodigoMoneda (@Model.MonedaSimbolo)</strong> | Periodo actual: <strong>@Model.FechaDesde.ToString("dd/MM/yyyy") - @Model.FechaHasta.ToString("dd/MM/yyyy")</strong>
             | Comparado contra: <strong>@Model.FechaDesdeAnterior.ToString("dd/MM/yyyy") - @Model.FechaHastaAnterior.ToString("dd/MM/yyyy")</strong>
         </div>
     </form>
@@ -203,7 +224,7 @@
                         <div class="sc-dash-kpi-label">Cobrado del periodo</div>
                         <span class="sc-dash-var @varCobrado.Css">@varCobrado.Texto</span>
                     </div>
-                    <div class="sc-dash-kpi-value">S/ @cobradoActual.ToString("N2")</div>
+                    <div class="sc-dash-kpi-value">@Model.MonedaSimbolo @cobradoActual.ToString("N2")</div>
                 </article>
 
                 <article class="sc-dash-kpi-card">
@@ -241,7 +262,7 @@
                     <div class="sc-dash-health-list">
                         <div class="sc-dash-health-item"><span>Pagos registrados</span><strong>@totalPagosActual</strong></div>
                         <div class="sc-dash-health-item"><span>Reservas cobradas</span><strong>@totalReservasCobradas</strong></div>
-                        <div class="sc-dash-health-item"><span>Cobrado</span><strong>S/ @cobradoActual.ToString("N2")</strong></div>
+                        <div class="sc-dash-health-item"><span>Cobrado</span><strong>@Model.MonedaSimbolo @cobradoActual.ToString("N2")</strong></div>
                         <div class="sc-dash-health-item"><span>Dias con cobro</span><strong>@totalDiasConCobro</strong></div>
                     </div>
 
@@ -274,7 +295,7 @@
                         </div>
                         <div class="sc-dash-health-item">
                             <span>Saldo pendiente total</span>
-                            <strong>S/ @totalSaldoPendiente.ToString("N2")</strong>
+                            <strong>@Model.MonedaSimbolo @totalSaldoPendiente.ToString("N2")</strong>
                         </div>
                     </div>
 
@@ -305,7 +326,7 @@
                 <button type="button" class="sc-report-donut-summary sc-visual-trigger"
                         data-detail-title="Nivel de cobranza del periodo"
                         data-detail-value="@cobranzaVisualPct.ToString("N1")% cobrado"
-                        data-detail-meta="Cobrado: S/ @cobradoActual.ToString("N2") · Reservado: S/ @reservadoActual.ToString("N2") · Saldo pendiente: S/ @totalSaldoPendiente.ToString("N2")"
+                        data-detail-meta="Cobrado: @Model.MonedaSimbolo @cobradoActual.ToString("N2") · Reservado: @Model.MonedaSimbolo @reservadoActual.ToString("N2") · Saldo pendiente: @Model.MonedaSimbolo @totalSaldoPendiente.ToString("N2")"
                         data-detail-link="@Url.Action("Index", "Pagos", new { negocioId = Model.NegocioId, fechaDesde = Model.FechaDesde.ToString("yyyy-MM-dd"), fechaHasta = Model.FechaHasta.ToString("yyyy-MM-dd") })">
                     <span class="sc-dash-donut" style="--sc-donut-value:@cobranzaVisualCss%"><span><strong>@cobranzaVisualPct.ToString("N0")%</strong><small>cobrado</small></span></span>
                     <span><strong>Cobranza frente a lo reservado</strong><small>La dona resume el avance; haz clic para abrir los pagos del periodo.</small></span>
@@ -326,14 +347,14 @@
                             var height = Math.Max(18m, Math.Round((item.Ingresos / maxIngresoDia) * 100m, 2));
                             <button type="button" class="sc-report-tower-col sc-visual-trigger"
                                     data-detail-title="Cobros del @item.Fecha.ToString("dd/MM/yyyy")"
-                                    data-detail-value="S/ @item.Ingresos.ToString("N2")"
+                                    data-detail-value="@Model.MonedaSimbolo @item.Ingresos.ToString("N2")"
                                     data-detail-meta="@item.CantidadReservas reserva(s) cobradas en la fecha real de pago."
                                     data-detail-link="@Url.Action("Index", "Pagos", new { negocioId = Model.NegocioId, fechaDesde = item.Fecha.ToString("yyyy-MM-dd"), fechaHasta = item.Fecha.ToString("yyyy-MM-dd") })">
                                 <div class="sc-report-tower-wrap">
-                                    <div class="sc-report-tower-value">S/ @item.Ingresos.ToString("N2")</div>
+                                    <div class="sc-report-tower-value">@Model.MonedaSimbolo @item.Ingresos.ToString("N2")</div>
                                     <div class="sc-report-tower-track">
                                         <div class="sc-report-tower-fill" style="height:@height.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%">
-                                            <span class="sc-report-tower-inline-value">S/ @item.Ingresos.ToString("N2")</span>
+                                            <span class="sc-report-tower-inline-value">@Model.MonedaSimbolo @item.Ingresos.ToString("N2")</span>
                                         </div>
                                     </div>
                                 </div>
@@ -356,6 +377,7 @@
                        asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")"
                        asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")"
                        asp-route-sedeId="@Model.SedeId"
+                       asp-route-codigoMoneda="@Model.CodigoMoneda"
                        asp-route-preset="@Model.Preset"
                        asp-route-bloque="ingresos">
                         Exportar cobros
@@ -380,7 +402,7 @@
                                 var target = $"cobro-{item.Fecha:yyyyMMdd}";
                                 <button type="button" class="sc-report-master-item @(item == Model.Ingresos.OrderByDescending(x => x.Fecha).First() ? "is-active" : string.Empty)" data-master-target="@target">
                                     <span><strong>@item.Fecha.ToString("dd/MM/yyyy")</strong><small>@item.CantidadReservas cobro(s)</small></span>
-                                    <b>S/ @item.Ingresos.ToString("N2")</b>
+                                    <b>@Model.MonedaSimbolo @item.Ingresos.ToString("N2")</b>
                                 </button>
                             }
                         </aside>
@@ -390,13 +412,13 @@
                                 var target = $"cobro-{item.Fecha:yyyyMMdd}";
                                 var pagosDelDia = Model.DetallePagos.Where(x => DateOnly.FromDateTime(x.FechaPago) == item.Fecha).OrderByDescending(x => x.Monto).ToList();
                                 <section class="sc-report-detail-pane" data-master-pane="@target">
-                                    <header class="sc-report-detail-head"><div><span>Detalle de cobros</span><h3>@item.Fecha.ToString("dddd dd 'de' MMMM", new System.Globalization.CultureInfo("es-PE"))</h3></div><strong>S/ @item.Ingresos.ToString("N2")</strong></header>
+                                    <header class="sc-report-detail-head"><div><span>Detalle de cobros</span><h3>@item.Fecha.ToString("dddd dd 'de' MMMM", new System.Globalization.CultureInfo("es-PE"))</h3></div><strong>@Model.MonedaSimbolo @item.Ingresos.ToString("N2")</strong></header>
                                     <div class="sc-report-detail-kpis"><div><span>Pagos</span><strong>@pagosDelDia.Count</strong></div><div><span>Reservas cobradas</span><strong>@item.CantidadReservas</strong></div><div><span>Participacion</span><strong>@Porcentaje(item.Ingresos, cobradoActual).ToString("N2")%</strong></div></div>
                                     @if (pagosDelDia.Any())
                                     {
                                         <div class="sc-report-detail-list">
                                             @foreach (var pago in pagosDelDia.Take(12))
-                                            { <article><div><strong>@pago.Cliente</strong><span>@pago.Sede · @pago.Espacio</span><small>@pago.FormaPago · Reserva #@pago.ReservaId</small></div><b>S/ @pago.Monto.ToString("N2")</b></article> }
+                                            { <article><div><strong>@pago.Cliente</strong><span>@pago.Sede · @pago.Espacio</span><small>@pago.CodigoPago · @pago.FormaPago · Reserva @pago.CodigoReserva</small></div><b>@pago.MonedaSimbolo @pago.Monto.ToString("N2")</b></article> }
                                         </div>
                                     }
                                     else { <div class="sc-report-detail-empty">No se encontraron movimientos individuales para esta fecha.</div> }
@@ -410,7 +432,7 @@
                         <div><span>Totales</span><strong>Vista rapida</strong></div>
                         <div><span>Dias</span><strong>@Model.Ingresos.Count</strong></div>
                         <div><span>Reservas cobradas</span><strong>@Model.Ingresos.Sum(x => x.CantidadReservas)</strong></div>
-                        <div><span>Ingresos</span><strong>S/ @Model.Ingresos.Sum(x => x.Ingresos).ToString("N2")</strong></div>
+                        <div><span>Ingresos</span><strong>@Model.MonedaSimbolo @Model.Ingresos.Sum(x => x.Ingresos).ToString("N2")</strong></div>
                     </div>
                 }
             </section>
@@ -431,7 +453,7 @@
                         <div class="sc-dash-kpi-label">Reservado del periodo</div>
                         <span class="sc-dash-var @varReservado.Css">@varReservado.Texto</span>
                     </div>
-                    <div class="sc-dash-kpi-value">S/ @reservadoActual.ToString("N2")</div>
+                    <div class="sc-dash-kpi-value">@Model.MonedaSimbolo @reservadoActual.ToString("N2")</div>
                 </article>
 
                 <article class="sc-dash-kpi-card">
@@ -445,9 +467,9 @@
                 <article class="sc-dash-kpi-card">
                     <div class="sc-dash-kpi-head">
                         <div class="sc-dash-kpi-label">Saldo pendiente</div>
-                        <span class="sc-dash-var sc-dash-var-flat">S/ @totalSaldoPendiente.ToString("N2")</span>
+                        <span class="sc-dash-var sc-dash-var-flat">@Model.MonedaSimbolo @totalSaldoPendiente.ToString("N2")</span>
                     </div>
-                    <div class="sc-dash-kpi-value">S/ @totalSaldoPendiente.ToString("N2")</div>
+                    <div class="sc-dash-kpi-value">@Model.MonedaSimbolo @totalSaldoPendiente.ToString("N2")</div>
                 </article>
             </section>
 
@@ -464,7 +486,7 @@
                         <div class="sc-dash-health-item"><span>Pagadas</span><strong>@Model.ResumenActual.TotalPagadas</strong></div>
                         <div class="sc-dash-health-item"><span>Canceladas</span><strong>@Model.ResumenActual.TotalCanceladas</strong></div>
                         <div class="sc-dash-health-item"><span>No asistio</span><strong>@Model.ResumenActual.TotalNoShow</strong></div>
-                        <div class="sc-dash-health-item"><span>Saldo pendiente</span><strong>S/ @totalSaldoPendiente.ToString("N2")</strong></div>
+                        <div class="sc-dash-health-item"><span>Saldo pendiente</span><strong>@Model.MonedaSimbolo @totalSaldoPendiente.ToString("N2")</strong></div>
                     </div>
 
                     <div class="d-flex gap-2 mt-3">
@@ -516,8 +538,8 @@
                                             </td>
                                             <td class="text-end">@item.CantidadReservas</td>
                                             <td class="text-end">@item.HorasReservadas.ToString("N2")</td>
-                                            <td class="text-end">S/ @item.MontoReservado.ToString("N2")</td>
-                                            <td class="text-end">S/ @item.MontoCobrado.ToString("N2")</td>
+                                            <td class="text-end">@Model.MonedaSimbolo @item.MontoReservado.ToString("N2")</td>
+                                            <td class="text-end">@Model.MonedaSimbolo @item.MontoCobrado.ToString("N2")</td>
                                         </tr>
                                     }
                                 </tbody>
@@ -557,7 +579,7 @@
                             var height = Math.Max(18m, Math.Round((item.CantidadReservas / maxReservasDia) * 100m, 2));
                             <button type="button" class="sc-report-tower-col sc-visual-trigger"
                                     data-detail-title="Operacion del @item.Fecha.ToString("dd/MM/yyyy")"
-                                    data-detail-value="@item.CantidadReservas reserva(s) · S/ @item.MontoReservado.ToString("N2")"
+                                    data-detail-value="@item.CantidadReservas reserva(s) · @Model.MonedaSimbolo @item.MontoReservado.ToString("N2")"
                                     data-detail-meta="Demanda por fecha de uso del espacio deportivo."
                                     data-detail-link="@Url.Action("Index", "Reservas", new { negocioId = Model.NegocioId, listadoDesde = item.Fecha.ToString("yyyy-MM-dd"), listadoHasta = item.Fecha.ToString("yyyy-MM-dd"), sedeId = Model.SedeId })">
                                 <div class="sc-report-tower-wrap sc-report-tower-wrap--operacion">
@@ -570,7 +592,7 @@
                                 </div>
                                 <div class="sc-report-tower-meta">
                                     <strong>@item.Fecha.ToString("dd/MM")</strong>
-                                    <span>Reservado: S/ @item.MontoReservado.ToString("N2")</span>
+                                    <span>Reservado: @Model.MonedaSimbolo @item.MontoReservado.ToString("N2")</span>
                                 </div>
                             </button>
                         }
@@ -587,6 +609,7 @@
                        asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")"
                        asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")"
                        asp-route-sedeId="@Model.SedeId"
+                       asp-route-codigoMoneda="@Model.CodigoMoneda"
                        asp-route-preset="@Model.Preset"
                        asp-route-bloque="ocupacion">
                         Exportar operacion
@@ -611,7 +634,7 @@
                                 var target = $"espacio-{item.EspacioDeportivoId}";
                                 <button type="button" class="sc-report-master-item @(item == Model.Ocupacion.OrderByDescending(x => x.MontoReservado).First() ? "is-active" : string.Empty)" data-master-target="@target">
                                     <span><strong>@item.Espacio</strong><small>@item.Sede · @item.CantidadReservas reserva(s)</small></span>
-                                    <b>S/ @item.MontoReservado.ToString("N2")</b>
+                                    <b>@Model.MonedaSimbolo @item.MontoReservado.ToString("N2")</b>
                                 </button>
                             }
                         </aside>
@@ -621,13 +644,13 @@
                                 var target = $"espacio-{item.EspacioDeportivoId}";
                                 var reservasEspacio = Model.DetalleReservas.Where(x => string.Equals(x.Sede, item.Sede, StringComparison.OrdinalIgnoreCase) && string.Equals(x.Espacio, item.Espacio, StringComparison.OrdinalIgnoreCase)).OrderBy(x => x.Fecha).ThenBy(x => x.HoraInicio).ToList();
                                 <section class="sc-report-detail-pane" data-master-pane="@target">
-                                    <header class="sc-report-detail-head"><div><span>Actividad del espacio</span><h3>@item.Espacio <small>@item.Sede</small></h3></div><strong>S/ @item.MontoReservado.ToString("N2")</strong></header>
-                                    <div class="sc-report-detail-kpis"><div><span>Reservas</span><strong>@item.CantidadReservas</strong></div><div><span>Horas</span><strong>@item.HorasReservadas.ToString("N2")</strong></div><div><span>Cobrado</span><strong>S/ @item.MontoCobrado.ToString("N2")</strong></div></div>
+                                    <header class="sc-report-detail-head"><div><span>Actividad del espacio</span><h3>@item.Espacio <small>@item.Sede</small></h3></div><strong>@Model.MonedaSimbolo @item.MontoReservado.ToString("N2")</strong></header>
+                                    <div class="sc-report-detail-kpis"><div><span>Reservas</span><strong>@item.CantidadReservas</strong></div><div><span>Horas</span><strong>@item.HorasReservadas.ToString("N2")</strong></div><div><span>Cobrado</span><strong>@Model.MonedaSimbolo @item.MontoCobrado.ToString("N2")</strong></div></div>
                                     @if (reservasEspacio.Any())
                                     {
                                         <div class="sc-report-detail-list">
                                             @foreach (var reserva in reservasEspacio.Take(12))
-                                            { <article><div><strong>@reserva.Cliente</strong><span>@reserva.Fecha.ToString("dd/MM/yyyy") · @reserva.HoraInicio.ToString("HH:mm") - @reserva.HoraFin.ToString("HH:mm")</span><small>@reserva.Estado · Saldo S/ @reserva.SaldoPendiente.ToString("N2")</small></div><b>S/ @reserva.Total.ToString("N2")</b></article> }
+                                            { <article><div><strong>@reserva.Cliente</strong><span>@reserva.Fecha.ToString("dd/MM/yyyy") · @reserva.HoraInicio.ToString("HH:mm") - @reserva.HoraFin.ToString("HH:mm")</span><small>@reserva.Estado · Saldo @reserva.MonedaSimbolo @reserva.SaldoPendiente.ToString("N2")</small></div><b>@reserva.MonedaSimbolo @reserva.Total.ToString("N2")</b></article> }
                                         </div>
                                     }
                                     else { <div class="sc-report-detail-empty">No se encontraron reservas individuales para este espacio.</div> }
@@ -641,8 +664,8 @@
                         <div><span>Totales</span><strong>Vista rapida</strong></div>
                         <div><span>Reservas</span><strong>@Model.Ocupacion.Sum(x => x.CantidadReservas)</strong></div>
                         <div><span>Horas</span><strong>@totalHorasOperativas.ToString("N2")</strong></div>
-                        <div><span>Reservado</span><strong>S/ @Model.Ocupacion.Sum(x => x.MontoReservado).ToString("N2")</strong></div>
-                        <div><span>Cobrado asociado</span><strong>S/ @totalCobradoAsociado.ToString("N2")</strong></div>
+                        <div><span>Reservado</span><strong>@Model.MonedaSimbolo @Model.Ocupacion.Sum(x => x.MontoReservado).ToString("N2")</strong></div>
+                        <div><span>Cobrado asociado</span><strong>@Model.MonedaSimbolo @totalCobradoAsociado.ToString("N2")</strong></div>
                     </div>
                 }
             </section>
@@ -670,7 +693,7 @@
                                 var target = $"reserva-{item.Fecha:yyyyMMdd}";
                                 <button type="button" class="sc-report-master-item @(item == Model.ReservasPorDia.OrderByDescending(x => x.Fecha).First() ? "is-active" : string.Empty)" data-master-target="@target">
                                     <span><strong>@item.Fecha.ToString("dd/MM/yyyy")</strong><small>@item.CantidadReservas reserva(s)</small></span>
-                                    <b>S/ @item.MontoReservado.ToString("N2")</b>
+                                    <b>@Model.MonedaSimbolo @item.MontoReservado.ToString("N2")</b>
                                 </button>
                             }
                         </aside>
@@ -681,12 +704,12 @@
                                 var reservasDelDia = Model.DetalleReservas.Where(x => x.Fecha == item.Fecha).OrderBy(x => x.HoraInicio).ToList();
                                 <section class="sc-report-detail-pane" data-master-pane="@target">
                                     <header class="sc-report-detail-head"><div><span>Detalle operativo</span><h3>@item.Fecha.ToString("dddd dd 'de' MMMM", new System.Globalization.CultureInfo("es-PE"))</h3></div><strong>@item.CantidadReservas reserva(s)</strong></header>
-                                    <div class="sc-report-detail-kpis"><div><span>Reservado</span><strong>S/ @item.MontoReservado.ToString("N2")</strong></div><div><span>Participacion</span><strong>@Porcentaje(item.MontoReservado, reservadoActual).ToString("N2")%</strong></div><div><span>Clientes</span><strong>@reservasDelDia.Select(x => x.Cliente).Distinct().Count()</strong></div></div>
+                                    <div class="sc-report-detail-kpis"><div><span>Reservado</span><strong>@Model.MonedaSimbolo @item.MontoReservado.ToString("N2")</strong></div><div><span>Participacion</span><strong>@Porcentaje(item.MontoReservado, reservadoActual).ToString("N2")%</strong></div><div><span>Clientes</span><strong>@reservasDelDia.Select(x => x.Cliente).Distinct().Count()</strong></div></div>
                                     @if (reservasDelDia.Any())
                                     {
                                         <div class="sc-report-detail-list">
                                             @foreach (var reserva in reservasDelDia.Take(12))
-                                            { <article><div><strong>@reserva.Cliente</strong><span>@reserva.Sede · @reserva.Espacio</span><small>@reserva.HoraInicio.ToString("HH:mm") - @reserva.HoraFin.ToString("HH:mm") · @reserva.Estado</small></div><b>S/ @reserva.Total.ToString("N2")</b></article> }
+                                            { <article><div><strong>@reserva.Cliente</strong><span>@reserva.Sede · @reserva.Espacio</span><small>@reserva.HoraInicio.ToString("HH:mm") - @reserva.HoraFin.ToString("HH:mm") · @reserva.Estado</small></div><b>@reserva.MonedaSimbolo @reserva.Total.ToString("N2")</b></article> }
                                         </div>
                                     }
                                     else { <div class="sc-report-detail-empty">No se encontraron reservas individuales para esta fecha.</div> }
@@ -700,7 +723,7 @@
                         <div><span>Totales</span><strong>Vista rapida</strong></div>
                         <div><span>Dias</span><strong>@Model.ReservasPorDia.Count</strong></div>
                         <div><span>Reservas</span><strong>@Model.ReservasPorDia.Sum(x => x.CantidadReservas)</strong></div>
-                        <div><span>Reservado</span><strong>S/ @Model.ReservasPorDia.Sum(x => x.MontoReservado).ToString("N2")</strong></div>
+                        <div><span>Reservado</span><strong>@Model.MonedaSimbolo @Model.ReservasPorDia.Sum(x => x.MontoReservado).ToString("N2")</strong></div>
                     </div>
                 }
             </section>
@@ -725,7 +748,7 @@
         <section class="sc-report-print-summary">
             <article class="sc-report-print-summary-card">
                 <span>Cobrado del periodo</span>
-                <strong>S/ @cobradoActual.ToString("N2")</strong>
+                <strong>@Model.MonedaSimbolo @cobradoActual.ToString("N2")</strong>
                 <small>@varCobrado.Texto</small>
             </article>
             <article class="sc-report-print-summary-card">
@@ -735,12 +758,12 @@
             </article>
             <article class="sc-report-print-summary-card">
                 <span>Reservado del periodo</span>
-                <strong>S/ @reservadoActual.ToString("N2")</strong>
+                <strong>@Model.MonedaSimbolo @reservadoActual.ToString("N2")</strong>
                 <small>@varReservado.Texto</small>
             </article>
             <article class="sc-report-print-summary-card">
                 <span>Saldo pendiente</span>
-                <strong>S/ @totalSaldoPendiente.ToString("N2")</strong>
+                <strong>@Model.MonedaSimbolo @totalSaldoPendiente.ToString("N2")</strong>
                 <small>Pendientes: @totalPendientes</small>
             </article>
         </section>
@@ -753,7 +776,7 @@
                 </div>
                 <table class="sc-report-print-table">
                     <tbody>
-                        <tr><th>Cobrado</th><td>S/ @cobradoActual.ToString("N2")</td></tr>
+                        <tr><th>Cobrado</th><td>@Model.MonedaSimbolo @cobradoActual.ToString("N2")</td></tr>
                         <tr><th>Pagos registrados</th><td>@totalPagosActual</td></tr>
                         <tr><th>Reservas cobradas</th><td>@totalReservasCobradas</td></tr>
                         <tr><th>Dias con cobro</th><td>@totalDiasConCobro</td></tr>
@@ -771,7 +794,7 @@
                 <table class="sc-report-print-table">
                     <tbody>
                         <tr><th>Total reservas</th><td>@reservasActual</td></tr>
-                        <tr><th>Monto reservado</th><td>S/ @reservadoActual.ToString("N2")</td></tr>
+                        <tr><th>Monto reservado</th><td>@Model.MonedaSimbolo @reservadoActual.ToString("N2")</td></tr>
                         <tr><th>Pendientes</th><td>@Model.ResumenActual.TotalPendientes</td></tr>
                         <tr><th>Confirmadas</th><td>@Model.ResumenActual.TotalConfirmadas</td></tr>
                         <tr><th>Pagadas</th><td>@Model.ResumenActual.TotalPagadas</td></tr>
@@ -806,8 +829,8 @@
                                     <td>@item.Sede</td>
                                     <td>@item.Espacio</td>
                                     <td class="text-end">@item.CantidadReservas</td>
-                                    <td class="text-end">S/ @item.MontoReservado.ToString("N2")</td>
-                                    <td class="text-end">S/ @item.MontoCobrado.ToString("N2")</td>
+                                    <td class="text-end">@Model.MonedaSimbolo @item.MontoReservado.ToString("N2")</td>
+                                    <td class="text-end">@Model.MonedaSimbolo @item.MontoCobrado.ToString("N2")</td>
                                 </tr>
                             }
                         }
@@ -843,7 +866,7 @@
                                 <tr>
                                     <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
                                     <td class="text-end">@item.CantidadReservas</td>
-                                    <td class="text-end">S/ @item.Ingresos.ToString("N2")</td>
+                                    <td class="text-end">@Model.MonedaSimbolo @item.Ingresos.ToString("N2")</td>
                                     <td class="text-end">@Porcentaje(item.Ingresos, cobradoActual).ToString("N2")%</td>
                                 </tr>
                             }
@@ -881,7 +904,7 @@
                                 <tr>
                                     <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
                                     <td class="text-end">@item.CantidadReservas</td>
-                                    <td class="text-end">S/ @item.MontoReservado.ToString("N2")</td>
+                                    <td class="text-end">@Model.MonedaSimbolo @item.MontoReservado.ToString("N2")</td>
                                 </tr>
                             }
                         }
@@ -902,7 +925,7 @@
                 </div>
                 <ul class="sc-report-print-notes">
                     <li>Horas operativas registradas: <strong>@totalHorasOperativas.ToString("N2")</strong>.</li>
-                    <li>Cobrado asociado a la ocupacion: <strong>S/ @totalCobradoAsociado.ToString("N2")</strong>.</li>
+                    <li>Cobrado asociado a la ocupacion: <strong>@Model.MonedaSimbolo @totalCobradoAsociado.ToString("N2")</strong>.</li>
                     <li>Espacios criticos: <strong>@(espaciosBajaCobranza.Any() ? string.Join(" | ", espaciosBajaCobranza.Select(x => $"{x.Sede}/{x.Espacio}")) : "Sin alertas criticas")</strong>.</li>
                     <li>Dias sin ingreso: <strong>@(diasSinIngreso.Any() ? string.Join(", ", diasSinIngreso.Select(x => x.Fecha.ToString("dd/MM"))) : "Ninguno")</strong>.</li>
                 </ul>

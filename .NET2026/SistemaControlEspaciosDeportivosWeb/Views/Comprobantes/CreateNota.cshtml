@@ -1,4 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteFormViewModel
+@* Firma: Codex - 01/10/2026 | Muestra el correlativo visible por negocio de los pagos asociados a la nota. *@
 @{
     var esNotaCredito = string.Equals(Model.TipoNota, "NC", StringComparison.OrdinalIgnoreCase);
     var titulo = esNotaCredito ? "Generar nota de credito" : "Generar nota de debito";
@@ -70,7 +71,7 @@
                             @foreach (var p in Model.PagosReserva)
                             {
                                 <tr>
-                                    <td class="text-center">#@p.PagoId</td>
+                                    <td class="text-center">@p.CodigoVisible</td>
                                     <td class="text-center">@p.FechaPago.ToString("dd/MM/yyyy")</td>
                                     <td class="text-center">@p.Monto.ToString("N2")</td>
                                     <td class="text-center">@p.FormaPago</td>

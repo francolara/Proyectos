@@ -19,6 +19,11 @@ public partial class SportCenterStoredProcedureService
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
         {
+            var reservaId = dr.IsDBNull(11) ? (int?)null : dr.GetInt32(11);
+            int? numeroReservaPorNegocio = reservaId.HasValue
+                ? ReadRequiredInt32(dr, 12, "NumeroReservaPorNegocio")
+                : null;
+
             list.Add(new SolicitudPublicaItemViewModel
             {
                 Id = dr.GetInt32(0),
@@ -32,8 +37,9 @@ public partial class SportCenterStoredProcedureService
                 Telefono = dr.GetString(8),
                 Correo = dr.IsDBNull(9) ? null : dr.GetString(9),
                 Estado = dr.GetInt32(10),
-                ReservaId = dr.IsDBNull(11) ? null : dr.GetInt32(11),
-                FechaRegistro = dr.GetDateTime(12)
+                ReservaId = reservaId,
+                NumeroReservaPorNegocio = numeroReservaPorNegocio,
+                FechaRegistro = dr.GetDateTime(13)
             });
         }
         return list;
@@ -60,7 +66,7 @@ public partial class SportCenterStoredProcedureService
         }
     }
 
-    public async Task<int> SolicitudesPublicasConvertirAReservaAsync(SolicitudConvertirFormViewModel model, string usuario)
+    public async Task<(int ReservaId, int NumeroPorNegocio)> SolicitudesPublicasConvertirAReservaAsync(SolicitudConvertirFormViewModel model, string usuario)
     {
         await using var cn = CreateConnection();
         await cn.OpenAsync();
@@ -71,6 +77,10 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@Adelanto", model.Adelanto, SqlDbType.Decimal);
         AddParam(cmd, "@EstadoReserva", model.EstadoReserva, SqlDbType.Int);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        return Convert.ToInt32(await cmd.ExecuteScalarAsync());
+        await using var dr = await cmd.ExecuteReaderAsync();
+        if (!await dr.ReadAsync() || dr.FieldCount < 2 || dr.IsDBNull(1))
+            throw new InvalidOperationException("El procedimiento no devolvio el correlativo visible de la reserva creada.");
+
+        return (dr.GetInt32(0), dr.GetInt32(1));
     }
 }

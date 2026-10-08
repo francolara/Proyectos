@@ -1,4 +1,4 @@
-﻿
+
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Reservas_ValidarDisponibilidad]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -10,6 +10,7 @@ GO
 -- Firma: FRANCO LARA - 26/05/2026 | Prioriza horario configurable por espacio deportivo; si no aplica, usa horario de la sede.
 -- Firma: FRANCO LARA - 06/06/2026 | Valida cruces usando el espacio reservado y sus espacios compartidos activos.
 -- Firma: FRANCO LARA - 08/06/2026 | Distingue bloqueo directo y espacios compuestos para evitar sobrebloqueos por propagacion en cadena.
+-- Firma: Codex - 01/10/2026 | Muestra el correlativo por negocio en mensajes de cruce y conserva el Id tecnico solo para abrir la reserva relacionada.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Reservas_ValidarDisponibilidad]
     @NegocioId INT,
     @ReservaId INT = NULL,
@@ -160,9 +161,10 @@ BEGIN
           AND er.Estado = 1
           AND NOT EXISTS (SELECT 1 FROM @EspaciosAfectados ea WHERE ea.EspacioDeportivoId = ep.EspacioDeportivoId);
 
-        DECLARE @ReservaCruceId INT = NULL, @ReservaCruceInicio TIME = NULL, @ReservaCruceFin TIME = NULL, @ReservaCruceEspacio NVARCHAR(150) = NULL;
+        DECLARE @ReservaCruceId INT = NULL, @ReservaCruceNumero INT = NULL, @ReservaCruceInicio TIME = NULL, @ReservaCruceFin TIME = NULL, @ReservaCruceEspacio NVARCHAR(150) = NULL;
         SELECT TOP 1
             @ReservaCruceId = r.Id,
+            @ReservaCruceNumero = r.NumeroPorNegocio,
             @ReservaCruceInicio = r.HoraInicio,
             @ReservaCruceFin = r.HoraFin,
             @ReservaCruceEspacio = e.Nombre
@@ -182,8 +184,8 @@ BEGIN
                 CAST(0 AS BIT) AS Disponible,
                 CAST(
                     CONCAT(
-                        CASE WHEN @ReservaCruceEspacio IS NOT NULL AND EXISTS (SELECT 1 FROM @EspaciosAfectados WHERE EspacioDeportivoId <> @EspacioDeportivoId) AND @ReservaCruceEspacio <> N'' THEN N'Cruce con reserva en ' + @ReservaCruceEspacio + N' #' ELSE N'Cruce con reserva #' END,
-                        @ReservaCruceId,
+                        CASE WHEN @ReservaCruceEspacio IS NOT NULL AND EXISTS (SELECT 1 FROM @EspaciosAfectados WHERE EspacioDeportivoId <> @EspacioDeportivoId) AND @ReservaCruceEspacio <> N'' THEN N'Cruce con reserva en ' + @ReservaCruceEspacio + N' R-' ELSE N'Cruce con reserva R-' END,
+                        RIGHT(N'000000' + CONVERT(NVARCHAR(20), @ReservaCruceNumero), 6),
                         N' (',
                         CONVERT(NVARCHAR(5), @ReservaCruceInicio, 108),
                         N' - ',

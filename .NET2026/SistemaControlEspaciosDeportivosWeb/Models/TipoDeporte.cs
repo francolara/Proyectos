@@ -6,6 +6,4 @@ public class TipoDeporte
     public string Nombre { get; set; } = string.Empty;
     public bool Activo { get; set; } = true;
 
-    public ICollection<EspacioDeportivo> EspaciosDeportivos { get; set; } = new List<EspacioDeportivo>();
 }
-

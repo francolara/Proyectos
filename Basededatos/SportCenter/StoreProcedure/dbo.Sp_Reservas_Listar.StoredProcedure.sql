@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Reservas_Listar]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -10,6 +10,8 @@ GO
 -- Firma: Codex - 05/04/2026 | Filtro de estado Pagada incluye estados historicos 3 y 4; retiro operativo de En uso.
 -- Firma: Codex - 07/04/2026 | Incluye Adelanto, SaldoPendiente, paginacion backend con total de registros para listado general, y separa Cliente/Equipo en columnas independientes.
 -- Firma: Codex - 13/04/2026 | SaldoPendiente se calcula con pagos acumulados por reserva (incluye adelantos y pagos posteriores), no solo Adelanto.
+-- Firma: FRANCO LARA - 01/10/2026 | Expone el correlativo visible por negocio en el listado administrativo de reservas.
+-- Firma: FRANCO LARA - 06/10/2026 | Expone codigo y simbolo de la moneda historica de cada reserva.
 CREATE OR ALTER  PROCEDURE [dbo].[Sp_Reservas_Listar]
     @NegocioId INT,
     @FechaDesde DATE = NULL,
@@ -53,13 +55,17 @@ BEGIN
             r.Total,
             r.Adelanto,
             CAST(CASE WHEN r.Total - COALESCE(pr.MontoPagado, 0) > 0 THEN r.Total - COALESCE(pr.MontoPagado, 0) ELSE 0 END AS DECIMAL(10,2)) AS SaldoPendiente,
-            CAST(r.Estado AS NVARCHAR(20)) AS Estado
+            CAST(r.Estado AS NVARCHAR(20)) AS Estado,
+            r.NumeroPorNegocio,
+            r.CodigoMoneda,
+            COALESCE(ms.Simbolo, r.CodigoMoneda) AS MonedaSimbolo
         INTO #ReservasFiltradas
         FROM dbo.Reservas r
         INNER JOIN dbo.Clientes c ON c.Id = r.ClienteId
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         LEFT JOIN PagosPorReserva pr ON pr.ReservaId = r.Id
+        LEFT JOIN dbo.MonedasSuperMaestro ms ON ms.Codigo = r.CodigoMoneda
         WHERE s.NegocioId = @NegocioId
           AND (@FechaDesde IS NULL OR r.Fecha >= @FechaDesde)
           AND (@FechaHasta IS NULL OR r.Fecha <= @FechaHasta)
@@ -100,7 +106,10 @@ BEGIN
             r.Total,
             r.Adelanto,
             r.SaldoPendiente,
-            r.Estado
+            r.Estado,
+            r.NumeroPorNegocio,
+            r.CodigoMoneda,
+            r.MonedaSimbolo
         FROM #ReservasFiltradas r
         ORDER BY r.Fecha ASC, r.HoraInicio ASC, r.Id ASC
         OFFSET ((@Pagina - 1) * @TamanoPagina) ROWS

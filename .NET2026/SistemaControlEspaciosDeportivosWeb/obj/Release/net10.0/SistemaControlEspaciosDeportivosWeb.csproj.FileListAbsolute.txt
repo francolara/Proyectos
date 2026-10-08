@@ -4,7 +4,6 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlE
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Release\net10.0\dotnet-tools.json
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Release\net10.0\SistemaControlEspaciosDeportivosWeb.staticwebassets.runtime.json
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Release\net10.0\SistemaControlEspaciosDeportivosWeb.staticwebassets.endpoints.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Release\net10.0\SistemaControlEspaciosDeportivosWeb.exe
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Release\net10.0\SistemaControlEspaciosDeportivosWeb.deps.json
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Release\net10.0\SistemaControlEspaciosDeportivosWeb.runtimeconfig.json
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Release\net10.0\SistemaControlEspaciosDeportivosWeb.dll
@@ -304,6 +303,8 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlE
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\376ed26qh3-{0}-j6erohxcak-j6erohxcak.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\lmsxrkt941-{0}-rtzofh0cs2-rtzofh0cs2.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\zp4r0czzpx-{0}-f5n4eih7ji-f5n4eih7ji.gz
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\fdmqcrxzoz-{0}-rwdmmkbwsf-rwdmmkbwsf.gz
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\9mwl8mstqz-{0}-e6v4e6idkw-e6v4e6idkw.gz
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\vnbh1609s7-{0}-wi91mp3r0a-wi91mp3r0a.gz
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Release\net10.0\.archify\mapa-operativo-administrador-20260929-0018\guia-operativa-interactiva.html
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\fdmqcrxzoz-{0}-bsifr8kaoe-bsifr8kaoe.gz
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\vnbh1609s7-{0}-3ndgoy71hr-3ndgoy71hr.gz
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\9mwl8mstqz-{0}-t6nbnrpap6-t6nbnrpap6.gz
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Release\net10.0\SistemaControlEspaciosDeportivosWeb.exe

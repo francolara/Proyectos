@@ -1,4 +1,4 @@
-﻿
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -10,6 +10,7 @@ GO
 -- Firma: FRANCO LARA - 20/05/2026 | Acepta duracion especial 23:00-23:59 en cotizacion para cierre de jornada y la factura como hora completa.
 -- Firma: FRANCO LARA - 20/05/2026 | Prioriza TarifaFeriado cuando la fecha es feriado; si no existe rango feriado aplica tarifa normal por dia.
 -- Firma: FRANCO LARA - 09/06/2026 | La cotizacion permite bloques exactos de 1 hora hasta HorasMaximasReservaCliente del negocio y mantiene compatibilidad con cotizaciones internas de 30 minutos.
+-- Firma: FRANCO LARA - 06/10/2026 | Obtiene la moneda canonica de la tarifa aplicada y no desde un identificador local del negocio.
 CREATE OR ALTER PROCEDURE dbo.Sp_Reservas_Cotizar
     @NegocioId INT,
     @EspacioDeportivoId INT,
@@ -69,10 +70,12 @@ BEGIN
             SET @EsFeriado = 1;
 
         DECLARE @PrecioHora DECIMAL(10,2);
+        DECLARE @CodigoMonedaTarifa NVARCHAR(10);
         IF @EsFeriado = 1
         BEGIN
             SELECT TOP 1
-                @PrecioHora = t.Precio
+                @PrecioHora = t.Precio,
+                @CodigoMonedaTarifa = t.CodigoMoneda
             FROM dbo.TarifaFeriado t
             WHERE t.EspacioDeportivoId = @EspacioDeportivoId
               AND t.Activa = 1
@@ -84,7 +87,8 @@ BEGIN
         IF @PrecioHora IS NULL
         BEGIN
             SELECT TOP 1
-                @PrecioHora = t.Precio
+                @PrecioHora = t.Precio,
+                @CodigoMonedaTarifa = t.CodigoMoneda
             FROM dbo.Tarifas t
             WHERE t.EspacioDeportivoId = @EspacioDeportivoId
               AND t.Activa = 1
@@ -130,10 +134,11 @@ BEGIN
         SELECT
             @PoliticaConfirmacionPago = COALESCE(n.PoliticaConfirmacionPago, 0),
             @PorcentajeAdelantoMinimo = n.PorcentajeAdelantoMinimo,
-            @MonedaNombre = COALESCE(m.Nombre, N'PEN'),
-            @MonedaSimbolo = COALESCE(NULLIF(LTRIM(RTRIM(m.Simbolo)), N''), N'S/')
+            @CodigoMonedaTarifa = COALESCE(@CodigoMonedaTarifa, n.CodigoMoneda),
+            @MonedaNombre = COALESCE(m.Nombre, COALESCE(@CodigoMonedaTarifa, n.CodigoMoneda), N'PEN'),
+            @MonedaSimbolo = COALESCE(NULLIF(LTRIM(RTRIM(m.Simbolo)), N''), COALESCE(@CodigoMonedaTarifa, n.CodigoMoneda), N'S/')
         FROM dbo.Negocios n
-        LEFT JOIN dbo.Monedas m ON m.Id = n.MonedaId
+        LEFT JOIN dbo.MonedasSuperMaestro m ON m.Codigo = COALESCE(@CodigoMonedaTarifa, n.CodigoMoneda)
         WHERE n.Id = @NegocioId;
 
         SELECT

@@ -1,4 +1,4 @@
-﻿
+
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Espacios_Listar]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -11,6 +11,8 @@ GO
 -- Firma: Codex - 18/04/2026 | Incluye bandera AdministracionPrivada para identificar espacios ocultos del portal publico.
 -- Firma: FRANCO LARA - 06/06/2026 | Incluye indicador y cantidad de espacios compartidos activos en el listado de espacios.
 -- Firma: FRANCO LARA - 08/06/2026 | Cuenta relaciones operativas directas y de composicion sin depender solo de pares bidireccionales.
+-- Firma: FRANCO LARA - 01/10/2026 | Expone el correlativo visible de espacio por negocio.
+-- Firma: FRANCO LARA - 06/10/2026 | Resuelve moneda canonica y nombres de deporte/suelo directamente desde los supermaestros.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Espacios_Listar]
     @NegocioId INT,
     @SedeId INT = NULL
@@ -21,9 +23,9 @@ BEGIN
         DECLARE @SimboloMoneda NVARCHAR(10);
         SET @SimboloMoneda = N'S/';
 
-        SELECT TOP (1) @SimboloMoneda = COALESCE(m.Simbolo, N'S/')
+        SELECT TOP (1) @SimboloMoneda = COALESCE(m.Simbolo, n.CodigoMoneda, N'S/')
         FROM dbo.Negocios n
-        LEFT JOIN dbo.Monedas m ON m.Id = n.MonedaId
+        LEFT JOIN dbo.MonedasSuperMaestro m ON m.Codigo = n.CodigoMoneda
         WHERE n.Id = @NegocioId;
 
         SELECT
@@ -127,11 +129,12 @@ BEGIN
                       AND ec.EspacioRelacionadoId = e.Id
                       AND ec.Activo = 1
                 ) relaciones
-            ) AS TotalEspaciosCompartidos
+            ) AS TotalEspaciosCompartidos,
+            e.NumeroPorNegocio
         FROM dbo.EspaciosDeportivos e
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
-        INNER JOIN dbo.TiposDeporte td ON td.Id = e.TipoDeporteId
-        INNER JOIN dbo.TiposSuelo ts ON ts.Id = e.TipoSueloId
+        INNER JOIN dbo.TiposDeporteSuperMaestro td ON td.Id = e.TipoDeporteSuperId
+        INNER JOIN dbo.TiposSueloSuperMaestro ts ON ts.Id = e.TipoSueloSuperId
         WHERE s.NegocioId = @NegocioId
           AND (@SedeId IS NULL OR s.Id = @SedeId)
         ORDER BY s.Nombre, e.Nombre;
@@ -144,5 +147,3 @@ BEGIN
 END
 
 GO
-
-

@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -6,6 +6,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 -- Firma: Codex - 10/04/2026 | KPI global del listado general de reservas (pendientes, pagadas y saldo total) sin paginacion.
 -- Firma: Codex - 13/04/2026 | Excluye reservas canceladas (Estado=5) del conteo de reservas KPI y del saldo total; mantiene filtros del listado.
+-- Firma: FRANCO LARA - 06/10/2026 | Detecta rangos multimoneda para impedir presentar un saldo total combinado.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Reservas_ListadoResumen]
     @NegocioId INT,
     @FechaDesde DATE = NULL,
@@ -28,11 +29,14 @@ BEGIN
         SELECT
             r.Estado,
             r.Total,
-            r.Adelanto
+            r.Adelanto,
+            r.CodigoMoneda,
+            COALESCE(ms.Simbolo, r.CodigoMoneda) AS MonedaSimbolo
         INTO #ReservasFiltradasResumen
         FROM dbo.Reservas r
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
+        LEFT JOIN dbo.MonedasSuperMaestro ms ON ms.Codigo = r.CodigoMoneda
         WHERE s.NegocioId = @NegocioId
           AND (@FechaDesde IS NULL OR r.Fecha >= @FechaDesde)
           AND (@FechaHasta IS NULL OR r.Fecha <= @FechaHasta)
@@ -61,7 +65,9 @@ BEGIN
             COALESCE(SUM(CASE WHEN rf.Estado <> 5 THEN 1 ELSE 0 END), 0) AS TotalReservasActivas,
             SUM(CASE WHEN rf.Estado = 1 THEN 1 ELSE 0 END) AS TotalPendientes,
             SUM(CASE WHEN rf.Estado IN (3, 4) THEN 1 ELSE 0 END) AS TotalPagadas,
-            CAST(COALESCE(SUM(CASE WHEN rf.Estado <> 5 THEN (rf.Total - rf.Adelanto) ELSE 0 END), 0) AS DECIMAL(18,2)) AS SaldoTotal
+            CAST(COALESCE(SUM(CASE WHEN rf.Estado <> 5 THEN (rf.Total - rf.Adelanto) ELSE 0 END), 0) AS DECIMAL(18,2)) AS SaldoTotal,
+            COUNT(DISTINCT CASE WHEN rf.Estado <> 5 THEN rf.CodigoMoneda END) AS CantidadMonedas,
+            MAX(CASE WHEN rf.Estado <> 5 THEN rf.MonedaSimbolo END) AS MonedaSimbolo
         FROM #ReservasFiltradasResumen rf;
     END TRY
     BEGIN CATCH

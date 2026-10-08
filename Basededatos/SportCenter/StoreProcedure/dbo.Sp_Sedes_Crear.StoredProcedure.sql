@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Sedes_Crear]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -18,6 +18,7 @@ GO
 -- Description:   Agrega persistencia de URLs sociales (Facebook/Instagram/Twitter) en sede.
 -- =============================================
 -- Firma: Codex - 27/04/2026 | Agrega CodigoUbigeo por sede y guarda match Google->SUNAT en UbigeoMapsMatch al crear sede.
+-- Firma: Codex - 01/10/2026 | Asigna el correlativo visible de sede por negocio al registrar una nueva sede.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Sedes_Crear]
     @NegocioId INT,
     @Nombre NVARCHAR(150),
@@ -83,16 +84,19 @@ BEGIN
 
         BEGIN TRANSACTION;
 
+        DECLARE @NumeroPorNegocio INT;
+        EXEC dbo.Sp_NegocioCorrelativos_ObtenerSiguiente @NegocioId, N'SEDE', @Usuario, @NumeroPorNegocio OUTPUT;
+
         INSERT INTO dbo.Sedes
         (
-            NegocioId, Nombre, Direccion, CodigoUbigeo, ConsideracionesReserva, Telefono, Activo,
+            NumeroPorNegocio, NegocioId, Nombre, Direccion, CodigoUbigeo, ConsideracionesReserva, Telefono, Activo,
             FacebookUrl, InstagramUrl, TwitterUrl,
             Latitud, Longitud, GooglePlaceId, GoogleMapsUrl, FotoPrincipalUrl, FotosUrlsCsv,
             FechaCreacion, UsuarioCreacion
         )
         VALUES
         (
-            @NegocioId, @Nombre, @Direccion, @CodigoUbigeo, @ConsideracionesReserva, @Telefono, @Activo,
+            @NumeroPorNegocio, @NegocioId, @Nombre, @Direccion, @CodigoUbigeo, @ConsideracionesReserva, @Telefono, @Activo,
             NULLIF(LTRIM(RTRIM(@FacebookUrl)), N''), NULLIF(LTRIM(RTRIM(@InstagramUrl)), N''), NULLIF(LTRIM(RTRIM(@TwitterUrl)), N''),
             @Latitud, @Longitud, @GooglePlaceId, @GoogleMapsUrl, @FotoPrincipalUrl, @FotosUrlsCsv,
             SYSUTCDATETIME(), @Usuario

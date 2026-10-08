@@ -7,6 +7,7 @@
 @inject IBusinessClock BusinessClock
 @* Firma: FRANCO LARA - 07/09/2026 | Valida horarios publicos con la hora operativa de Peru, independiente de la ubicacion del visitante o hosting. *@
 @* Firma: FRANCO LARA - 18/09/2026 | Recompone la reserva pública para aprovechar monitores amplios, priorizar el calendario y organizar el formulario en bloques de reserva, cliente y opciones. *@
+@* Firma: FRANCO LARA - 08/10/2026 | Mantiene la confirmacion en la vista de reserva, muestra el correlativo y refresca el calendario sin cache. *@
 
 @{
     ViewData["Title"] = "Registrar reserva";
@@ -77,6 +78,18 @@
             </div>
         </div>
     </section>
+
+    @if (Model.NumeroReservaCreada.HasValue)
+    {
+        <div class="alert alert-success shadow-sm d-flex flex-wrap align-items-center justify-content-between gap-2" role="status" id="confirmacionReservaPublica">
+            <div>
+                <strong><i class="bi bi-check-circle-fill me-1"></i>Reserva registrada correctamente.</strong>
+                <span class="ms-1">Tu numero de reserva es</span>
+                <strong class="ms-1">R-@Model.NumeroReservaCreada.Value.ToString("D6")</strong>.
+            </div>
+            <span class="small">Ya puedes verla en el calendario del espacio.</span>
+        </div>
+    }
 
     <div class="card border-0 shadow-sm mb-3 sc-public-section-card">
         <div class="card-body">
@@ -1614,7 +1627,10 @@
                             start: fetchInfo.startStr,
                             end: fetchInfo.endStr
                         });
-                        const resp = await fetch('@Url.Action("ReservarCalendarioEventos", "Home")' + '?' + params.toString(), { credentials: 'same-origin' });
+                        const resp = await fetch('@Url.Action("ReservarCalendarioEventos", "Home")' + '?' + params.toString(), {
+                            credentials: 'same-origin',
+                            cache: 'no-store'
+                        });
                         if (!resp.ok) throw new Error('No se pudo cargar el calendario.');
                         const data = await resp.json();
                         eventosCache = (data || []).map(x => ({ start: x.start, end: x.end }));

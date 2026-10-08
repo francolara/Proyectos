@@ -6,6 +6,7 @@
 @inject ISportCenterStoredProcedureService spService
 @inject IModuloPermisoService moduloPermisoService
 @inject UserManager<ApplicationUser> userManager
+@* Firma: FRANCO LARA - 01/10/2026 | Carga los estilos estructurales de la portada de forma bloqueante para evitar el destello de enlaces sin formato durante el primer renderizado. *@
 @{
     var adminShellHead = ViewData["AdminShell"] as bool? ?? false;
     var platformShellHead = ViewData["PlatformShell"] as bool? ?? false;
@@ -68,18 +69,7 @@
         <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     </noscript>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-    @if (string.Equals(ViewContext.RouteData.Values["controller"]?.ToString(), "Home", StringComparison.OrdinalIgnoreCase)
-        && string.Equals(ViewContext.RouteData.Values["action"]?.ToString(), "Index", StringComparison.OrdinalIgnoreCase))
-    {
-        <link rel="preload" href="~/lib/bootstrap/dist/css/bootstrap.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
-        <noscript>
-            <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-        </noscript>
-    }
-    else
-    {
-        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    }
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="preload"
           href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
           as="style"
@@ -87,26 +77,12 @@
     <noscript>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     </noscript>
-    @if (string.Equals(ViewContext.RouteData.Values["controller"]?.ToString(), "Home", StringComparison.OrdinalIgnoreCase)
-        && string.Equals(ViewContext.RouteData.Values["action"]?.ToString(), "Index", StringComparison.OrdinalIgnoreCase))
-    {
-        <link rel="preload" href="~/SistemaControlEspaciosDeportivosWeb.styles.css" asp-append-version="true" as="style" onload="this.onload=null;this.rel='stylesheet'" />
-        <noscript>
-            <link rel="stylesheet" href="~/SistemaControlEspaciosDeportivosWeb.styles.css" asp-append-version="true" />
-        </noscript>
-    }
-    else
-    {
-        <link rel="stylesheet" href="~/SistemaControlEspaciosDeportivosWeb.styles.css" asp-append-version="true" />
-    }
+    <link rel="stylesheet" href="~/SistemaControlEspaciosDeportivosWeb.styles.css" asp-append-version="true" />
     @if (string.Equals(ViewContext.RouteData.Values["controller"]?.ToString(), "Home", StringComparison.OrdinalIgnoreCase)
         && string.Equals(ViewContext.RouteData.Values["action"]?.ToString(), "Index", StringComparison.OrdinalIgnoreCase))
     {
         <link rel="stylesheet" href="~/css/home-critical.css" asp-append-version="true" />
-        <link rel="preload" as="style" href="~/css/site.css" asp-append-version="true" onload="this.onload=null;this.rel='stylesheet'" />
-        <noscript>
-            <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-        </noscript>
+        <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     }
     else
     {
@@ -1043,9 +1019,9 @@
                 const step = Number(document.querySelector('[data-onboarding-float]')?.getAttribute('data-step') || '0');
                 const selectorsByStep = {
                     1: ['.sc-maestros-nav', '[data-target="tipos-deporte"]', '[data-target="tipos-suelo"]', '[data-target="formas-pago"]', '[data-target="monedas"]'],
-                    2: ['#NombreComercial', '#RazonSocial', '#TipoDocumento', '#NumeroDocumento', '#DireccionFiscal', '#CodigoDepartamento', '#CodigoProvincia', '#CodigoUbigeo', '#PorcentajeIgv', '#CancelacionAutomaticaNoConfirmada', '#PermitirModificarPrecioReserva', '#PoliticaConfirmacionPago', '#MonedaId'],
+                    2: ['#NombreComercial', '#RazonSocial', '#TipoDocumento', '#NumeroDocumento', '#DireccionFiscal', '#CodigoDepartamento', '#CodigoProvincia', '#CodigoUbigeo', '#PorcentajeIgv', '#CancelacionAutomaticaNoConfirmada', '#PermitirModificarPrecioReserva', '#PoliticaConfirmacionPago', '#CodigoMoneda'],
                     3: ['#Nombre', '#Direccion', '#CodigoUbigeo', '#HoraApertura', '#HoraCierre', '#NotificacionesActivas', '#CorreoNotificacion', '#WhatsappNumeroLocal', '#ServiciosComplejoCard'],
-                    4: ['#SedeId', '#TipoDeporteId', '#TipoSueloId', '#Codigo', '#Nombre', '#tablaTarifasEspacio']
+                    4: ['#SedeId', '#TipoDeporteSuperId', '#TipoSueloSuperId', '#Codigo', '#Nombre', '#tablaTarifasEspacio']
                 };
 
                 const clearHighlight = () => {

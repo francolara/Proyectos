@@ -1,5 +1,6 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PagoReservaEditViewModel
 @* Firma: FRANCO LARA - 17/09/2026 | Agrega trazabilidad individual de pagos durante la edicion. *@
+@* Firma: FRANCO LARA - 01/10/2026 | Muestra los correlativos visibles por negocio para reserva y pagos, incluidas confirmaciones y errores de edicion. *@
 @{
     ViewData["Title"] = $"Editar pagos reserva {Model.ReservaCodigo}";
     var totalPagos = Model.Pagos?.Count ?? 0;
@@ -103,8 +104,9 @@
                             {
                                 <tr>
                                     <td class="text-center">
-                                        #@Model.Pagos[i].PagoId
+                                        @Model.Pagos[i].CodigoVisible
                                         <input type="hidden" asp-for="Pagos[i].PagoId" />
+                                        <input type="hidden" asp-for="Pagos[i].NumeroPorNegocio" />
                                         <input type="hidden" asp-for="Pagos[i].Monto" />
                                         <input type="hidden" asp-for="Pagos[i].FechaPago" />
                                         <input type="hidden" asp-for="Pagos[i].FormaPagoId" />
@@ -124,6 +126,7 @@
                                             <input asp-for="Pagos[i].Eliminar"
                                                    class="form-check-input js-eliminar-pago"
                                                    data-pago-id="@Model.Pagos[i].PagoId"
+                                                   data-pago-codigo="@Model.Pagos[i].CodigoVisible"
                                                    data-total-pagos="@Model.Pagos.Count"
                                                    type="checkbox" />
                                         </td>
@@ -234,10 +237,10 @@
                 check.addEventListener('change', () => {
                     if (!check.checked) return;
                     const totalPagos = Number(check.getAttribute('data-total-pagos') || '0');
-                    const pagoId = check.getAttribute('data-pago-id') || '';
+                    const pagoCodigo = check.getAttribute('data-pago-codigo') || 'seleccionado';
                     const mensaje = totalPagos <= 1
-                        ? `Si eliminas el pago #${pagoId}, la reserva quedara sin pagos y se cambiara a estado Cancelada. Deseas continuar?`
-                        : `Si eliminas el pago #${pagoId}, la reserva cambiara a estado Confirmada. Deseas continuar?`;
+                        ? `Si eliminas el pago ${pagoCodigo}, la reserva quedara sin pagos y se cambiara a estado Cancelada. Deseas continuar?`
+                        : `Si eliminas el pago ${pagoCodigo}, la reserva cambiara a estado Confirmada. Deseas continuar?`;
                     if (!window.confirm(mensaje)) {
                         check.checked = false;
                         return;

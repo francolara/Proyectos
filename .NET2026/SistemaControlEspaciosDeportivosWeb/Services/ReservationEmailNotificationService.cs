@@ -57,7 +57,7 @@ public class ReservationEmailNotificationService(
             await emailService.SendEmailAsync(
                 reserva.CorreoNotificacionSede.Trim(),
                 reserva.Sede,
-                $"Nueva reserva generada - #{reserva.ReservaId:D6}",
+                $"Nueva reserva generada - {reserva.CodigoVisible}",
                 ReservationEmailTemplateBuilder.BuildReservationGeneratedTemplate(
                     reserva,
                     BuildLoginReturnUrl("/Reservas"),
@@ -127,7 +127,7 @@ public class ReservationEmailNotificationService(
             await emailService.SendEmailAsync(
                 reserva.ClienteCorreo.Trim(),
                 reserva.Cliente,
-                $"Tu reserva fue confirmada - #{reserva.ReservaId:D6}",
+                $"Tu reserva fue confirmada - {reserva.CodigoVisible}",
                 ReservationEmailTemplateBuilder.BuildReservationConfirmedTemplate(
                     reserva,
                     BuildLoginReturnUrl("/PerfilPublico?tab=reservas"),
@@ -221,7 +221,7 @@ public static class ReservationEmailTemplateBuilder
         var rows = new List<(string Label, string Value)>
         {
             ("Complejo Deportivo", SanitizeValue(reserva.Negocio)),
-            ("Codigo de reserva", $"#{reserva.ReservaId:D6}"),
+            ("Codigo de reserva", reserva.CodigoVisible),
             ("Sede", SanitizeValue(reserva.Sede)),
             ("Espacio deportivo", SanitizeValue(reserva.Espacio)),
             ("Fecha", reserva.Fecha.ToString("dd/MM/yyyy")),

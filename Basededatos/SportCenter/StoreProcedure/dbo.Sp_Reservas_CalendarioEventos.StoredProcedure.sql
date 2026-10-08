@@ -1,4 +1,4 @@
-﻿
+
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Reservas_CalendarioEventos]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -13,6 +13,7 @@ GO
 -- Firma: FRANCO LARA - 26/05/2026 | Usa horario de espacio cuando ConfigurarHorarioPorEspacio=1; si no, mantiene horario de sede.
 -- Firma: FRANCO LARA - 06/06/2026 | Cuando se filtra un espacio, incluye reservas y bloqueos manuales de espacios compartidos como eventos bloqueantes no editables.
 -- Firma: FRANCO LARA - 08/06/2026 | Distingue bloqueo directo y espacios compuestos para evitar sobrebloqueos por propagacion en cadena.
+-- Firma: Codex - 01/10/2026 | Expone el correlativo visible por negocio como dato independiente para el calendario, pendientes y pop-up, sin usar el Id tecnico como etiqueta.
 CREATE  OR ALTER PROCEDURE [dbo].[Sp_Reservas_CalendarioEventos]
     @NegocioId INT,
     @FechaDesde DATE,
@@ -156,7 +157,8 @@ BEGIN
                 END
                 AS NVARCHAR(80)
             ) AS EstadoTexto,
-            CAST(ISNULL(r.Total, 0) AS DECIMAL(10,2)) AS TotalReserva
+            CAST(ISNULL(r.Total, 0) AS DECIMAL(10,2)) AS TotalReserva,
+            r.NumeroPorNegocio
         FROM dbo.Reservas r
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
@@ -203,7 +205,8 @@ BEGIN
             ) AS Motivo,
             CAST(CASE WHEN @EspacioDeportivoId IS NOT NULL AND b.EspacioDeportivoId <> @EspacioDeportivoId THEN N'BLOQUEO_COMPARTIDO' ELSE N'BLOQUEADO' END AS NVARCHAR(40)) AS EstadoCodigo,
             CAST(CASE WHEN @EspacioDeportivoId IS NOT NULL AND b.EspacioDeportivoId <> @EspacioDeportivoId THEN N'Bloqueado por espacio compartido' ELSE N'Bloqueado' END AS NVARCHAR(80)) AS EstadoTexto,
-            CAST(0 AS DECIMAL(10,2)) AS TotalReserva
+            CAST(0 AS DECIMAL(10,2)) AS TotalReserva,
+            CAST(NULL AS INT) AS NumeroPorNegocio
         FROM dbo.BloqueosHorario b
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = b.EspacioDeportivoId
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
@@ -234,7 +237,8 @@ BEGIN
             CAST(N'Sede sin atencion (fecha inhabilitada)' AS NVARCHAR(200)),
             CAST(N'BLOQUEADO_NO_ATENCION' AS NVARCHAR(40)),
             CAST(N'Bloqueado/No atencion' AS NVARCHAR(80)),
-            CAST(0 AS DECIMAL(10,2))
+            CAST(0 AS DECIMAL(10,2)),
+            CAST(NULL AS INT)
         FROM dbo.SedeFechasInhabilitadas sfi
         INNER JOIN dbo.Sedes s ON s.Id = sfi.SedeId
         INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
@@ -265,7 +269,8 @@ BEGIN
             CAST(N'Sede sin atencion (dia no laborable)' AS NVARCHAR(200)),
             CAST(N'BLOQUEADO_NO_ATENCION' AS NVARCHAR(40)),
             CAST(N'Bloqueado/No atencion' AS NVARCHAR(80)),
-            CAST(0 AS DECIMAL(10,2))
+            CAST(0 AS DECIMAL(10,2)),
+            CAST(NULL AS INT)
         FROM Fechas f
         INNER JOIN dbo.Sedes s ON s.NegocioId = @NegocioId
         INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
@@ -306,7 +311,8 @@ BEGIN
             CAST(N'Sede sin atencion (fuera de horario)' AS NVARCHAR(200)),
             CAST(N'BLOQUEADO_NO_ATENCION' AS NVARCHAR(40)),
             CAST(N'Bloqueado/No atencion' AS NVARCHAR(80)),
-            CAST(0 AS DECIMAL(10,2))
+            CAST(0 AS DECIMAL(10,2)),
+            CAST(NULL AS INT)
         FROM Fechas f
         INNER JOIN dbo.Sedes s ON s.NegocioId = @NegocioId
         INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
@@ -343,7 +349,8 @@ BEGIN
             CAST(N'Sede sin atencion (fuera de horario)' AS NVARCHAR(200)),
             CAST(N'BLOQUEADO_NO_ATENCION' AS NVARCHAR(40)),
             CAST(N'Bloqueado/No atencion' AS NVARCHAR(80)),
-            CAST(0 AS DECIMAL(10,2))
+            CAST(0 AS DECIMAL(10,2)),
+            CAST(NULL AS INT)
         FROM Fechas f
         INNER JOIN dbo.Sedes s ON s.NegocioId = @NegocioId
         INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id

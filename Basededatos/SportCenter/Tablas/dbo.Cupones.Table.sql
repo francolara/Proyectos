@@ -4,8 +4,11 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+-- Firma: FRANCO LARA - 01/10/2026 | Agrega el correlativo visible de cupon por negocio, separado del codigo canjeable.
+-- Firma: FRANCO LARA - 06/10/2026 | Conserva CodigoMoneda canonico de los descuentos de importe fijo.
 CREATE TABLE [dbo].[Cupones](
     [Id] [int] IDENTITY(1,1) NOT NULL,
+    [NumeroPorNegocio] [int] NULL,
     [NegocioId] [int] NOT NULL,
     [SedeId] [int] NULL,
     [EspacioDeportivoId] [int] NULL,
@@ -13,6 +16,7 @@ CREATE TABLE [dbo].[Cupones](
     [Nombre] [nvarchar](150) NOT NULL,
     [TipoDescuento] [nvarchar](20) NOT NULL,
     [ValorDescuento] [decimal](10,2) NOT NULL,
+    [CodigoMoneda] [nvarchar](10) NOT NULL,
     [CantidadMaxUsos] [int] NOT NULL,
     [CantidadUsosActuales] [int] NOT NULL,
     [FechaInicio] [date] NOT NULL,
@@ -42,6 +46,10 @@ GO
 ALTER TABLE [dbo].[Cupones]  WITH CHECK ADD CONSTRAINT [FK_Cupones_Espacios_EspacioDeportivoId] FOREIGN KEY([EspacioDeportivoId]) REFERENCES [dbo].[EspaciosDeportivos] ([Id])
 GO
 ALTER TABLE [dbo].[Cupones] CHECK CONSTRAINT [FK_Cupones_Espacios_EspacioDeportivoId]
+GO
+ALTER TABLE [dbo].[Cupones] WITH CHECK ADD CONSTRAINT [FK_Cupones_MonedasSuperMaestro_CodigoMoneda] FOREIGN KEY([CodigoMoneda]) REFERENCES [dbo].[MonedasSuperMaestro] ([Codigo])
+GO
+ALTER TABLE [dbo].[Cupones] CHECK CONSTRAINT [FK_Cupones_MonedasSuperMaestro_CodigoMoneda]
 GO
 CREATE UNIQUE NONCLUSTERED INDEX [UX_Cupones_Negocio_Codigo] ON [dbo].[Cupones]([NegocioId] ASC, [CodigoCupon] ASC)
 GO

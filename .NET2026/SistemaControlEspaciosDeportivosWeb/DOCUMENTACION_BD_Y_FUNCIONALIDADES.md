@@ -1,5 +1,118 @@
 # SistemaControlEspaciosDeportivosWeb
 
+## Actualizacion 08/10/2026 - Reserva publica y correlativo visible
+- Se corrigio el contrato encadenado entre `Sp_Home_SolicitarReservaPublica` y `Sp_Reservas_Crear`. El procedimiento interno devolvia anticipadamente un result set con un solo Id y la capa ADO.NET lo interpretaba como el resultado final, antes de recibir `ReservaId` y `NumeroPorNegocio`.
+- `Sp_Reservas_Crear` incorpora `@DevolverResultado BIT = 1`; conserva el comportamiento de las llamadas directas y permite que los procedimientos orquestadores utilicen solamente `@ReservaId OUTPUT`.
+- `Sp_Home_SolicitarReservaPublica` invoca la creacion con `@DevolverResultado = 0` y expone un unico resultado final con `ReservaId` y `NumeroPorNegocio`.
+- La capa ADO.NET identifica el resultado final por nombre de columna y avanza entre result sets, evitando depender de la posicion de resultados internos heredados durante un despliegue progresivo.
+- Tras registrar una reserva publica, el portal vuelve a la misma vista del espacio mediante POST-Redirect-GET, conserva la fecha y el horario seleccionados, muestra el correlativo `R-######` y vuelve a consultar el calendario sin cache para visualizar la nueva reserva.
+- El mantenimiento de espacios oculta `Capacidad` y normaliza internamente su valor a `10` al crear o editar. La interfaz solo permite `Activo` (`1`) e `Inactivo` (`3`); los registros heredados con estado de mantenimiento se presentan y normalizan como inactivos sin modificar los procedimientos almacenados.
+- Orden de publicacion: desplegar primero `Sp_Reservas_Crear`, luego `Sp_Home_SolicitarReservaPublica` y finalmente la aplicacion ASP.NET Core.
+
+## Actualizacion 06/10/2026 - Fase 7: Deporte y suelo globales en espacios
+- `EspaciosDeportivos` persiste `TipoDeporteSuperId` y `TipoSueloSuperId`, relacionados directamente con `TiposDeporteSuperMaestro` y `TiposSueloSuperMaestro`. Ya no guarda los `Id` variables de `TiposDeporte` o `TiposSuelo` por negocio.
+- `TiposDeporte` y `TiposSuelo` continúan existiendo como tablas de habilitación por negocio. Crear o editar un espacio exige que el identificador global elegido tenga una asociación activa para ese negocio.
+- Los procedimientos de edición e inactivación de ambos maestros impiden deshabilitar una asociación mientras existan espacios del negocio que utilicen ese identificador global.
+- Los formularios, contratos ADO.NET, listados, detalle, combos, Home y checklist de onboarding leen y escriben identificadores globales. El filtro público `TipoDeporteId` conserva su nombre por compatibilidad HTTP, pero su valor siempre es el `Id` de `TiposDeporteSuperMaestro`.
+- `20261006_Fase7A_MigrarEspaciosADeporteSueloGlobal.sql` agrega las columnas nuevas, completa los datos desde los mappings locales, detiene la migración si detecta inconsistencias y crea claves foráneas e índices globales.
+- Después de publicar los procedimientos y la aplicación, `20261006_Fase7B_RetirarIdsLocalesDeEspacios.sql` elimina las relaciones y columnas heredadas. Este retiro permanece bloqueado hasta confirmar `@RespaldoVerificado = 1`.
+- Ajuste final 08/10/2026: Fase 7A usa SQL dinamico para soportar bases que aun no tienen las columnas globales, valida la equivalencia contra los Id locales y vuelve anulables las columnas heredadas durante la ventana de publicacion. Fase 7B exige respaldo, QA y contratos publicados; detecta dependencias y elimina dinamicamente FK, DEFAULT, CHECK, claves, indices y estadisticas antes de retirar las columnas locales, sin depender de nombres fisicos particulares.
+- `Sp_Sistema_ValidarContratoCanonico` incorpora estructura, claves foráneas, parámetros y consistencia negocio-supermaestro para deporte y suelo. La versión resultante es `CANONICO_MAESTROS_V2`.
+- Orden de despliegue: respaldo verificado; ejecutar Fase 7A; publicar los procedimientos de espacios, combos, Home, onboarding y el validador; publicar la aplicación; probar alta/edición/listado/búsqueda pública; habilitar y ejecutar Fase 7B; ejecutar Fases 5 y 6 para la certificación final.
+- La auditoría confirmó que los tipos de documento ya se persisten mediante códigos SUNAT. `FormasPago` aún es un catálogo exclusivamente local y no dispone de supermaestro global, por lo que queda fuera de esta migración y requiere un diseño canónico propio antes de reemplazar sus identificadores.
+
+## Actualizacion 06/10/2026 - Fase 6: Certificacion y readiness de publicacion
+- El endpoint `/healthz/ready` ya no valida solamente la conexion a SQL Server. Ejecuta `Sp_Sistema_ValidarContratoCanonico @ValidarDatos = 0` y solo informa disponibilidad cuando el esquema y los contratos canonicos estan vigentes, sin recorrer historicos en cada sonda.
+- La aplicacion debe publicarse despues del procedimiento validador. Si la base conserva columnas heredadas, tiene inconsistencias monetarias o carece de un contrato requerido, readiness responde como no saludable y evita declarar lista una instancia incompatible.
+- `20261006_Fase6_CertificarPublicacionCanonica.sql` ejecuta nuevamente la auditoria integral, verifica la presencia de los procedimientos criticos, busca dependencias SQL hacia columnas heredadas y devuelve evidencia de las fechas de publicacion.
+- La certificacion es de solo lectura. Debe ejecutarse despues de publicar la aplicacion y antes de habilitar trafico; luego se deben probar configuracion, reserva administrativa y publica, pago, comprobante, nota y los reportes filtrados por moneda.
+- Resultado esperado: `FASE_6_CERTIFICADA` y contrato `CANONICO_MAESTROS_V2`.
+
+## Actualizacion 06/10/2026 - Fase 5: Integridad canonica automatizada
+- Se agrega `Sp_Sistema_ValidarContratoCanonico` como auditor reutilizable de la arquitectura canonica de monedas y comprobantes.
+- El auditor exige las columnas canonicas obligatorias y el retiro de `Negocios.MonedaId`, `ComprobantesElectronicos.TipoMoneda` y `ComprobantesElectronicos.TipoComprobante`.
+- Valida monedas globales, asociacion local del negocio, consistencia historica entre reservas, pagos, usos de cupon, comprobantes y sus detalles, codigos SUNAT, correlativos unicos, claves foraneas confiables y ausencia de parametros heredados.
+- Los siete procedimientos de reporteria deben existir y exponer `@CodigoMoneda`, evitando consolidar importes de monedas diferentes.
+- `20261006_Fase5_ValidarIntegridadCanonicaFinal.sql` ejecuta el auditor y devuelve conteos por moneda y tipo de comprobante para conciliacion. Es de solo lectura y no corrige datos automaticamente.
+- Orden: completar Fase 4B; publicar `Sp_Sistema_ValidarContratoCanonico`; ejecutar Fase 5; resolver cualquier inconsistencia; continuar con la certificacion de Fase 6.
+
+## Actualizacion 06/10/2026 - Fase 4B: Retiro fisico de IDs locales
+- El modelo final elimina `Negocios.MonedaId`, `ComprobantesElectronicos.TipoMoneda` y `ComprobantesElectronicos.TipoComprobante`. Las relaciones funcionales quedan representadas por `CodigoMoneda` y `CodigoTipoComprobante`.
+- `Sp_ConfiguracionClub_Actualizar` deja de sincronizar identificadores locales. Valida la asociacion activa de `CodigoMoneda` con el negocio y actualiza solo el codigo canonico.
+- `Sp_Comprobantes_Crear` deja de resolver y guardar IDs locales; valida que la moneda y el documento esten habilitados y persiste exclusivamente sus codigos canonicos.
+- `Sp_ConfiguracionClub_Obtener`, `Sp_Comprobantes_ObtenerPorId` y `Sp_Comprobantes_ObtenerVisualizacion` mantienen temporalmente ordinales reservados nulos para no desplazar los campos ADO.NET existentes durante el despliegue coordinado, pero ya no consultan columnas heredadas.
+- `Sp_AltasClubes_Aprobar`, `Sp_Home_RegistrarClubConPrueba` y el script historico de altas crean negocios usando exclusivamente `CodigoMoneda = 'PEN'`.
+- La tabla base `Negocios` ya no declara `MonedaId`, establece `CodigoMoneda` como obligatorio con predeterminado `PEN` y conserva su FK global. La tabla base `ComprobantesElectronicos` ya no declara los dos IDs locales y agrega unicidad por `(NegocioId, CodigoTipoComprobante, Serie, Numero)`.
+- `20261006_Fase4B_01_PrepararRetiroColumnasHeredadas.sql` valida integridad y duplicados, vuelve nullable las columnas heredadas del comprobante y crea el indice unico canonico. Esto permite publicar los SP finales sin interrumpir escrituras durante la transicion.
+- Despues de publicar y validar la aplicacion y los SP finales, `20261006_Fase4B_02_RetirarColumnasHeredadas.sql` detecta modulos SQL dependientes, elimina restricciones, indices y estadisticas asociados, y retira fisicamente las tres columnas dentro de una transaccion.
+- Ambos scripts permanecen bloqueados por defecto. Para ejecutarlos se debe confirmar un backup verificado y cambiar explicitamente sus banderas de autorizacion. El segundo script exige ademas confirmar que los contratos canonicos ya fueron publicados.
+- Orden obligatorio de despliegue: backup adicional y verificado; ejecutar `4B_01`; publicar `Sp_ConfiguracionClub_Actualizar`, `Sp_ConfiguracionClub_Obtener`, `Sp_Comprobantes_Crear`, `Sp_Comprobantes_ObtenerPorId`, `Sp_Comprobantes_ObtenerVisualizacion`, `Sp_AltasClubes_Aprobar`, `Sp_Home_RegistrarClubConPrueba` y la aplicacion; probar configuracion, reservas, pagos, emision, notas y reportes; ejecutar `4B_02`; repetir pruebas y conservar la imagen anterior para rollback de aplicacion.
+- Despues de ejecutar `4B_02` no se deben volver a ejecutar los scripts secuenciales de Fase 1 o Fase 2 (`20261006_CatalogosCanonicos_MonedasYComprobantes.sql` y `20261006_Fase2_EscriturasMonetariasCanonicas.sql`), porque contienen pasos historicos de migracion que parten de las columnas heredadas. Para una instalacion nueva deben usarse las tablas base y los procedimientos finales ya actualizados.
+- Una vez ejecutado `4B_02`, el rollback de base requiere restauracion o una migracion inversa especifica; no basta con volver a publicar una imagen anterior que dependa de las columnas eliminadas.
+
+## Actualizacion 06/10/2026 - Fase 4A: Retiro de dependencias runtime de IDs locales
+- Configuracion y onboarding seleccionan y actualizan la moneda por `CodigoMoneda`; los combos exponen el codigo canonico como valor y ya no entregan el `Id` local como contrato de interfaz.
+- `Sp_ConfiguracionClub_Actualizar` recibe `@CodigoMoneda`, valida que este habilitado para el negocio y sincroniza `MonedaId` unicamente como espejo transitorio para instalaciones que aun conservan la columna heredada.
+- Panel, reportes y configuracion de tarifas resuelven la moneda vigente por codigo, sin comparar identificadores locales de `Monedas`.
+- `Sp_OnboardingChecklist_Validar` considera completa la moneda solo cuando `Negocios.CodigoMoneda` tiene una asociacion activa en el maestro del negocio.
+- Las altas de clubes inicializan `Negocios.CodigoMoneda = 'PEN'`, evitando que una instalacion nueva nazca dependiendo de un identificador local predeterminado.
+- El contrato ADO.NET de `Sp_Comprobantes_Crear` deja de enviar `TipoComprobante` y `TipoMoneda`: recibe el codigo SUNAT, hereda `CodigoMoneda` de la reserva y resuelve internamente los IDs solo para poblar las columnas fisicas de compatibilidad.
+- `ComprobanteFormViewModel` y `ComprobanteVisualizacionViewModel` dejan de transportar los enums heredados. La lectura de comprobantes expone `CodigoMoneda` y conserva los ordinales anteriores solo durante esta transicion.
+- El modelo EF incorpora las columnas canonicas, define la unicidad de comprobantes con `CodigoTipoComprobante` y retira las propiedades/enums heredados. Las columnas fisicas antiguas permanecen temporalmente en SQL Server y solo los SP de escritura las completan como compatibilidad.
+- `Basededatos/SportCenter/Script/20261006_Fase4A_ValidarContratosCanonicos.sql` comprueba integridad de codigos y que los procedimientos publicados ya no expongan los parametros locales heredados; es solo diagnostico y no elimina datos ni columnas.
+- Esta fase no eliminaba columnas ni restricciones. La Fase 4B agrega ahora el retiro fisico controlado, que solo debe ejecutarse despues de publicar y validar 4A, revisar consumidores externos y confirmar un respaldo verificado.
+
+## Actualizacion 06/10/2026 - Fase 3: Lecturas canonicas, emision y reportería multimoneda
+- Las lecturas de reservas, pagos y comprobantes resuelven moneda mediante el `CodigoMoneda` historico de la operacion y `MonedasSuperMaestro`; ya no dependen de la moneda predeterminada actual del negocio para mostrar simbolos.
+- La edicion de una reserva conserva y muestra su propia moneda. Registrar pagos posteriores utiliza esa misma moneda aunque el club haya cambiado su configuracion predeterminada.
+- `Sp_ConfiguracionClub_Obtener` expone el codigo y simbolo canonicos vigentes; el formulario de nueva reserva deja de asumir `PEN`/`S/` antes de cotizar.
+- El listado, detalle, visualizacion, emision y validacion de comprobantes/notas usa `CodigoTipoComprobante` como codigo SUNAT autoritativo. Los IDs locales `TipoComprobante` y `TipoMoneda` permanecen solo como compatibilidad temporal de contratos existentes.
+- `Sp_Comprobantes_Crear`, `Sp_Comprobantes_Actualizar` y `Sp_Combos_ReservasPagadas_Buscar` validan comprobantes principales y notas de credito por codigo SUNAT historico, evitando interpretar nuevamente IDs que pueden variar entre negocios.
+- Reportes agrega un filtro obligatorio de moneda. `Sp_Reportes_IngresosPorDia`, `Sp_Reportes_ReservasPorDia`, `Sp_Reportes_OcupacionPorEspacio`, `Sp_Reportes_ResumenOperativo`, `Sp_Reportes_ResumenCobranza`, `Sp_Reportes_DetallePagos` y `Sp_Reportes_DetalleReservas` reciben `@CodigoMoneda` y no suman divisas diferentes.
+- El panel usa la moneda predeterminada vigente solo como moneda de consulta y etiqueta visual; todos sus KPI monetarios y series se filtran por ese codigo. `Sp_Panel_ObtenerMetricas` aplica el mismo criterio.
+- La impresion y exportacion de reportes conservan el filtro de moneda. Los importes del detalle muestran el simbolo historico y los resúmenes muestran el simbolo de la moneda seleccionada.
+- El perfil publico `Mis reservas` muestra `CodigoMoneda`/simbolo historicos por reserva en lugar de asumir soles.
+- Los listados de reservas, pagos y comprobantes muestran el simbolo historico por fila. Si el filtro abarca operaciones de mas de una moneda, sus KPI monetarios indican `Varias monedas` y no presentan una suma sin conversion.
+- Los cupones de importe fijo muestran el simbolo asociado a `Cupones.CodigoMoneda`; los porcentuales permanecen independientes de moneda.
+- Los cobros de suscripcion exponen `CodigoMoneda` y simbolo por registro. Sus resumenes administrativos e imprimibles indican `Varias monedas` cuando el historial pagado contiene mas de una divisa, en vez de sumar importes incompatibles.
+- `Sp_Reservas_Cotizar` obtiene la moneda de la tarifa canonica aplicada; si no existe tarifa y se permite precio manual, usa `Negocios.CodigoMoneda`.
+- Los archivos base de las tablas monetarias reflejan las columnas, claves foraneas e indices canonicos de las migraciones, de modo que una instalacion nueva y una base actualizada terminen con el mismo modelo.
+- Compatibilidad ADO.NET: los nuevos campos se agregaron al final de los resultados existentes para no desplazar ordinales ya consumidos.
+- Orden de despliegue: aplicar primero las fases 1 y 2; publicar despues los SP de reservas/pagos/comprobantes, cupones y suscripciones, los siete SP de reportes, `Sp_Panel_ObtenerMetricas`, `Sp_Reservas_Cotizar`, `Sp_Espacios_Listar`, `Sp_Home_BuscarEspaciosDisponibles` y `Sp_UsuariosPublicos_ReservasListar`; finalmente publicar la aplicacion ASP.NET Core.
+- No ejecutar el despliegue SQL sin confirmar previamente un respaldo verificado del ambiente objetivo, conforme a `DOCUMENTACION_INFRAESTRUCTURA_FRALSE.md`.
+
+## Actualizacion 06/10/2026 - Fase 2: Escrituras monetarias canonicas
+- Se corrigio el despliegue de los procedimientos embebidos en los scripts de fases 1 y 2: los identificadores de auditoria se convierten primero a variables `NVARCHAR(80)` y luego se envian a `Sp_Auditoria_Registrar`, porque SQL Server no admite `CONVERT(...)` directamente como argumento nombrado de `EXEC`.
+- Se migraron todas las rutas vigentes que crean operaciones monetarias para persistir `CodigoMoneda`: reservas administrativas y publicas, pagos iniciales y posteriores, tarifas normales y de feriado, cupones y sus usos, comprobantes y cobros de suscripcion.
+- La moneda de una reserva se obtiene de `Negocios.CodigoMoneda` al crearla y queda congelada. Los pagos y comprobantes posteriores heredan el codigo de la reserva, aunque el negocio cambie su configuracion en el futuro.
+- `Sp_Comprobantes_Crear` conserva temporalmente los identificadores locales heredados para compatibilidad, pero toma como datos autoritativos `CodigoTipoComprobante` (codigo SUNAT) y `CodigoMoneda` (codigo canonico de la reserva); el identificador local de moneda se resuelve desde ese codigo historico.
+- `Sp_Maestros_Monedas_Actualizar`, utilizado tambien por la eliminacion logica, impide inactivar la moneda predeterminada o una moneda con reservas, pagos, comprobantes, tarifas normales/de feriado o cupones del negocio.
+- `Sp_Maestros_Monedas_Crear` permite habilitar mas de una moneda para el negocio, sin repetir la misma moneda del supermaestro. Asi el club puede cambiar su moneda predeterminada sin alterar ni deshabilitar la utilizada por sus operaciones historicas.
+- El script `Basededatos/SportCenter/Script/20261006_Fase2_EscriturasMonetariasCanonicas.sql` vuelve a completar los historicos, detiene el despliegue si queda algun codigo nulo y cambia a `NOT NULL` las columnas canonicas de las tablas transaccionales.
+- Orden de despliegue: ejecutar primero `20261006_CatalogosCanonicos_MonedasYComprobantes.sql`; publicar despues los SP `Sp_Reservas_Crear`, `Sp_Reservas_Actualizar`, `Sp_Pagos_Crear`, `Sp_Espacios_Crear`, `Sp_Espacios_Actualizar`, `Sp_Cupones_Crear`, `Sp_SolicitudesPublicas_ConvertirAReserva`, `Sp_Comprobantes_Crear`, `Sp_NegociosSuscripcionPago_Registrar`, `Sp_Maestros_Monedas_Crear` y `Sp_Maestros_Monedas_Actualizar`; finalmente ejecutar `20261006_Fase2_EscriturasMonetariasCanonicas.sql`.
+- La retirada definitiva de `MonedaId`, `TipoMoneda` y `TipoComprobante` queda fuera de esta fase: se hara despues de migrar las lecturas, reportes y contratos ADO.NET para evitar una ruptura de compatibilidad.
+
+## Actualizacion 06/10/2026 - Fase 1: Catalogos canonicos en operaciones
+- Se define que las transacciones monetarias almacenan `CodigoMoneda` canonico (`PEN`, `USD`, etc.) y no el identificador variable de la configuracion por negocio.
+- `Negocios.CodigoMoneda` admite valor nulo solo durante el onboarding, antes de que el club complete su configuracion monetaria; las operaciones monetarias no admiten valor nulo.
+- El script incremental `Basededatos/SportCenter/Script/20261006_CatalogosCanonicos_MonedasYComprobantes.sql` agrega, migra y valida `CodigoMoneda` en Negocios, Reservas, Pagos, Tarifas normales/de feriado, Cupones, CuponesUso, ComprobantesElectronicos, ComprobantesDetalle y NegociosSuscripcionPago.
+- El mismo script incorpora `CodigoTipoComprobante` en ComprobantesElectronicos y lo migra desde `NegociosTiposDocumentoComprobante.CodigoSunat`; los comprobantes quedan relacionados con el supermaestro por el codigo SUNAT (`01`, `03`, `07`, `08`, `RI`).
+- Las columnas heredadas `MonedaId`, `TipoMoneda` y `TipoComprobante` se mantienen temporalmente para compatibilidad mientras se actualizan los procedimientos almacenados, servicios ADO.NET y vistas. Las nuevas columnas permanecen nullable en esta fase para no interrumpir procedimientos de creacion aun no migrados; la Fase 2 las volvera obligatorias.
+- En Fase 1, `Sp_ConfiguracionClub_Actualizar` conservaba temporalmente `MonedaId`; desde Fase 4A recibe `CodigoMoneda`, valida la asociacion del negocio y mantiene el ID solo como espejo fisico transitorio. `Sp_ConfiguracionClub_Obtener` expone el codigo para la capa ADO.NET.
+- `Sp_Pagos_Crear` toma obligatoriamente la moneda de la reserva, la almacena en `Pagos.CodigoMoneda` y valida que la forma de pago pertenezca al mismo negocio.
+- Monedas por negocio conserva el rol de habilitar opciones para el club. `Sp_Maestros_Monedas_Actualizar` impide inactivar la moneda predeterminada y toda moneda que tenga reservas, pagos, comprobantes, tarifas o cupones asociados a su `CodigoMoneda`.
+
+## Actualizacion 01/10/2026
+- Se incorpora `NegocioCorrelativos` como base para asignar codigos visibles, consecutivos e independientes por negocio, sin reemplazar los identificadores tecnicos globales.
+- `Sp_NegocioCorrelativos_ObtenerSiguiente` reserva de forma transaccional el siguiente numero para `RESERVA`, `PAGO`, `CLIENTE`, `SEDE`, `ESPACIO`, `CUPON` o `PROMOCION`.
+- `Reservas`, `Pagos`, `Clientes`, `Sedes`, `EspaciosDeportivos`, `Cupones` y `PromocionesHorario` incorporan `NumeroPorNegocio`; sus identificadores globales permanecen como claves tecnicas y relaciones internas.
+- Los procedimientos de creacion solicitan el correlativo antes del `INSERT`, incluida la sede principal creada durante el alta de un club y los pagos registrados desde una reserva. No se utilizan triggers.
+- El script idempotente `Script/20261001_CorrelativosPorNegocio.sql` actualiza las tablas existentes: crea `NegocioCorrelativos` si no existe y agrega `NumeroPorNegocio` a las siete entidades sin completar registros historicos.
+- Los codigos visibles se presentan como `R-000001`, `P-000001`, `C-000001`, `S-001`, `E-001`, `CUP-000001` y `PRO-000001`, reiniciando de forma independiente para cada negocio y entidad.
+- Se actualizan reserva publica, Mis reservas, calendario, pendientes, pop-up de edicion, pagos, comprobantes, solicitudes convertidas, listados administrativos, correos, recordatorios, reportes, resenas y mensajes de bloqueo para mostrar el correlativo del negocio sin exponer el ID tecnico. Los buscadores de clientes, pagos, comprobantes y seleccion de reservas aceptan los codigos visibles `C-000000` y `R-000000`. El calendario entrega `NumeroPorNegocio` como dato independiente del titulo y las lecturas visibles exigen que el procedimiento devuelva dicho correlativo, sin recurrir al Id global como respaldo.
+- No se incluye migracion ni numeracion retroactiva de registros historicos, porque la base de datos se reiniciara antes de usar esta estructura.
+- Mientras existan promociones anteriores con `NumeroPorNegocio` nulo, el listado las identifica como `Sin correlativo` y continua operativo; las promociones nuevas reciben `PRO-000001` en adelante mediante `Sp_Promociones_Crear`.
+
 ## Arquitectura actual
 - Frontend: ASP.NET Core MVC.
 - Base de datos: SQL Server (`DbSportCenter`).
@@ -732,7 +845,7 @@
 - Objetivo:
   - permitir que cada negocio maneje sus propios catálogos.
   - en `Maestros > Monedas`, registrar monedas del club seleccionando desde supermaestro.
-  - `Sp_Maestros_Monedas_Crear` valida que por negocio solo se permita una moneda registrada.
+  - `Sp_Maestros_Monedas_Crear` permite asociar varias monedas del supermaestro al negocio y evita duplicar la misma moneda canonica.
 
 ### 37_Sedes_Ubicacion_Fotos.sql
 - Alter tabla:
@@ -1349,7 +1462,7 @@
 - Home (tipos de deporte publicos):
   - `Sp_Home_ListarTiposDeporte` ahora lista deportes unicos por `TipoDeporteSuperId` (sin duplicados), consolidando deportes de negocios afiliados y referenciales externos activos.
   - el combo de `Tipo de deporte` en Home usa como `value` el `Id` de `TiposDeporteSuperMaestro`.
-  - `Sp_Home_BuscarEspaciosDisponibles` filtra por `TiposDeporte.TipoDeporteSuperId` (con fallback a `EspaciosDeportivos.TipoDeporteId` si el dato legacy no tiene super id).
+  - `Sp_Home_BuscarEspaciosDisponibles` filtra directamente por `EspaciosDeportivos.TipoDeporteSuperId`; no depende del identificador local del negocio.
 - Home (referenciales externos):
   - se crea tabla `HomeEspaciosReferencialesExternos` para almacenar complejos/espacios externos usados solo en el buscador publico Home.
   - la tabla incorpora `GooglePlaceId` como llave tecnica de sincronizacion para evitar duplicados por barridos sucesivos.

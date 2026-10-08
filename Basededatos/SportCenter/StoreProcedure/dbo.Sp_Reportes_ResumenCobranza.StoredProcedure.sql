@@ -1,4 +1,4 @@
-﻿
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -6,11 +6,13 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- Firma: Codex - 18/06/2026 | Nuevo resumen comercial por fecha de pago para separar KPIs de cobranza de los KPIs operativos.
+-- Firma: FRANCO LARA - 06/10/2026 | Calcula el resumen exclusivamente en la moneda canonica seleccionada.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Reportes_ResumenCobranza]
     @NegocioId INT,
     @FechaDesde DATE,
     @FechaHasta DATE,
-    @SedeId INT = NULL
+    @SedeId INT = NULL,
+    @CodigoMoneda NVARCHAR(10)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -26,6 +28,7 @@ BEGIN
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         WHERE s.NegocioId = @NegocioId
           AND (@SedeId IS NULL OR s.Id = @SedeId)
+          AND p.CodigoMoneda = @CodigoMoneda
           AND CAST(p.FechaPago AS DATE) >= @FechaDesde
           AND CAST(p.FechaPago AS DATE) <= @FechaHasta
           AND r.Estado <> 5;

@@ -1,4 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteVisualizacionViewModel
+@* Firma: Codex - 01/10/2026 | Imprime el correlativo visible de la reserva por negocio. *@
 @{
     Layout = null;
     var numeroComprobante = $"{Model.Serie}-{Model.Numero:D8}";
@@ -189,7 +190,7 @@
         <section class="summary" aria-label="Resumen del comprobante">
             <article class="summary-item"><span class="label">Documento</span><strong>@numeroComprobante</strong><small>Recibo Interno</small></article>
             <article class="summary-item"><span class="label">Fecha emision</span><strong>@Model.FechaEmision.ToString("dd/MM/yyyy")</strong><small>Comprobante emitido</small></article>
-            <article class="summary-item"><span class="label">Reserva</span><strong>#@Model.ReservaId</strong><small>@Model.SedeNombre | @Model.EspacioNombre</small></article>
+            <article class="summary-item"><span class="label">Reserva</span><strong>@Model.CodigoReserva</strong><small>@Model.SedeNombre | @Model.EspacioNombre</small></article>
             <article class="summary-item total"><span class="label">Total</span><strong>@Model.MonedaSimbolo @Model.Total.ToString("N2")</strong><small>Moneda de emision</small></article>
         </section>
 
@@ -239,7 +240,7 @@
 
         <footer class="receipt-footer">
             <span>Recibo interno generado por @Model.NegocioNombre</span>
-            <span>Reserva #@Model.ReservaId</span>
+            <span>Reserva @Model.CodigoReserva</span>
         </footer>
     </main>
 

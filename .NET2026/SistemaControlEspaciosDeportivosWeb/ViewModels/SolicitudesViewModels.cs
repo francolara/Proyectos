@@ -24,6 +24,10 @@ public class SolicitudPublicaItemViewModel
     public string? Correo { get; set; }
     public int Estado { get; set; }
     public int? ReservaId { get; set; }
+    public int? NumeroReservaPorNegocio { get; set; }
+    public string? CodigoReservaVisible => NumeroReservaPorNegocio.HasValue
+        ? $"R-{NumeroReservaPorNegocio.Value:D6}"
+        : null;
     public DateTime FechaRegistro { get; set; }
 }
 

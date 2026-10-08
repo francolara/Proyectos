@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -6,11 +6,13 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- Firma: Codex - 13/04/2026 | Incluye SedeId y EspacioDeportivoId para drill-down desde Reportes a Reservas/Pagos.
+-- Firma: FRANCO LARA - 06/10/2026 | Separa ocupacion e importes por CodigoMoneda canonico seleccionado.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Reportes_OcupacionPorEspacio]
     @NegocioId INT,
     @FechaDesde DATE,
     @FechaHasta DATE,
-    @SedeId INT = NULL
+    @SedeId INT = NULL,
+    @CodigoMoneda NVARCHAR(10)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -22,6 +24,7 @@ BEGIN
                 p.ReservaId,
                 SUM(p.Monto) AS MontoCobrado
             FROM dbo.Pagos p
+            WHERE p.CodigoMoneda = @CodigoMoneda
             GROUP BY p.ReservaId
         )
         SELECT
@@ -39,6 +42,7 @@ BEGIN
         LEFT JOIN PagosPorReserva pr ON pr.ReservaId = r.Id
         WHERE s.NegocioId = @NegocioId
           AND (@SedeId IS NULL OR s.Id = @SedeId)
+          AND r.CodigoMoneda = @CodigoMoneda
           AND r.Fecha >= @FechaDesde
           AND r.Fecha <= @FechaHasta
           AND r.Estado NOT IN (5, 6)

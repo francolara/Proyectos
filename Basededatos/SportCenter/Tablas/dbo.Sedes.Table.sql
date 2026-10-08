@@ -20,8 +20,10 @@ GO
 -- Create date:   27/04/2026
 -- Description:   Agrega CodigoUbigeo por sede para filtros publicos por ubicacion real de cada sede.
 -- =============================================
+-- Firma: FRANCO LARA - 01/10/2026 | Agrega el correlativo visible de sede por negocio sin reemplazar el Id tecnico global.
 CREATE TABLE [dbo].[Sedes](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[NumeroPorNegocio] [int] NULL,
 	[NegocioId] [int] NOT NULL,
 	[Nombre] [nvarchar](max) NOT NULL,
 	[Direccion] [nvarchar](max) NOT NULL,

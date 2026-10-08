@@ -4,6 +4,8 @@
 -- Firma:         Ajuste de aprobacion de altas con dias de prueba configurables y creacion de suscripcion inicial.
 -- Firma:         FRANCO LARA - 18/06/2026 | Registra TipoPlan Basico por defecto al crear nuevos negocios desde altas.
 -- Firma:         FRANCO LARA - 21/07/2026 | Conserva TipoPlan Basico y los limites predeterminados, sin asociarlos al plan comercial publico, y usa 15 dias de prueba por defecto.
+-- Firma:         Codex - 01/10/2026 | Asigna el correlativo visible de sede al crear el negocio aprobado.
+-- Firma:         FRANCO LARA - 06/10/2026 | Inicializa exclusivamente CodigoMoneda canonico PEN al crear el negocio.
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.Sp_AltasClubes_Aprobar
     @Id INT,
@@ -15,7 +17,7 @@ BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
         DECLARE @Correo NVARCHAR(200), @NombreClub NVARCHAR(200), @Telefono NVARCHAR(30), @Direccion NVARCHAR(250), @Ciudad NVARCHAR(120), @EstadoActual INT;
-        DECLARE @NegocioId INT, @SedeId INT;
+        DECLARE @NegocioId INT, @SedeId INT, @NumeroSedePorNegocio INT;
         DECLARE @Hoy DATE = CAST(SYSUTCDATETIME() AS DATE);
 
         IF @DiasPrueba IS NULL OR @DiasPrueba <= 0
@@ -39,12 +41,17 @@ BEGIN
 
         BEGIN TRANSACTION;
 
-        INSERT INTO dbo.Negocios (NombreComercial, RazonSocial, DocumentoFiscal, Activo, FechaRegistro, MonedaId, TipoPlan)
-        VALUES (@NombreClub, NULL, NULL, 1, SYSUTCDATETIME(), NULL, N'Basico');
+        INSERT INTO dbo.Negocios (NombreComercial, RazonSocial, DocumentoFiscal, Activo, FechaRegistro, CodigoMoneda, TipoPlan)
+        VALUES (@NombreClub, NULL, NULL, 1, SYSUTCDATETIME(), N'PEN', N'Basico');
         SET @NegocioId = SCOPE_IDENTITY();
 
-        INSERT INTO dbo.Sedes (NegocioId, Nombre, Direccion, Telefono, Activo, FechaCreacion, UsuarioCreacion)
-        VALUES (@NegocioId, CONCAT(@NombreClub, N' - Principal'), CONCAT(@Ciudad, N' - ', @Direccion), @Telefono, 1, SYSUTCDATETIME(), @Usuario);
+        EXEC dbo.Sp_NegocioCorrelativos_ObtenerSiguiente
+            @NegocioId = @NegocioId,
+            @Entidad = N'SEDE',
+            @Numero = @NumeroSedePorNegocio OUTPUT;
+
+        INSERT INTO dbo.Sedes (NegocioId, NumeroPorNegocio, Nombre, Direccion, Telefono, Activo, FechaCreacion, UsuarioCreacion)
+        VALUES (@NegocioId, @NumeroSedePorNegocio, CONCAT(@NombreClub, N' - Principal'), CONCAT(@Ciudad, N' - ', @Direccion), @Telefono, 1, SYSUTCDATETIME(), @Usuario);
         SET @SedeId = SCOPE_IDENTITY();
 
         IF OBJECT_ID(N'dbo.SedeConfiguracionNotificacion', N'U') IS NOT NULL

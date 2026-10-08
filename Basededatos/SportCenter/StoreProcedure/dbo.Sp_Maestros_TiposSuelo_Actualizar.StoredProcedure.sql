@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Maestros_TiposSuelo_Actualizar]    Script Date: 6/04/2026 07:00:00 ******/
 SET ANSI_NULLS ON
@@ -10,8 +10,9 @@ GO
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   06/04/2026
--- Description:   Actualiza estado de tipo de suelo por negocio.
+-- Description:   Actualiza estado y protege asociaciones utilizadas por espacios del negocio.
 -- =============================================
+-- Firma: FRANCO LARA - 06/10/2026 | Impide inactivar una asociacion de suelo utilizada por espacios del negocio.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Maestros_TiposSuelo_Actualizar]
     @NegocioId INT,
     @Id INT,
@@ -21,6 +22,17 @@ AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
+        IF @Activo = 0 AND EXISTS
+        (
+            SELECT 1
+            FROM dbo.TiposSuelo ts
+            INNER JOIN dbo.EspaciosDeportivos e ON e.TipoSueloSuperId = ts.TipoSueloSuperId
+            INNER JOIN dbo.Sedes s ON s.Id = e.SedeId AND s.NegocioId = ts.NegocioId
+            WHERE ts.Id = @Id
+              AND ts.NegocioId = @NegocioId
+        )
+            RAISERROR('No se puede inactivar el tipo de suelo porque existen espacios que lo utilizan.', 16, 1);
+
         UPDATE dbo.TiposSuelo
         SET
             Activo = @Activo,

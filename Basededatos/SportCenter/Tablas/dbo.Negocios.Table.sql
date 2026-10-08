@@ -8,6 +8,7 @@ GO
 -- Firma: Codex - 16/04/2026 | Agrega limites operativos (Sedes/Espacios) y flags de reserva (edicion de precio/cancelacion automatica por no confirmacion).
 -- Firma: Codex - 19/04/2026 | Agrega UsuariosPermitidos como limite operativo adicional para gestion de usuarios por negocio.
 -- Firma: FRANCO LARA - 18/06/2026 | Agrega TipoPlan en Negocios para distinguir capacidades Basico y Full.
+-- Firma: FRANCO LARA - 06/10/2026 | Usa CodigoMoneda canonico y retira MonedaId de la configuracion del negocio.
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -19,7 +20,7 @@ CREATE TABLE [dbo].[Negocios](
     [DocumentoFiscal] [nvarchar](max) NULL,
     [Activo] [bit] NOT NULL,
     [FechaRegistro] [datetime2](7) NOT NULL,
-    [MonedaId] [int] NULL,
+    [CodigoMoneda] [nvarchar](10) NOT NULL,
     [PoliticaConfirmacionPago] [tinyint] NOT NULL,
     [PorcentajeAdelantoMinimo] [decimal](5,2) NULL,
     [PorcentajeIgv] [int] NOT NULL,
@@ -37,15 +38,15 @@ CREATE TABLE [dbo].[Negocios](
     [SedesPermitidas] [int] NOT NULL,
     [EspaciosPermitidos] [int] NOT NULL,
     [UsuariosPermitidos] [int] NOT NULL,
- CONSTRAINT [PK_Negocios] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_Negocios] PRIMARY KEY CLUSTERED
 (
     [Id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_MonedaId]  DEFAULT ((1)) FOR [MonedaId]
-GO
 ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_PoliticaConfirmacionPago]  DEFAULT ((0)) FOR [PoliticaConfirmacionPago]
+GO
+ALTER TABLE [dbo].[Negocios] ADD CONSTRAINT [DF_Negocios_CodigoMoneda] DEFAULT (N'PEN') FOR [CodigoMoneda]
 GO
 ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_PorcentajeIgv]  DEFAULT ((18)) FOR [PorcentajeIgv]
 GO
@@ -65,10 +66,10 @@ ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_EspaciosPermitidos]  D
 GO
 ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_UsuariosPermitidos]  DEFAULT ((3)) FOR [UsuariosPermitidos]
 GO
-ALTER TABLE [dbo].[Negocios]  WITH CHECK ADD  CONSTRAINT [FK_Negocios_Monedas_MonedaId] FOREIGN KEY([MonedaId])
-REFERENCES [dbo].[Monedas] ([Id])
+ALTER TABLE [dbo].[Negocios] WITH CHECK ADD CONSTRAINT [FK_Negocios_MonedasSuperMaestro_CodigoMoneda] FOREIGN KEY([CodigoMoneda])
+REFERENCES [dbo].[MonedasSuperMaestro] ([Codigo])
 GO
-ALTER TABLE [dbo].[Negocios] CHECK CONSTRAINT [FK_Negocios_Monedas_MonedaId]
+ALTER TABLE [dbo].[Negocios] CHECK CONSTRAINT [FK_Negocios_MonedasSuperMaestro_CodigoMoneda]
 GO
 ALTER TABLE [dbo].[Negocios]  WITH CHECK ADD  CONSTRAINT [FK_Negocios_UbigeoDistritos_CodigoUbigeo] FOREIGN KEY([CodigoUbigeo])
 REFERENCES [dbo].[UbigeoDistritos] ([CodigoUbigeo])

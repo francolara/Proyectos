@@ -1,4 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.EspaciosResenasIndexViewModel
+@* Firma: Codex - 01/10/2026 | Muestra el correlativo visible de la reserva por negocio. *@
 @{
     ViewData["Title"] = "Resenas del espacio";
     var totalResenas = Model.TotalRegistros;
@@ -84,7 +85,7 @@
                                     </span>
                                 </div>
                                 <div class="small text-muted mt-1">
-                                    Reserva #@item.ReservaId | @item.ReservaFecha.ToString("dd/MM/yyyy") | @item.HoraInicio.ToString("HH\\:mm") - @item.HoraFin.ToString("HH\\:mm")
+                                    Reserva @item.CodigoReserva | @item.ReservaFecha.ToString("dd/MM/yyyy") | @item.HoraInicio.ToString("HH\\:mm") - @item.HoraFin.ToString("HH\\:mm")
                                 </div>
                             </div>
                             <div class="small text-muted">

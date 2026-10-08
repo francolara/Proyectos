@@ -6,7 +6,7 @@ namespace SistemaControlEspaciosDeportivosWeb.Services;
 
 public partial class SportCenterStoredProcedureService
 {
-    public async Task<List<ReporteOcupacionItemViewModel>> ReportesOcupacionPorEspacioAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null)
+    public async Task<List<ReporteOcupacionItemViewModel>> ReportesOcupacionPorEspacioAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId, string codigoMoneda)
     {
         var list = new List<ReporteOcupacionItemViewModel>();
         await using var cn = CreateConnection();
@@ -16,6 +16,7 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@FechaDesde", fechaDesde.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
         AddParam(cmd, "@FechaHasta", fechaHasta.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
         AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
+        AddParam(cmd, "@CodigoMoneda", codigoMoneda, SqlDbType.NVarChar);
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
         {
@@ -34,7 +35,7 @@ public partial class SportCenterStoredProcedureService
         return list;
     }
 
-    public async Task<List<ReporteIngresoDiaItemViewModel>> ReportesIngresosPorDiaAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null)
+    public async Task<List<ReporteIngresoDiaItemViewModel>> ReportesIngresosPorDiaAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId, string codigoMoneda)
     {
         var list = new List<ReporteIngresoDiaItemViewModel>();
         await using var cn = CreateConnection();
@@ -44,6 +45,7 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@FechaDesde", fechaDesde.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
         AddParam(cmd, "@FechaHasta", fechaHasta.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
         AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
+        AddParam(cmd, "@CodigoMoneda", codigoMoneda, SqlDbType.NVarChar);
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
         {
@@ -57,7 +59,7 @@ public partial class SportCenterStoredProcedureService
         return list;
     }
 
-    public async Task<List<ReporteReservaDiaItemViewModel>> ReportesReservasPorDiaAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null)
+    public async Task<List<ReporteReservaDiaItemViewModel>> ReportesReservasPorDiaAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId, string codigoMoneda)
     {
         var list = new List<ReporteReservaDiaItemViewModel>();
         await using var cn = CreateConnection();
@@ -67,6 +69,7 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@FechaDesde", fechaDesde.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
         AddParam(cmd, "@FechaHasta", fechaHasta.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
         AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
+        AddParam(cmd, "@CodigoMoneda", codigoMoneda, SqlDbType.NVarChar);
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
         {
@@ -80,7 +83,7 @@ public partial class SportCenterStoredProcedureService
         return list;
     }
 
-    public async Task<ReporteResumenOperativoViewModel> ReportesResumenOperativoAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null)
+    public async Task<ReporteResumenOperativoViewModel> ReportesResumenOperativoAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId, string codigoMoneda)
     {
         var vm = new ReporteResumenOperativoViewModel();
 
@@ -91,6 +94,7 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@FechaDesde", fechaDesde.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
         AddParam(cmd, "@FechaHasta", fechaHasta.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
         AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
+        AddParam(cmd, "@CodigoMoneda", codigoMoneda, SqlDbType.NVarChar);
 
         await using var dr = await cmd.ExecuteReaderAsync();
         if (await dr.ReadAsync())
@@ -109,7 +113,7 @@ public partial class SportCenterStoredProcedureService
         return vm;
     }
 
-    public async Task<ReporteResumenCobranzaViewModel> ReportesResumenCobranzaAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null)
+    public async Task<ReporteResumenCobranzaViewModel> ReportesResumenCobranzaAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId, string codigoMoneda)
     {
         var vm = new ReporteResumenCobranzaViewModel();
 
@@ -120,6 +124,7 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@FechaDesde", fechaDesde.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
         AddParam(cmd, "@FechaHasta", fechaHasta.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
         AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
+        AddParam(cmd, "@CodigoMoneda", codigoMoneda, SqlDbType.NVarChar);
 
         await using var dr = await cmd.ExecuteReaderAsync();
         if (await dr.ReadAsync())
@@ -132,7 +137,7 @@ public partial class SportCenterStoredProcedureService
         return vm;
     }
 
-    public async Task<List<ReportePagoDetalleItemViewModel>> ReportesDetallePagosAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null)
+    public async Task<List<ReportePagoDetalleItemViewModel>> ReportesDetallePagosAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId, string codigoMoneda)
     {
         var list = new List<ReportePagoDetalleItemViewModel>();
         await using var cn = CreateConnection();
@@ -142,6 +147,7 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@FechaDesde", fechaDesde.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
         AddParam(cmd, "@FechaHasta", fechaHasta.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
         AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
+        AddParam(cmd, "@CodigoMoneda", codigoMoneda, SqlDbType.NVarChar);
 
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
@@ -160,14 +166,18 @@ public partial class SportCenterStoredProcedureService
                 Espacio = dr.GetString(9),
                 FormaPago = dr.GetString(10),
                 NumeroOperacion = dr.IsDBNull(11) ? null : dr.GetString(11),
-                Monto = dr.GetDecimal(12)
+                Monto = dr.GetDecimal(12),
+                NumeroPagoPorNegocio = ReadRequiredInt32(dr, 13, "NumeroPagoPorNegocio"),
+                NumeroReservaPorNegocio = ReadRequiredInt32(dr, 14, "NumeroReservaPorNegocio"),
+                CodigoMoneda = dr.FieldCount > 15 && !dr.IsDBNull(15) ? dr.GetString(15) : "PEN",
+                MonedaSimbolo = dr.FieldCount > 16 && !dr.IsDBNull(16) ? dr.GetString(16) : "S/"
             });
         }
 
         return list;
     }
 
-    public async Task<List<ReporteReservaDetalleItemViewModel>> ReportesDetalleReservasAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null)
+    public async Task<List<ReporteReservaDetalleItemViewModel>> ReportesDetalleReservasAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId, string codigoMoneda)
     {
         var list = new List<ReporteReservaDetalleItemViewModel>();
         await using var cn = CreateConnection();
@@ -177,6 +187,7 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@FechaDesde", fechaDesde.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
         AddParam(cmd, "@FechaHasta", fechaHasta.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
         AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
+        AddParam(cmd, "@CodigoMoneda", codigoMoneda, SqlDbType.NVarChar);
 
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
@@ -198,7 +209,10 @@ public partial class SportCenterStoredProcedureService
                 Descuento = dr.GetDecimal(12),
                 MontoPagado = dr.GetDecimal(13),
                 SaldoPendiente = dr.GetDecimal(14),
-                CodigoCupon = dr.IsDBNull(15) ? null : dr.GetString(15)
+                CodigoCupon = dr.IsDBNull(15) ? null : dr.GetString(15),
+                NumeroPorNegocio = ReadRequiredInt32(dr, 16, "NumeroPorNegocio"),
+                CodigoMoneda = dr.FieldCount > 17 && !dr.IsDBNull(17) ? dr.GetString(17) : "PEN",
+                MonedaSimbolo = dr.FieldCount > 18 && !dr.IsDBNull(18) ? dr.GetString(18) : "S/"
             });
         }
 

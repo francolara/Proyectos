@@ -60,8 +60,8 @@ public class SolicitudesController(IModuloPermisoService moduloPermisoService, I
 
         try
         {
-            var reservaId = await spService.SolicitudesPublicasConvertirAReservaAsync(model, User.Identity?.Name ?? "sistema");
-            TempData["MensajeSolicitudInterna"] = $"Solicitud convertida correctamente a reserva #{reservaId}.";
+            var (_, numeroPorNegocio) = await spService.SolicitudesPublicasConvertirAReservaAsync(model, User.Identity?.Name ?? "sistema");
+            TempData["MensajeSolicitudInterna"] = $"Solicitud convertida correctamente a reserva R-{numeroPorNegocio:D6}.";
         }
         catch (Exception ex)
         {

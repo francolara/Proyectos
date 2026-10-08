@@ -12,6 +12,7 @@ public class Reserva
     public decimal Total { get; set; }
     public decimal Adelanto { get; set; }
     public decimal Saldo { get; set; }
+    public string CodigoMoneda { get; set; } = "PEN";
     public DateTime FechaRegistro { get; set; } = DateTime.UtcNow;
     public DateTime? FechaActualizacion { get; set; }
     public string? UsuarioCreacion { get; set; }

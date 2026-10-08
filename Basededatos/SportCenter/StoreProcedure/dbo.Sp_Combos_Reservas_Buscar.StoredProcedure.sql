@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -6,6 +6,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- Firma: Codex - 09/04/2026 | Combo de reservas para pagos con busqueda incremental por texto y opcion de incluir reserva especifica.
+-- Firma: Codex - 01/10/2026 | Muestra y permite buscar por el correlativo visible completo R-000000 de la reserva por negocio, sin respaldo al Id tecnico.
 CREATE OR ALTER PROCEDURE dbo.Sp_Combos_Reservas_Buscar
     @NegocioId INT,
     @Buscar NVARCHAR(150) = NULL,
@@ -17,6 +18,13 @@ BEGIN
 
     BEGIN TRY
         DECLARE @BuscarNorm NVARCHAR(150) = NULLIF(LTRIM(RTRIM(@Buscar)), N'');
+        DECLARE @BuscarNumeroReserva INT = TRY_CONVERT(
+            INT,
+            CASE
+                WHEN UPPER(LEFT(@BuscarNorm, 2)) = N'R-' THEN SUBSTRING(@BuscarNorm, 3, 150)
+                ELSE NULL
+            END
+        );
         SET @Top = CASE WHEN ISNULL(@Top, 0) < 1 THEN 40 WHEN @Top > 100 THEN 100 ELSE @Top END;
 
         ;WITH Fuente AS
@@ -24,7 +32,7 @@ BEGIN
             SELECT
                 r.Id,
                 CONCAT(
-                    N'#', r.Id,
+                    N'R-', RIGHT(N'000000' + CONVERT(NVARCHAR(20), r.NumeroPorNegocio), 6),
                     N' - ',
                     c.NombresORazonSocial,
                     CASE
@@ -51,7 +59,8 @@ BEGIN
               (
                   (@BuscarNorm IS NOT NULL AND
                    (
-                       CONVERT(NVARCHAR(20), r.Id) LIKE N'%' + @BuscarNorm + N'%'
+                       CONVERT(NVARCHAR(20), r.NumeroPorNegocio) LIKE N'%' + @BuscarNorm + N'%'
+                       OR (@BuscarNumeroReserva IS NOT NULL AND r.NumeroPorNegocio = @BuscarNumeroReserva)
                        OR c.NombresORazonSocial LIKE N'%' + @BuscarNorm + N'%'
                        OR ISNULL(c.NombreEquipo, N'') LIKE N'%' + @BuscarNorm + N'%'
                        OR s.Nombre LIKE N'%' + @BuscarNorm + N'%'
@@ -78,4 +87,3 @@ BEGIN
     END CATCH
 END
 GO
-

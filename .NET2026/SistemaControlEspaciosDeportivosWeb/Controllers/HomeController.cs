@@ -136,6 +136,18 @@ public class HomeController(
         var codigoDep = string.IsNullOrWhiteSpace(codigoDepartamento) ? null : codigoDepartamento.Trim();
         var codigoProv = string.IsNullOrWhiteSpace(codigoProvincia) ? null : codigoProvincia.Trim();
         var codigoDist = string.IsNullOrWhiteSpace(codigoUbigeo) ? null : codigoUbigeo.Trim();
+        int? numeroReservaCreada = null;
+        if (TempData.TryGetValue("NumeroReservaPublicaCreada", out var numeroReservaCreadaTemp)
+            && int.TryParse(
+                Convert.ToString(numeroReservaCreadaTemp, CultureInfo.InvariantCulture),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out var numeroPorNegocio)
+            && numeroPorNegocio > 0)
+        {
+            numeroReservaCreada = numeroPorNegocio;
+        }
+
         var vm = await ConstruirReservaVmAsync(
             espacioDeportivoId,
             fechaConsulta,
@@ -146,7 +158,8 @@ public class HomeController(
             codigoDist,
             tipoDeporteId,
             negocioId,
-            omitirFechaHorario: omitirFechaHorario);
+            omitirFechaHorario: omitirFechaHorario,
+            permitirHorarioOcupado: numeroReservaCreada.HasValue);
 
         if (vm is null)
         {
@@ -165,6 +178,8 @@ public class HomeController(
                 pagina = 1
             });
         }
+
+        vm.NumeroReservaCreada = numeroReservaCreada;
 
         return View(vm);
     }
@@ -377,14 +392,15 @@ public class HomeController(
                 }
             }
 
-            var reservaId = await spService.HomeSolicitarReservaPublicaAsync(model);
+            var (reservaId, numeroPorNegocio) = await spService.HomeSolicitarReservaPublicaAsync(model);
             await reservationEmailNotificationService.NotifyPublicReservationCreatedAsync(null, reservaId);
             logger.LogInformation(
                 "Reserva publica creada con exito. ReservaId={ReservaId}.",
                 reservaId);
-            TempData["MensajeSolicitud"] = $"Reserva registrada correctamente. Codigo: R-{reservaId:D6}.";
-            return RedirectToAction(nameof(Index), new
+            TempData["NumeroReservaPublicaCreada"] = numeroPorNegocio;
+            return RedirectToAction(nameof(Reservar), new
             {
+                espacioDeportivoId = model.EspacioDeportivoId,
                 fecha = model.Fecha,
                 horaInicio = model.HoraInicio,
                 horaFin = model.HoraFin,
@@ -393,8 +409,7 @@ public class HomeController(
                 codigoUbigeo = model.CodigoUbigeo,
                 tipoDeporteId = model.TipoDeporteId,
                 negocioId = model.NegocioId,
-                omitirFechaHorario = omitirFechaHorario,
-                pagina = 1
+                omitirFechaHorario = omitirFechaHorario
             });
         }
         catch (Exception ex)
@@ -721,7 +736,8 @@ public class HomeController(
         int? tipoDeporteId,
         int? negocioId,
         bool omitirFechaHorario = false,
-        SolicitudReservaPublicaFormViewModel? formBase = null)
+        SolicitudReservaPublicaFormViewModel? formBase = null,
+        bool permitirHorarioOcupado = false)
     {
         var codigoDep = string.IsNullOrWhiteSpace(codigoDepartamento) ? null : codigoDepartamento.Trim();
         var codigoProv = string.IsNullOrWhiteSpace(codigoProvincia) ? null : codigoProvincia.Trim();
@@ -739,7 +755,7 @@ public class HomeController(
             codigoDist,
             tipoDeporteId,
             negocioId,
-            omitirFechaHorario);
+            omitirFechaHorario || permitirHorarioOcupado);
 
         var espacio = disponibles.FirstOrDefault(x => x.EspacioDeportivoId == espacioDeportivoId);
         if (espacio is null)

@@ -1,4 +1,4 @@
-﻿GO
+GO
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -8,6 +8,7 @@ GO
 -- Create date:   08/06/2026
 -- Description:   Obtiene el detalle de una reserva publica del usuario autenticado para exportarla a calendario ICS.
 -- =============================================
+-- Firma: Codex - 01/10/2026 | Incluye el correlativo visible de la reserva por negocio para el archivo de calendario.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_UsuariosPublicos_ReservaCalendarioObtener]
     @UsuarioId NVARCHAR(450),
     @ReservaId INT
@@ -40,7 +41,8 @@ BEGIN
             s.Direccion AS SedeDireccion,
             r.Fecha,
             r.HoraInicio,
-            r.HoraFin
+            r.HoraFin,
+            r.NumeroPorNegocio
         FROM dbo.ReservasUsuariosPublicos rup
         INNER JOIN dbo.Reservas r ON r.Id = rup.ReservaId
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId

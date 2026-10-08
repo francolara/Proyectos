@@ -75,16 +75,25 @@ public class PanelController(ISportCenterStoredProcedureService spService, IModu
         var desdeAnterior = desde.AddDays(-diasPeriodo);
         var hastaAnterior = desde.AddDays(-1);
 
-        var metricas = await spService.PanelObtenerMetricasAsync(negocioSeleccionadoId, hasta, sedeAplicada);
-        var metricasDiaAnterior = await spService.PanelObtenerMetricasAsync(negocioSeleccionadoId, hasta.AddDays(-1), sedeAplicada);
+        var monedasNegocio = await spService.MaestrosMonedasListarAsync(negocioSeleccionadoId);
+        var configuracionNegocio = await spService.ConfiguracionClubObtenerAsync(negocioSeleccionadoId);
+        var codigoMonedaDashboard = monedasNegocio.FirstOrDefault(x => string.Equals(x.Codigo, configuracionNegocio?.CodigoMoneda, StringComparison.OrdinalIgnoreCase))?.Codigo
+            ?? monedasNegocio.FirstOrDefault(x => string.Equals(x.Codigo, "PEN", StringComparison.OrdinalIgnoreCase))?.Codigo
+            ?? monedasNegocio.FirstOrDefault()?.Codigo
+            ?? "PEN";
+        var simboloMonedaDashboard = monedasNegocio.FirstOrDefault(x => string.Equals(x.Codigo, codigoMonedaDashboard, StringComparison.OrdinalIgnoreCase))?.Simbolo
+            ?? codigoMonedaDashboard;
 
-        var ingresosPeriodo = await spService.ReportesIngresosPorDiaAsync(negocioSeleccionadoId, desde, hasta, sedeAplicada);
-        var ingresosPeriodoAnterior = await spService.ReportesIngresosPorDiaAsync(negocioSeleccionadoId, desdeAnterior, hastaAnterior, sedeAplicada);
-        var reservasPeriodo = await spService.ReportesReservasPorDiaAsync(negocioSeleccionadoId, desde, hasta, sedeAplicada);
-        var reservasPeriodoAnterior = await spService.ReportesReservasPorDiaAsync(negocioSeleccionadoId, desdeAnterior, hastaAnterior, sedeAplicada);
-        var cobranzaPeriodo = await spService.ReportesResumenCobranzaAsync(negocioSeleccionadoId, desde, hasta, sedeAplicada);
-        var cobranzaPeriodoAnterior = await spService.ReportesResumenCobranzaAsync(negocioSeleccionadoId, desdeAnterior, hastaAnterior, sedeAplicada);
-        var ocupacionPeriodo = await spService.ReportesOcupacionPorEspacioAsync(negocioSeleccionadoId, desde, hasta, sedeAplicada);
+        var metricas = await spService.PanelObtenerMetricasAsync(negocioSeleccionadoId, hasta, sedeAplicada, codigoMonedaDashboard);
+        var metricasDiaAnterior = await spService.PanelObtenerMetricasAsync(negocioSeleccionadoId, hasta.AddDays(-1), sedeAplicada, codigoMonedaDashboard);
+
+        var ingresosPeriodo = await spService.ReportesIngresosPorDiaAsync(negocioSeleccionadoId, desde, hasta, sedeAplicada, codigoMonedaDashboard);
+        var ingresosPeriodoAnterior = await spService.ReportesIngresosPorDiaAsync(negocioSeleccionadoId, desdeAnterior, hastaAnterior, sedeAplicada, codigoMonedaDashboard);
+        var reservasPeriodo = await spService.ReportesReservasPorDiaAsync(negocioSeleccionadoId, desde, hasta, sedeAplicada, codigoMonedaDashboard);
+        var reservasPeriodoAnterior = await spService.ReportesReservasPorDiaAsync(negocioSeleccionadoId, desdeAnterior, hastaAnterior, sedeAplicada, codigoMonedaDashboard);
+        var cobranzaPeriodo = await spService.ReportesResumenCobranzaAsync(negocioSeleccionadoId, desde, hasta, sedeAplicada, codigoMonedaDashboard);
+        var cobranzaPeriodoAnterior = await spService.ReportesResumenCobranzaAsync(negocioSeleccionadoId, desdeAnterior, hastaAnterior, sedeAplicada, codigoMonedaDashboard);
+        var ocupacionPeriodo = await spService.ReportesOcupacionPorEspacioAsync(negocioSeleccionadoId, desde, hasta, sedeAplicada, codigoMonedaDashboard);
 
         var reservasPendientes = await spService.ReservasListarAsync(
             negocioSeleccionadoId,
@@ -127,6 +136,7 @@ public class PanelController(ISportCenterStoredProcedureService spService, IModu
             SedesFiltro = PrepararSedesFiltro(sedes, contextoDashboard.EsAdministrador, sedeAplicada),
             FechaDesde = desde,
             FechaHasta = hasta,
+            MonedaSimbolo = simboloMonedaDashboard,
             Modulos = permisosRol.Where(p => p.PuedeVer).OrderBy(p => p.ModuloNombre).ToList(),
 
             TotalSedes = metricas.TotalSedes,
@@ -175,6 +185,7 @@ public class PanelController(ISportCenterStoredProcedureService spService, IModu
                 .ToList(),
 
             ReservasPendientesConfirmacion = reservasPendientes.Reservas
+                .Where(x => string.Equals(x.CodigoMoneda, codigoMonedaDashboard, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(x => x.Fecha)
                 .ThenBy(x => x.HoraInicio)
                 .Take(8)
@@ -182,7 +193,7 @@ public class PanelController(ISportCenterStoredProcedureService spService, IModu
                 .ToList(),
 
             ReservasConSaldoPendiente = reservasSaldoPendiente.Reservas
-                .Where(x => x.SaldoPendiente > 0)
+                .Where(x => x.SaldoPendiente > 0 && string.Equals(x.CodigoMoneda, codigoMonedaDashboard, StringComparison.OrdinalIgnoreCase))
                 .OrderByDescending(x => x.SaldoPendiente)
                 .ThenBy(x => x.Fecha)
                 .Select(MapearReservaAccion)
@@ -246,7 +257,7 @@ public class PanelController(ISportCenterStoredProcedureService spService, IModu
         return new DashboardReservaAccionViewModel
         {
             ReservaId = item.Id,
-            ReservaCodigo = $"R-{item.Id:000000}",
+            ReservaCodigo = item.CodigoVisible,
             Cliente = item.Cliente,
             Sede = item.Sede,
             Espacio = item.Espacio,

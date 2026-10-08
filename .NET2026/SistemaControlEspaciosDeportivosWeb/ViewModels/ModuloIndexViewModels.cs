@@ -49,8 +49,10 @@ public class ConfiguracionClubViewModel : ModuloBaseViewModel
     [StringLength(6, ErrorMessage = "El codigo ubigeo debe tener 6 caracteres.")]
     public string? CodigoUbigeo { get; set; }
 
-    [Range(1, int.MaxValue, ErrorMessage = "Debes seleccionar una moneda válida.")]
-    public int MonedaId { get; set; } = 1;
+    [Required(ErrorMessage = "Debes seleccionar una moneda válida.")]
+    [StringLength(10, ErrorMessage = "El código de moneda no puede superar los 10 caracteres.")]
+    public string CodigoMoneda { get; set; } = "PEN";
+    public string MonedaSimbolo { get; set; } = string.Empty;
 
     [Range(0, 2, ErrorMessage = "La politica de confirmacion no es valida.")]
     public int PoliticaConfirmacionPago { get; set; } = 0;
@@ -115,6 +117,8 @@ public class SedesIndexViewModel : ModuloBaseViewModel
 public class SedeItemViewModel
 {
     public int Id { get; set; }
+    public int NumeroPorNegocio { get; set; }
+    public string CodigoVisible => $"S-{NumeroPorNegocio:D3}";
     public string Nombre { get; set; } = string.Empty;
     public string Direccion { get; set; } = string.Empty;
     public string Servicios { get; set; } = string.Empty;
@@ -153,6 +157,8 @@ public class EspaciosResenasIndexViewModel : ModuloBaseViewModel
 public class EspacioItemViewModel
 {
     public int Id { get; set; }
+    public int NumeroPorNegocio { get; set; }
+    public string CodigoVisible => $"E-{NumeroPorNegocio:D3}";
     public string Codigo { get; set; } = string.Empty;
     public string Nombre { get; set; } = string.Empty;
     public string SedeNombre { get; set; } = string.Empty;
@@ -171,6 +177,8 @@ public class EspacioResenaAdminItemViewModel
 {
     public int ResenaId { get; set; }
     public int ReservaId { get; set; }
+    public int NumeroReservaPorNegocio { get; set; }
+    public string CodigoReserva => $"R-{NumeroReservaPorNegocio:D6}";
     public int EspacioDeportivoId { get; set; }
     public int SedeId { get; set; }
     public string EspacioNombre { get; set; } = string.Empty;
@@ -212,6 +220,8 @@ public class ReservasIndexViewModel : ModuloBaseViewModel
     public int TotalPendientesListadoGlobal { get; set; }
     public int TotalPagadasListadoGlobal { get; set; }
     public decimal SaldoTotalListadoGlobal { get; set; }
+    public bool SaldoListadoEsMultimoneda { get; set; }
+    public string SaldoListadoMonedaSimbolo { get; set; } = "S/";
     public int PaginaListado { get; set; } = 1;
     public int TamanoPaginaListado { get; set; } = 20;
     public int TotalPaginasListado { get; set; } = 1;
@@ -255,6 +265,8 @@ public class ReservasListadoResumenViewModel
     public int TotalPendientes { get; set; }
     public int TotalPagadas { get; set; }
     public decimal SaldoTotal { get; set; }
+    public bool EsMultimoneda { get; set; }
+    public string MonedaSimbolo { get; set; } = "S/";
 }
 
 public class ReservaClienteRapidoRequestViewModel
@@ -273,6 +285,8 @@ public class ReservaClienteRapidoRequestViewModel
 public class ReservaItemViewModel
 {
     public int Id { get; set; }
+    public int NumeroPorNegocio { get; set; }
+    public string CodigoVisible => $"R-{NumeroPorNegocio:D6}";
     public string Cliente { get; set; } = string.Empty;
     public string? Equipo { get; set; }
     public string Espacio { get; set; } = string.Empty;
@@ -283,12 +297,15 @@ public class ReservaItemViewModel
     public decimal Total { get; set; }
     public decimal Adelanto { get; set; }
     public decimal SaldoPendiente { get; set; }
+    public string CodigoMoneda { get; set; } = "PEN";
+    public string MonedaSimbolo { get; set; } = "S/";
     public string Estado { get; set; } = string.Empty;
 }
 
 public class ReservaCalendarioEventoViewModel
 {
     public int Id { get; set; }
+    public int? NumeroPorNegocio { get; set; }
     public string TipoEvento { get; set; } = string.Empty;
     public string Titulo { get; set; } = string.Empty;
     public DateOnly Fecha { get; set; }
@@ -345,6 +362,7 @@ public class PagosIndexViewModel : ModuloBaseViewModel
     public decimal TotalPagadoGeneral { get; set; }
     public decimal TotalSaldoGeneral { get; set; }
     public string MonedaSimbolo { get; set; } = "S/";
+    public bool EsMultimoneda { get; set; }
     public bool EmisionComprobantesElectronicos { get; set; }
     public bool EmisionReciboInterno { get; set; }
     public List<PagoReservaResumenViewModel> Pagos { get; set; } = new();
@@ -363,6 +381,7 @@ public class PagoReservaResumenViewModel
     public string FormaPagoResumen { get; set; } = string.Empty;
     public int CantidadPagos { get; set; }
     public string MonedaSimbolo { get; set; } = "S/";
+    public string CodigoMoneda { get; set; } = "PEN";
     public bool PagadaCompleta { get; set; }
     public bool TieneComprobanteActivo { get; set; }
     public string Referencia { get; set; } = string.Empty;
@@ -382,6 +401,7 @@ public class PagoReservaEditViewModel : ModuloBaseViewModel
     public decimal TotalPagado { get; set; }
     public decimal SaldoPendiente { get; set; }
     public string MonedaSimbolo { get; set; } = "S/";
+    public string CodigoMoneda { get; set; } = "PEN";
     public int PoliticaConfirmacionPago { get; set; }
     public decimal? PorcentajeAdelantoMinimo { get; set; }
     public bool TieneComprobanteActivo { get; set; }
@@ -400,6 +420,8 @@ public class PagoReservaEditViewModel : ModuloBaseViewModel
 public class PagoReservaDetalleItemViewModel : IRegistroTrazable
 {
     public int PagoId { get; set; }
+    public int NumeroPorNegocio { get; set; }
+    public string CodigoVisible => $"P-{NumeroPorNegocio:D6}";
     public DateTime FechaPago { get; set; }
     public decimal Monto { get; set; }
     public int FormaPagoId { get; set; }
@@ -426,6 +448,9 @@ public class ComprobantesIndexViewModel : ModuloBaseViewModel
     public decimal TotalMontoEmitidoGeneral { get; set; }
     public int TotalPendientesGeneral { get; set; }
     public int TotalAnuladosGeneral { get; set; }
+    public string MonedaSimbolo { get; set; } = "S/";
+    public string CodigoMoneda { get; set; } = "PEN";
+    public bool EsMultimoneda { get; set; }
     public List<SelectListItem> TiposDocumentoFiltro { get; set; } = new();
     public List<ComprobanteItemViewModel> Comprobantes { get; set; } = new();
 }
@@ -434,11 +459,15 @@ public class ComprobanteItemViewModel
 {
     public int Id { get; set; }
     public int ReservaId { get; set; }
+    public int NumeroReservaPorNegocio { get; set; }
+    public string CodigoReserva => $"R-{NumeroReservaPorNegocio:D6}";
     public string Tipo { get; set; } = string.Empty;
     public string SerieNumero { get; set; } = string.Empty;
     public DateTime FechaEmision { get; set; }
     public string Cliente { get; set; } = string.Empty;
     public decimal Total { get; set; }
+    public string CodigoMoneda { get; set; } = "PEN";
+    public string MonedaSimbolo { get; set; } = "S/";
     public string Estado { get; set; } = string.Empty;
     public int EstadoCodigo { get; set; }
     public string CodigoDocumentoComprobante { get; set; } = string.Empty;
@@ -536,6 +565,10 @@ public class TipoDocumentoComprobanteNegocioItemViewModel
 public class PromocionItemViewModel
 {
     public int Id { get; set; }
+    public int? NumeroPorNegocio { get; set; }
+    public string CodigoVisible => NumeroPorNegocio.HasValue
+        ? $"PRO-{NumeroPorNegocio.Value:D6}"
+        : "Sin correlativo";
     public string Nombre { get; set; } = string.Empty;
     public string Sede { get; set; } = string.Empty;
     public string Espacio { get; set; } = string.Empty;
@@ -550,10 +583,14 @@ public class PromocionItemViewModel
 public class CuponItemViewModel
 {
     public int Id { get; set; }
+    public int NumeroPorNegocio { get; set; }
+    public string CodigoVisible => $"CUP-{NumeroPorNegocio:D6}";
     public string CodigoCupon { get; set; } = string.Empty;
     public string Nombre { get; set; } = string.Empty;
     public string TipoDescuento { get; set; } = string.Empty;
     public decimal ValorDescuento { get; set; }
+    public string CodigoMoneda { get; set; } = string.Empty;
+    public string MonedaSimbolo { get; set; } = string.Empty;
     public int CantidadMaxUsos { get; set; }
     public int CantidadUsosActuales { get; set; }
     public int CantidadUsosDisponibles { get; set; }
@@ -578,6 +615,8 @@ public class CuponValidacionViewModel
 public class ClienteItemViewModel
 {
     public int Id { get; set; }
+    public int NumeroPorNegocio { get; set; }
+    public string CodigoVisible => $"C-{NumeroPorNegocio:D6}";
     public string NombresORazonSocial { get; set; } = string.Empty;
     public string? NombreEquipo { get; set; }
     public string TipoDocumento { get; set; } = string.Empty;

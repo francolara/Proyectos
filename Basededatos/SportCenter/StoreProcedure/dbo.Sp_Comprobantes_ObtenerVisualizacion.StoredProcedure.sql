@@ -1,4 +1,4 @@
-﻿USE [DbSportCenter]
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -8,6 +8,8 @@ GO
 -- Firma: Codex - 11/04/2026 | Agrega soporte de codigos 07/08 para visualizacion de NC/ND.
 -- Firma: Codex - 05/05/2026 | URL de descarga prioriza campos dedicados URL PDF/XML/CDR.
 -- Firma: Codex - 07/05/2026 | Corrige EsTributario para usar CodigoSunat por negocio (IDs de TipoComprobante son dinamicos).
+-- Firma: Codex - 01/10/2026 | Incluye el correlativo visible de la reserva por negocio.
+-- Firma: FRANCO LARA - 06/10/2026 | Visualiza codigos canonicos y reemplaza el ordinal heredado por un valor reservado nulo.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Comprobantes_ObtenerVisualizacion]
     @NegocioId INT,
     @Id INT
@@ -19,28 +21,20 @@ BEGIN
             ce.Id,
             ce.NegocioId,
             ce.ReservaId,
-            ce.TipoComprobante,
-            --CASE
-            --    WHEN ce.TipoComprobante = 2 THEN N'01'
-            --    WHEN ce.TipoComprobante = 1 THEN N'03'
-            --    WHEN ce.TipoComprobante = 3 THEN N'RI'
-            --    WHEN ce.TipoComprobante = 4 THEN N'07'
-            --    WHEN ce.TipoComprobante = 5 THEN N'08'
-            --    ELSE N'03'
-            --END AS CodigoDocumentoComprobante,
-            d.CodigoSunat AS CodigoDocumentoComprobante,
+            CAST(NULL AS INT) AS CompatibilidadTipoComprobanteReservada,
+            ce.CodigoTipoComprobante AS CodigoDocumentoComprobante,
             CASE
-                WHEN d.CodigoSunat = '01' THEN N'Factura'
-                WHEN d.CodigoSunat = '03' THEN N'Boleta'
-                WHEN d.CodigoSunat = 'RI' THEN N'Recibo Interno'
-                WHEN d.CodigoSunat = '07' THEN N'Nota de Credito'
-                WHEN d.CodigoSunat = '08' THEN N'Nota de Debito'
+                WHEN ce.CodigoTipoComprobante = '01' THEN N'Factura'
+                WHEN ce.CodigoTipoComprobante = '03' THEN N'Boleta'
+                WHEN ce.CodigoTipoComprobante = 'RI' THEN N'Recibo Interno'
+                WHEN ce.CodigoTipoComprobante = '07' THEN N'Nota de Credito'
+                WHEN ce.CodigoTipoComprobante = '08' THEN N'Nota de Debito'
             END AS TipoDocumentoNombre,
-            CAST(CASE WHEN d.CodigoSunat IN (N'01', N'03', N'07', N'08') THEN 1 ELSE 0 END AS BIT) AS EsTributario,
+            CAST(CASE WHEN ce.CodigoTipoComprobante IN (N'01', N'03', N'07', N'08') THEN 1 ELSE 0 END AS BIT) AS EsTributario,
             ce.Serie,
             ce.Numero,
             ce.FechaEmision,
-            COALESCE(ms.Simbolo, N'S/') AS MonedaSimbolo,
+            COALESCE(ms.Simbolo, ce.CodigoMoneda) AS MonedaSimbolo,
             ce.SubTotal,
             ce.Igv,
             ce.Total,
@@ -73,23 +67,21 @@ BEGIN
                 NULLIF(LTRIM(RTRIM(ce.UrlXmlSunat)), N''),
                 NULLIF(LTRIM(RTRIM(ce.UrlCdrSunat)), N''),
                 CASE WHEN ce.MensajeRespuestaSunat LIKE N'http%' THEN ce.MensajeRespuestaSunat ELSE NULL END
-            ) AS UrlDescargaProveedor
+            ) AS UrlDescargaProveedor,
+            r.NumeroPorNegocio AS NumeroReservaPorNegocio
         FROM dbo.ComprobantesElectronicos ce
         INNER JOIN dbo.Negocios n ON n.Id = ce.NegocioId
         INNER JOIN dbo.Reservas r ON r.Id = ce.ReservaId
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         INNER JOIN dbo.Clientes c ON c.Id = ce.ClienteId
-        INNER JOIN NegociosTiposDocumentoComprobante d
-        ON ce.TipoComprobante = d.Id AND d.NegocioId = @NegocioId
         LEFT JOIN dbo.UbigeoDistritos ndis ON ndis.CodigoUbigeo = n.CodigoUbigeo
         LEFT JOIN dbo.UbigeoProvincias nprov ON nprov.CodigoProvincia = ndis.CodigoProvincia
         LEFT JOIN dbo.UbigeoDepartamentos ndep ON ndep.CodigoDepartamento = ndis.CodigoDepartamento
         LEFT JOIN dbo.UbigeoDistritos cdis ON cdis.CodigoUbigeo = c.CodigoUbigeo
         LEFT JOIN dbo.UbigeoProvincias cprov ON cprov.CodigoProvincia = cdis.CodigoProvincia
         LEFT JOIN dbo.UbigeoDepartamentos cdep ON cdep.CodigoDepartamento = cdis.CodigoDepartamento
-        LEFT JOIN dbo.Monedas m ON m.Id = n.MonedaId
-        LEFT JOIN dbo.MonedasSuperMaestro ms ON ms.Id = m.MonedaSuperId
+        LEFT JOIN dbo.MonedasSuperMaestro ms ON ms.Codigo = ce.CodigoMoneda
         WHERE ce.NegocioId = @NegocioId
           AND ce.Id = @Id;
     END TRY

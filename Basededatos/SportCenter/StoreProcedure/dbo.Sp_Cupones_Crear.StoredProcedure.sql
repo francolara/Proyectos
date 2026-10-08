@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -6,6 +6,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 -- Firma: FRANCO LARA
 -- Create date: 03/05/2026
+-- Firma: FRANCO LARA - 01/10/2026 | Asigna el correlativo visible de cupon por negocio, independiente del codigo canjeable.
+-- Firma: FRANCO LARA - 06/10/2026 | Persiste el codigo canonico de moneda del negocio.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Cupones_Crear]
     @NegocioId INT,
     @SedeId INT = NULL,
@@ -23,6 +25,10 @@ AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
+        DECLARE @CodigoMoneda NVARCHAR(10);
+        SELECT @CodigoMoneda = n.CodigoMoneda FROM dbo.Negocios n WHERE n.Id = @NegocioId AND n.Activo = 1;
+        IF @CodigoMoneda IS NULL RAISERROR('El negocio debe configurar una moneda valida antes de crear cupones.', 16, 1);
+
         SET @CodigoCupon = UPPER(LTRIM(RTRIM(@CodigoCupon)));
         IF @CodigoCupon = N'' RAISERROR('El codigo de cupon es obligatorio.', 16, 1);
         IF @FechaFin < @FechaInicio RAISERROR('La fecha fin no puede ser menor a la fecha inicio.', 16, 1);
@@ -34,14 +40,17 @@ BEGIN
         IF EXISTS (SELECT 1 FROM dbo.Cupones WHERE NegocioId = @NegocioId AND CodigoCupon = @CodigoCupon)
             RAISERROR('El codigo de cupon ya existe para este negocio.', 16, 1);
 
+        DECLARE @NumeroPorNegocio INT;
+        EXEC dbo.Sp_NegocioCorrelativos_ObtenerSiguiente @NegocioId, N'CUPON', @Usuario, @NumeroPorNegocio OUTPUT;
+
         INSERT INTO dbo.Cupones
         (
-            NegocioId, SedeId, EspacioDeportivoId, CodigoCupon, Nombre, TipoDescuento, ValorDescuento,
+            NumeroPorNegocio, NegocioId, SedeId, EspacioDeportivoId, CodigoCupon, Nombre, TipoDescuento, ValorDescuento, CodigoMoneda,
             CantidadMaxUsos, CantidadUsosActuales, FechaInicio, FechaFin, Activo, FechaRegistro, UsuarioCreacion
         )
         VALUES
         (
-            @NegocioId, @SedeId, @EspacioDeportivoId, @CodigoCupon, @Nombre, @TipoDescuento, @ValorDescuento,
+            @NumeroPorNegocio, @NegocioId, @SedeId, @EspacioDeportivoId, @CodigoCupon, @Nombre, @TipoDescuento, @ValorDescuento, @CodigoMoneda,
             @CantidadMaxUsos, 0, @FechaInicio, @FechaFin, @Activo, SYSUTCDATETIME(), @Usuario
         );
 

@@ -1,4 +1,4 @@
-﻿
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -8,6 +8,7 @@ GO
 -- SOURCE: 32_Usuarios_Sede_Restriccion_Filtros.sql (linea 503)
 -- Firma: Codex - 13/04/2026 | Agrega filtro por rango de fechas y estado (activos/inactivos/todos) con paginacion backend 20x20 y total de registros para el listado de promociones.
 -- Firma: FRANCO LARA - 17/09/2026 | Los inactivos se listan por estado sin ocultarlos por su rango de vigencia.
+-- Firma: FRANCO LARA - 01/10/2026 | Expone el correlativo visible de promocion por negocio.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Promociones_Listar]
     @NegocioId INT,
     @SedeId INT = NULL,
@@ -46,7 +47,8 @@ BEGIN
                 p.HoraInicio,
                 p.HoraFin,
                 p.PorcentajeDescuento,
-                p.Activo
+                p.Activo,
+                p.NumeroPorNegocio
             FROM dbo.PromocionesHorario p
             LEFT JOIN dbo.Sedes s ON s.Id = p.SedeId
             LEFT JOIN dbo.EspaciosDeportivos e ON e.Id = p.EspacioDeportivoId
@@ -76,7 +78,8 @@ BEGIN
                 p.HoraInicio,
                 p.HoraFin,
                 p.PorcentajeDescuento,
-                p.Activo
+                p.Activo,
+                p.NumeroPorNegocio
             FROM dbo.PromocionesHorario p
             LEFT JOIN dbo.Sedes s ON s.Id = p.SedeId
             LEFT JOIN dbo.EspaciosDeportivos e ON e.Id = p.EspacioDeportivoId
@@ -101,7 +104,8 @@ BEGIN
             HoraInicio,
             HoraFin,
             PorcentajeDescuento,
-            Activo
+            Activo,
+            NumeroPorNegocio
         FROM PromocionesFiltradas
         ORDER BY FechaInicio DESC, Id DESC
         OFFSET @Offset ROWS FETCH NEXT @TamanoPagina ROWS ONLY;

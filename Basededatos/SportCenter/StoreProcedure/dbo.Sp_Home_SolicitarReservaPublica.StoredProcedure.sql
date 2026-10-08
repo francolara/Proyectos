@@ -15,6 +15,8 @@ GO
 -- Firma: FRANCO LARA - 03/05/2026 | Reserva publica restringida a duracion fija de 1 hora (60 minutos).
 -- Firma: FRANCO LARA - 20/05/2026 | Permite cierre especial de reserva publica 23:00-23:59 como excepcion valida de duracion.
 -- Firma: FRANCO LARA - 09/06/2026 | La reserva publica valida la duracion en bloques de 1 hora, respeta el limite HorasMaximasReservaCliente configurado por negocio y reutiliza clientes existentes por documento o, si no encuentra, por correo dentro del negocio.
+-- Firma: Codex - 01/10/2026 | Devuelve el correlativo visible de la reserva dentro del negocio junto con el identificador tecnico.
+-- Firma: FRANCO LARA - 08/10/2026 | Suprime el result set interno de Sp_Reservas_Crear y mantiene el contrato ReservaId/NumeroPorNegocio.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Home_SolicitarReservaPublica]
     @EspacioDeportivoId INT,
     @Fecha DATE,
@@ -189,6 +191,7 @@ BEGIN
             @CodigoCupon = @CodigoCupon,
             @CanalOrigen = N'CLIENTE_WEB',
             @ReservaId = @ReservaId OUTPUT,
+            @DevolverResultado = 0,
             @Usuario = N'portal-web';
 
         IF @ReservaId IS NULL OR @ReservaId <= 0
@@ -204,7 +207,11 @@ BEGIN
             END
         END
 
-        SELECT @ReservaId;
+        SELECT
+            r.Id AS ReservaId,
+            r.NumeroPorNegocio
+        FROM dbo.Reservas r
+        WHERE r.Id = @ReservaId;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;

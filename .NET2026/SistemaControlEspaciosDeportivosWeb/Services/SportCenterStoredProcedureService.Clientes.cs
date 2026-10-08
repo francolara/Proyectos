@@ -38,7 +38,8 @@ public partial class SportCenterStoredProcedureService
                 NumeroDocumento = dr.GetString(4),
                 Telefono = dr.IsDBNull(5) ? null : dr.GetString(5),
                 Correo = dr.IsDBNull(6) ? null : dr.GetString(6),
-                Activo = dr.GetBoolean(7)
+                Activo = dr.GetBoolean(7),
+                NumeroPorNegocio = ReadRequiredInt32(dr, 8, "NumeroPorNegocio")
             });
         }
         await dr.CloseAsync();

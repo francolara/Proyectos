@@ -1,6 +1,8 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.CuponesIndexViewModel
 @* Firma: FRANCO LARA - 17/09/2026 | Incorpora filtro de cupones inactivos. *@
 @* Firma: FRANCO LARA - 01/09/2026 | Presenta el listado con un titulo operativo y directo. *@
+@* Firma: FRANCO LARA - 01/10/2026 | Muestra el correlativo visible de cupon separado del codigo canjeable. *@
+@* Firma: FRANCO LARA - 06/10/2026 | Presenta el descuento fijo con la moneda canonica historica del cupon. *@
 @{
     ViewData["Title"] = "Cupones";
     var totalCuponesVista = Model.Cupones.Count;
@@ -100,8 +102,8 @@
                     @foreach (var item in Model.Cupones)
                     {
                         <tr>
-                            <td class="text-center"><span class="sc-id-chip">@item.CodigoCupon</span><div class="mt-1 fw-semibold">@item.Nombre</div></td>
-                            <td class="text-center">@(item.TipoDescuento == "PORCENTAJE" ? $"{item.ValorDescuento:N0}%" : $"S/ {item.ValorDescuento:N2}")</td>
+                            <td class="text-center"><span class="sc-id-chip">@item.CodigoVisible</span><div class="mt-1"><code>@item.CodigoCupon</code></div><div class="mt-1 fw-semibold">@item.Nombre</div></td>
+                            <td class="text-center">@(item.TipoDescuento == "PORCENTAJE" ? $"{item.ValorDescuento:N0}%" : $"{item.MonedaSimbolo} {item.ValorDescuento:N2}")</td>
                             <td class="text-center">@item.FechaInicio.ToString("dd/MM/yyyy") - @item.FechaFin.ToString("dd/MM/yyyy")</td>
                             <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-check2-circle"></i><span>@item.CantidadUsosActuales / @item.CantidadMaxUsos</span></span></td>
                             <td class="text-center"><div class="d-flex flex-column gap-1"><span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-geo-alt"></i><span>@item.Sede</span></span><span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-grid-3x3-gap"></i><span>@item.Espacio</span></span></div></td>

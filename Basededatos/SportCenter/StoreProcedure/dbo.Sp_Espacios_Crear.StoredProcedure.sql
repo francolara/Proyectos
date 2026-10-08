@@ -1,4 +1,4 @@
-﻿
+
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Espacios_Crear]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -11,11 +11,13 @@ GO
 -- Firma: FRANCO LARA - 26/05/2026 | Agrega configuracion opcional de horario propio por espacio deportivo y su persistencia.
 -- Firma: FRANCO LARA - 06/06/2026 | Agrega configuracion bidireccional de espacios compartidos para bloqueo cruzado de horarios.
 -- Firma: FRANCO LARA - 08/06/2026 | Separa relaciones operativas entre bloqueo directo y espacios compuestos por componentes, y agrega soporte de fotos para espacios deportivos.
+-- Firma: FRANCO LARA - 01/10/2026 | Asigna el correlativo visible de espacio por negocio al crear el registro.
+-- Firma: FRANCO LARA - 06/10/2026 | Persiste CodigoMoneda en tarifas y usa los Id globales de deporte y suelo, validando su habilitacion por negocio.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Espacios_Crear]
     @NegocioId INT,
     @SedeId INT,
-    @TipoDeporteId INT,
-    @TipoSueloId INT,
+    @TipoDeporteSuperId INT,
+    @TipoSueloSuperId INT,
     @Codigo NVARCHAR(20),
     @Nombre NVARCHAR(150),
     @Capacidad INT,
@@ -46,12 +48,40 @@ BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
         DECLARE @FotosAlternativasCount INT = 0;
+        DECLARE @CodigoMoneda NVARCHAR(10);
 
         SET @FotoPrincipalUrl = NULLIF(LTRIM(RTRIM(@FotoPrincipalUrl)), N'');
         SET @FotosUrlsCsv = NULLIF(LTRIM(RTRIM(@FotosUrlsCsv)), N'');
 
         IF NOT EXISTS (SELECT 1 FROM dbo.Sedes WHERE Id = @SedeId AND NegocioId = @NegocioId)
             RAISERROR('Sede invalida para el negocio.', 16, 1);
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM dbo.TiposDeporte td
+            INNER JOIN dbo.TiposDeporteSuperMaestro tdm ON tdm.Id = td.TipoDeporteSuperId
+            WHERE td.NegocioId = @NegocioId
+              AND td.TipoDeporteSuperId = @TipoDeporteSuperId
+              AND td.Activo = 1
+              AND tdm.Activo = 1
+        )
+            RAISERROR('El deporte global no esta habilitado para el negocio.', 16, 1);
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM dbo.TiposSuelo ts
+            INNER JOIN dbo.TiposSueloSuperMaestro tsm ON tsm.Id = ts.TipoSueloSuperId
+            WHERE ts.NegocioId = @NegocioId
+              AND ts.TipoSueloSuperId = @TipoSueloSuperId
+              AND ts.Activo = 1
+              AND tsm.Activo = 1
+        )
+            RAISERROR('El tipo de suelo global no esta habilitado para el negocio.', 16, 1);
+
+        SELECT @CodigoMoneda = n.CodigoMoneda FROM dbo.Negocios n WHERE n.Id = @NegocioId AND n.Activo = 1;
+        IF @CodigoMoneda IS NULL RAISERROR('El negocio debe configurar una moneda antes de registrar tarifas.', 16, 1);
 
         IF @FotosUrlsCsv IS NOT NULL AND LEN(LTRIM(RTRIM(@FotosUrlsCsv))) > 0
             SELECT @FotosAlternativasCount = COUNT(1)
@@ -202,14 +232,17 @@ BEGIN
                 RAISERROR('Un espacio no puede registrarse como bloqueo directo y componente al mismo tiempo.', 16, 1);
         END;
 
+        DECLARE @NumeroPorNegocio INT;
+        EXEC dbo.Sp_NegocioCorrelativos_ObtenerSiguiente @NegocioId, N'ESPACIO', @Usuario, @NumeroPorNegocio OUTPUT;
+
         INSERT INTO dbo.EspaciosDeportivos
         (
-            SedeId, TipoDeporteId, TipoSueloId, Codigo, Nombre, Capacidad,
+            NumeroPorNegocio, SedeId, TipoDeporteSuperId, TipoSueloSuperId, Codigo, Nombre, Capacidad,
             TieneIluminacion, Techada, AdministracionPrivada, FotoPrincipalUrl, FotosUrlsCsv, Estado, FechaCreacion, UsuarioCreacion
         )
         VALUES
         (
-            @SedeId, @TipoDeporteId, @TipoSueloId, @Codigo, @Nombre, @Capacidad,
+            @NumeroPorNegocio, @SedeId, @TipoDeporteSuperId, @TipoSueloSuperId, @Codigo, @Nombre, @Capacidad,
             @TieneIluminacion, @Techada, @AdministracionPrivada, @FotoPrincipalUrl, @FotosUrlsCsv, @Estado, SYSUTCDATETIME(), @Usuario
         );
 
@@ -218,7 +251,7 @@ BEGIN
 
         INSERT INTO dbo.Tarifas
         (
-            EspacioDeportivoId, DiaSemana, HoraInicio, HoraFin, Precio, Activa
+            EspacioDeportivoId, DiaSemana, HoraInicio, HoraFin, Precio, CodigoMoneda, Activa
         )
         SELECT
             @Id,
@@ -226,18 +259,20 @@ BEGIN
             t.HoraInicio,
             t.HoraFin,
             t.Precio,
+            @CodigoMoneda,
             1
         FROM @Tarifas t;
 
         INSERT INTO dbo.TarifaFeriado
         (
-            EspacioDeportivoId, HoraInicio, HoraFin, Precio, Activa
+            EspacioDeportivoId, HoraInicio, HoraFin, Precio, CodigoMoneda, Activa
         )
         SELECT
             @Id,
             t.HoraInicio,
             t.HoraFin,
             t.Precio,
+            @CodigoMoneda,
             1
         FROM @TarifasFeriado t;
 

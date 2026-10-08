@@ -1,4 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteFormViewModel
+@* Firma: Codex - 01/10/2026 | Muestra y permite buscar el correlativo visible por negocio en reservas y pagos asociados al comprobante. *@
 @{
     ViewData["Title"] = "Emitir comprobante";
 }
@@ -31,7 +32,7 @@
                 <div class="row g-3">
                     <div class="col-md-8">
                         <label class="form-label">Buscar reserva</label>
-                        <input type="text" id="reservaBuscarInput" class="form-control" value="@Model.ReservaCodigo" placeholder="Escribe cliente/equipo/#reserva y presiona Enter..." />
+                        <input type="text" id="reservaBuscarInput" class="form-control" value="@Model.ReservaCodigo" placeholder="Escribe cliente, equipo o R-000001 y presiona Enter..." />
                         <small class="text-muted">Solo se listan reservas pagadas.</small>
                     </div>
                     <div class="col-md-4">
@@ -420,7 +421,7 @@
                 } else {
                     pagosReservaBody.innerHTML = pagos.map((p) => `
                         <tr>
-                            <td class="text-center">#${p.pagoId}</td>
+                            <td class="text-center">${p.codigoVisible || '-'}</td>
                             <td class="text-center">${p.fechaPago || '-'}</td>
                             <td class="text-center">${toMoney(p.monto)}</td>
                             <td class="text-center">${p.formaPago || '-'}</td>

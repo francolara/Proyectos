@@ -36,6 +36,14 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         };
     }
 
+    private static int ReadRequiredInt32(SqlDataReader dr, int ordinal, string fieldName)
+    {
+        if (dr.FieldCount <= ordinal || dr.IsDBNull(ordinal))
+            throw new InvalidOperationException($"El procedimiento almacenado no devolvio el campo obligatorio {fieldName}.");
+
+        return dr.GetInt32(ordinal);
+    }
+
     private async Task<List<SelectListItem>> ComboAsync(string spName, params (string Name, object? Value, SqlDbType Type)[] parameters)
     {
         var list = new List<SelectListItem>();
@@ -498,7 +506,9 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
                                     .Distinct(StringComparer.OrdinalIgnoreCase)
                                     .ToList()
                                 : new List<string>()),
-                        DistanciaKm = dr.FieldCount > 24 && !dr.IsDBNull(24) ? dr.GetDecimal(24) : null
+                        DistanciaKm = dr.FieldCount > 24 && !dr.IsDBNull(24) ? dr.GetDecimal(24) : null,
+                        CodigoMoneda = dr.FieldCount > 25 && !dr.IsDBNull(25) ? dr.GetString(25) : "PEN",
+                        MonedaSimbolo = dr.FieldCount > 26 && !dr.IsDBNull(26) ? dr.GetString(26) : "S/"
                     });
                 }
             }
@@ -625,7 +635,9 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
                                 .Distinct(StringComparer.OrdinalIgnoreCase)
                                 .ToList()
                             : new List<string>()),
-                    DistanciaKm = dr.FieldCount > 24 && !dr.IsDBNull(24) ? dr.GetDecimal(24) : null
+                    DistanciaKm = dr.FieldCount > 24 && !dr.IsDBNull(24) ? dr.GetDecimal(24) : null,
+                    CodigoMoneda = dr.FieldCount > 25 && !dr.IsDBNull(25) ? dr.GetString(25) : "PEN",
+                    MonedaSimbolo = dr.FieldCount > 26 && !dr.IsDBNull(26) ? dr.GetString(26) : "S/"
                 });
             }
             else
@@ -649,7 +661,7 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         return list;
     }
 
-    public async Task<int> HomeSolicitarReservaPublicaAsync(SolicitudReservaPublicaFormViewModel model)
+    public async Task<(int ReservaId, int NumeroPorNegocio)> HomeSolicitarReservaPublicaAsync(SolicitudReservaPublicaFormViewModel model)
     {
         try
         {
@@ -661,7 +673,7 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         }
     }
 
-    private async Task<int> HomeSolicitarReservaPublicaInternoAsync(SolicitudReservaPublicaFormViewModel model, bool incluirUsuarioId)
+    private async Task<(int ReservaId, int NumeroPorNegocio)> HomeSolicitarReservaPublicaInternoAsync(SolicitudReservaPublicaFormViewModel model, bool incluirUsuarioId)
     {
         await using var cn = CreateConnection();
         await cn.OpenAsync();
@@ -681,8 +693,32 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         AddParam(cmd, "@CodigoCupon", string.IsNullOrWhiteSpace(model.CodigoCupon) ? null : model.CodigoCupon.Trim().ToUpperInvariant(), SqlDbType.NVarChar);
         if (incluirUsuarioId)
             AddParam(cmd, "@UsuarioId", string.IsNullOrWhiteSpace(model.UsuarioId) ? null : model.UsuarioId.Trim(), SqlDbType.NVarChar);
-        var result = await cmd.ExecuteScalarAsync();
-        return Convert.ToInt32(result);
+        await using var dr = await cmd.ExecuteReaderAsync();
+        do
+        {
+            var reservaIdOrdinal = -1;
+            var numeroPorNegocioOrdinal = -1;
+
+            for (var ordinal = 0; ordinal < dr.FieldCount; ordinal++)
+            {
+                var columnName = dr.GetName(ordinal);
+                if (string.Equals(columnName, "ReservaId", StringComparison.OrdinalIgnoreCase))
+                    reservaIdOrdinal = ordinal;
+                else if (string.Equals(columnName, "NumeroPorNegocio", StringComparison.OrdinalIgnoreCase))
+                    numeroPorNegocioOrdinal = ordinal;
+            }
+
+            if (reservaIdOrdinal >= 0 && numeroPorNegocioOrdinal >= 0 && await dr.ReadAsync())
+            {
+                if (dr.IsDBNull(reservaIdOrdinal) || dr.IsDBNull(numeroPorNegocioOrdinal))
+                    throw new InvalidOperationException("La reserva creada no devolvio su identificador y correlativo visibles.");
+
+                return (dr.GetInt32(reservaIdOrdinal), dr.GetInt32(numeroPorNegocioOrdinal));
+            }
+        }
+        while (await dr.NextResultAsync());
+
+        throw new InvalidOperationException("El procedimiento Sp_Home_SolicitarReservaPublica no devolvio el contrato ReservaId/NumeroPorNegocio.");
     }
 
     public async Task<SolicitudNotificacionEmailViewModel?> HomeObtenerSolicitudParaNotificacionAsync(string codigoSolicitud)
@@ -758,7 +794,7 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         return list;
     }
 
-    public async Task<(int TotalSedes, int TotalEspacios, int ReservasHoy, decimal IngresosHoy, decimal OcupacionHoyPct, int NoShowMes, decimal TicketPromedioMes)> PanelObtenerMetricasAsync(int negocioId, DateOnly fecha, int? sedeId = null)
+    public async Task<(int TotalSedes, int TotalEspacios, int ReservasHoy, decimal IngresosHoy, decimal OcupacionHoyPct, int NoShowMes, decimal TicketPromedioMes)> PanelObtenerMetricasAsync(int negocioId, DateOnly fecha, int? sedeId, string codigoMoneda)
     {
         await using var cn = CreateConnection();
         await cn.OpenAsync();
@@ -766,6 +802,7 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
         AddParam(cmd, "@Fecha", fecha.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
         AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
+        AddParam(cmd, "@CodigoMoneda", codigoMoneda, SqlDbType.NVarChar);
         await using var dr = await cmd.ExecuteReaderAsync();
         if (await dr.ReadAsync())
         {

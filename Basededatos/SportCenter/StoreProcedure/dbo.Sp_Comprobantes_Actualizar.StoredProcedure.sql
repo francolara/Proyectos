@@ -1,4 +1,4 @@
-﻿USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -6,6 +6,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 -- Firma: Codex - 09/04/2026 | Permite editar solo datos del cliente cuando el comprobante esta pendiente; mantiene inmutable reserva/documento/importe.
 -- Firma: Codex - 08/05/2026 | Corrige validacion por tipo de comprobante en edicion: obtiene CodigoSunat desde NegociosTiposDocumentoComprobante segun TipoComprobante + NegocioId (sin CASE hardcodeado).
+-- Firma: FRANCO LARA - 06/10/2026 | Valida la edicion con CodigoTipoComprobante SUNAT historico del comprobante.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Comprobantes_Actualizar]
     @Id INT,
     @NegocioId INT,
@@ -32,11 +33,8 @@ BEGIN
             @ClienteId = c.ClienteId,
             @EstadoActual = c.Estado,
             @Total = c.Total,
-            @CodigoDocComprobante = NULLIF(LTRIM(RTRIM(nt.CodigoSunat)), N'')
+            @CodigoDocComprobante = NULLIF(LTRIM(RTRIM(c.CodigoTipoComprobante)), N'')
         FROM dbo.ComprobantesElectronicos c
-        INNER JOIN dbo.NegociosTiposDocumentoComprobante nt
-            ON nt.Id = c.TipoComprobante
-           AND nt.NegocioId = c.NegocioId
         WHERE c.Id = @Id
           AND c.NegocioId = @NegocioId;
 

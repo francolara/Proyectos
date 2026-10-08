@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -7,10 +7,12 @@ GO
 
 -- SOURCE: 32_Usuarios_Sede_Restriccion_Filtros.sql (linea 397)
 -- Firma: Codex - 13/04/2026 | Ajusta ocupacion del dashboard para calcular horas disponibles netas (horario sede menos bloqueos activos del dia) y excluir periodos inhabilitados.
+-- Firma: FRANCO LARA - 06/10/2026 | Filtra reservas e importes por CodigoMoneda canonico del dashboard.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Panel_ObtenerMetricas]
     @NegocioId INT,
     @Fecha DATE,
-    @SedeId INT = NULL
+    @SedeId INT = NULL,
+    @CodigoMoneda NVARCHAR(10)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -38,6 +40,7 @@ BEGIN
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         WHERE s.NegocioId = @NegocioId
           AND (@SedeId IS NULL OR s.Id = @SedeId)
+          AND r.CodigoMoneda = @CodigoMoneda
           AND r.Fecha = @Fecha;
 
         SELECT @IngresosHoy = COALESCE(SUM(p.Monto), 0)
@@ -47,6 +50,7 @@ BEGIN
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         WHERE s.NegocioId = @NegocioId
           AND (@SedeId IS NULL OR s.Id = @SedeId)
+          AND p.CodigoMoneda = @CodigoMoneda
           AND CAST(p.FechaPago AS DATE) = @Fecha;
 
         DECLARE @TotalMinDisponibles INT = 0;
@@ -144,6 +148,7 @@ BEGIN
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         WHERE s.NegocioId = @NegocioId
           AND (@SedeId IS NULL OR s.Id = @SedeId)
+          AND r.CodigoMoneda = @CodigoMoneda
           AND e.Estado = 1
           AND r.Fecha = @Fecha
           AND r.Estado NOT IN (5, 6);
@@ -160,6 +165,7 @@ BEGIN
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         WHERE s.NegocioId = @NegocioId
           AND (@SedeId IS NULL OR s.Id = @SedeId)
+          AND r.CodigoMoneda = @CodigoMoneda
           AND r.Estado = 6
           AND YEAR(r.Fecha) = YEAR(@Fecha)
           AND MONTH(r.Fecha) = MONTH(@Fecha);
@@ -173,6 +179,7 @@ BEGIN
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         WHERE s.NegocioId = @NegocioId
           AND (@SedeId IS NULL OR s.Id = @SedeId)
+          AND p.CodigoMoneda = @CodigoMoneda
           AND YEAR(p.FechaPago) = YEAR(@Fecha)
           AND MONTH(p.FechaPago) = MONTH(@Fecha);
 
@@ -183,6 +190,7 @@ BEGIN
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         WHERE s.NegocioId = @NegocioId
           AND (@SedeId IS NULL OR s.Id = @SedeId)
+          AND p.CodigoMoneda = @CodigoMoneda
           AND YEAR(p.FechaPago) = YEAR(@Fecha)
           AND MONTH(p.FechaPago) = MONTH(@Fecha);
 

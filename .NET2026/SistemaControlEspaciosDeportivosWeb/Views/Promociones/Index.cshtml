@@ -1,5 +1,6 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PromocionesIndexViewModel
 @* Firma: FRANCO LARA - 01/09/2026 | Presenta el listado con un titulo operativo y directo. *@
+@* Firma: FRANCO LARA - 01/10/2026 | Muestra el correlativo visible por negocio y tolera registros anteriores sin numeracion. *@
 @{
     ViewData["Title"] = "Promociones";
     var totalPromocionesVista = Model.Promociones.Count;
@@ -188,7 +189,7 @@
                             var estadoTexto = item.Activo ? "Activa" : "Inactiva";
                             <tr>
                                 <td class="text-center">
-                                    <span class="sc-id-chip">PROMO #@item.Id</span>
+                                    <span class="sc-id-chip">@item.CodigoVisible</span>
                                     <div class="mt-1 fw-semibold">@item.Nombre</div>
                                 </td>
                                 <td class="text-center">

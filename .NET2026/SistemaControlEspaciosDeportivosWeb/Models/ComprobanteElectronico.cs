@@ -8,14 +8,16 @@ public class ComprobanteElectronico
     public int NegocioId { get; set; }
     public int ReservaId { get; set; }
     public int ClienteId { get; set; }
-    public TipoComprobante TipoComprobante { get; set; }
+    [MaxLength(4)]
+    public string CodigoTipoComprobante { get; set; } = string.Empty;
 
     [MaxLength(4)]
     public string Serie { get; set; } = string.Empty;
 
     public int Numero { get; set; }
     public DateTime FechaEmision { get; set; } = DateTime.UtcNow;
-    public TipoMoneda TipoMoneda { get; set; } = TipoMoneda.PEN;
+    [MaxLength(10)]
+    public string CodigoMoneda { get; set; } = "PEN";
 
     [MaxLength(4)]
     public string CodigoTipoOperacionSunat { get; set; } = "0101";

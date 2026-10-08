@@ -1,5 +1,6 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteVisualizacionViewModel
 @* Firma: FRANCO LARA - 03/09/2026 | Integra la vista previa al modo oscuro antracita sin alterar su presentacion clara ni su impresion. *@
+@* Firma: Codex - 01/10/2026 | Muestra el correlativo visible de la reserva por negocio. *@
 @{
     ViewData["Title"] = "Vista previa de comprobante";
     ViewData["AdminShell"] = true;
@@ -150,7 +151,7 @@
         </article>
         <article class="summary-card">
             <small>Reserva</small>
-            <h3>#@Model.ReservaId</h3>
+            <h3>@Model.CodigoReserva</h3>
             <p>@Model.SedeNombre | @Model.EspacioNombre</p>
         </article>
         <article class="summary-card summary-card-total">

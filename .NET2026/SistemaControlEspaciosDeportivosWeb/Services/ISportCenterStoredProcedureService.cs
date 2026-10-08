@@ -18,7 +18,7 @@ public interface ISportCenterStoredProcedureService
     Task<WebBannerPublicoViewModel?> WebBannersObtenerFijoPorTipoAsync(int tipoBanner);
     Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId, int? negocioId, bool omitirFechaHorario = false, bool buscarCercaDeMi = false, decimal? latitudUsuario = null, decimal? longitudUsuario = null, decimal? radioKm = null);
     Task<(List<EspacioDisponibleViewModel> Espacios, int TotalRegistros)> HomeBuscarEspaciosDisponiblesPaginadoAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId, int? negocioId, int pagina = 1, int tamanoPagina = 9, bool omitirFechaHorario = false, bool buscarCercaDeMi = false, decimal? latitudUsuario = null, decimal? longitudUsuario = null, decimal? radioKm = null);
-    Task<int> HomeSolicitarReservaPublicaAsync(SolicitudReservaPublicaFormViewModel model);
+    Task<(int ReservaId, int NumeroPorNegocio)> HomeSolicitarReservaPublicaAsync(SolicitudReservaPublicaFormViewModel model);
     Task<SolicitudNotificacionEmailViewModel?> HomeObtenerSolicitudParaNotificacionAsync(string codigoSolicitud);
     Task<bool> HomeMarcarSolicitudNotificadaAsync(string codigoSolicitud);
     Task<ConfiguracionClubViewModel?> ConfiguracionClubObtenerAsync(int negocioId);
@@ -69,7 +69,7 @@ public interface ISportCenterStoredProcedureService
 
     Task<List<NegocioAccesoViewModel>> PanelListarNegociosUsuarioAsync(string usuarioId);
     Task<List<PermisoModuloViewModel>> PanelListarModulosPermitidosAsync(string usuarioId, int negocioId);
-    Task<(int TotalSedes, int TotalEspacios, int ReservasHoy, decimal IngresosHoy, decimal OcupacionHoyPct, int NoShowMes, decimal TicketPromedioMes)> PanelObtenerMetricasAsync(int negocioId, DateOnly fecha, int? sedeId = null);
+    Task<(int TotalSedes, int TotalEspacios, int ReservasHoy, decimal IngresosHoy, decimal OcupacionHoyPct, int NoShowMes, decimal TicketPromedioMes)> PanelObtenerMetricasAsync(int negocioId, DateOnly fecha, int? sedeId, string codigoMoneda);
 
     Task<List<SedeItemViewModel>> SedesListarAsync(int negocioId, int? sedeId = null);
     Task<SedeFormViewModel?> SedesObtenerAsync(int negocioId, int id);
@@ -138,13 +138,13 @@ public interface ISportCenterStoredProcedureService
     Task<bool> ClientesActualizarAsync(ClienteFormViewModel model, string usuario);
     Task<bool> ClientesEliminarAsync(int negocioId, int id, string usuario);
 
-    Task<List<ReporteOcupacionItemViewModel>> ReportesOcupacionPorEspacioAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null);
-    Task<List<ReporteIngresoDiaItemViewModel>> ReportesIngresosPorDiaAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null);
-    Task<List<ReporteReservaDiaItemViewModel>> ReportesReservasPorDiaAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null);
-    Task<ReporteResumenOperativoViewModel> ReportesResumenOperativoAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null);
-    Task<ReporteResumenCobranzaViewModel> ReportesResumenCobranzaAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null);
-    Task<List<ReportePagoDetalleItemViewModel>> ReportesDetallePagosAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null);
-    Task<List<ReporteReservaDetalleItemViewModel>> ReportesDetalleReservasAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null);
+    Task<List<ReporteOcupacionItemViewModel>> ReportesOcupacionPorEspacioAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId, string codigoMoneda);
+    Task<List<ReporteIngresoDiaItemViewModel>> ReportesIngresosPorDiaAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId, string codigoMoneda);
+    Task<List<ReporteReservaDiaItemViewModel>> ReportesReservasPorDiaAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId, string codigoMoneda);
+    Task<ReporteResumenOperativoViewModel> ReportesResumenOperativoAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId, string codigoMoneda);
+    Task<ReporteResumenCobranzaViewModel> ReportesResumenCobranzaAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId, string codigoMoneda);
+    Task<List<ReportePagoDetalleItemViewModel>> ReportesDetallePagosAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId, string codigoMoneda);
+    Task<List<ReporteReservaDetalleItemViewModel>> ReportesDetalleReservasAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId, string codigoMoneda);
     Task<int> NotificacionesContarNoLeidasAsync(int negocioId);
     Task<List<NotificacionNegocioItemViewModel>> NotificacionesListarAsync(int negocioId, int top = 15);
     Task<bool> NotificacionesMarcarLeidaAsync(int negocioId, int notificacionId, string? userId);
@@ -152,7 +152,7 @@ public interface ISportCenterStoredProcedureService
 
     Task<List<SolicitudPublicaItemViewModel>> SolicitudesPublicasListarAsync(int negocioId, DateOnly? fechaDesde = null, DateOnly? fechaHasta = null, int? estado = null);
     Task<bool> SolicitudesPublicasActualizarEstadoAsync(SolicitudEstadoFormViewModel model, string usuario);
-    Task<int> SolicitudesPublicasConvertirAReservaAsync(SolicitudConvertirFormViewModel model, string usuario);
+    Task<(int ReservaId, int NumeroPorNegocio)> SolicitudesPublicasConvertirAReservaAsync(SolicitudConvertirFormViewModel model, string usuario);
     Task<string> HomeSolicitarAltaClubAsync(AltaClubSolicitudFormViewModel model);
     Task<string> HomeRegistrarClubConPruebaAsync(AltaClubSolicitudFormViewModel model, string usuarioId);
     Task<(List<AltaClubItemViewModel> Solicitudes, int TotalRegistros, int TotalPendientes, int TotalAprobados, int TotalRechazados)> AltasClubesListarAsync(int? estado = null, int pagina = 1, int tamanoPagina = 20);
@@ -232,7 +232,7 @@ public interface ISportCenterStoredProcedureService
     Task<bool> PlataformaNegocioReactivarComplejoAsync(int negocioId, string? observacion, string usuario);
     Task<List<PlataformaNegocioSuscripcionMovimientoViewModel>> PlataformaNegocioHistorialComercialAsync(int negocioId, int top = 8);
     Task<bool> PlataformaNegocioRegistrarPagoSuscripcionAsync(int negocioId, string tipoPago, string estadoPago, decimal monto, string moneda, DateTime fechaPago, DateOnly? fechaVencimiento, string? operacionNumero, string? entidadFinanciera, string? referenciaExterna, string? observacion, string? accionAplicacion, bool aplicarAlConfirmar, string? tipoCobroObjetivo, string? planComercialObjetivo, int? sedesPermitidasObjetivo, int? espaciosPermitidosObjetivo, int? usuariosPermitidosObjetivo, DateOnly? fechaInicioPlanObjetivo, int? diasGraciaObjetivo, string usuario);
-    Task<(List<PlataformaNegocioSuscripcionPagoViewModel> Pagos, int CantidadPagos, decimal MontoTotalPagado, DateTime? UltimaFechaPago, decimal? UltimoMonto, string? UltimoTipoPago)> PlataformaNegocioPagosSuscripcionAsync(int negocioId, int top = 8);
+    Task<(List<PlataformaNegocioSuscripcionPagoViewModel> Pagos, int CantidadPagos, decimal MontoTotalPagado, DateTime? UltimaFechaPago, decimal? UltimoMonto, string? UltimoTipoPago, int CantidadMonedasPago, string? CodigoMonedaResumen, string? MonedaSimboloResumen)> PlataformaNegocioPagosSuscripcionAsync(int negocioId, int top = 8);
     Task<bool> PlataformaNegocioConfirmarPagoSuscripcionAsync(int negocioId, int pagoId, string usuario);
     Task<MiSuscripcionNegocioViewModel?> MiSuscripcionObtenerAsync(int negocioId);
 

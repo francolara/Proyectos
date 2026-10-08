@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -11,6 +11,7 @@ GO
 -- =============================================
 -- Firma: Codex - 26/05/2026 | Se crea SP de validacion integral para configuracion, maestros, sedes y espacios; se exige en sede notificaciones activas, correo y WhatsApp via dbo.SedeConfiguracionNotificacion.
 -- Firma: Codex - 25/05/2026 | Se amplia requisito de Configuracion inicial (razon social, documento, direccion, ubigeo, IGV y reglas de reserva) y se quita documento/serie como requisito obligatorio de Maestros.
+-- Firma: FRANCO LARA - 06/10/2026 | Valida moneda canonica y que cada espacio use deporte/suelo globales habilitados para el negocio.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_OnboardingChecklist_Validar]
     @NegocioId INT
 AS
@@ -36,7 +37,13 @@ BEGIN
         SELECT
             @ConfigNombreComercialOk = CASE WHEN LTRIM(RTRIM(COALESCE(n.NombreComercial, N''))) <> N'' THEN 1 ELSE 0 END,
             @ConfigTipoDocumentoOk = CASE WHEN LTRIM(RTRIM(COALESCE(n.TipoDocumentoFiscal, N''))) <> N'' THEN 1 ELSE 0 END,
-            @ConfigMonedaOk = CASE WHEN n.MonedaId IS NOT NULL THEN 1 ELSE 0 END,
+            @ConfigMonedaOk = CASE WHEN EXISTS (
+                SELECT 1
+                FROM dbo.Monedas m
+                WHERE m.NegocioId = n.Id
+                  AND m.Codigo = n.CodigoMoneda
+                  AND m.Activo = 1
+            ) THEN 1 ELSE 0 END,
             @ConfigCpeCondicionesOk =
                 CASE
                     WHEN LTRIM(RTRIM(COALESCE(n.RazonSocial, N''))) <> N''
@@ -115,8 +122,24 @@ BEGIN
               AND e.Estado = 1
               AND LTRIM(RTRIM(COALESCE(e.Codigo, N''))) <> N''
               AND LTRIM(RTRIM(COALESCE(e.Nombre, N''))) <> N''
-              AND e.TipoDeporteId > 0
-              AND e.TipoSueloId > 0
+              AND e.TipoDeporteSuperId > 0
+              AND e.TipoSueloSuperId > 0
+              AND EXISTS
+              (
+                  SELECT 1
+                  FROM dbo.TiposDeporte td
+                  WHERE td.NegocioId = @NegocioId
+                    AND td.TipoDeporteSuperId = e.TipoDeporteSuperId
+                    AND td.Activo = 1
+              )
+              AND EXISTS
+              (
+                  SELECT 1
+                  FROM dbo.TiposSuelo ts
+                  WHERE ts.NegocioId = @NegocioId
+                    AND ts.TipoSueloSuperId = e.TipoSueloSuperId
+                    AND ts.Activo = 1
+              )
               AND EXISTS (
                     SELECT 1
                     FROM dbo.Tarifas t

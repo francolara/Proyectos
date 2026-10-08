@@ -3,11 +3,14 @@
 -- Create date:   16/07/2026
 -- Description:   Detalle ejecutivo de reservas, importes y saldos para impresion de reportes.
 -- =============================================
+-- Firma: Codex - 01/10/2026 | Incluye el correlativo visible de la reserva por negocio.
+-- Firma: FRANCO LARA - 06/10/2026 | Expone moneda historica y filtra el detalle por CodigoMoneda canonico.
 CREATE OR ALTER PROCEDURE dbo.Sp_Reportes_DetalleReservas
     @NegocioId INT,
     @FechaDesde DATE,
     @FechaHasta DATE,
-    @SedeId INT = NULL
+    @SedeId INT = NULL,
+    @CodigoMoneda NVARCHAR(10)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -58,15 +61,20 @@ BEGIN
                 WHEN r.Estado = 5 OR r.Total <= COALESCE(pr.MontoPagado, 0) THEN 0
                 ELSE r.Total - COALESCE(pr.MontoPagado, 0)
             END AS DECIMAL(18, 2)) AS SaldoPendiente,
-            cr.CodigoCupon
+            cr.CodigoCupon,
+            r.NumeroPorNegocio,
+            r.CodigoMoneda,
+            COALESCE(ms.Simbolo, r.CodigoMoneda) AS MonedaSimbolo
         FROM dbo.Reservas r
         INNER JOIN dbo.Clientes c ON c.Id = r.ClienteId
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         LEFT JOIN PagosPorReserva pr ON pr.ReservaId = r.Id
         LEFT JOIN CuponPorReserva cr ON cr.ReservaId = r.Id
+        LEFT JOIN dbo.MonedasSuperMaestro ms ON ms.Codigo = r.CodigoMoneda
         WHERE s.NegocioId = @NegocioId
           AND (@SedeId IS NULL OR s.Id = @SedeId)
+          AND r.CodigoMoneda = @CodigoMoneda
           AND r.Fecha >= @FechaDesde
           AND r.Fecha <= @FechaHasta
         ORDER BY r.Fecha ASC, r.HoraInicio ASC, r.Id ASC;

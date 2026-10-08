@@ -28,7 +28,8 @@ public partial class SportCenterStoredProcedureService
                 HoraInicio = TimeOnly.FromTimeSpan(dr.GetTimeSpan(7)),
                 HoraFin = TimeOnly.FromTimeSpan(dr.GetTimeSpan(8)),
                 CorreoNotificacion = dr.IsDBNull(9) ? null : dr.GetString(9),
-                WhatsappContacto = dr.IsDBNull(10) ? null : dr.GetString(10)
+                WhatsappContacto = dr.IsDBNull(10) ? null : dr.GetString(10),
+                NumeroPorNegocio = ReadRequiredInt32(dr, 11, "NumeroPorNegocio")
             });
         }
 

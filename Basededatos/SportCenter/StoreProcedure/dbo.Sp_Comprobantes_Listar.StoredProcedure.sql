@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -11,6 +11,8 @@ GO
 -- Firma: Codex - 12/04/2026 | Elimina mapeos rigidos por Id de tipo comprobante y usa relacion NegociosTiposDocumentoComprobante + TiposDocumentoComprobanteSuperMaestro para tipo/codigo/referencia/filtros en entorno multi-negocio.
 -- Firma: Codex - 12/04/2026 | En columna Referencia usa abreviatura del documento desde TiposDocumentoComprobanteSuperMaestro.Abreviatura.
 -- Firma: Codex - 13/04/2026 | Agrega filtro opcional por rango de fecha de emision (Desde/Hasta) para listado de comprobantes.
+-- Firma: Codex - 01/10/2026 | Incluye el correlativo visible de la reserva por negocio en el listado y permite buscar por dicho codigo sin consultar el Id tecnico.
+-- Firma: FRANCO LARA - 06/10/2026 | Lista y filtra comprobantes usando CodigoTipoComprobante SUNAT canonico.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Comprobantes_Listar]
     @NegocioId INT,
     @SedeId INT = NULL,
@@ -29,6 +31,13 @@ BEGIN
         DECLARE @TamanoNorm INT = CASE WHEN @TamanoPagina IS NULL OR @TamanoPagina < 1 THEN 20 ELSE @TamanoPagina END;
         DECLARE @Offset INT = (@PaginaNorm - 1) * @TamanoNorm;
         DECLARE @BuscarNorm NVARCHAR(120) = NULLIF(LTRIM(RTRIM(@Buscar)), N'');
+        DECLARE @BuscarNumeroReserva INT = TRY_CONVERT(
+            INT,
+            CASE
+                WHEN UPPER(LEFT(@BuscarNorm, 2)) = N'R-' THEN SUBSTRING(@BuscarNorm, 3, 120)
+                ELSE NULL
+            END
+        );
         DECLARE @CodigoDocumentoNorm NVARCHAR(4) = NULLIF(UPPER(LTRIM(RTRIM(@CodigoDocumento))), N'');
 
         CREATE TABLE #Base
@@ -46,7 +55,9 @@ BEGIN
             TieneNotasRelacionadas BIT NOT NULL,
             ReservaId INT NOT NULL,
             EsTributario BIT NOT NULL,
-            UrlDescargaProveedor NVARCHAR(500) NULL
+            UrlDescargaProveedor NVARCHAR(500) NULL,
+            CodigoMoneda NVARCHAR(10) NOT NULL,
+            MonedaSimbolo NVARCHAR(10) NOT NULL
         );
 
         INSERT INTO #Base
@@ -64,11 +75,13 @@ BEGIN
             TieneNotasRelacionadas,
             ReservaId,
             EsTributario,
-            UrlDescargaProveedor
+            UrlDescargaProveedor,
+            CodigoMoneda,
+            MonedaSimbolo
         )
         SELECT
             c.Id,
-            COALESCE(tdsm.Nombre, CONCAT(N'Tipo ', ntd.CodigoSunat)) AS Tipo,
+            COALESCE(tdsm.Nombre, CONCAT(N'Tipo ', c.CodigoTipoComprobante)) AS Tipo,
             CONCAT(c.Serie, N'-', c.Numero) AS SerieNumero,
             c.FechaEmision,
             cl.NombresORazonSocial AS Cliente,
@@ -82,9 +95,9 @@ BEGIN
                 ELSE CONCAT(N'Estado ', c.Estado)
             END AS Estado,
             c.Estado AS EstadoCodigo,
-            COALESCE(ntd.CodigoSunat, N'') AS CodigoDocumentoComprobante,
+            c.CodigoTipoComprobante AS CodigoDocumentoComprobante,
             CASE
-                WHEN ntd.CodigoSunat IN (N'07', N'08') AND cref.Id IS NOT NULL
+                WHEN c.CodigoTipoComprobante IN (N'07', N'08') AND cref.Id IS NOT NULL
                     THEN CONCAT(
                         COALESCE(tdsmRef.Abreviatura, tdsmRef.Nombre, N'Comp.'),
                         N' ',
@@ -98,14 +111,15 @@ BEGIN
             CAST(CASE WHEN notasRelacionadas.TieneNotas = 1 THEN 1 ELSE 0 END AS BIT) AS TieneNotasRelacionadas,
             ISNULL(c.ReservaId, 0) AS ReservaId,
             CAST(COALESCE(tdsm.Tributario, 0) AS BIT) AS EsTributario,
-            CASE WHEN c.MensajeRespuestaSunat LIKE N'http%' THEN c.MensajeRespuestaSunat ELSE NULL END AS UrlDescargaProveedor
+            CASE WHEN c.MensajeRespuestaSunat LIKE N'http%' THEN c.MensajeRespuestaSunat ELSE NULL END AS UrlDescargaProveedor,
+            c.CodigoMoneda,
+            COALESCE(ms.Simbolo, c.CodigoMoneda) AS MonedaSimbolo
         FROM dbo.ComprobantesElectronicos c
         INNER JOIN dbo.Clientes cl ON cl.Id = c.ClienteId
-        LEFT JOIN dbo.NegociosTiposDocumentoComprobante ntd ON ntd.Id = c.TipoComprobante
-        LEFT JOIN dbo.TiposDocumentoComprobanteSuperMaestro tdsm ON tdsm.CodigoSunat = ntd.CodigoSunat
+        LEFT JOIN dbo.TiposDocumentoComprobanteSuperMaestro tdsm ON tdsm.CodigoSunat = c.CodigoTipoComprobante
         LEFT JOIN dbo.ComprobantesElectronicos cref ON cref.Id = c.ComprobanteReferenciaId
-        LEFT JOIN dbo.NegociosTiposDocumentoComprobante ntdRef ON ntdRef.Id = cref.TipoComprobante
-        LEFT JOIN dbo.TiposDocumentoComprobanteSuperMaestro tdsmRef ON tdsmRef.CodigoSunat = ntdRef.CodigoSunat
+        LEFT JOIN dbo.TiposDocumentoComprobanteSuperMaestro tdsmRef ON tdsmRef.CodigoSunat = cref.CodigoTipoComprobante
+        LEFT JOIN dbo.MonedasSuperMaestro ms ON ms.Codigo = c.CodigoMoneda
         LEFT JOIN dbo.Reservas r ON r.Id = c.ReservaId
         LEFT JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
         LEFT JOIN dbo.Sedes s ON s.Id = e.SedeId
@@ -116,8 +130,8 @@ BEGIN
                 STRING_AGG(
                     CONCAT(
                         CASE
-                            WHEN ntdn.CodigoSunat = N'07' THEN N'NC'
-                            WHEN ntdn.CodigoSunat = N'08' THEN N'ND'
+                            WHEN n.CodigoTipoComprobante = N'07' THEN N'NC'
+                            WHEN n.CodigoTipoComprobante = N'08' THEN N'ND'
                             ELSE N'N'
                         END,
                         N' ',
@@ -128,11 +142,10 @@ BEGIN
                     N' | '
                 ) AS RefTexto
             FROM dbo.ComprobantesElectronicos n
-            LEFT JOIN dbo.NegociosTiposDocumentoComprobante ntdn ON ntdn.Id = n.TipoComprobante
             WHERE n.ComprobanteReferenciaId = c.Id
               AND n.NegocioId = c.NegocioId
               AND n.Estado <> 5
-              AND ntdn.CodigoSunat IN (N'07', N'08')
+              AND n.CodigoTipoComprobante IN (N'07', N'08')
         ) AS notasRelacionadas
         WHERE c.NegocioId = @NegocioId
           AND (@SedeId IS NULL OR s.Id = @SedeId)
@@ -141,16 +154,17 @@ BEGIN
           AND
           (
                 @CodigoDocumentoNorm IS NULL
-                OR ntd.CodigoSunat = @CodigoDocumentoNorm
+                OR c.CodigoTipoComprobante = @CodigoDocumentoNorm
           )
           AND
           (
                 @BuscarNorm IS NULL
                 OR CONCAT(c.Serie, N'-', c.Numero) LIKE N'%' + @BuscarNorm + N'%'
                 OR cl.NombresORazonSocial LIKE N'%' + @BuscarNorm + N'%'
-                OR CAST(ISNULL(c.ReservaId, 0) AS NVARCHAR(20)) LIKE N'%' + @BuscarNorm + N'%'
+                OR CONVERT(NVARCHAR(20), r.NumeroPorNegocio) LIKE N'%' + @BuscarNorm + N'%'
+                OR (@BuscarNumeroReserva IS NOT NULL AND r.NumeroPorNegocio = @BuscarNumeroReserva)
                 OR
-                COALESCE(tdsm.Nombre, CONCAT(N'Tipo ', c.TipoComprobante)) LIKE N'%' + @BuscarNorm + N'%'
+                COALESCE(tdsm.Nombre, CONCAT(N'Tipo ', c.CodigoTipoComprobante)) LIKE N'%' + @BuscarNorm + N'%'
                 OR
                 (
                     CASE
@@ -181,8 +195,12 @@ BEGIN
             b.TieneNotasRelacionadas,
             b.ReservaId,
             b.EsTributario,
-            b.UrlDescargaProveedor
+            b.UrlDescargaProveedor,
+            r.NumeroPorNegocio AS NumeroReservaPorNegocio,
+            b.CodigoMoneda,
+            b.MonedaSimbolo
         FROM #Base b
+        LEFT JOIN dbo.Reservas r ON r.Id = b.ReservaId
         ORDER BY b.FechaEmision DESC, b.Id DESC
         OFFSET @Offset ROWS
         FETCH NEXT @TamanoNorm ROWS ONLY;

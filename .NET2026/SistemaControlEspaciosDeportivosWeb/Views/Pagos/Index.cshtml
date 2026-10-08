@@ -1,5 +1,7 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PagosIndexViewModel
 @* Firma: FRANCO LARA - 01/09/2026 | Presenta el listado con un titulo operativo y directo. *@
+@* Firma: Codex - 01/10/2026 | Orienta la busqueda al correlativo visible de reserva por negocio. *@
+@* Firma: FRANCO LARA - 06/10/2026 | Muestra moneda historica por fila y evita totalizar monedas distintas. *@
 @{
     ViewData["Title"] = "Pagos";
 
@@ -45,15 +47,15 @@
     <section class="kpi-grid mb-3">
         <article class="kpi-card">
             <p class="kpi-card-label">Monto</p>
-            <h3 class="kpi-card-value">@Model.MonedaSimbolo @Model.TotalMontoGeneral.ToString("N2")</h3>
+            <h3 class="kpi-card-value">@(Model.EsMultimoneda ? "Varias monedas" : $"{Model.MonedaSimbolo} {Model.TotalMontoGeneral:N2}")</h3>
         </article>
         <article class="kpi-card">
             <p class="kpi-card-label">Pago</p>
-            <h3 class="kpi-card-value">@Model.MonedaSimbolo @Model.TotalPagadoGeneral.ToString("N2")</h3>
+            <h3 class="kpi-card-value">@(Model.EsMultimoneda ? "Ver detalle" : $"{Model.MonedaSimbolo} {Model.TotalPagadoGeneral:N2}")</h3>
         </article>
         <article class="kpi-card">
             <p class="kpi-card-label">Saldo</p>
-            <h3 class="kpi-card-value">@Model.MonedaSimbolo @Model.TotalSaldoGeneral.ToString("N2")</h3>
+            <h3 class="kpi-card-value">@(Model.EsMultimoneda ? "Ver detalle" : $"{Model.MonedaSimbolo} {Model.TotalSaldoGeneral:N2}")</h3>
         </article>
     </section>
 
@@ -66,7 +68,7 @@
             <div class="row g-2 align-items-end px-3 pb-3">
                 <div class="col-lg-8 col-md-7">
                     <label class="form-label">Buscar por reserva, sede, espacio, cliente, forma o fecha</label>
-                    <input type="text" name="buscar" value="@Model.Buscar" class="form-control" placeholder="Ejemplo: #12, VILLA MARIA, CANCHA 1, BORIS..." />
+                    <input type="text" name="buscar" value="@Model.Buscar" class="form-control" placeholder="Ejemplo: R-000012, VILLA MARIA, CANCHA 1, BORIS..." />
                 </div>
                 <div class="col-lg-4 col-md-5">
                     <label class="form-label">Registros visibles</label>
@@ -136,7 +138,7 @@
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-person"></i><small>Cliente</small></span></th>
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-calendar-event"></i><small>Fecha pago</small></span></th>
                             <th class="text-start"><span class="sc-col-header"><i class="bi bi-link-45deg"></i><small>Referencia</small></span></th>
-                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-cash-stack"></i><small>Monto (@Model.MonedaSimbolo)</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-cash-stack"></i><small>Monto</small></span></th>
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-credit-card"></i><small>Pago</small></span></th>
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-cash-coin"></i><small>Saldo</small></span></th>
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-wallet2"></i><small>Forma</small></span></th>
@@ -163,9 +165,9 @@
                                         <span class="sc-list-mini-card"><span>@item.Referencia</span></span>
                                     }
                                 </td>
-                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><span>@item.MontoTotal.ToString("N2")</span></span></td>
-                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><span>@(Math.Max(0m, item.MontoTotal - item.SaldoPendiente).ToString("N2"))</span></span></td>
-                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><span>@item.SaldoPendiente.ToString("N2")</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><span>@item.MonedaSimbolo @item.MontoTotal.ToString("N2")</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><span>@item.MonedaSimbolo @(Math.Max(0m, item.MontoTotal - item.SaldoPendiente).ToString("N2"))</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><span>@item.MonedaSimbolo @item.SaldoPendiente.ToString("N2")</span></span></td>
                                 <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><span>@item.FormaPagoResumen</span></span></td>
                                 <td class="text-end">
                                     @if (Model.EmisionComprobantesElectronicos && item.PagadaCompleta && !item.TieneComprobanteActivo)

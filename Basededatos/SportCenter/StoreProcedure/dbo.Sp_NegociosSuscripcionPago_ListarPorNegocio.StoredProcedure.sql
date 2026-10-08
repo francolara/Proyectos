@@ -3,6 +3,7 @@
 -- Create date:   10/06/2026
 -- Firma:         Lista cobros de suscripcion por negocio devolviendo resumen acumulado, estado de conciliacion e historial reciente.
 -- Firma:         FRANCO LARA - 21/07/2026 | Devuelve el plan comercial y limites objetivo aplicados con cada cobro.
+-- Firma:         FRANCO LARA - 06/10/2026 | Expone CodigoMoneda canonico y evita presentar acumulados mezclando monedas.
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.Sp_NegociosSuscripcionPago_ListarPorNegocio
     @NegocioId INT,
@@ -11,7 +12,10 @@ CREATE OR ALTER PROCEDURE dbo.Sp_NegociosSuscripcionPago_ListarPorNegocio
     @MontoTotalPagado DECIMAL(12,2) OUTPUT,
     @UltimaFechaPago DATETIME2(7) OUTPUT,
     @UltimoMonto DECIMAL(12,2) OUTPUT,
-    @UltimoTipoPago NVARCHAR(30) OUTPUT
+    @UltimoTipoPago NVARCHAR(30) OUTPUT,
+    @CantidadMonedasPago INT OUTPUT,
+    @CodigoMonedaResumen NVARCHAR(10) OUTPUT,
+    @MonedaSimboloResumen NVARCHAR(10) OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -24,10 +28,20 @@ BEGIN
 
         SELECT
             @CantidadPagos = COUNT(1),
-            @MontoTotalPagado = COALESCE(SUM(CASE WHEN p.EstadoPago = N'PAGADO' THEN p.Monto ELSE 0 END), 0)
+            @MontoTotalPagado = COALESCE(SUM(CASE WHEN p.EstadoPago = N'PAGADO' THEN p.Monto ELSE 0 END), 0),
+            @CantidadMonedasPago = COUNT(DISTINCT CASE WHEN p.EstadoPago = N'PAGADO' THEN p.CodigoMoneda END),
+            @CodigoMonedaResumen = CASE
+                WHEN COUNT(DISTINCT CASE WHEN p.EstadoPago = N'PAGADO' THEN p.CodigoMoneda END) = 1
+                    THEN MIN(CASE WHEN p.EstadoPago = N'PAGADO' THEN p.CodigoMoneda END)
+                ELSE NULL
+            END
         FROM dbo.NegociosSuscripcionPago p
         WHERE p.NegocioId = @NegocioId
           AND p.EstadoPago <> N'ANULADO';
+
+        SELECT @MonedaSimboloResumen = COALESCE(ms.Simbolo, @CodigoMonedaResumen)
+        FROM dbo.MonedasSuperMaestro ms
+        WHERE ms.Codigo = @CodigoMonedaResumen;
 
         SELECT TOP (1)
             @UltimaFechaPago = p.FechaPago,
@@ -43,7 +57,7 @@ BEGIN
             p.TipoPago,
             p.EstadoPago,
             p.Monto,
-            p.Moneda,
+            p.CodigoMoneda AS Moneda,
             p.FechaPago,
             p.FechaVencimiento,
             p.OperacionNumero,
@@ -65,9 +79,12 @@ BEGIN
             p.TipoPlanObjetivo,
             p.SedesPermitidasObjetivo,
             p.EspaciosPermitidosObjetivo,
-            p.UsuariosPermitidosObjetivo
+            p.UsuariosPermitidosObjetivo,
+            p.CodigoMoneda,
+            COALESCE(ms.Simbolo, p.CodigoMoneda) AS MonedaSimbolo
         FROM dbo.NegociosSuscripcionPago p
         LEFT JOIN dbo.NegociosSuscripcionMovimiento m ON m.Id = p.NegocioSuscripcionMovimientoId
+        LEFT JOIN dbo.MonedasSuperMaestro ms ON ms.Codigo = p.CodigoMoneda
         WHERE p.NegocioId = @NegocioId
         ORDER BY p.FechaPago DESC, p.Id DESC;
     END TRY

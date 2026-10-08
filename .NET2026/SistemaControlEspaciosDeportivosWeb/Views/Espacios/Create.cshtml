@@ -24,12 +24,13 @@
 @* Firma: FRANCO LARA - 20/05/2026 | En tarifas de espacios muestra 24:00 en hora fin y guarda internamente 23:59 para cierre de jornada. *@
 @* Firma: FRANCO LARA - 06/06/2026 | Agrega configuracion visual de espacios compartidos con carga dinamica por sede. *@
 @* Firma: FRANCO LARA - 08/06/2026 | Reemplaza la seleccion multiple por checkboxes, separa relaciones operativas entre bloqueo directo y espacios compuestos, y agrega galeria de fotos para espacios deportivos. *@
+@* Firma: FRANCO LARA - 08/10/2026 | Oculta capacidad usando valor interno 10 y limita el estado visible a Activo/Inactivo. *@
 
 <div class="admin-page-frame">
     <section class="page-header">
         <div>
             <h1>Nuevo espacio deportivo</h1>
-            <p class="page-subtitle">Configura deporte, suelo, capacidad y estado operativo del espacio.</p>
+            <p class="page-subtitle">Configura deporte, suelo y estado operativo del espacio.</p>
         </div>
         <div class="action-toolbar">
             <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
@@ -40,6 +41,7 @@
 
     <form asp-action="Create" method="post" enctype="multipart/form-data" class="sc-form-shell">
         <input type="hidden" asp-for="NegocioId" />
+        <input type="hidden" name="Capacidad" value="10" />
         <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm mb-0"></div>
 
         <section class="sc-form-card">
@@ -51,16 +53,19 @@
                         <select asp-for="SedeId" asp-items="Model.Sedes" class="form-select"></select>
                     </div>
                     <div class="col-md-3">
-                        <label asp-for="TipoDeporteId" class="form-label">Deporte</label>
-                        <select asp-for="TipoDeporteId" asp-items="Model.TiposDeporte" class="form-select"></select>
+                        <label asp-for="TipoDeporteSuperId" class="form-label">Deporte</label>
+                        <select asp-for="TipoDeporteSuperId" asp-items="Model.TiposDeporte" class="form-select"></select>
                     </div>
                     <div class="col-md-3">
-                        <label asp-for="TipoSueloId" class="form-label">Tipo de suelo</label>
-                        <select asp-for="TipoSueloId" asp-items="Model.TiposSuelo" class="form-select"></select>
+                        <label asp-for="TipoSueloSuperId" class="form-label">Tipo de suelo</label>
+                        <select asp-for="TipoSueloSuperId" asp-items="Model.TiposSuelo" class="form-select"></select>
                     </div>
                     <div class="col-md-3">
                         <label asp-for="Estado" class="form-label"></label>
-                        <select asp-for="Estado" asp-items="Html.GetEnumSelectList<EstadoEspacioDeportivo>()" class="form-select"></select>
+                        <select asp-for="Estado" class="form-select">
+                            <option value="1">Activo</option>
+                            <option value="3">Inactivo</option>
+                        </select>
                     </div>
                     <div class="col-md-3">
                         <label asp-for="Codigo" class="form-label"></label>
@@ -69,10 +74,6 @@
                     <div class="col-md-6">
                         <label asp-for="Nombre" class="form-label"></label>
                         <input asp-for="Nombre" class="form-control" placeholder="Ejemplo: 6x6 Cancha 1" />
-                    </div>
-                    <div class="col-md-3">
-                        <label asp-for="Capacidad" class="form-label"></label>
-                        <input asp-for="Capacidad" class="form-control" />
                     </div>
                     <div class="col-md-6">
                         <label class="sc-check-chip">

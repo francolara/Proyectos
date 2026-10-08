@@ -17,6 +17,8 @@ GO
 -- Firma:         Codex - 26/04/2026 | Se implementa paginacion real por pagina/tamano (6 por defecto) desde SQL para Mis Reservas.
 -- Firma:         FRANCO LARA - 08/06/2026 | Se incorpora estado de reseña por reserva para permitir un solo registro en estados Confirmada, Pagada o Completada y mostrar la reseña existente en el perfil publico.
 -- Firma:         FRANCO LARA - 11/06/2026 | Devuelve estado visible y respuesta administrativa de cada reseña para reflejar la gestion del negocio en Mis reservas.
+-- Firma:         FRANCO LARA - 01/10/2026 | Expone el correlativo visible de la reserva para Mis reservas sin revelar el Id tecnico.
+-- Firma:         FRANCO LARA - 06/10/2026 | Expone codigo y simbolo de la moneda historica de cada reserva publica.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_UsuariosPublicos_ReservasListar]
     @UsuarioId NVARCHAR(450),
     @Pagina INT = 1,
@@ -77,7 +79,10 @@ BEGIN
             rr.Comentario AS ResenaComentario,
             rr.FechaCreacion AS ResenaFechaCreacion,
             rr.Activo AS ResenaActivo,
-            rr.Respuesta AS ResenaRespuesta
+            rr.Respuesta AS ResenaRespuesta,
+            r.NumeroPorNegocio AS NumeroReservaPorNegocio,
+            r.CodigoMoneda,
+            COALESCE(ms.Simbolo, r.CodigoMoneda) AS MonedaSimbolo
         FROM dbo.ReservasUsuariosPublicos rup
         INNER JOIN dbo.Reservas r ON r.Id = rup.ReservaId
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
@@ -85,6 +90,7 @@ BEGIN
         INNER JOIN dbo.Negocios n ON n.Id = s.NegocioId
         LEFT JOIN dbo.SedeConfiguracionNotificacion scn ON scn.SedeId = s.Id
         LEFT JOIN dbo.ReservasUsuariosPublicosResenas rr ON rr.ReservaId = r.Id
+        LEFT JOIN dbo.MonedasSuperMaestro ms ON ms.Codigo = r.CodigoMoneda
         WHERE rup.UsuarioId = @UsuarioId
         ORDER BY r.Fecha DESC, r.HoraInicio DESC, r.Id DESC
         OFFSET @Offset ROWS FETCH NEXT @TamanoPaginaFinal ROWS ONLY;

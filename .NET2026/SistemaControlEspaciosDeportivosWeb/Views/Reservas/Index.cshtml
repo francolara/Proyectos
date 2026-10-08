@@ -5,6 +5,9 @@
 @* Firma: FRANCO LARA - 07/09/2026 | Usa la fecha y hora operativa de Peru en filtros, pagos y disponibilidad del calendario. *@
 @* Firma: FRANCO LARA - 17/09/2026 | Reduce el bloque de promociones y agrega trazabilidad de registro y actualizacion en el pop-up de reservas. *@
 @* Firma: FRANCO LARA - 25/09/2026 | Al guardar o actualizar desde el pop-up, actualiza tambien el listado de reservas registradas conservando sus filtros activos. *@
+@* Firma: FRANCO LARA - 01/10/2026 | Muestra el correlativo visible de reserva por negocio en listado, calendario, pendientes y pop-up; conserva el Id tecnico solo para acciones internas. *@
+@* Firma: FRANCO LARA - 02/10/2026 | Selecciona sede y espacio unicos, reorganiza la vista en tres bloques operativos, presenta Agenda y Bloqueos plegados bajo demanda y alinea cabeceras y detalle del listado con el estandar: texto plano sin iconos ni chips decorativos por columna. *@
+@* Firma: FRANCO LARA - 06/10/2026 | Amplia fechas del pop-up, ajusta pagos, muestra moneda historica por reserva y evita sumar monedas distintas. *@
 @{
     ViewData["Title"] = "Reservas";
     var ahoraNegocio = BusinessClock.LocalNow;
@@ -57,184 +60,216 @@
     <div class="alert alert-danger">@reservasError</div>
 }
 
-@if (mostrarPanelOperativo)
-{
-    <section class="table-card sc-kpi-operativo-card mb-3" id="panelKpiOperativoDia">
-        <div class="sc-reservas-list-head">
-            <div>
-                <h2 class="section-title"><i class="bi bi-speedometer2 me-1"></i>KPI operativo del dia</h2>
-                <p class="mb-0 text-muted small">Resumen en tiempo real por fecha seleccionada (backend).</p>
+<section class="sc-reservas-group sc-operacion-group mb-4" aria-labelledby="operacionDiariaTitulo">
+    <header class="sc-reservas-group-head">
+        <div>
+            <h2 id="operacionDiariaTitulo" class="sc-reservas-group-title"><i class="bi bi-sliders2"></i>Operacion del dia</h2>
+            <p>Indicadores, filtros y estados para trabajar con la seleccion actual.</p>
+        </div>
+    </header>
+    <div class="sc-reservas-group-body">
+        @if (mostrarPanelOperativo)
+        {
+            <div class="sc-kpi-operativo-card sc-reservas-subpanel" id="panelKpiOperativoDia">
+                <div class="sc-kpi-grid">
+                    <article class="sc-kpi-item">
+                        <span>Ocupacion</span>
+                        <strong id="kpiOcupacionDia">0%</strong>
+                    </article>
+                    <article class="sc-kpi-item">
+                        <span>Slots ocupados</span>
+                        <strong id="kpiSlotsOcupadosDia">0</strong>
+                    </article>
+                    <article class="sc-kpi-item">
+                        <span>Slots libres</span>
+                        <strong id="kpiSlotsLibresDia">0</strong>
+                    </article>
+                    <article class="sc-kpi-item">
+                        <span>Reservas activas</span>
+                        <strong id="kpiReservasActivasDia">0</strong>
+                    </article>
+                    <article class="sc-kpi-item">
+                        <span>Pendientes</span>
+                        <strong id="kpiPendientesDia">0</strong>
+                    </article>
+                </div>
             </div>
-        </div>
-        <div class="sc-kpi-grid">
-            <article class="sc-kpi-item">
-                <span>Ocupacion</span>
-                <strong id="kpiOcupacionDia">0%</strong>
-            </article>
-            <article class="sc-kpi-item">
-                <span>Slots ocupados</span>
-                <strong id="kpiSlotsOcupadosDia">0</strong>
-            </article>
-            <article class="sc-kpi-item">
-                <span>Slots libres</span>
-                <strong id="kpiSlotsLibresDia">0</strong>
-            </article>
-            <article class="sc-kpi-item">
-                <span>Reservas activas</span>
-                <strong id="kpiReservasActivasDia">0</strong>
-            </article>
-            <article class="sc-kpi-item">
-                <span>Pendientes</span>
-                <strong id="kpiPendientesDia">0</strong>
-            </article>
-        </div>
-    </section>
-}
+        }
 
-<form method="get" asp-action="Index" class="filter-card mb-3 sc-calendar-filter-card" id="filtrosForm">
-    <input type="hidden" name="negocioId" value="@Model.NegocioId" />
-    <input id="fechaDesde" type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
-    <input id="fechaHasta" type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
-    <div class="sc-calendar-filter-head">
-        <h2 class="section-title"><i class="bi bi-funnel me-1"></i>Filtro operativo de reservas</h2>
-    </div>
-    <div class="row g-2 align-items-end">
-        <div class="col-md-4">
-            <label class="form-label">Sede</label>
-            <select id="sedeId" class="form-select" name="sedeId">
-                <option value="">Seleccione sede</option>
-                @foreach (var s in Model.SedesFiltro)
-                {
-                    if (Model.SedeId?.ToString() == s.Value)
-                    {
-                        <option value="@s.Value" selected="selected">@s.Text</option>
-                    }
-                    else
-                    {
-                        <option value="@s.Value">@s.Text</option>
-                    }
-                }
-            </select>
-        </div>
-        <div id="espacioFiltroCol" class="col-md-4">
-            <label class="form-label">Espacio</label>
-            <select id="espacioDeportivoId" class="form-select" name="espacioDeportivoId" @(habilitarFiltroEspacio ? "" : "disabled")>
-                <option value="">@(habilitarFiltroEspacio ? "Selecciona espacio" : "Selecciona sede primero")</option>
-                @foreach (var e in Model.EspaciosFiltro)
-                {
-                    if (Model.EspacioDeportivoId?.ToString() == e.Value)
-                    {
-                        <option value="@e.Value" selected="selected">@e.Text</option>
-                    }
-                    else
-                    {
-                        <option value="@e.Value">@e.Text</option>
-                    }
-                }
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Estado</label>
-            <select id="estado" class="form-select" name="estado">
-                @foreach (var est in Model.EstadosFiltro)
-                {
-                    if (Model.Estado?.ToString() == est.Value)
-                    {
-                        <option value="@est.Value" selected="selected">@est.Text</option>
-                    }
-                    else
-                    {
-                        <option value="@est.Value">@est.Text</option>
-                    }
-                }
-            </select>
-        </div>
-        <div class="col-md-1 d-grid">
-            <button type="submit" class="btn btn-outline-primary btn-accion-filtro"><i class="bi bi-search me-1"></i> Buscar</button>
-        </div>
-    </div>
-</form>
-
-@if (mostrarPanelOperativo)
-{
-    <div class="sc-calendar-legend-card mb-3">
-        <div class="sc-calendar-legend-header">
-            <h2 class="section-title"><i class="bi bi-palette2 me-1"></i>Estado de reservas</h2>
-            <div class="sc-calendar-legend-actions">
-                <small class="text-muted me-1">Vista rapida por color para lectura inmediata del calendario.</small>
+        <form method="get" asp-action="Index" class="sc-calendar-filter-card sc-reservas-subpanel" id="filtrosForm">
+            <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+            <input id="fechaDesde" type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
+            <input id="fechaHasta" type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
+            <div class="sc-reservas-subpanel-title"><i class="bi bi-funnel"></i>Filtros operativos</div>
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Sede</label>
+                    <select id="sedeId" class="form-select" name="sedeId">
+                        <option value="">Seleccione sede</option>
+                        @foreach (var s in Model.SedesFiltro)
+                        {
+                            if (Model.SedeId?.ToString() == s.Value)
+                            {
+                                <option value="@s.Value" selected="selected">@s.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@s.Value">@s.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div id="espacioFiltroCol" class="col-md-4">
+                    <label class="form-label">Espacio</label>
+                    <select id="espacioDeportivoId" class="form-select" name="espacioDeportivoId" @(habilitarFiltroEspacio ? "" : "disabled")>
+                        <option value="">@(habilitarFiltroEspacio ? "Selecciona espacio" : "Selecciona sede primero")</option>
+                        @foreach (var e in Model.EspaciosFiltro)
+                        {
+                            if (Model.EspacioDeportivoId?.ToString() == e.Value)
+                            {
+                                <option value="@e.Value" selected="selected">@e.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@e.Value">@e.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Estado</label>
+                    <select id="estado" class="form-select" name="estado">
+                        @foreach (var est in Model.EstadosFiltro)
+                        {
+                            if (Model.Estado?.ToString() == est.Value)
+                            {
+                                <option value="@est.Value" selected="selected">@est.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@est.Value">@est.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-1 d-grid">
+                    <button type="submit" class="btn btn-outline-primary btn-accion-filtro"><i class="bi bi-search me-1"></i> Buscar</button>
+                </div>
             </div>
-        </div>
-        <div class="sc-calendar-legend-list">
+        </form>
+
+        @if (mostrarPanelOperativo)
+        {
+            <div class="sc-calendar-legend-card sc-reservas-subpanel">
+                <div class="sc-reservas-subpanel-title"><i class="bi bi-palette2"></i>Estados del calendario</div>
+                <div class="sc-calendar-legend-list">
             <button type="button" class="sc-legend-pill is-pendiente" data-legend-estado="pendiente" data-legend-label="Pendiente" aria-pressed="true"><i></i><span class="sc-legend-pill-label">Pendiente</span> <span class="sc-legend-pill-count" data-legend-count>(0)</span></button>
             <button type="button" class="sc-legend-pill is-confirmada" data-legend-estado="confirmada" data-legend-label="Confirmada" aria-pressed="true"><i></i><span class="sc-legend-pill-label">Confirmada</span> <span class="sc-legend-pill-count" data-legend-count>(0)</span></button>
             <button type="button" class="sc-legend-pill is-finalizada" data-legend-estado="finalizada" data-legend-label="Pagada" aria-pressed="true"><i></i><span class="sc-legend-pill-label">Pagada</span> <span class="sc-legend-pill-count" data-legend-count>(0)</span></button>
             <button type="button" class="sc-legend-pill is-cancelada" data-legend-estado="cancelada" data-legend-label="Cancelada" aria-pressed="true"><i></i><span class="sc-legend-pill-label">Cancelada</span> <span class="sc-legend-pill-count" data-legend-count>(0)</span></button>
             <button type="button" class="sc-legend-pill is-noshow" data-legend-estado="noshow" data-legend-label="No Asistio" aria-pressed="true"><i></i><span class="sc-legend-pill-label">No Asistio</span> <span class="sc-legend-pill-count" data-legend-count>(0)</span></button>
             <button type="button" class="sc-legend-pill is-bloqueada" data-legend-estado="bloqueada" data-legend-label="Bloqueada / No atencion" aria-pressed="true"><i></i><span class="sc-legend-pill-label">Bloqueada / No atencion</span></button>
-        </div>
+                </div>
+            </div>
+        }
     </div>
+</section>
 
-    <section class="table-card sc-calendar-card sc-operativa-card mb-3">
-        <div class="sc-reservas-list-head">
+@if (mostrarPanelOperativo)
+{
+    <section class="sc-reservas-group sc-agenda-operativa-card is-collapsed mb-4" id="agendaOperativaCard" aria-labelledby="agendaDisponibilidadTitulo">
+        <header class="sc-reservas-group-head sc-agenda-operativa-head">
             <div>
-                <h2 class="section-title"><i class="bi bi-calendar-week me-1"></i>Agenda operativa</h2>
-                <p class="mb-0 text-muted small">Haz clic en un dia/hora para ver disponibilidad. Arrastra reservas para mover horario.</p>
+                <h2 id="agendaDisponibilidadTitulo" class="sc-reservas-group-title"><i class="bi bi-calendar-week"></i>Agenda y disponibilidad</h2>
+                <p>Consulta el calendario, los horarios libres y las reservas que requieren confirmacion.</p>
             </div>
-            <div class="sc-reservas-metrics">
-                <div class="sc-reservas-metric">
-                    <span>Rango</span>
-                    <strong>@diasRango dia(s)</strong>
+            <label class="sc-agenda-switch" for="mostrarAgendaSwitch">
+                <span class="sc-agenda-switch-label">Mostrar agenda</span>
+                <input type="checkbox"
+                       id="mostrarAgendaSwitch"
+                       class="sc-agenda-switch-input"
+                       role="switch"
+                       aria-controls="agendaOperativaContenido"
+                       aria-expanded="false" />
+                <span class="sc-agenda-switch-track" aria-hidden="true"><span></span></span>
+            </label>
+        </header>
+        <div class="sc-reservas-group-body">
+            <section class="sc-calendar-card sc-operativa-card sc-reservas-subpanel">
+                <div id="agendaOperativaContenido" class="sc-agenda-operativa-content" hidden>
+                    <div class="sc-agenda-operativa-summary">
+                        <p class="mb-0 text-muted small">Haz clic en un dia/hora para ver disponibilidad. Arrastra reservas para mover horario.</p>
+                        <div class="sc-reservas-metrics">
+                            <div class="sc-reservas-metric">
+                                <span>Rango</span>
+                                <strong>@diasRango dia(s)</strong>
+                            </div>
+                            <div class="sc-reservas-metric">
+                                <span>Sede</span>
+                                <strong>@sedeSeleccionadaTexto</strong>
+                            </div>
+                            <div class="sc-reservas-metric">
+                                <span>Espacio</span>
+                                <strong>@espacioSeleccionadoTexto</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sc-calendar-body">
+                        <div id="calendarioReservas" class="sc-mode-contrast sc-mode-blocks-hc"></div>
+                    </div>
                 </div>
-                <div class="sc-reservas-metric">
-                    <span>Sede</span>
-                    <strong>@sedeSeleccionadaTexto</strong>
-                </div>
-                <div class="sc-reservas-metric">
-                    <span>Espacio</span>
-                    <strong>@espacioSeleccionadoTexto</strong>
-                </div>
+            </section>
+
+            <div class="sc-operativa-summary-grid">
+                <section class="sc-disponibilidad-card sc-reservas-subpanel" id="panelDisponibilidadDia">
+                    <div class="sc-reservas-subpanel-head">
+                        <div>
+                            <h3><i class="bi bi-clock-history"></i>Disponibilidad por dia</h3>
+                            <p>Horarios libres calculados con reservas y bloqueos activos.</p>
+                        </div>
+                        <div class="sc-disponibilidad-date-filter">
+                            <label for="disponibilidadFechaFiltro" class="form-label mb-1">Fecha</label>
+                            <input type="date" id="disponibilidadFechaFiltro" class="form-control form-control-sm" value="@hoyNegocioIso" />
+                        </div>
+                    </div>
+                    <div class="sc-disponibilidad-body">
+                        <div id="disponibilidadMensaje" class="sc-disponibilidad-msg">Aun no has seleccionado una fecha.</div>
+                        <div id="disponibilidadSlots" class="d-flex flex-wrap gap-2 mt-2"></div>
+                    </div>
+                </section>
+
+                <section class="sc-pendientes-card sc-reservas-subpanel" id="panelPendientesDia">
+                    <div class="sc-reservas-subpanel-head">
+                        <div>
+                            <h3><i class="bi bi-hourglass-split"></i>Pendientes de confirmacion</h3>
+                            <p>Selecciona una reserva para abrir su detalle.</p>
+                        </div>
+                        <div class="sc-disponibilidad-date-filter">
+                            <label for="pendientesFechaFiltro" class="form-label mb-1">Fecha</label>
+                            <input type="date" id="pendientesFechaFiltro" class="form-control form-control-sm" value="@hoyNegocioIso" />
+                        </div>
+                    </div>
+                    <div class="sc-disponibilidad-body">
+                        <div id="pendientesMensaje" class="sc-pendientes-msg">Aun no has seleccionado una fecha.</div>
+                        <div id="pendientesSlots" class="d-flex flex-wrap gap-2 mt-2"></div>
+                    </div>
+                </section>
             </div>
-        </div>
-        <div class="sc-calendar-body">
-            <div id="calendarioReservas" class="sc-mode-contrast sc-mode-blocks-hc"></div>
         </div>
     </section>
+}
 
-    <section class="table-card sc-disponibilidad-card mb-4" id="panelDisponibilidadDia">
-        <div class="sc-reservas-list-head">
-            <div>
-                <h2 class="section-title"><i class="bi bi-clock-history me-1"></i>Disponibilidad por dia</h2>
-                <p class="mb-0 text-muted small">La disponibilidad se calcula con los eventos activos del calendario (reservas y bloqueos).</p>
-            </div>
-            <div class="sc-disponibilidad-date-filter">
-                <label for="disponibilidadFechaFiltro" class="form-label mb-1">Filtrar fecha</label>
-                <input type="date" id="disponibilidadFechaFiltro" class="form-control form-control-sm" value="@hoyNegocioIso" />
-            </div>
+<section class="sc-reservas-group sc-gestion-group mb-4" aria-labelledby="gestionReservasTitulo">
+    <header class="sc-reservas-group-head">
+        <div>
+            <h2 id="gestionReservasTitulo" class="sc-reservas-group-title"><i class="bi bi-calendar-check"></i>Gestion de reservas</h2>
+            <p>Consulta reservas registradas y administra los bloqueos del espacio seleccionado.</p>
         </div>
-        <div class="sc-disponibilidad-body">
-            <div id="disponibilidadMensaje" class="sc-disponibilidad-msg">Aun no has seleccionado una fecha.</div>
-            <div id="disponibilidadSlots" class="d-flex flex-wrap gap-2 mt-2"></div>
-        </div>
-    </section>
-
-    <section class="table-card sc-pendientes-card mb-4" id="panelPendientesDia">
-        <div class="sc-reservas-list-head">
-            <div>
-                <h2 class="section-title"><i class="bi bi-hourglass-split me-1"></i>Reservas pendientes de confirmacion</h2>
-                <p class="mb-0 text-muted small">Muestra las reservas en estado pendiente para la fecha seleccionada. Haz clic para abrir el detalle en el pop-up.</p>
-            </div>
-            <div class="sc-disponibilidad-date-filter">
-                <label for="pendientesFechaFiltro" class="form-label mb-1">Filtrar fecha</label>
-                <input type="date" id="pendientesFechaFiltro" class="form-control form-control-sm" value="@hoyNegocioIso" />
-            </div>
-        </div>
-        <div class="sc-disponibilidad-body">
-            <div id="pendientesMensaje" class="sc-pendientes-msg">Aun no has seleccionado una fecha.</div>
-            <div id="pendientesSlots" class="d-flex flex-wrap gap-2 mt-2"></div>
-        </div>
-    </section>
-
-    <section class="table-card sc-reservas-list-card mb-3">
+    </header>
+    <div class="sc-reservas-group-body">
+@if (mostrarPanelOperativo)
+{
+    <section class="sc-reservas-list-card sc-reservas-subpanel">
         <div class="sc-reservas-list-head">
             <div>
                 <h2 class="section-title"><i class="bi bi-calendar-check me-1"></i>Reservas registradas</h2>
@@ -255,7 +290,7 @@
                 </div>
                 <div class="sc-reservas-metric">
                     <span>Saldo total</span>
-                    <strong>@Model.MonedaSimbolo @Model.SaldoTotalListadoGlobal.ToString("N2")</strong>
+                    <strong>@(Model.SaldoListadoEsMultimoneda ? "Varias monedas" : $"{Model.SaldoListadoMonedaSimbolo} {Model.SaldoTotalListadoGlobal:N2}")</strong>
                 </div>
             </div>
         </div>
@@ -329,32 +364,32 @@
                 <table id="tablaReservasDetallada" class="table table-sm align-middle">
                     <thead>
                         <tr>
-                            <th class="sc-col-id"><span class="sc-col-header"><i class="bi bi-hash"></i><small># Reserva</small></span></th>
-                            <th><span class="sc-col-header"><i class="bi bi-person"></i><small>Cliente</small></span></th>
-                            <th><span class="sc-col-header"><i class="bi bi-people"></i><small>Equipo</small></span></th>
-                            <th><span class="sc-col-header"><i class="bi bi-geo-alt"></i><small>Sede</small></span></th>
-                            <th><span class="sc-col-header"><i class="bi bi-grid-3x3-gap"></i><small>Espacio</small></span></th>
-                            <th><span class="sc-col-header"><i class="bi bi-calendar-event"></i><small>Fecha</small></span></th>
-                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-clock"></i><small>Horario</small></span></th>
-                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-cash-stack"></i><small>Precio (@Model.MonedaSimbolo)</small></span></th>
-                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-wallet2"></i><small>Saldo</small></span></th>
-                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-patch-check"></i><small>Estado</small></span></th>
-                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-gear"></i><small>Acciones</small></span></th>
+                            <th class="sc-col-id"># Reserva</th>
+                            <th>Cliente</th>
+                            <th>Equipo</th>
+                            <th>Sede</th>
+                            <th>Espacio</th>
+                            <th>Fecha</th>
+                            <th class="text-center">Horario</th>
+                            <th class="text-center">Precio</th>
+                            <th class="text-center">Saldo</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var item in Model.Reservas)
                         {
                             <tr>
-                                <td class="text-center sc-col-id"><span class="sc-id-chip">#@item.Id</span></td>
-                                <td><span class="sc-list-mini-card"><i class="bi bi-person"></i><span>@item.Cliente</span></span></td>
-                                <td><span class="sc-list-mini-card"><i class="bi bi-people"></i><span>@(string.IsNullOrWhiteSpace(item.Equipo) ? "-" : item.Equipo)</span></span></td>
-                                <td><span class="sc-list-mini-card"><i class="bi bi-geo-alt"></i><span>@item.Sede</span></span></td>
-                                <td><span class="sc-list-mini-card"><i class="bi bi-grid-3x3-gap"></i><span>@item.Espacio</span></span></td>
-                                <td><span class="sc-list-mini-card"><i class="bi bi-calendar-event"></i><span>@item.Fecha.ToString("dd/MM/yyyy")</span></span></td>
-                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-clock"></i><span>@item.HoraInicio.ToString("HH\\:mm") - @item.HoraFin.ToString("HH\\:mm")</span></span></td>
-                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><i class="bi bi-cash-stack"></i><span>@item.Total.ToString("N2")</span></span></td>
-                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><i class="bi bi-wallet2"></i><span>@item.SaldoPendiente.ToString("N2")</span></span></td>
+                                <td class="text-center sc-col-id">@item.CodigoVisible</td>
+                                <td>@item.Cliente</td>
+                                <td>@(string.IsNullOrWhiteSpace(item.Equipo) ? "-" : item.Equipo)</td>
+                                <td>@item.Sede</td>
+                                <td>@item.Espacio</td>
+                                <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
+                                <td class="text-center">@item.HoraInicio.ToString("HH\\:mm") - @item.HoraFin.ToString("HH\\:mm")</td>
+                                <td class="text-center">@item.MonedaSimbolo @item.Total.ToString("N2")</td>
+                                <td class="text-center">@item.MonedaSimbolo @item.SaldoPendiente.ToString("N2")</td>
                                 <td class="text-center">
                                     @{
                                     var estadoTexto = item.Estado switch
@@ -397,98 +432,146 @@
         }
     </section>
 
-    <section class="table-card sc-bloqueo-form-card mb-4">
-        <div class="sc-reservas-list-head">
+    <section class="sc-bloqueos-panel sc-reservas-subpanel is-collapsed" id="bloqueosGestionCard">
+        <div class="sc-reservas-subpanel-head sc-bloqueos-panel-head">
             <div>
-                <h2 class="section-title"><i class="bi bi-shield-lock me-1"></i>Bloquear horario</h2>
-                <p class="mb-0 text-muted small">Registra cortes por mantenimiento, torneo o eventos internos. Si el espacio comparte horario, el bloqueo tambien impacta en los espacios relacionados.</p>
+                <h3><i class="bi bi-shield-lock"></i>Bloqueos <span class="sc-inline-count">@totalBloqueos</span></h3>
+                <p>Registra cortes y consulta las franjas bloqueadas del periodo.</p>
             </div>
-            <div class="sc-reservas-metrics">
-                <div class="sc-reservas-metric">
-                    <span>Bloqueos en rango</span>
-                    <strong>@totalBloqueos</strong>
-                </div>
-            </div>
+            <label class="sc-section-switch" for="mostrarBloqueosSwitch">
+                <span>Mostrar bloqueos</span>
+                <input type="checkbox"
+                       id="mostrarBloqueosSwitch"
+                       role="switch"
+                       aria-controls="bloqueosGestionContenido"
+                       aria-expanded="false" />
+                <span class="sc-section-switch-track" aria-hidden="true"><span></span></span>
+            </label>
         </div>
-        <div class="sc-bloqueo-form-body">
-            @if (Model.PuedeEditar)
-            {
-                <form asp-action="CrearBloqueo" method="post" class="row g-2 align-items-end sc-bloqueo-form">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="NegocioId" value="@Model.NegocioId" />
-                    <input type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
-                    <input type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
-                    <input type="hidden" name="sedeId" value="@Model.SedeId" />
-                    <input type="hidden" name="espacioDeportivoId" value="@Model.EspacioDeportivoId" />
-                    <input type="hidden" name="estado" value="@Model.Estado" />
-                    <div class="col-md-3">
-                        <label class="form-label">Espacio</label>
-                        <select name="EspacioDeportivoId" class="form-select" required>
-                            @foreach (var e in Model.BloqueoForm.Espacios)
-                            {
-                                if (Model.EspacioDeportivoId?.ToString() == e.Value)
+        <div id="bloqueosGestionContenido" class="sc-bloqueos-panel-content" hidden>
+            <div class="sc-bloqueo-form-body">
+                <div class="sc-reservas-subpanel-title"><i class="bi bi-plus-circle"></i>Nuevo bloqueo</div>
+                @if (Model.PuedeEditar)
+                {
+                    <form asp-action="CrearBloqueo" method="post" class="row g-2 align-items-end sc-bloqueo-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="NegocioId" value="@Model.NegocioId" />
+                        <input type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
+                        <input type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
+                        <input type="hidden" name="sedeId" value="@Model.SedeId" />
+                        <input type="hidden" name="espacioDeportivoId" value="@Model.EspacioDeportivoId" />
+                        <input type="hidden" name="estado" value="@Model.Estado" />
+                        <div class="col-md-3">
+                            <label class="form-label">Espacio</label>
+                            <select name="EspacioDeportivoId" class="form-select" required>
+                                @foreach (var e in Model.BloqueoForm.Espacios)
                                 {
-                                    <option value="@e.Value" selected="selected">@e.Text</option>
+                                    if (Model.EspacioDeportivoId?.ToString() == e.Value)
+                                    {
+                                        <option value="@e.Value" selected="selected">@e.Text</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@e.Value">@e.Text</option>
+                                    }
                                 }
-                                else
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Fecha</label>
+                            <input type="date" class="form-control" name="Fecha" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" required />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Inicio</label>
+                            <select class="form-select" name="HoraInicio" required>
+                                @foreach (var hora in horasMediaHora)
                                 {
-                                    <option value="@e.Value">@e.Text</option>
+                                    var valor = hora.ToString("HH\\:mm");
+                                    if (valor == "08:00")
+                                    {
+                                        <option value="@valor" selected="selected">@valor</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@valor">@valor</option>
+                                    }
                                 }
-                            }
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Fecha</label>
-                        <input type="date" class="form-control" name="Fecha" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" required />
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Inicio</label>
-                        <select class="form-select" name="HoraInicio" required>
-                            @foreach (var hora in horasMediaHora)
-                            {
-                                var valor = hora.ToString("HH\\:mm");
-                                if (valor == "08:00")
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Fin</label>
+                            <select class="form-select" name="HoraFin" required>
+                                @foreach (var hora in horasCierre)
                                 {
-                                    <option value="@valor" selected="selected">@valor</option>
+                                    var valor = hora.ToString("HH\\:mm");
+                                    var etiqueta = hora == new TimeOnly(23, 59) ? "24:00" : valor;
+                                    if (valor == "09:00")
+                                    {
+                                        <option value="@valor" selected="selected">@etiqueta</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@valor">@etiqueta</option>
+                                    }
                                 }
-                                else
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Motivo</label>
+                            <input type="text" class="form-control" name="Motivo" maxlength="250" required />
+                        </div>
+                        <div class="col-md-1 d-grid">
+                            <button type="submit" class="btn btn-outline-danger"><i class="bi bi-lock"></i> Bloquear</button>
+                        </div>
+                    </form>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">No tienes permisos para crear bloqueos.</p>
+                }
+            </div>
+
+            <div class="sc-bloqueos-body">
+                <div class="sc-reservas-subpanel-title"><i class="bi bi-ban"></i>Bloqueos activos</div>
+                @if (Model.Bloqueos.Count == 0)
+                {
+                    <div class="empty-state mb-0">
+                        <i class="bi bi-check2-circle"></i>
+                        <span>No hay bloqueos en el rango seleccionado.</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex flex-column gap-2">
+                        @foreach (var b in Model.Bloqueos)
+                        {
+                            <div class="sc-bloqueo-item">
+                                <div class="small text-muted"><i class="bi bi-calendar-event"></i> @b.Fecha.ToString("dd/MM/yyyy") @b.HoraInicio.ToString("HH\\:mm") - @b.HoraFin.ToString("HH\\:mm")</div>
+                                <div class="fw-semibold"><i class="bi bi-geo-alt"></i> @b.Sede - @b.Espacio</div>
+                                @if (b.EsCompartido && !string.IsNullOrWhiteSpace(b.EspacioOrigen))
                                 {
-                                    <option value="@valor">@valor</option>
+                                    <div class="small text-primary-emphasis"><i class="bi bi-link-45deg"></i> Bloqueo compartido desde @b.EspacioOrigen</div>
                                 }
-                            }
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Fin</label>
-                        <select class="form-select" name="HoraFin" required>
-                            @foreach (var hora in horasCierre)
-                            {
-                                var valor = hora.ToString("HH\\:mm");
-                                var etiqueta = hora == new TimeOnly(23, 59) ? "24:00" : valor;
-                                if (valor == "09:00")
+                                <div class="small">@b.Motivo</div>
+                                @if (Model.PuedeEliminar)
                                 {
-                                    <option value="@valor" selected="selected">@etiqueta</option>
+                                    <form asp-action="EliminarBloqueo" method="post" class="mt-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                        <input type="hidden" name="id" value="@b.Id" />
+                                        <input type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
+                                        <input type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
+                                        <input type="hidden" name="sedeId" value="@Model.SedeId" />
+                                        <input type="hidden" name="espacioDeportivoId" value="@Model.EspacioDeportivoId" />
+                                        <input type="hidden" name="estado" value="@Model.Estado" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i> Quitar bloqueo</button>
+                                    </form>
                                 }
-                                else
-                                {
-                                    <option value="@valor">@etiqueta</option>
-                                }
-                            }
-                        </select>
+                            </div>
+                        }
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Motivo</label>
-                        <input type="text" class="form-control" name="Motivo" maxlength="250" required />
-                    </div>
-                    <div class="col-md-1 d-grid">
-                        <button type="submit" class="btn btn-outline-danger"><i class="bi bi-lock"></i> Bloquear</button>
-                    </div>
-                </form>
-            }
-            else
-            {
-                <p class="text-muted mb-0">No tienes permisos para crear bloqueos.</p>
-            }
+                }
+            </div>
         </div>
     </section>
 }
@@ -502,7 +585,7 @@ else
         </div>
     </section>
 
-    <section class="table-card sc-reservas-list-card mb-3">
+    <section class="sc-reservas-list-card sc-reservas-subpanel">
         <div class="sc-reservas-list-head">
             <div>
                 <h2 class="section-title"><i class="bi bi-calendar-check me-1"></i>Reservas registradas</h2>
@@ -519,7 +602,7 @@ else
                 </div>
                 <div class="sc-reservas-metric">
                     <span>Saldo total</span>
-                    <strong>@Model.MonedaSimbolo @Model.SaldoTotalListadoGlobal.ToString("N2")</strong>
+                    <strong>@(Model.SaldoListadoEsMultimoneda ? "Varias monedas" : $"{Model.SaldoListadoMonedaSimbolo} {Model.SaldoTotalListadoGlobal:N2}")</strong>
                 </div>
             </div>
         </div>
@@ -592,32 +675,32 @@ else
                 <table id="tablaReservasDetallada" class="table table-sm align-middle">
                     <thead>
                         <tr>
-                            <th class="sc-col-id"><span class="sc-col-header"><i class="bi bi-hash"></i><small># Reserva</small></span></th>
-                            <th><span class="sc-col-header"><i class="bi bi-person"></i><small>Cliente</small></span></th>
-                            <th><span class="sc-col-header"><i class="bi bi-people"></i><small>Equipo</small></span></th>
-                            <th><span class="sc-col-header"><i class="bi bi-geo-alt"></i><small>Sede</small></span></th>
-                            <th><span class="sc-col-header"><i class="bi bi-grid-3x3-gap"></i><small>Espacio</small></span></th>
-                            <th><span class="sc-col-header"><i class="bi bi-calendar-event"></i><small>Fecha</small></span></th>
-                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-clock"></i><small>Horario</small></span></th>
-                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-cash-stack"></i><small>Precio (@Model.MonedaSimbolo)</small></span></th>
-                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-wallet2"></i><small>Saldo</small></span></th>
-                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-patch-check"></i><small>Estado</small></span></th>
-                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-gear"></i><small>Acciones</small></span></th>
+                            <th class="sc-col-id"># Reserva</th>
+                            <th>Cliente</th>
+                            <th>Equipo</th>
+                            <th>Sede</th>
+                            <th>Espacio</th>
+                            <th>Fecha</th>
+                            <th class="text-center">Horario</th>
+                            <th class="text-center">Precio</th>
+                            <th class="text-center">Saldo</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var item in Model.Reservas)
                         {
                             <tr>
-                                <td class="text-center sc-col-id"><span class="sc-id-chip">#@item.Id</span></td>
-                                <td><span class="sc-list-mini-card"><i class="bi bi-person"></i><span>@item.Cliente</span></span></td>
-                                <td><span class="sc-list-mini-card"><i class="bi bi-people"></i><span>@(string.IsNullOrWhiteSpace(item.Equipo) ? "-" : item.Equipo)</span></span></td>
-                                <td><span class="sc-list-mini-card"><i class="bi bi-geo-alt"></i><span>@item.Sede</span></span></td>
-                                <td><span class="sc-list-mini-card"><i class="bi bi-grid-3x3-gap"></i><span>@item.Espacio</span></span></td>
-                                <td><span class="sc-list-mini-card"><i class="bi bi-calendar-event"></i><span>@item.Fecha.ToString("dd/MM/yyyy")</span></span></td>
-                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-clock"></i><span>@item.HoraInicio.ToString("HH\\:mm") - @item.HoraFin.ToString("HH\\:mm")</span></span></td>
-                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><i class="bi bi-cash-stack"></i><span>@item.Total.ToString("N2")</span></span></td>
-                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><i class="bi bi-wallet2"></i><span>@item.SaldoPendiente.ToString("N2")</span></span></td>
+                                <td class="text-center sc-col-id">@item.CodigoVisible</td>
+                                <td>@item.Cliente</td>
+                                <td>@(string.IsNullOrWhiteSpace(item.Equipo) ? "-" : item.Equipo)</td>
+                                <td>@item.Sede</td>
+                                <td>@item.Espacio</td>
+                                <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
+                                <td class="text-center">@item.HoraInicio.ToString("HH\\:mm") - @item.HoraFin.ToString("HH\\:mm")</td>
+                                <td class="text-center">@item.MonedaSimbolo @item.Total.ToString("N2")</td>
+                                <td class="text-center">@item.MonedaSimbolo @item.SaldoPendiente.ToString("N2")</td>
                                 <td class="text-center">
                                     @{
                                     var estadoTexto = item.Estado switch
@@ -661,63 +744,8 @@ else
     </section>
 }
 
-@if (mostrarPanelOperativo)
-{
-    <section class="table-card sc-bloqueos-card mb-4">
-        <div class="sc-reservas-list-head">
-            <div>
-                <h2 class="section-title"><i class="bi bi-ban me-1"></i>Bloqueos activos</h2>
-                <p class="mb-0 text-muted small">Listado de franjas bloqueadas en el periodo filtrado, incluyendo bloqueos propagados desde espacios compartidos.</p>
-            </div>
-            <div class="sc-reservas-metrics">
-                <div class="sc-reservas-metric">
-                    <span>Total bloqueos</span>
-                    <strong>@totalBloqueos</strong>
-                </div>
-            </div>
-        </div>
-        <div class="sc-bloqueos-body">
-            @if (Model.Bloqueos.Count == 0)
-            {
-                <div class="empty-state mb-0">
-                    <i class="bi bi-check2-circle"></i>
-                    <span>No hay bloqueos en el rango seleccionado.</span>
-                </div>
-            }
-            else
-            {
-                <div class="d-flex flex-column gap-2">
-                    @foreach (var b in Model.Bloqueos)
-                    {
-                        <div class="sc-bloqueo-item">
-                            <div class="small text-muted"><i class="bi bi-calendar-event"></i> @b.Fecha.ToString("dd/MM/yyyy") @b.HoraInicio.ToString("HH\\:mm") - @b.HoraFin.ToString("HH\\:mm")</div>
-                            <div class="fw-semibold"><i class="bi bi-geo-alt"></i> @b.Sede - @b.Espacio</div>
-                            @if (b.EsCompartido && !string.IsNullOrWhiteSpace(b.EspacioOrigen))
-                            {
-                                <div class="small text-primary-emphasis"><i class="bi bi-link-45deg"></i> Bloqueo compartido desde @b.EspacioOrigen</div>
-                            }
-                            <div class="small">@b.Motivo</div>
-                            @if (Model.PuedeEliminar)
-                            {
-                                <form asp-action="EliminarBloqueo" method="post" class="mt-2">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="negocioId" value="@Model.NegocioId" />
-                                    <input type="hidden" name="id" value="@b.Id" />
-                                    <input type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
-                                    <input type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
-                                    <input type="hidden" name="sedeId" value="@Model.SedeId" />
-                                    <input type="hidden" name="espacioDeportivoId" value="@Model.EspacioDeportivoId" />
-                                    <input type="hidden" name="estado" value="@Model.Estado" />
-                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i> Quitar bloqueo</button>
-                                </form>
-                            }
-                        </div>
-                    }
-                </div>
-            }
-        </div>
-    </section>
-}
+    </div>
+</section>
 
 <div class="modal fade" id="reservaModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-fullscreen-sm-down modal-dialog-scrollable">
@@ -755,9 +783,9 @@ else
                                         @foreach (var e in Model.EspaciosFiltro) { <option value="@e.Value">@e.Text</option> }
                                     </select>
                                 </div>
-                                <div class="col-md-4"><label class="form-label">Fecha</label><input type="date" class="form-control" id="modalFecha" name="Fecha" required /></div>
-                                <div class="col-md-4"><label class="form-label">Hora inicio</label><select class="form-select" id="modalHoraInicio" name="HoraInicio" required>@foreach (var hora in horasMediaHora) { <option value="@hora.ToString("HH\\:mm")">@hora.ToString("HH\\:mm")</option> }</select></div>
-                                <div class="col-md-4"><label class="form-label">Hora fin</label><select class="form-select" id="modalHoraFin" name="HoraFin" required>@foreach (var hora in horasCierre) { var etiquetaHora = hora == new TimeOnly(23, 59) ? "24:00" : hora.ToString("HH\\:mm"); <option value="@hora.ToString("HH\\:mm")">@etiquetaHora</option> }</select></div>
+                                <div class="col-md-5"><label class="form-label">Fecha</label><input type="date" class="form-control" id="modalFecha" name="Fecha" required /></div>
+                                <div class="col-md"><label class="form-label">Hora inicio</label><select class="form-select" id="modalHoraInicio" name="HoraInicio" required>@foreach (var hora in horasMediaHora) { <option value="@hora.ToString("HH\\:mm")">@hora.ToString("HH\\:mm")</option> }</select></div>
+                                <div class="col-md"><label class="form-label">Hora fin</label><select class="form-select" id="modalHoraFin" name="HoraFin" required>@foreach (var hora in horasCierre) { var etiquetaHora = hora == new TimeOnly(23, 59) ? "24:00" : hora.ToString("HH\\:mm"); <option value="@hora.ToString("HH\\:mm")">@etiquetaHora</option> }</select></div>
                                 <div class="col-12 d-none" id="modalEstadoWrap"><label class="form-label">Estado</label><select class="form-select" id="modalEstado" name="Estado" required><option value="1">Pendiente</option><option value="2">Confirmada</option><option value="4">Pagada</option><option value="5">Cancelada</option><option value="6">No Asistio</option></select></div>
                                 <div class="col-12"><div id="reservaModalDisponibilidad" class="alert d-none py-2 mb-0"></div></div>
                             </div>
@@ -786,8 +814,8 @@ else
                             <div class="row g-3">
                                 <div class="col-12"><label class="form-label" id="modalPrecioLabel">Precio de espacio (@Model.MonedaSimbolo)</label><input type="number" min="0.01" step="0.01" class="form-control sc-monto-input" id="modalTotal" name="Total" required /><input type="hidden" id="modalTotalBaseCupon" value="0.00" />@if (!Model.PermitirModificarPrecioReserva) { <small class="text-muted">El precio se calcula automáticamente según la tarifa y promoción del horario.</small> }</div>
                                 <div class="col-12"><div class="d-flex justify-content-between align-items-center gap-2"><label class="form-label mb-0">Adelanto / pago</label><div class="form-check m-0 sc-check-highlight sc-check-highlight-pago"><input class="form-check-input" type="checkbox" id="modalRegistrarPago" name="RegistrarPago" value="true" /><label class="form-check-label small" for="modalRegistrarPago">Registrar pago</label></div></div><small id="modalAdelantoActualInfo" class="text-muted d-block mb-1">Pagado acumulado actual: 0.00</small><input type="number" min="0" step="0.01" class="form-control sc-monto-input" id="modalAdelanto" name="Adelanto" value="0.00" disabled /></div>
-                                <div class="col-md-6"><label class="form-label">Forma de pago</label><select class="form-select" id="modalFormaPagoId" name="FormaPagoId" disabled><option value="">Selecciona...</option>@foreach (var fp in Model.FormasPagoFiltro) { <option value="@fp.Value">@fp.Text</option> }</select></div>
-                                <div class="col-md-3"><label class="form-label">Fecha de pago</label><input type="date" class="form-control" id="modalFechaPago" name="FechaPago" value="@hoyNegocioIso" max="@hoyNegocioIso" disabled /></div>
+                                <div class="col-md-4"><label class="form-label">Forma de pago</label><select class="form-select" id="modalFormaPagoId" name="FormaPagoId" disabled><option value="">Selecciona...</option>@foreach (var fp in Model.FormasPagoFiltro) { <option value="@fp.Value">@fp.Text</option> }</select></div>
+                                <div class="col-md-5"><label class="form-label">Fecha de pago</label><input type="date" class="form-control" id="modalFechaPago" name="FechaPago" value="@hoyNegocioIso" max="@hoyNegocioIso" disabled /></div>
                                 <div class="col-md-3"><label class="form-label">Nro. operación</label><input type="text" class="form-control" id="modalNumeroOperacion" name="NumeroOperacion" maxlength="50" placeholder="Opcional" autocomplete="off" disabled /></div>
                                 <div class="col-12"><div class="sc-reserva-policy"><i class="bi bi-shield-check"></i><div><span>Política de confirmación</span><strong id="modalPoliticaPagoInfo">Cargando...</strong></div></div></div>
                             </div>
@@ -903,6 +931,12 @@ else
             const negocioId = @Model.NegocioId;
             const calendarioEl = document.getElementById('calendarioReservas');
             const calendarioActivo = !!calendarioEl;
+            const agendaOperativaCardEl = document.getElementById('agendaOperativaCard');
+            const agendaOperativaContenidoEl = document.getElementById('agendaOperativaContenido');
+            const mostrarAgendaSwitchEl = document.getElementById('mostrarAgendaSwitch');
+            const bloqueosGestionCardEl = document.getElementById('bloqueosGestionCard');
+            const bloqueosGestionContenidoEl = document.getElementById('bloqueosGestionContenido');
+            const mostrarBloqueosSwitchEl = document.getElementById('mostrarBloqueosSwitch');
             const formFiltros = document.getElementById('filtrosForm');
             const disponibilidadMensajeEl = document.getElementById('disponibilidadMensaje');
             const disponibilidadSlotsEl = document.getElementById('disponibilidadSlots');
@@ -911,6 +945,7 @@ else
             const pendientesSlotsEl = document.getElementById('pendientesSlots');
             const pendientesFechaFiltroEl = document.getElementById('pendientesFechaFiltro');
             const monedaSimboloCalendario = '@Model.MonedaSimbolo';
+            let monedaSimboloModal = monedaSimboloCalendario;
             const reservaModalEl = document.getElementById('reservaModal');
             const reservaModal = new bootstrap.Modal(reservaModalEl);
             const reservaModalForm = document.getElementById('reservaModalForm');
@@ -1018,6 +1053,39 @@ else
             const debugDragActivo = true;
             const calendarAxisWidth = '122px';
             const clientesDetalleMap = new Map();
+
+            const actualizarEstadoAgendaOperativa = () => {
+                if (!agendaOperativaContenidoEl || !mostrarAgendaSwitchEl) return;
+
+                const mostrarAgenda = mostrarAgendaSwitchEl.checked;
+                agendaOperativaContenidoEl.hidden = !mostrarAgenda;
+                agendaOperativaCardEl?.classList.toggle('is-collapsed', !mostrarAgenda);
+                mostrarAgendaSwitchEl.setAttribute('aria-expanded', mostrarAgenda ? 'true' : 'false');
+
+                if (mostrarAgenda) {
+                    window.requestAnimationFrame(() => {
+                        calendar?.updateSize();
+                        pintarCabeceraHorarios();
+                        aplicarEstiloCalendarioFase1();
+                    });
+                }
+            };
+
+            mostrarAgendaSwitchEl?.addEventListener('change', actualizarEstadoAgendaOperativa);
+            actualizarEstadoAgendaOperativa();
+
+            const actualizarEstadoBloqueos = () => {
+                if (!bloqueosGestionContenidoEl || !mostrarBloqueosSwitchEl) return;
+
+                const mostrarBloqueos = mostrarBloqueosSwitchEl.checked;
+                bloqueosGestionContenidoEl.hidden = !mostrarBloqueos;
+                bloqueosGestionCardEl?.classList.toggle('is-collapsed', !mostrarBloqueos);
+                mostrarBloqueosSwitchEl.setAttribute('aria-expanded', mostrarBloqueos ? 'true' : 'false');
+            };
+
+            mostrarBloqueosSwitchEl?.addEventListener('change', actualizarEstadoBloqueos);
+            actualizarEstadoBloqueos();
+
             if (modalTotalEl && !permiteEditarPrecioReserva) {
                 modalTotalEl.readOnly = true;
                 modalTotalEl.classList.add('bg-light');
@@ -1276,12 +1344,9 @@ else
 
             function obtenerCodigoReservaDesdeEvento(evento) {
                 if (!evento) return '';
-                const reservaIdRaw = evento.extendedProps?.reservaId ?? evento.id ?? '';
-                const match = String(reservaIdRaw).match(/\d+/);
-                if (!match) return '';
-                const numero = Number.parseInt(match[0], 10);
+                const numero = Number.parseInt(evento.extendedProps?.numeroPorNegocio, 10);
                 if (!Number.isFinite(numero) || numero <= 0) return '';
-                return `#${numero}`;
+                return `R-${String(numero).padStart(6, '0')}`;
             }
 
             function colorTextoByEstado(estadoCodigo, tipoEvento) {
@@ -1366,7 +1431,7 @@ else
                 reservaModalAccionConflicto.classList.add('d-none');
                 if (!disponible && String(conflictoTipo || '').toUpperCase() === 'RESERVA' && conflictoId) {
                     conflictoReservaIdActual = conflictoId;
-                    btnVerReservaConflicto.textContent = `Ver reserva #${conflictoId}`;
+                    btnVerReservaConflicto.textContent = 'Ver reserva relacionada';
                     reservaModalAccionConflicto.classList.remove('d-none');
                 }
             }
@@ -1538,7 +1603,7 @@ else
                 const pagoActual = modalRegistrarPagoEl?.checked ? Math.max(0, Number(modalAdelantoEl?.value || 0)) : 0;
                 const totalPagado = pagadoAnterior + pagoActual;
                 const saldo = Math.max(0, total - totalPagado);
-                const conMoneda = (valor) => `${monedaSimboloCalendario} ${formatMoney(valor)}`;
+                const conMoneda = (valor) => `${monedaSimboloModal} ${formatMoney(valor)}`;
 
                 if (modalResumenTotalEl) modalResumenTotalEl.textContent = conMoneda(total);
                 if (modalResumenDescuentoEl) modalResumenDescuentoEl.textContent = conMoneda(descuento);
@@ -1856,8 +1921,9 @@ else
                     optSelecciona.textContent = 'Selecciona espacio';
                     espacioSelect.appendChild(optSelecciona);
 
+                    const espaciosDisponibles = payload.items || [];
                     let encontrado = false;
-                    (payload.items || []).forEach((item) => {
+                    espaciosDisponibles.forEach((item) => {
                         const opt = document.createElement('option');
                         opt.value = String(item.value ?? '');
                         opt.textContent = String(item.text ?? '');
@@ -1867,7 +1933,10 @@ else
                         espacioSelect.appendChild(opt);
                     });
 
-                    espacioSelect.value = encontrado ? String(valorObjetivo) : '';
+                    const valorUnico = espaciosDisponibles.length === 1
+                        ? String(espaciosDisponibles[0].value ?? '')
+                        : '';
+                    espacioSelect.value = encontrado ? String(valorObjetivo) : valorUnico;
                     espacioSelect.disabled = false;
                 } catch (err) {
                     console.error(err);
@@ -2012,6 +2081,7 @@ else
             function abrirModalNuevaReserva(fechaIso, horaInicio, horaFin, espacioId) {
                 limpiarErrorModal();
                 limpiarDisponibilidadModal();
+                monedaSimboloModal = monedaSimboloCalendario;
                 reservaModalTitulo.textContent = 'Nueva reserva';
                 if (modalEstadoWrap) modalEstadoWrap.classList.add('d-none');
                 if (modalCuponWrapEl) modalCuponWrapEl.classList.remove('d-none');
@@ -2062,7 +2132,12 @@ else
                         return payload;
                     })
                     .then(data => {
-                        reservaModalTitulo.textContent = `Editar reserva #${data.id}`;
+                        const numeroPorNegocio = Number.parseInt(data.numeroPorNegocio, 10);
+                        const codigoReserva = Number.isFinite(numeroPorNegocio) && numeroPorNegocio > 0
+                            ? `R-${String(numeroPorNegocio).padStart(6, '0')}`
+                            : 'seleccionada';
+                        reservaModalTitulo.textContent = `Editar reserva ${codigoReserva}`;
+                        monedaSimboloModal = String(data.monedaSimbolo || data.codigoMoneda || monedaSimboloCalendario);
                         if (modalEstadoWrap) modalEstadoWrap.classList.remove('d-none');
                         if (modalCuponWrapEl) modalCuponWrapEl.classList.add('d-none');
                         actualizarAuditoriaReserva(data);
@@ -2284,7 +2359,12 @@ else
                         pendientesUnicos.add(reservaId);
                         const hi = String(item.horaInicio || '').trim();
                         const hf = String(item.horaFin || '').trim();
-                        const titulo = String(item.titulo || `Reserva #${reservaId}`).trim();
+                        const numeroPorNegocio = Number.parseInt(item.numeroPorNegocio, 10);
+                        const codigoReserva = Number.isFinite(numeroPorNegocio) && numeroPorNegocio > 0
+                            ? `R-${String(numeroPorNegocio).padStart(6, '0')}`
+                            : '';
+                        const tituloBase = String(item.titulo || 'Reserva').trim();
+                        const titulo = codigoReserva ? `${codigoReserva} - ${tituloBase}` : tituloBase;
                         const btn = document.createElement('button');
                         btn.type = 'button';
                         btn.className = 'btn btn-sm sc-pendiente-slot-btn';
@@ -2549,7 +2629,7 @@ else
                         }
                         const tipoEvento = String(arg.event.extendedProps?.tipoEvento || '').trim().toUpperCase();
                         const timeText = arg.timeText ? `<div class="sc-fc-event-time">${arg.timeText}</div>` : '';
-                        if (tipoEvento === 'RESERVA') {
+                        if (tipoEvento === 'RESERVA' || tipoEvento === 'RESERVA_COMPARTIDA') {
                             const clienteEquipo = obtenerClienteEquipoDesdeTitulo(arg.event.title);
                             const codigoReserva = obtenerCodigoReservaDesdeEvento(arg.event);
                             const total = Number(arg.event.extendedProps?.totalReserva || 0);
@@ -3060,7 +3140,7 @@ else
                         return;
                     }
                     if (adelanto - saldoPendiente > 0.009) {
-                        mostrarErrorModal(`El pago no puede exceder el saldo pendiente de ${monedaSimboloCalendario} ${formatMoney(saldoPendiente)}.`);
+                        mostrarErrorModal(`El pago no puede exceder el saldo pendiente de ${monedaSimboloModal} ${formatMoney(saldoPendiente)}.`);
                         modalAdelantoEl?.focus();
                         return;
                     }

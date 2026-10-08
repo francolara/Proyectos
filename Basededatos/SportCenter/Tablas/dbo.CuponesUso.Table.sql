@@ -4,6 +4,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+-- Firma: FRANCO LARA - 06/10/2026 | Conserva CodigoMoneda canonico de los importes aplicados.
 CREATE TABLE [dbo].[CuponesUso](
     [Id] [int] IDENTITY(1,1) NOT NULL,
     [CuponId] [int] NOT NULL,
@@ -12,6 +13,7 @@ CREATE TABLE [dbo].[CuponesUso](
     [MontoAntes] [decimal](10,2) NOT NULL,
     [MontoDescuento] [decimal](10,2) NOT NULL,
     [MontoFinal] [decimal](10,2) NOT NULL,
+    [CodigoMoneda] [nvarchar](10) NOT NULL,
     [CanalOrigen] [nvarchar](20) NOT NULL,
     [FechaUso] [datetime2](7) NOT NULL,
     [UsuarioCreacion] [nvarchar](200) NULL,
@@ -27,6 +29,10 @@ GO
 ALTER TABLE [dbo].[CuponesUso]  WITH CHECK ADD CONSTRAINT [FK_CuponesUso_Reservas_ReservaId] FOREIGN KEY([ReservaId]) REFERENCES [dbo].[Reservas] ([Id])
 GO
 ALTER TABLE [dbo].[CuponesUso] CHECK CONSTRAINT [FK_CuponesUso_Reservas_ReservaId]
+GO
+ALTER TABLE [dbo].[CuponesUso] WITH CHECK ADD CONSTRAINT [FK_CuponesUso_MonedasSuperMaestro_CodigoMoneda] FOREIGN KEY([CodigoMoneda]) REFERENCES [dbo].[MonedasSuperMaestro] ([Codigo])
+GO
+ALTER TABLE [dbo].[CuponesUso] CHECK CONSTRAINT [FK_CuponesUso_MonedasSuperMaestro_CodigoMoneda]
 GO
 CREATE UNIQUE NONCLUSTERED INDEX [UX_CuponesUso_Reserva_Cupon] ON [dbo].[CuponesUso]([ReservaId] ASC, [CuponId] ASC)
 GO

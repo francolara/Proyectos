@@ -1,4 +1,4 @@
-﻿
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -11,6 +11,8 @@ GO
 -- Firma: Codex - 12/04/2026 | Usa abreviatura del documento (TiposDocumentoComprobanteSuperMaestro.Abreviatura) en columna Referencia.
 -- Firma: Codex - 13/04/2026 | Agrega filtro opcional por rango de fecha de reserva (Desde/Hasta) para listado de pagos.
 -- Firma: Codex - 18/06/2026 | Cambia el filtro del listado de pagos para usar FechaPago real y expone la ultima fecha de pago por reserva en la grilla.
+-- Firma: FRANCO LARA - 01/10/2026 | Usa el correlativo visible por negocio para identificar y buscar la reserva en el listado de pagos.
+-- Firma: FRANCO LARA - 06/10/2026 | Lee simbolo/codigo de moneda y comprobantes desde codigos canonicos historicos.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Pagos_Listar]
     @NegocioId INT,
     @SedeId INT = NULL,
@@ -30,6 +32,13 @@ BEGIN
 
         DECLARE @Offset INT = (@Pagina - 1) * @TamanoPagina;
         DECLARE @BuscarTrim NVARCHAR(120) = NULLIF(LTRIM(RTRIM(@Buscar)), N'');
+        DECLARE @BuscarNumeroReserva INT = TRY_CONVERT(
+            INT,
+            CASE
+                WHEN UPPER(LEFT(@BuscarTrim, 2)) = N'R-' THEN SUBSTRING(@BuscarTrim, 3, 120)
+                ELSE NULL
+            END
+        );
 
         CREATE TABLE #ReservasFiltradas
         (
@@ -46,13 +55,15 @@ BEGIN
             MonedaSimbolo NVARCHAR(10) NOT NULL,
             PagadaCompleta BIT NOT NULL,
             TieneComprobanteActivo BIT NOT NULL,
-            Referencia NVARCHAR(120) NOT NULL
+            Referencia NVARCHAR(120) NOT NULL,
+            CodigoMoneda NVARCHAR(10) NOT NULL
         );
 
         ;WITH ReservasConPago AS
         (
             SELECT
                 r.Id AS ReservaId,
+                r.NumeroPorNegocio AS ReservaNumeroPorNegocio,
                 s.Nombre AS Sede,
                 e.Nombre AS Espacio,
                 c.NombresORazonSocial AS Cliente,
@@ -62,28 +73,27 @@ BEGIN
                 CAST(CASE WHEN r.Estado = 4 AND (r.Total - SUM(p.Monto)) <= 0 THEN 1 ELSE 0 END AS BIT) AS PagadaCompleta,
                 COUNT(p.Id) AS CantidadPagos,
                 STRING_AGG(fp.Nombre, N', ') WITHIN GROUP (ORDER BY fp.Nombre) AS FormaPagoResumen,
-                COALESCE(ms.Simbolo, N'S/') AS MonedaSimbolo
+                COALESCE(ms.Simbolo, r.CodigoMoneda) AS MonedaSimbolo,
+                r.CodigoMoneda
             FROM dbo.Reservas r
             INNER JOIN dbo.Pagos p ON p.ReservaId = r.Id
             INNER JOIN dbo.FormasPago fp ON fp.Id = p.FormaPago
             INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
             INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
-            INNER JOIN dbo.Negocios n ON n.Id = s.NegocioId
-            LEFT JOIN dbo.Monedas m ON m.Id = n.MonedaId
-            LEFT JOIN dbo.MonedasSuperMaestro ms ON ms.Id = m.MonedaSuperId
+            LEFT JOIN dbo.MonedasSuperMaestro ms ON ms.Codigo = r.CodigoMoneda
             INNER JOIN dbo.Clientes c ON c.Id = r.ClienteId
             WHERE s.NegocioId = @NegocioId
               AND (@SedeId IS NULL OR s.Id = @SedeId)
               AND (@FechaDesde IS NULL OR CAST(p.FechaPago AS DATE) >= @FechaDesde)
               AND (@FechaHasta IS NULL OR CAST(p.FechaPago AS DATE) <= @FechaHasta)
-            GROUP BY r.Id, s.Nombre, e.Nombre, c.NombresORazonSocial, r.Total, r.Estado, ms.Simbolo
+            GROUP BY r.Id, r.NumeroPorNegocio, s.Nombre, e.Nombre, c.NombresORazonSocial, r.Total, r.Estado, r.CodigoMoneda, ms.Simbolo
         ),
         ComprobantesPrincipales AS
         (
             SELECT
                 ce.ReservaId,
                 ce.Id AS ComprobanteId,
-                tdc.CodigoSunat AS CodigoDocumento,
+                ce.CodigoTipoComprobante AS CodigoDocumento,
                 COALESCE(tdsm.Abreviatura, tdsm.Nombre, N'Comp.') AS TipoDocumentoNombre,
                 ce.Serie,
                 ce.Numero,
@@ -92,22 +102,20 @@ BEGIN
                     (
                         SELECT 1
                         FROM dbo.ComprobantesElectronicos n
-                        INNER JOIN dbo.NegociosTiposDocumentoComprobante tdn ON tdn.Id = n.TipoComprobante
                         WHERE n.NegocioId = ce.NegocioId
                           AND n.ComprobanteReferenciaId = ce.Id
                           AND n.Estado <> 5
-                          AND tdn.CodigoSunat IN (N'07', N'08')
+                          AND n.CodigoTipoComprobante IN (N'07', N'08')
                     ) THEN 1 ELSE 0 END
                 AS BIT) AS TieneNotaActiva,
                 ROW_NUMBER() OVER (PARTITION BY ce.ReservaId ORDER BY ce.Id DESC) AS rn
             FROM dbo.ComprobantesElectronicos ce
-            INNER JOIN dbo.NegociosTiposDocumentoComprobante tdc ON tdc.Id = ce.TipoComprobante
-            LEFT JOIN dbo.TiposDocumentoComprobanteSuperMaestro tdsm ON tdsm.CodigoSunat = tdc.CodigoSunat
+            LEFT JOIN dbo.TiposDocumentoComprobanteSuperMaestro tdsm ON tdsm.CodigoSunat = ce.CodigoTipoComprobante
             WHERE ce.NegocioId = @NegocioId
               AND ce.ReservaId IS NOT NULL
               AND ce.ComprobanteReferenciaId IS NULL
               AND ce.Estado <> 5
-              AND tdc.CodigoSunat IN (N'01', N'03', N'RI')
+              AND ce.CodigoTipoComprobante IN (N'01', N'03', N'RI')
         ),
         UltimoComprobantePrincipal AS
         (
@@ -136,11 +144,12 @@ BEGIN
             MonedaSimbolo,
             PagadaCompleta,
             TieneComprobanteActivo,
-            Referencia
+            Referencia,
+            CodigoMoneda
         )
         SELECT
             x.ReservaId,
-            CONCAT(N'#', CONVERT(NVARCHAR(20), x.ReservaId)) AS ReservaCodigo,
+            CONCAT(N'R-', RIGHT(N'000000' + CONVERT(NVARCHAR(20), x.ReservaNumeroPorNegocio), 6)) AS ReservaCodigo,
             x.Sede,
             x.Espacio,
             x.Cliente,
@@ -164,11 +173,10 @@ BEGIN
                       (
                           SELECT 1
                           FROM dbo.ComprobantesElectronicos nc
-                          INNER JOIN dbo.NegociosTiposDocumentoComprobante ntdNc ON ntdNc.Id = nc.TipoComprobante
-                          WHERE nc.NegocioId = ce.NegocioId
+                            WHERE nc.NegocioId = ce.NegocioId
                             AND nc.ComprobanteReferenciaId = ce.Id
                             AND nc.Estado <> 5
-                            AND ntdNc.CodigoSunat = N'07'
+                            AND nc.CodigoTipoComprobante = N'07'
                       )
                 ) THEN 1 ELSE 0
             END AS BIT) AS TieneComprobanteActivo,
@@ -176,11 +184,13 @@ BEGIN
                 WHEN u.ReservaId IS NULL THEN N''
                 WHEN u.CodigoDocumento IN (N'01', N'03') AND u.TieneNotaActiva = 1 THEN N''
                 ELSE CONCAT(u.TipoDocumentoNombre, N' ', u.Serie, N'-', FORMAT(u.Numero, '00000000'))
-            END AS Referencia
+            END AS Referencia,
+            x.CodigoMoneda
         FROM ReservasConPago x
         LEFT JOIN UltimoComprobantePrincipal u ON u.ReservaId = x.ReservaId
         WHERE @BuscarTrim IS NULL
-           OR CONVERT(NVARCHAR(20), x.ReservaId) LIKE N'%' + @BuscarTrim + N'%'
+           OR CONVERT(NVARCHAR(20), x.ReservaNumeroPorNegocio) LIKE N'%' + @BuscarTrim + N'%'
+           OR (@BuscarNumeroReserva IS NOT NULL AND x.ReservaNumeroPorNegocio = @BuscarNumeroReserva)
            OR x.Sede LIKE N'%' + @BuscarTrim + N'%'
            OR x.Espacio LIKE N'%' + @BuscarTrim + N'%'
            OR x.Cliente LIKE N'%' + @BuscarTrim + N'%'
@@ -204,7 +214,8 @@ BEGIN
             MonedaSimbolo,
             PagadaCompleta,
             TieneComprobanteActivo,
-            Referencia
+            Referencia,
+            CodigoMoneda
         FROM #ReservasFiltradas
         ORDER BY Fecha DESC, ReservaId DESC
         OFFSET @Offset ROWS FETCH NEXT @TamanoPagina ROWS ONLY;

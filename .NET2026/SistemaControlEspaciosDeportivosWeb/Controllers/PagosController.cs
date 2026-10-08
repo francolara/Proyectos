@@ -29,7 +29,7 @@ public class PagosController(
             paginaActual = totalPaginas;
             (pagos, totalRegistros) = await spService.PagosListarAsync(resolvedNegocioId.Value, AplicarSedeAsignada(baseVm, null), buscar, desde, hasta, paginaActual, tamanoPagina);
         }
-        var (totalMontoGeneral, totalPagadoGeneral, totalSaldoGeneral) = await CalcularTotalesPagosAsync(
+        var (totalMontoGeneral, totalPagadoGeneral, totalSaldoGeneral, esMultimoneda, monedaSimbolo) = await CalcularTotalesPagosAsync(
             resolvedNegocioId.Value,
             AplicarSedeAsignada(baseVm, null),
             buscar,
@@ -58,7 +58,8 @@ public class PagosController(
             TotalMontoGeneral = totalMontoGeneral,
             TotalPagadoGeneral = totalPagadoGeneral,
             TotalSaldoGeneral = totalSaldoGeneral,
-            MonedaSimbolo = pagos.FirstOrDefault()?.MonedaSimbolo ?? "S/",
+            MonedaSimbolo = monedaSimbolo,
+            EsMultimoneda = esMultimoneda,
             EmisionComprobantesElectronicos = configClub?.EmisionComprobantesElectronicos == true,
             EmisionReciboInterno = configClub?.EmisionReciboInterno == true,
             Pagos = pagos
@@ -66,7 +67,7 @@ public class PagosController(
         return View(vm);
     }
 
-    private async Task<(decimal TotalMonto, decimal TotalPagado, decimal TotalSaldo)> CalcularTotalesPagosAsync(
+    private async Task<(decimal TotalMonto, decimal TotalPagado, decimal TotalSaldo, bool EsMultimoneda, string MonedaSimbolo)> CalcularTotalesPagosAsync(
         int negocioId,
         int? sedeId,
         string? buscar,
@@ -79,6 +80,7 @@ public class PagosController(
         var totalPagado = 0m;
         var totalSaldo = 0m;
         var totalRegistros = 0;
+        var monedas = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         do
         {
@@ -86,6 +88,7 @@ public class PagosController(
             totalRegistros = total;
             foreach (var item in items)
             {
+                monedas[item.CodigoMoneda] = item.MonedaSimbolo;
                 totalMonto += item.MontoTotal;
                 totalSaldo += item.SaldoPendiente;
                 totalPagado += Math.Max(0m, item.MontoTotal - item.SaldoPendiente);
@@ -97,7 +100,9 @@ public class PagosController(
             pagina++;
         } while ((pagina - 1) * tamanoLote < totalRegistros);
 
-        return (totalMonto, totalPagado, totalSaldo);
+        var esMultimoneda = monedas.Count > 1;
+        var monedaSimbolo = monedas.Count == 1 ? monedas.Values.First() : "";
+        return (totalMonto, totalPagado, totalSaldo, esMultimoneda, monedaSimbolo);
     }
 
     private static (DateOnly Desde, DateOnly Hasta) ResolverRangoFechas(DateOnly? fechaDesde, DateOnly? fechaHasta, string? preset)
@@ -257,7 +262,7 @@ public class PagosController(
                     var okEliminar = await spService.PagosEliminarAsync(model.NegocioId, pago.PagoId, usuario);
                     if (!okEliminar)
                     {
-                        ModelState.AddModelError(string.Empty, $"No se pudo eliminar el pago #{pago.PagoId}.");
+                        ModelState.AddModelError(string.Empty, $"No se pudo eliminar el pago {pago.CodigoVisible}.");
                         return View(model);
                     }
                     continue;
@@ -266,7 +271,7 @@ public class PagosController(
                 var okObs = await spService.PagosActualizarAsync(model.NegocioId, pago.PagoId, pago.Observacion, usuario);
                 if (!okObs)
                 {
-                    ModelState.AddModelError(string.Empty, $"No se pudo actualizar la observacion del pago #{pago.PagoId}.");
+                    ModelState.AddModelError(string.Empty, $"No se pudo actualizar la observacion del pago {pago.CodigoVisible}.");
                     return View(model);
                 }
             }
@@ -408,6 +413,7 @@ public class PagosController(
                 pagos = data.Pagos.Select(p => new
                 {
                     pagoId = p.PagoId,
+                    codigoVisible = p.CodigoVisible,
                     fechaPago = p.FechaPago.ToString("dd/MM/yyyy"),
                     monto = p.Monto,
                     formaPago = p.FormaPagoNombre,
@@ -441,6 +447,7 @@ public class PagosController(
             .Select(p => new PagoPrevioItemViewModel
             {
                 PagoId = p.PagoId,
+                NumeroPorNegocio = p.NumeroPorNegocio,
                 FechaPago = p.FechaPago,
                 Monto = p.Monto,
                 FormaPago = p.FormaPagoNombre,

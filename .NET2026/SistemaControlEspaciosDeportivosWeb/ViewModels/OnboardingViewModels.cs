@@ -53,7 +53,7 @@ public class OnboardingConfiguracionFormViewModel
     [Required] public string NombreComercial { get; set; } = string.Empty;
     [Required] public string TipoDocumento { get; set; } = "1";
     public string? NumeroDocumento { get; set; }
-    [Range(1, int.MaxValue)] public int MonedaId { get; set; } = 1;
+    [Required, StringLength(10)] public string CodigoMoneda { get; set; } = "PEN";
     public List<SelectListItem> TiposDocumento { get; set; } = new();
     public List<SelectListItem> Monedas { get; set; } = new();
 }
@@ -89,8 +89,8 @@ public class OnboardingEspacioFormViewModel
 {
     public int NegocioId { get; set; }
     [Range(1, int.MaxValue)] public int SedeId { get; set; }
-    [Range(1, int.MaxValue)] public int TipoDeporteId { get; set; }
-    [Range(1, int.MaxValue)] public int TipoSueloId { get; set; }
+    [Range(1, int.MaxValue)] public int TipoDeporteSuperId { get; set; }
+    [Range(1, int.MaxValue)] public int TipoSueloSuperId { get; set; }
     [Required] public string Codigo { get; set; } = string.Empty;
     [Required] public string Nombre { get; set; } = string.Empty;
     [Range(1, 200)] public int Capacidad { get; set; } = 10;

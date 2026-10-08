@@ -119,7 +119,10 @@ public partial class SportCenterStoredProcedureService
                 SedeInstagramUrl = dr.IsDBNull(15) ? null : dr.GetString(15),
                 SedeTwitterUrl = dr.IsDBNull(16) ? null : dr.GetString(16),
                 SedeMapaUrl = dr.IsDBNull(17) ? null : dr.GetString(17),
-                PuedeRegistrarResena = dr.FieldCount > 19 && !dr.IsDBNull(19) && ReadBool(dr, 19)
+                PuedeRegistrarResena = dr.FieldCount > 19 && !dr.IsDBNull(19) && ReadBool(dr, 19),
+                NumeroPorNegocio = ReadRequiredInt32(dr, 26, "NumeroPorNegocio"),
+                CodigoMoneda = dr.FieldCount > 27 && !dr.IsDBNull(27) ? dr.GetString(27) : "PEN",
+                MonedaSimbolo = dr.FieldCount > 28 && !dr.IsDBNull(28) ? dr.GetString(28) : "S/"
             };
 
             if (dr.FieldCount > 25 && !dr.IsDBNull(20))
@@ -167,7 +170,8 @@ public partial class SportCenterStoredProcedureService
             SedeDireccion = dr.IsDBNull(6) ? null : dr.GetString(6),
             Fecha = DateOnly.FromDateTime(dr.GetDateTime(7)),
             HoraInicio = TimeOnly.FromTimeSpan(dr.GetTimeSpan(8)),
-            HoraFin = TimeOnly.FromTimeSpan(dr.GetTimeSpan(9))
+            HoraFin = TimeOnly.FromTimeSpan(dr.GetTimeSpan(9)),
+            NumeroPorNegocio = ReadRequiredInt32(dr, 10, "NumeroPorNegocio")
         };
     }
 

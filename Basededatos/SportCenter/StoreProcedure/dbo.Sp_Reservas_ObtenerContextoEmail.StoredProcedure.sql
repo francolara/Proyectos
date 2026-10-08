@@ -1,4 +1,4 @@
-﻿USE [DbSportCenter]
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -10,6 +10,7 @@ GO
 -- Create date:   26/04/2026
 -- Description:   Obtiene contexto de reserva para correos (cliente/sede/notificaciones/negocio).
 -- Firma:         Codex - 26/04/2026 | Nuevo SP para notificacion de reserva publica y confirmacion. Incluye nombre del club/negocio para cuerpo de correo.
+-- Firma:         FRANCO LARA - 01/10/2026 | Expone el correlativo visible de reserva por negocio para asuntos y plantillas de correo.
 -- =============================================
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Reservas_ObtenerContextoEmail]
     @NegocioId INT = NULL,
@@ -34,7 +35,8 @@ BEGIN
             r.HoraInicio,
             r.HoraFin,
             COALESCE(scn.NotificacionesActivas, 1) AS NotificacionesActivasSede,
-            scn.CorreoNotificacion AS CorreoNotificacionSede
+            scn.CorreoNotificacion AS CorreoNotificacionSede,
+            r.NumeroPorNegocio
         FROM dbo.Reservas r
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId

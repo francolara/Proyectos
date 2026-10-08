@@ -63,7 +63,7 @@ public class ComprobantesController(
                 paginaActual,
                 tamanoPagina);
         }
-        var (totalMontoEmitidoGeneral, totalPendientesGeneral, totalAnuladosGeneral) = await CalcularTotalesComprobantesAsync(
+        var (totalMontoEmitidoGeneral, totalPendientesGeneral, totalAnuladosGeneral, esMultimoneda, monedaSimbolo) = await CalcularTotalesComprobantesAsync(
             resolvedNegocioId.Value,
             AplicarSedeAsignada(baseVm, null),
             buscar,
@@ -94,13 +94,15 @@ public class ComprobantesController(
             TotalMontoEmitidoGeneral = totalMontoEmitidoGeneral,
             TotalPendientesGeneral = totalPendientesGeneral,
             TotalAnuladosGeneral = totalAnuladosGeneral,
+            EsMultimoneda = esMultimoneda,
+            MonedaSimbolo = monedaSimbolo,
             TiposDocumentoFiltro = tiposDocumentoFiltro,
             Comprobantes = comprobantes
         };
         return View(vm);
     }
 
-    private async Task<(decimal TotalMonto, int TotalPendientes, int TotalAnulados)> CalcularTotalesComprobantesAsync(
+    private async Task<(decimal TotalMonto, int TotalPendientes, int TotalAnulados, bool EsMultimoneda, string MonedaSimbolo)> CalcularTotalesComprobantesAsync(
         int negocioId,
         int? sedeId,
         string? buscar,
@@ -114,6 +116,7 @@ public class ComprobantesController(
         var totalPendientes = 0;
         var totalAnulados = 0;
         var totalRegistros = 0;
+        var monedas = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         do
         {
@@ -130,6 +133,7 @@ public class ComprobantesController(
 
             foreach (var item in items)
             {
+                monedas[item.CodigoMoneda] = item.MonedaSimbolo;
                 totalMonto += item.Total;
                 if (item.Estado.Contains("Pend", StringComparison.OrdinalIgnoreCase))
                     totalPendientes++;
@@ -143,7 +147,9 @@ public class ComprobantesController(
             pagina++;
         } while ((pagina - 1) * tamanoLote < totalRegistros);
 
-        return (totalMonto, totalPendientes, totalAnulados);
+        var esMultimoneda = monedas.Count > 1;
+        var monedaSimbolo = monedas.Count == 1 ? monedas.Values.First() : "";
+        return (totalMonto, totalPendientes, totalAnulados, esMultimoneda, monedaSimbolo);
     }
 
     private static (DateOnly Desde, DateOnly Hasta) ResolverRangoFechas(DateOnly? fechaDesde, DateOnly? fechaHasta, string? preset)
@@ -241,7 +247,6 @@ public class ComprobantesController(
         NormalizarDatosCliente(model);
         var montoMaximoBoletaSinDoc = await ObtenerMontoMaximoBoletaSinDocAsync();
         ValidarReglasDocumento(model, montoMaximoBoletaSinDoc);
-        model.TipoComprobante = MapearTipoComprobante(model.CodigoDocumentoComprobante);
         if (!ModelState.IsValid) return View(model);
 
         var usuarioActual = User.Identity?.Name ?? "sistema";
@@ -300,7 +305,6 @@ public class ComprobantesController(
             ReservaId = referencia.ReservaId,
             FechaEmision = DateTime.Today,
             CodigoDocumentoComprobante = codigoDocumentoNota,
-            TipoComprobante = MapearTipoComprobante(codigoDocumentoNota),
             DocumentoTributario = true,
             Total = referencia.Total,
             SubTotal = referencia.SubTotal,
@@ -310,7 +314,7 @@ public class ComprobantesController(
             ClienteNumeroDocumento = referencia.ClienteNumeroDocumento,
             ClienteDireccionFiscal = referencia.ClienteDireccionFiscal,
             ClienteCodigoUbigeo = referencia.ClienteCodigoUbigeo,
-            TipoMoneda = referencia.TipoMoneda,
+            CodigoMoneda = referencia.CodigoMoneda,
             EsNota = true,
             TipoNota = tipoNotaNormalizado,
             ComprobanteReferenciaId = referencia.Id,
@@ -320,9 +324,8 @@ public class ComprobantesController(
         };
 
         await PoblarDatosComprobanteAsync(vm, baseVm, vm.ReservaId);
-        vm.TipoMoneda = referencia.TipoMoneda;
+        vm.CodigoMoneda = referencia.CodigoMoneda;
         vm.CodigoDocumentoComprobante = codigoDocumentoNota;
-        vm.TipoComprobante = MapearTipoComprobante(codigoDocumentoNota);
         vm.TiposDocumentoComprobante = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
         {
             new(
@@ -361,7 +364,6 @@ public class ComprobantesController(
         model.TipoNota = tipoNotaNormalizado;
         var codigoDocumentoNota = CodigoDocumentoPorTipoNota(tipoNotaNormalizado);
         model.CodigoDocumentoComprobante = codigoDocumentoNota;
-        model.TipoComprobante = MapearTipoComprobante(codigoDocumentoNota);
         model.DocumentoTributario = true;
 
         if (!model.ComprobanteReferenciaId.HasValue || model.ComprobanteReferenciaId <= 0)
@@ -393,10 +395,9 @@ public class ComprobantesController(
         await PoblarDatosComprobanteAsync(model, baseVm, model.ReservaId);
         if (referencia is not null)
         {
-            model.TipoMoneda = referencia.TipoMoneda;
+            model.CodigoMoneda = referencia.CodigoMoneda;
         }
         model.CodigoDocumentoComprobante = codigoDocumentoNota;
-        model.TipoComprobante = MapearTipoComprobante(codigoDocumentoNota);
         model.TiposDocumentoComprobante = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
         {
             new(
@@ -498,12 +499,11 @@ public class ComprobantesController(
         }
 
         model.ReservaId = actual.ReservaId;
-        model.TipoComprobante = actual.TipoComprobante;
         model.CodigoDocumentoComprobante = actual.CodigoDocumentoComprobante;
         model.Serie = actual.Serie;
         model.Numero = actual.Numero;
         model.FechaEmision = actual.FechaEmision;
-        model.TipoMoneda = actual.TipoMoneda;
+        model.CodigoMoneda = actual.CodigoMoneda;
         model.SubTotal = actual.SubTotal;
         model.Igv = actual.Igv;
         model.Total = actual.Total;
@@ -512,7 +512,6 @@ public class ComprobantesController(
 
         await PoblarDatosComprobanteAsync(model, baseVm, actual.ReservaId);
         AplicarCalculoComprobante(model);
-        model.TipoComprobante = MapearTipoComprobante(model.CodigoDocumentoComprobante);
         NormalizarDatosCliente(model);
         var montoMaximoBoletaSinDoc = await ObtenerMontoMaximoBoletaSinDocAsync();
         ValidarReglasDocumento(model, montoMaximoBoletaSinDoc);
@@ -633,6 +632,7 @@ public class ComprobantesController(
                 pagos = data.PagosReserva.Select(p => new
                 {
                     pagoId = p.PagoId,
+                    codigoVisible = p.CodigoVisible,
                     fechaPago = p.FechaPago.ToString("dd/MM/yyyy"),
                     monto = p.Monto,
                     formaPago = p.FormaPago,
@@ -1014,10 +1014,8 @@ public class ComprobantesController(
         model.EmisionComprobantesElectronicos = config?.EmisionComprobantesElectronicos == true;
         model.EmisionReciboInterno = config?.EmisionReciboInterno == true;
         model.PorcentajeIgvConfigurado = config?.PorcentajeIgv ?? 18;
-        if (model.Id == 0 && config is not null && config.MonedaId > 0)
-        {
-            model.TipoMoneda = (SistemaControlEspaciosDeportivosWeb.Models.TipoMoneda)config.MonedaId;
-        }
+        if (model.Id == 0 && config is not null)
+            model.CodigoMoneda = config.CodigoMoneda;
 
         model.Reservas = await spService.ComprobantesBuscarReservasPagadasAsync(model.NegocioId, null, reservaId, 20);
         List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> documentos;
@@ -1117,6 +1115,7 @@ public class ComprobantesController(
                 model.PagadoReserva = ctx.TotalPagado;
                 model.SaldoReserva = ctx.SaldoPendiente;
                 model.MonedaSimbolo = ctx.MonedaSimbolo;
+                model.CodigoMoneda = ctx.CodigoMoneda;
                 model.PagosReserva = ctx.PagosReserva;
                 model.SeriesDocumento = ctx.SeriesDisponibles;
                 if (model.NegocioSerieId.HasValue
@@ -1221,19 +1220,6 @@ public class ComprobantesController(
         if (divisor <= 0) divisor = 1m;
         model.SubTotal = decimal.Round(model.Total / divisor, 2, MidpointRounding.AwayFromZero);
         model.Igv = decimal.Round(model.Total - model.SubTotal, 2, MidpointRounding.AwayFromZero);
-    }
-
-    private static SistemaControlEspaciosDeportivosWeb.Models.TipoComprobante MapearTipoComprobante(string? codigoSunat)
-    {
-        var codigo = (codigoSunat ?? string.Empty).Trim().ToUpperInvariant();
-        return codigo switch
-        {
-            "01" => SistemaControlEspaciosDeportivosWeb.Models.TipoComprobante.Factura,
-            "07" => SistemaControlEspaciosDeportivosWeb.Models.TipoComprobante.NotaCredito,
-            "08" => SistemaControlEspaciosDeportivosWeb.Models.TipoComprobante.NotaDebito,
-            "RI" => (SistemaControlEspaciosDeportivosWeb.Models.TipoComprobante)3,
-            _ => SistemaControlEspaciosDeportivosWeb.Models.TipoComprobante.Boleta
-        };
     }
 
     private static string? NormalizarTipoNota(string? tipoNota)

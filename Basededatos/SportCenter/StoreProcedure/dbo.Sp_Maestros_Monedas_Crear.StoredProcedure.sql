@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Maestros_Monedas_Crear]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -10,7 +10,8 @@ GO
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   04/04/2026
--- Description:   Validacion para permitir solo una moneda por negocio.
+-- Description:   Habilita monedas del supermaestro para la configuracion del negocio.
+-- Firma:         FRANCO LARA - 06/10/2026 | Permite varias monedas por negocio sin duplicar el mismo codigo canonico.
 -- =============================================
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Maestros_Monedas_Crear]
     @NegocioId INT,
@@ -23,8 +24,6 @@ BEGIN
     BEGIN TRY
         IF NOT EXISTS (SELECT 1 FROM dbo.MonedasSuperMaestro WHERE Id = @MonedaSuperId AND Activo = 1)
             RAISERROR('La moneda del supermaestro no es valida.', 16, 1);
-        IF EXISTS (SELECT 1 FROM dbo.Monedas WHERE NegocioId = @NegocioId)
-            RAISERROR('Solo se permite una moneda por negocio.', 16, 1);
         IF EXISTS (SELECT 1 FROM dbo.Monedas WHERE NegocioId = @NegocioId AND MonedaSuperId = @MonedaSuperId)
             RAISERROR('La moneda ya esta registrada para este negocio.', 16, 1);
 

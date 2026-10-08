@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -10,16 +10,15 @@ GO
 -- Firma: Codex - 11/04/2026 | Soporta emision de NC/ND desde comprobante referencia (Factura/Boleta aceptada SUNAT), con tipo de nota SUNAT.
 -- Firma: Codex - 12/04/2026 | Elimina mapeos fijos de TipoComprobante (1/2/3/4/5) y resuelve dinamicamente CodigoSunat/TipoComprobanteId por negocio en NegociosTiposDocumentoComprobante.
 -- Firma: Codex - 13/04/2026 | Permite reemision de comprobante principal cuando el comprobante inicial tiene NC activa, sin anular el comprobante inicial.
+-- Firma: FRANCO LARA - 06/10/2026 | Persiste exclusivamente CodigoTipoComprobante SUNAT y CodigoMoneda canonico; elimina IDs locales heredados.
 CREATE OR ALTER PROCEDURE dbo.Sp_Comprobantes_Crear
     @NegocioId INT,
     @ReservaId INT,
-    @TipoComprobante INT,
     @CodigoDocumentoComprobante NVARCHAR(4) = NULL,
     @NegocioSerieId INT = NULL,
     @Serie NVARCHAR(4),
     @Numero INT = NULL,
     @FechaEmision DATETIME2,
-    @TipoMoneda INT,
     @SubTotal DECIMAL(10,2),
     @Igv DECIMAL(10,2),
     @Total DECIMAL(10,2),
@@ -55,20 +54,21 @@ BEGIN
         DECLARE @EstadoComprobanteReferencia INT;
         DECLARE @ReservaReferenciaId INT;
         DECLARE @ClienteReferenciaId INT;
+        DECLARE @CodigoMoneda NVARCHAR(10);
 
         SET @CodigoDoc = UPPER(LTRIM(RTRIM(ISNULL(@CodigoDocumentoComprobante, N''))));
         SET @TipoNotaNorm = UPPER(LTRIM(RTRIM(ISNULL(@TipoNota, ''))));
         SET @TipoNotaCodigoSunat = NULLIF(UPPER(LTRIM(RTRIM(@TipoNotaCodigoSunat))), N'');
 
-        IF @CodigoDoc = N''
-        BEGIN
-            SELECT TOP (1)
-                @CodigoDoc = ntd.CodigoSunat
-            FROM dbo.NegociosTiposDocumentoComprobante ntd
-            WHERE ntd.Id = @TipoComprobante
-              AND ntd.NegocioId = @NegocioId
-              AND ntd.Activo = 1;
-        END
+        SELECT @CodigoMoneda = r.CodigoMoneda
+        FROM dbo.Reservas r
+        INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
+        INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
+        WHERE r.Id = @ReservaId
+          AND s.NegocioId = @NegocioId;
+
+        IF @CodigoMoneda IS NULL
+            RAISERROR('La reserva no tiene una moneda canonica valida para emitir el comprobante.', 16, 1);
 
         IF @CodigoDoc = N''
             RAISERROR('No se pudo determinar el tipo de documento del comprobante.', 16, 1);
@@ -113,12 +113,11 @@ BEGIN
                 RAISERROR('El tipo de nota SUNAT no es valido.', 16, 1);
 
             SELECT
-                @TipoComprobanteReferenciaCodigo = ntdRef.CodigoSunat,
+                @TipoComprobanteReferenciaCodigo = ce.CodigoTipoComprobante,
                 @EstadoComprobanteReferencia = ce.Estado,
                 @ReservaReferenciaId = ce.ReservaId,
                 @ClienteReferenciaId = ce.ClienteId
             FROM dbo.ComprobantesElectronicos ce
-            LEFT JOIN dbo.NegociosTiposDocumentoComprobante ntdRef ON ntdRef.Id = ce.TipoComprobante
             WHERE ce.Id = @ComprobanteReferenciaId
               AND ce.NegocioId = @NegocioId;
 
@@ -139,7 +138,8 @@ BEGIN
             @ClienteId = ISNULL(@ClienteId, r.ClienteId),
             @CodigoTipoDocumentoClienteSunat = c.TipoDocumento,
             @ReservaEstado = r.Estado,
-            @SedeId = e.SedeId
+            @SedeId = e.SedeId,
+            @CodigoMoneda = r.CodigoMoneda
         FROM dbo.Reservas r
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
@@ -149,6 +149,18 @@ BEGIN
 
         IF @ClienteId IS NULL
             RAISERROR('No se encontro la reserva para generar el comprobante.', 16, 1);
+
+        IF @CodigoMoneda IS NULL
+            RAISERROR('La reserva no tiene una moneda canonica valida para emitir el comprobante.', 16, 1);
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM dbo.Monedas m
+            WHERE m.NegocioId = @NegocioId
+              AND m.Codigo = @CodigoMoneda
+        )
+            RAISERROR('La moneda historica de la reserva no esta asociada al negocio.', 16, 1);
 
         IF @EsNota = 0 AND @ReservaEstado <> 4
             RAISERROR('Solo se pueden emitir comprobantes sobre reservas pagadas.', 16, 1);
@@ -167,11 +179,10 @@ BEGIN
                   (
                       SELECT 1
                       FROM dbo.ComprobantesElectronicos nc
-                      INNER JOIN dbo.NegociosTiposDocumentoComprobante ntdNc ON ntdNc.Id = nc.TipoComprobante
                       WHERE nc.NegocioId = ce.NegocioId
                         AND nc.ComprobanteReferenciaId = ce.Id
                         AND nc.Estado <> 5
-                        AND ntdNc.CodigoSunat = N'07'
+                        AND nc.CodigoTipoComprobante = N'07'
                   )
             )
                 RAISERROR('La reserva ya tiene un comprobante emitido. No se permite duplicar comprobantes.', 16, 1);
@@ -187,7 +198,6 @@ BEGIN
             RAISERROR('El cliente no tiene un tipo de documento SUNAT valido.', 16, 1);
 
         SELECT TOP (1)
-            @TipoComprobante = ntd.Id,
             @Tributario = t.Tributario
         FROM dbo.NegociosTiposDocumentoComprobante ntd
         INNER JOIN dbo.TiposDocumentoComprobanteSuperMaestro t ON t.CodigoSunat = ntd.CodigoSunat
@@ -197,7 +207,7 @@ BEGIN
           AND t.Activo = 1
           AND t.Habilitado = 1;
 
-        IF @TipoComprobante IS NULL OR @Tributario IS NULL
+        IF @Tributario IS NULL
             RAISERROR('El tipo de documento no esta habilitado para este negocio.', 16, 1);
 
         IF @NegocioSerieId IS NOT NULL
@@ -313,20 +323,20 @@ BEGIN
         SELECT @NumeroGenerado = ISNULL(MAX(ce.Numero), 0) + 1
         FROM dbo.ComprobantesElectronicos ce WITH (UPDLOCK, HOLDLOCK)
         WHERE ce.NegocioId = @NegocioId
-          AND ce.TipoComprobante = @TipoComprobante
+          AND ce.CodigoTipoComprobante = @CodigoDoc
           AND ce.Serie = @Serie;
 
         INSERT INTO dbo.ComprobantesElectronicos
         (
-            NegocioId, ReservaId, ClienteId, TipoComprobante, Serie, Numero,
-            FechaEmision, TipoMoneda, CodigoTipoOperacionSunat, CodigoTipoDocumentoClienteSunat,
+            NegocioId, ReservaId, ClienteId, CodigoTipoComprobante, Serie, Numero,
+            FechaEmision, CodigoMoneda, CodigoTipoOperacionSunat, CodigoTipoDocumentoClienteSunat,
             SubTotal, Igv, Total, Estado, ComprobanteReferenciaId, TipoNota, TipoNotaCodigoSunat,
             FechaRegistro, UsuarioCreacion
         )
         VALUES
         (
-            @NegocioId, @ReservaId, @ClienteId, @TipoComprobante, @Serie, @NumeroGenerado,
-            @FechaEmision, @TipoMoneda, N'0101', @TipoDocumentoClienteFinal,
+            @NegocioId, @ReservaId, @ClienteId, @CodigoDoc, @Serie, @NumeroGenerado,
+            @FechaEmision, @CodigoMoneda, N'0101', @TipoDocumentoClienteFinal,
             @SubTotal, @Igv, @Total, @Estado, @ComprobanteReferenciaId,
             CASE WHEN @EsNota = 1 THEN @TipoNotaNorm ELSE NULL END,
             CASE WHEN @EsNota = 1 THEN @TipoNotaCodigoSunat ELSE NULL END,

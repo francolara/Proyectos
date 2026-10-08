@@ -1,4 +1,4 @@
-﻿
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -8,6 +8,7 @@ GO
 -- Firma: Codex - 06/04/2026 | Reemplaza eliminacion por inactivacion logica usando Clientes.NegocioId, sin tabla puente.
 -- Firma: Codex - 07/04/2026 | Bloquea inactivacion cuando existen reservas activas futuras del cliente.
 -- Firma: FRANCO LARA - 07/09/2026 | Usa la fecha y hora operativa de Peru al validar reservas activas.
+-- Firma: Codex - 01/10/2026 | Identifica reservas bloqueantes con el correlativo visible por negocio.
 CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_Eliminar
     @NegocioId INT,
     @Id INT,
@@ -25,7 +26,7 @@ BEGIN
         SELECT @ReservasActivas =
             STRING_AGG(
                 CONCAT(
-                    N'#', CONVERT(NVARCHAR(20), r.Id),
+                    N'R-', RIGHT(N'000000' + CONVERT(NVARCHAR(20), r.NumeroPorNegocio), 6),
                     N' ', CONVERT(NVARCHAR(10), r.Fecha, 103),
                     N' ', LEFT(CONVERT(NVARCHAR(8), r.HoraInicio, 108), 5),
                     N'-', LEFT(CONVERT(NVARCHAR(8), r.HoraFin, 108), 5),

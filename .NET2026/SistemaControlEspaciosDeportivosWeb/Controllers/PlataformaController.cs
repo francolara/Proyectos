@@ -346,6 +346,9 @@ public class PlataformaController(
         negocio.HistorialCobros = cobros.Pagos;
         negocio.CantidadCobrosRegistrados = cobros.CantidadPagos;
         negocio.MontoTotalCobrado = cobros.MontoTotalPagado;
+        negocio.CobrosEsMultimoneda = cobros.CantidadMonedasPago > 1;
+        negocio.CobrosCodigoMoneda = cobros.CodigoMonedaResumen;
+        negocio.CobrosMonedaSimbolo = cobros.MonedaSimboloResumen;
         negocio.UltimoCobroFecha = cobros.UltimaFechaPago;
         negocio.UltimoCobroMonto = cobros.UltimoMonto;
         negocio.UltimoCobroTipoPago = cobros.UltimoTipoPago;
@@ -1337,6 +1340,9 @@ public class PlataformaController(
             n.HistorialCobros = resumen.Pagos;
             n.CantidadCobrosRegistrados = resumen.CantidadPagos;
             n.MontoTotalCobrado = resumen.MontoTotalPagado;
+            n.CobrosEsMultimoneda = resumen.CantidadMonedasPago > 1;
+            n.CobrosCodigoMoneda = resumen.CodigoMonedaResumen;
+            n.CobrosMonedaSimbolo = resumen.MonedaSimboloResumen;
             n.UltimoCobroFecha = resumen.UltimaFechaPago;
             n.UltimoCobroMonto = resumen.UltimoMonto;
             n.UltimoCobroTipoPago = resumen.UltimoTipoPago;

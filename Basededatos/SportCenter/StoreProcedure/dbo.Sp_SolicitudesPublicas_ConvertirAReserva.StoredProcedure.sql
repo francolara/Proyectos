@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -9,6 +9,8 @@ GO
 -- Firma: Codex - 06/04/2026 | Si la solicitud se convierte como Confirmada, valida politica de pago del negocio.
 -- Firma: Codex - 06/04/2026 | Se elimina dependencia de NegocioClientes y se usa Clientes.NegocioId.
 -- Firma: Codex - 14/04/2026 | Reserva generada desde solicitud publica persiste CanalOrigen=CLIENTE_WEB, crea notificacion para campanita admin y ajusta concatenacion compatible.
+-- Firma: FRANCO LARA - 01/10/2026 | Asigna correlativos visibles por negocio al cliente y reserva creados desde una solicitud publica y devuelve ambos identificadores de la reserva.
+-- Firma: FRANCO LARA - 06/10/2026 | Conserva CodigoMoneda canonico al convertir la solicitud en reserva.
 CREATE OR ALTER PROCEDURE dbo.Sp_SolicitudesPublicas_ConvertirAReserva
     @NegocioId INT,
     @Id INT,
@@ -26,12 +28,17 @@ BEGIN
         DECLARE @PoliticaConfirmacionPago TINYINT;
         DECLARE @PorcentajeAdelantoMinimo DECIMAL(5,2);
         DECLARE @PagoMinimoRequerido DECIMAL(10,2);
+        DECLARE @CodigoMoneda NVARCHAR(10);
 
         SELECT
             @PoliticaConfirmacionPago = COALESCE(n.PoliticaConfirmacionPago, 0),
-            @PorcentajeAdelantoMinimo = n.PorcentajeAdelantoMinimo
+            @PorcentajeAdelantoMinimo = n.PorcentajeAdelantoMinimo,
+            @CodigoMoneda = n.CodigoMoneda
         FROM dbo.Negocios n
         WHERE n.Id = @NegocioId;
+
+        IF @CodigoMoneda IS NULL
+            RAISERROR('El negocio debe configurar una moneda valida antes de convertir solicitudes.', 16, 1);
 
         IF @PoliticaConfirmacionPago NOT IN (0, 1, 2)
             SET @PoliticaConfirmacionPago = 0;
@@ -97,29 +104,35 @@ BEGIN
 
         IF @ClienteId IS NULL
         BEGIN
+            DECLARE @NumeroClientePorNegocio INT;
+            EXEC dbo.Sp_NegocioCorrelativos_ObtenerSiguiente @NegocioId, N'CLIENTE', @Usuario, @NumeroClientePorNegocio OUTPUT;
+
             INSERT INTO dbo.Clientes
             (
-                NegocioId, NombresORazonSocial, TipoDocumento, NumeroDocumento, Telefono, Correo,
+                NumeroPorNegocio, NegocioId, NombresORazonSocial, TipoDocumento, NumeroDocumento, Telefono, Correo,
                 Activo, FechaCreacion, UsuarioCreacion
             )
             VALUES
             (
-                @NegocioId, @NombreSolicitante, N'0', CONCAT(N'SOL', @Id), @Telefono, @Correo,
+                @NumeroClientePorNegocio, @NegocioId, @NombreSolicitante, N'0', CONCAT(N'SOL', @Id), @Telefono, @Correo,
                 1, SYSUTCDATETIME(), @Usuario
             );
 
             SET @ClienteId = SCOPE_IDENTITY();
         END;
 
+        DECLARE @NumeroReservaPorNegocio INT;
+        EXEC dbo.Sp_NegocioCorrelativos_ObtenerSiguiente @NegocioId, N'RESERVA', @Usuario, @NumeroReservaPorNegocio OUTPUT;
+
         INSERT INTO dbo.Reservas
         (
-            EspacioDeportivoId, ClienteId, Fecha, HoraInicio, HoraFin,
-            Estado, Total, Adelanto, Saldo, CanalOrigen, FechaRegistro, UsuarioCreacion
+            NumeroPorNegocio, EspacioDeportivoId, ClienteId, Fecha, HoraInicio, HoraFin,
+            Estado, Total, Adelanto, Saldo, CodigoMoneda, CanalOrigen, FechaRegistro, UsuarioCreacion
         )
         VALUES
         (
-            @EspacioDeportivoId, @ClienteId, @Fecha, @HoraInicio, @HoraFin,
-            @EstadoReserva, @Total, @Adelanto, (@Total - @Adelanto), N'CLIENTE_WEB', SYSUTCDATETIME(), @Usuario
+            @NumeroReservaPorNegocio, @EspacioDeportivoId, @ClienteId, @Fecha, @HoraInicio, @HoraFin,
+            @EstadoReserva, @Total, @Adelanto, (@Total - @Adelanto), @CodigoMoneda, N'CLIENTE_WEB', SYSUTCDATETIME(), @Usuario
         );
 
         SET @ReservaId = SCOPE_IDENTITY();
@@ -140,7 +153,7 @@ BEGIN
         EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'RESERVAS', @Accion = N'CREATE', @Entidad = N'Reserva', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
         DECLARE @MensajeNotificacion NVARCHAR(300);
         DECLARE @UrlNotificacion NVARCHAR(300);
-        SET @MensajeNotificacion = N'Reserva #' + CONVERT(NVARCHAR(20), @ReservaId) + N' generada desde solicitud del cliente.';
+        SET @MensajeNotificacion = N'Reserva R-' + RIGHT(N'000000' + CONVERT(NVARCHAR(20), @NumeroReservaPorNegocio), 6) + N' generada desde solicitud del cliente.';
         SET @UrlNotificacion = N'/Reservas?negocioId=' + CONVERT(NVARCHAR(20), @NegocioId);
 
         EXEC dbo.Sp_Notificaciones_Crear
@@ -154,7 +167,9 @@ BEGIN
 
         COMMIT TRANSACTION;
 
-        SELECT @ReservaId;
+        SELECT
+            @ReservaId AS ReservaId,
+            @NumeroReservaPorNegocio AS NumeroPorNegocio;
     END TRY
     BEGIN CATCH
         IF XACT_STATE() <> 0

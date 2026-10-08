@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -7,8 +7,9 @@ GO
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   06/04/2026
--- Description:   Actualiza estado de tipo de deporte por negocio.
+-- Description:   Actualiza estado y protege asociaciones utilizadas por espacios del negocio.
 -- =============================================
+-- Firma: FRANCO LARA - 06/10/2026 | Impide inactivar una asociacion de deporte utilizada por espacios del negocio.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Maestros_TiposDeporte_Actualizar]
     @NegocioId INT,
     @Id INT,
@@ -18,6 +19,17 @@ AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
+        IF @Activo = 0 AND EXISTS
+        (
+            SELECT 1
+            FROM dbo.TiposDeporte td
+            INNER JOIN dbo.EspaciosDeportivos e ON e.TipoDeporteSuperId = td.TipoDeporteSuperId
+            INNER JOIN dbo.Sedes s ON s.Id = e.SedeId AND s.NegocioId = td.NegocioId
+            WHERE td.Id = @Id
+              AND td.NegocioId = @NegocioId
+        )
+            RAISERROR('No se puede inactivar el deporte porque existen espacios que lo utilizan.', 16, 1);
+
         UPDATE dbo.TiposDeporte
         SET
             Activo = @Activo,

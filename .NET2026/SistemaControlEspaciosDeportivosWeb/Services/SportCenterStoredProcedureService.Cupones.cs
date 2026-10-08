@@ -121,7 +121,10 @@ public partial class SportCenterStoredProcedureService
                 Sede = dr.GetString(10),
                 Espacio = dr.GetString(11),
                 Activo = dr.GetBoolean(12),
-                VigenteHoy = dr.GetBoolean(13)
+                VigenteHoy = dr.GetBoolean(13),
+                NumeroPorNegocio = ReadRequiredInt32(dr, 14, "NumeroPorNegocio"),
+                CodigoMoneda = dr.GetString(15),
+                MonedaSimbolo = dr.GetString(16)
             });
         }
 

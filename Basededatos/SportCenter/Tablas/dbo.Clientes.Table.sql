@@ -5,12 +5,14 @@ GO
 -- Firma: Codex - 06/04/2026 | Agrega columnas Nombres y Apellidos para clientes naturales, manteniendo NombresORazonSocial para compatibilidad de listados.
 -- Firma: Codex - 06/04/2026 | Cliente queda asociado directamente al NegocioId; se elimina tabla puente NegocioClientes.
 -- Firma: Codex - 07/04/2026 | Indice unico excluye tipo documento 0 para permitir multiples clientes no domiciliados sin RUC.
+-- Firma: FRANCO LARA - 01/10/2026 | Agrega el correlativo visible de cliente por negocio sin reemplazar el Id tecnico global.
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[Clientes](
     [Id] [int] IDENTITY(1,1) NOT NULL,
+    [NumeroPorNegocio] [int] NULL,
     [NegocioId] [int] NOT NULL,
     [NombresORazonSocial] [nvarchar](200) NOT NULL,
     [Nombres] [nvarchar](120) NULL,

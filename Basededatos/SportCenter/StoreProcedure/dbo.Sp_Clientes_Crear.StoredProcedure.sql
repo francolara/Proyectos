@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -9,6 +9,7 @@ GO
 -- Firma: Codex - 06/04/2026 | Agrega soporte de nombres/apellidos por separado para documentos distintos a RUC y mantiene NombresORazonSocial concatenado para compatibilidad.
 -- Firma: Codex - 06/04/2026 | Se elimina dependencia de NegocioClientes y se usa Clientes.NegocioId.
 -- Firma: Codex - 07/04/2026 | Valida reglas de numero de documento y permite vacio para tipo no domiciliado sin RUC.
+-- Firma: FRANCO LARA - 01/10/2026 | Asigna el correlativo visible de cliente por negocio al crear el registro.
 CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_Crear
     @NegocioId INT,
     @NombresORazonSocial NVARCHAR(200),
@@ -107,14 +108,17 @@ BEGIN
 
         BEGIN TRANSACTION;
 
+        DECLARE @NumeroPorNegocio INT;
+        EXEC dbo.Sp_NegocioCorrelativos_ObtenerSiguiente @NegocioId, N'CLIENTE', @Usuario, @NumeroPorNegocio OUTPUT;
+
         INSERT INTO dbo.Clientes
         (
-            NegocioId, NombresORazonSocial, Nombres, Apellidos, NombreEquipo, TipoDocumento, NumeroDocumento, Telefono,
+            NumeroPorNegocio, NegocioId, NombresORazonSocial, Nombres, Apellidos, NombreEquipo, TipoDocumento, NumeroDocumento, Telefono,
             Correo, DireccionFiscal, CodigoUbigeo, Activo, FechaCreacion, UsuarioCreacion
         )
         VALUES
         (
-            @NegocioId, @NombresORazonSocialNormalizado, @NombresNormalizado, @ApellidosNormalizado, @NombreEquipoNormalizado, @TipoDocumento, @NumeroDocumento, @Telefono,
+            @NumeroPorNegocio, @NegocioId, @NombresORazonSocialNormalizado, @NombresNormalizado, @ApellidosNormalizado, @NombreEquipoNormalizado, @TipoDocumento, @NumeroDocumento, @Telefono,
             @Correo, @DireccionFiscalNormalizada, @CodigoUbigeoNormalizado, @Activo, SYSUTCDATETIME(), @Usuario
         );
 

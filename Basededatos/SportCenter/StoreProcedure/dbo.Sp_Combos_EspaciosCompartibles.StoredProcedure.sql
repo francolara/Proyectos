@@ -1,4 +1,4 @@
-﻿
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -10,6 +10,7 @@ GO
 -- Create date:   06/06/2026
 -- Description:   Lista espacios activos de la misma sede para configurarlos como espacios compartidos.
 -- =============================================
+-- Firma: FRANCO LARA - 06/10/2026 | Resuelve el tipo de suelo desde el supermaestro persistido por el espacio.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Combos_EspaciosCompartibles]
     @NegocioId INT,
     @SedeId INT,
@@ -30,7 +31,7 @@ BEGIN
             )
         FROM dbo.EspaciosDeportivos e
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
-        LEFT JOIN dbo.TiposSuelo ts ON ts.Id = e.TipoSueloId
+        LEFT JOIN dbo.TiposSueloSuperMaestro ts ON ts.Id = e.TipoSueloSuperId
         WHERE s.NegocioId = @NegocioId
           AND e.SedeId = @SedeId
           AND e.Estado = 1

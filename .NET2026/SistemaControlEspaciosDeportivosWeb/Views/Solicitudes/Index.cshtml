@@ -1,4 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.SolicitudesIndexViewModel
+@* Firma: Codex - 01/10/2026 | Muestra el correlativo de reserva por negocio al convertir solicitudes. *@
 @{
     ViewData["Title"] = "Solicitudes publicas";
 }
@@ -70,7 +71,9 @@
                     1 => "Pendiente",
                     2 => "Aprobada",
                     3 => "Rechazada",
-                    4 => $"Convertida (#{item.ReservaId})",
+                    4 => item.CodigoReservaVisible is not null
+                        ? $"Convertida ({item.CodigoReservaVisible})"
+                        : "Convertida",
                     _ => item.Estado.ToString()
                 };
 

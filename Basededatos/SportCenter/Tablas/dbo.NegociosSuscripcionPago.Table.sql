@@ -10,6 +10,7 @@ GO
 -- Create date:   10/06/2026
 -- Firma:         Registro manual y futuro conciliable de cobros de suscripcion por negocio.
 -- Firma:         FRANCO LARA - 21/07/2026 | Guarda plan comercial y limites objetivo aplicados con el cobro.
+-- Firma:         FRANCO LARA - 06/10/2026 | Conserva CodigoMoneda canonico del cobro de suscripcion.
 -- =============================================
 IF OBJECT_ID(N'dbo.NegociosSuscripcionPago', N'U') IS NULL
 BEGIN
@@ -23,6 +24,7 @@ BEGIN
         [EstadoPago] [nvarchar](20) NOT NULL,
         [Monto] [decimal](12, 2) NOT NULL,
         [Moneda] [nvarchar](10) NOT NULL,
+        [CodigoMoneda] [nvarchar](10) NOT NULL,
         [FechaPago] [datetime2](7) NOT NULL,
         [FechaVencimiento] [date] NULL,
         [OperacionNumero] [nvarchar](100) NULL,
@@ -82,6 +84,12 @@ BEGIN
             FOREIGN KEY([NegocioSuscripcionMovimientoId]) REFERENCES [dbo].[NegociosSuscripcionMovimiento]([Id]);
 
     ALTER TABLE [dbo].[NegociosSuscripcionPago] CHECK CONSTRAINT [FK_NegociosSuscripcionPago_NegociosSuscripcionMovimiento_NegocioSuscripcionMovimientoId];
+
+    ALTER TABLE [dbo].[NegociosSuscripcionPago] WITH CHECK
+        ADD CONSTRAINT [FK_NegociosSuscripcionPago_MonedasSuperMaestro_CodigoMoneda]
+            FOREIGN KEY([CodigoMoneda]) REFERENCES [dbo].[MonedasSuperMaestro]([Codigo]);
+
+    ALTER TABLE [dbo].[NegociosSuscripcionPago] CHECK CONSTRAINT [FK_NegociosSuscripcionPago_MonedasSuperMaestro_CodigoMoneda];
 
     CREATE NONCLUSTERED INDEX [IX_NegociosSuscripcionPago_Negocio_Fecha]
         ON [dbo].[NegociosSuscripcionPago]([NegocioId] ASC, [FechaPago] DESC, [Id] DESC);

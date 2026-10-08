@@ -8,6 +8,8 @@ GO
 -- Create date: 03/05/2026
 -- Firma: FRANCO LARA - 07/09/2026 | Calcula la vigencia con la fecha operativa de Peru.
 -- Firma: FRANCO LARA - 17/09/2026 | Incorpora inactivos y evita que su vigencia los oculte del filtro.
+-- Firma: FRANCO LARA - 01/10/2026 | Expone el correlativo visible de cupon por negocio.
+-- Firma: FRANCO LARA - 06/10/2026 | Expone la moneda canonica historica de los descuentos de importe fijo.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Cupones_Listar]
     @NegocioId INT,
     @SedeId INT = NULL,
@@ -47,10 +49,14 @@ BEGIN
                 COALESCE(s.Nombre, N'Todas') AS Sede,
                 COALESCE(e.Nombre, N'Todos') AS Espacio,
                 c.Activo,
-                CAST(CASE WHEN c.Activo = 1 AND c.FechaInicio <= @Hoy AND c.FechaFin >= @Hoy THEN 1 ELSE 0 END AS BIT) AS VigenteHoy
+                CAST(CASE WHEN c.Activo = 1 AND c.FechaInicio <= @Hoy AND c.FechaFin >= @Hoy THEN 1 ELSE 0 END AS BIT) AS VigenteHoy,
+                c.NumeroPorNegocio,
+                c.CodigoMoneda,
+                COALESCE(ms.Simbolo, c.CodigoMoneda) AS MonedaSimbolo
             FROM dbo.Cupones c
             LEFT JOIN dbo.Sedes s ON s.Id = c.SedeId
             LEFT JOIN dbo.EspaciosDeportivos e ON e.Id = c.EspacioDeportivoId
+            LEFT JOIN dbo.MonedasSuperMaestro ms ON ms.Codigo = c.CodigoMoneda
             WHERE c.NegocioId = @NegocioId
               AND (@SedeId IS NULL OR c.SedeId = @SedeId OR (c.SedeId IS NULL AND c.EspacioDeportivoId IS NULL))
               AND (
@@ -86,10 +92,14 @@ BEGIN
                 COALESCE(s.Nombre, N'Todas') AS Sede,
                 COALESCE(e.Nombre, N'Todos') AS Espacio,
                 c.Activo,
-                CAST(CASE WHEN c.Activo = 1 AND c.FechaInicio <= @Hoy AND c.FechaFin >= @Hoy THEN 1 ELSE 0 END AS BIT) AS VigenteHoy
+                CAST(CASE WHEN c.Activo = 1 AND c.FechaInicio <= @Hoy AND c.FechaFin >= @Hoy THEN 1 ELSE 0 END AS BIT) AS VigenteHoy,
+                c.NumeroPorNegocio,
+                c.CodigoMoneda,
+                COALESCE(ms.Simbolo, c.CodigoMoneda) AS MonedaSimbolo
             FROM dbo.Cupones c
             LEFT JOIN dbo.Sedes s ON s.Id = c.SedeId
             LEFT JOIN dbo.EspaciosDeportivos e ON e.Id = c.EspacioDeportivoId
+            LEFT JOIN dbo.MonedasSuperMaestro ms ON ms.Codigo = c.CodigoMoneda
             WHERE c.NegocioId = @NegocioId
               AND (@SedeId IS NULL OR c.SedeId = @SedeId OR (c.SedeId IS NULL AND c.EspacioDeportivoId IS NULL))
               AND (
@@ -122,7 +132,10 @@ BEGIN
             Sede,
             Espacio,
             Activo,
-            VigenteHoy
+            VigenteHoy,
+            NumeroPorNegocio,
+            CodigoMoneda,
+            MonedaSimbolo
         FROM F
         ORDER BY FechaInicio DESC, Id DESC
         OFFSET @Offset ROWS FETCH NEXT @TamanoPagina ROWS ONLY;

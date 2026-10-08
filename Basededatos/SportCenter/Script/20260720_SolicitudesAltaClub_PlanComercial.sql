@@ -1,8 +1,9 @@
-﻿
+
 GO
 
 -- Firma: FRANCO LARA - 20/07/2026 | Guarda el plan comercial publico y aplica sus limites internos al aprobar altas de complejos deportivos.
 -- Firma: FRANCO LARA - 21/07/2026 | Renombra los planes publicos a Prueba, Esencial y Pro, hace idempotente la migracion, conserva la asignacion interna y establece 15 dias de prueba por defecto.
+-- Firma: FRANCO LARA - 06/10/2026 | Inicializa exclusivamente CodigoMoneda PEN al crear el negocio aprobado.
 IF COL_LENGTH(N'dbo.SolicitudesAltaClub', N'PlanComercial') IS NULL
 BEGIN
     ALTER TABLE dbo.SolicitudesAltaClub
@@ -208,11 +209,11 @@ BEGIN
 
         INSERT INTO dbo.Negocios
         (
-            NombreComercial, RazonSocial, DocumentoFiscal, Activo, FechaRegistro, MonedaId, TipoPlan
+            NombreComercial, RazonSocial, DocumentoFiscal, Activo, FechaRegistro, CodigoMoneda, TipoPlan
         )
         VALUES
         (
-            @NombreClub, NULL, NULL, 1, SYSUTCDATETIME(), NULL, N'Basico'
+            @NombreClub, NULL, NULL, 1, SYSUTCDATETIME(), N'PEN', N'Basico'
         );
         SET @NegocioId = SCOPE_IDENTITY();
 

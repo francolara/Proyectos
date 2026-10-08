@@ -2442,7 +2442,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   131989505
+         Format          =   132448257
          CurrentDate     =   38955
       End
       Begin VB.CommandButton cmbAyudaMotivoNCD 
@@ -2767,7 +2767,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   131989505
+         Format          =   132448257
          CurrentDate     =   38955
       End
       Begin MSComctlLib.ImageList imgDocVentas 
@@ -4049,7 +4049,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   131989505
+         Format          =   132448257
          CurrentDate     =   38955
       End
       Begin CATControls.CATTextBox txtgls_contacto 
@@ -6011,6 +6011,7 @@ Dim NArrTotales(7)      As Double
 Dim CSqlC               As String
 Dim RsC                 As New ADODB.Recordset
 Dim rsValida            As New ADODB.Recordset
+Dim rsPedidosOrigenAntes As New ADODB.Recordset
 
     If STR_VENTA_ELECTRONICA = "S" And (strTipoDoc = "01" Or strTipoDoc = "07" Or strTipoDoc = "86") Then
     
@@ -6359,7 +6360,7 @@ Dim rsValida            As New ADODB.Recordset
             objDocVentas.EjecutaSQLFormDocVentas Me, 0, StrMsgError, strTipoDoc, txt_Serie.Text, gDetalle, gDocReferencia, indGeneraVale, rsTempLotes, RsDetProductos, rsTempLiquidacion, NArrTotales
             If StrMsgError <> "" Then GoTo Err
         End If
-        
+
         '--------------------------------------------------------------------------------------------
         '--------- CONTROLAR CON PARAMETRO
         If glsGrabaGuiaFactura = "S" Then
@@ -6473,6 +6474,12 @@ Dim rsValida            As New ADODB.Recordset
 '        FacturacionEntreEmpresasAsientoContable StrMsgError, False, txt_serie.Text, txt_numdoc.Text
 '        If StrMsgError <> "" Then GoTo Err
     
+        If strTipoDoc = "86" Then
+            ' Recalcula todos los pedidos referenciados por la guia recien grabada.
+            RecalculaPedidosImportadosDeGuia strTipoDoc, txt_Serie.Text, txt_NumDoc.Text, StrMsgError
+            If StrMsgError <> "" Then GoTo Err
+        End If
+
         Cn.CommitTrans
         
         If Trim(STR_CLIENTE_ANULA & "") = "S" Then
@@ -6545,12 +6552,30 @@ Dim rsValida            As New ADODB.Recordset
                 If StrMsgError <> "" Then GoTo Err
             End If
         End If
+
+        If strTipoDoc = "86" Then
+            ' Conserva los pedidos anteriores antes de reemplazar el detalle de la guia.
+            ObtenerPedidosImportadosDeGuia strTipoDoc, txt_Serie.Text, txt_NumDoc.Text, rsPedidosOrigenAntes, StrMsgError
+            If StrMsgError <> "" Then GoTo Err
+        End If
         
         If ccodparamemp = "S" Then
             objDocVentas.EjecutaSQLFormDocVentasEmpresas Me, 1, StrMsgError, strTipoDoc, txt_Serie.Text, gDetalle, gDocReferencia, indGeneraVale, rsTempLotes, RsDetProductos, rsTempLiquidacion, rsdEmpresas, NArrTotales
             If StrMsgError <> "" Then GoTo Err
         Else
             objDocVentas.EjecutaSQLFormDocVentas Me, 1, StrMsgError, strTipoDoc, txt_Serie.Text, gDetalle, gDocReferencia, indGeneraVale, rsTempLotes, RsDetProductos, rsTempLiquidacion, NArrTotales
+            If StrMsgError <> "" Then GoTo Err
+        End If
+
+        If strTipoDoc = "40" Then
+            ' El pedido pudo variar de cantidad; se reconstruye su importacion desde las guias vigentes.
+            CSqlC = "EXECUTE spu_RecalculaImportacionPedido '" & glsEmpresa & "','" & glsSucursal & "','" & txt_Serie.Text & "','" & txt_NumDoc.Text & "'"
+            Cn.Execute CSqlC
+        ElseIf strTipoDoc = "86" Then
+            ' Recalcula los pedidos retirados y los que permanecen asociados a la guia modificada.
+            RecalculaPedidosImportados rsPedidosOrigenAntes, StrMsgError
+            If StrMsgError <> "" Then GoTo Err
+            RecalculaPedidosImportadosDeGuia strTipoDoc, txt_Serie.Text, txt_NumDoc.Text, StrMsgError
             If StrMsgError <> "" Then GoTo Err
         End If
         
@@ -15133,6 +15158,59 @@ Dim rst As New ADODB.Recordset
     
 End Sub
 
+' Firma FRANCO LARA 02/10/2026 - Recalculo de importaciones y validacion de anulacion/eliminacion de pedidos.
+Private Sub ObtenerPedidosImportadosDeGuia(ByVal strDocumentoGuia As String, ByVal strserieguia As String, ByVal strNumeroGuia As String, ByRef rsPedidos As ADODB.Recordset, ByRef StrMsgError As String)
+On Error GoTo Err
+Dim csql As String
+
+    ' El SP devuelve los pedidos referenciados por los detalles de la guia.
+    csql = "EXECUTE dbo.spu_ObtenerPedidosImportadosDeGuia '" & glsEmpresa & "','" & glsSucursal & "','" & _
+           strDocumentoGuia & "','" & strserieguia & "','" & strNumeroGuia & "'"
+    If rsPedidos.State = 1 Then rsPedidos.Close
+    rsPedidos.Open csql, Cn, adOpenStatic, adLockReadOnly
+    Exit Sub
+Err:
+    If StrMsgError = "" Then StrMsgError = Err.Description
+End Sub
+
+Private Sub RecalculaPedidosImportados(ByRef rsPedidos As ADODB.Recordset, ByRef StrMsgError As String)
+On Error GoTo Err
+Dim csql As String
+
+    If rsPedidos.State = 0 Then Exit Sub
+    If rsPedidos.EOF Then Exit Sub
+    rsPedidos.MoveFirst
+    Do While Not rsPedidos.EOF
+        ' El procedimiento reconstruye CantidadImp y los estados del pedido indicado.
+        csql = "EXECUTE spu_RecalculaImportacionPedido '" & Trim("" & rsPedidos.Fields("idEmpresa")) & "','" & _
+               Trim("" & rsPedidos.Fields("idSucursal")) & "','" & _
+               Trim("" & rsPedidos.Fields("idSerieImp")) & "','" & _
+               Trim("" & rsPedidos.Fields("idDocVentasImp")) & "'"
+        Cn.Execute csql
+        rsPedidos.MoveNext
+    Loop
+    Exit Sub
+Err:
+    If StrMsgError = "" Then StrMsgError = Err.Description
+End Sub
+
+Private Sub RecalculaPedidosImportadosDeGuia(ByVal strDocumentoGuia As String, ByVal strserieguia As String, ByVal strNumeroGuia As String, ByRef StrMsgError As String)
+On Error GoTo Err
+Dim rsPedidos As New ADODB.Recordset
+
+    ObtenerPedidosImportadosDeGuia strDocumentoGuia, strserieguia, strNumeroGuia, rsPedidos, StrMsgError
+    If StrMsgError <> "" Then GoTo Err
+    RecalculaPedidosImportados rsPedidos, StrMsgError
+    If StrMsgError <> "" Then GoTo Err
+    If rsPedidos.State = 1 Then rsPedidos.Close
+    Set rsPedidos = Nothing
+    Exit Sub
+Err:
+    If rsPedidos.State = 1 Then rsPedidos.Close
+    Set rsPedidos = Nothing
+    If StrMsgError = "" Then StrMsgError = Err.Description
+End Sub
+
 Private Sub anularDoc(ByRef StrMsgError As String)
 On Error GoTo Err
 Dim rst                 As New ADODB.Recordset
@@ -15173,6 +15251,12 @@ Dim RsC                 As New ADODB.Recordset
     
     '--- Parametro que evaluar la liberacin del detalle de un documento de  referencia por el item del producto
     strParamItemPro = Trim("" & traerCampo("Parametros", "ValParametro", "GlsParametro", "EVALUA_ITEM_DETALLE_PRODUCTO", True))
+
+    If strTipoDoc = "40" Then
+        ' Antes de anular, valida GR vigente y los detalles comprados segun el acceso de compras.
+        CSqlC = "EXECUTE dbo.spu_ValidaEliminacionPedido '" & glsEmpresa & "','" & glsSucursal & "','" & txt_Serie.Text & "','" & txt_NumDoc.Text & "'," & IIf(indCompraUsuario, "1", "0")
+        Cn.Execute CSqlC
+    End If
     
     idValeDocventas = Trim("" & traerCampo("docventas", "idValesCab", "iddocventas", txt_NumDoc.Text, True, " idserie = '" & txt_Serie.Text & "' and iddocumento = '" & strTipoDoc & "' and idsucursal = '" & glsSucursal & "' "))
     strTipoVale = Trim("" & traerCampo("docventas", "tipoVale", "iddocventas", txt_NumDoc.Text, True, " idserie = '" & txt_Serie.Text & "' and iddocumento = '" & strTipoDoc & "' and idsucursal = '" & glsSucursal & "' "))
@@ -15729,6 +15813,13 @@ Dim RsC                 As New ADODB.Recordset
                 End If
             End If
         End If
+
+        If strTipoDoc = "86" Then
+            ' La guia anulada permanece en detalle, pero el SP la excluye por estado ANU.
+            RecalculaPedidosImportadosDeGuia strTipoDoc, txt_Serie.Text, txt_NumDoc.Text, StrMsgError
+            If StrMsgError <> "" Then GoTo Err
+        End If
+
         Cn.CommitTrans
         
         AsientoContableVentas StrMsgError, "A"
@@ -17247,6 +17338,7 @@ Dim CadMysqlLiqAct      As String
 Dim idValescabIngreso As String
 Dim strTipoValeIngreso As String
 Dim strSucursalDes As String
+Dim rsPedidosOrigenEliminacion As New ADODB.Recordset
 
     getEstadoCierreMes Format(dtp_Emision.Value, "dd/mm/yyyy"), StrMsgError
     If StrMsgError <> "" Then GoTo Err
@@ -17257,6 +17349,12 @@ Dim strSucursalDes As String
     
     '--- Parametro que evaluar la liberacin del detalle de un documento de  referencia por el item del producto
     strParamItemPro = Trim("" & traerCampo("Parametros", "ValParametro", "GlsParametro", "EVALUA_ITEM_DETALLE_PRODUCTO", True))
+
+    If strTipoDoc = "40" Then
+        ' La GR vigente bloquea siempre; los detalles comprados dependen del acceso de compras.
+        csql = "EXECUTE dbo.spu_ValidaEliminacionPedido '" & glsEmpresa & "','" & glsSucursal & "','" & txt_Serie.Text & "','" & txt_NumDoc.Text & "'," & IIf(indCompraUsuario, "1", "0")
+        Cn.Execute csql
+    End If
     
     If MsgBox("Seguro de eliminar el documento?" & vbCrLf & "Se eliminaran todas sus dependencias.", vbQuestion + vbYesNo, App.Title) = vbNo Then Exit Sub
         
@@ -17305,6 +17403,12 @@ Dim strSucursalDes As String
         
     Cn.BeginTrans
     indTrans = True
+
+    If strTipoDoc = "86" Then
+        ' Se conserva la relacion antes de borrar los detalles de la guia.
+        ObtenerPedidosImportadosDeGuia strTipoDoc, txt_Serie.Text, txt_NumDoc.Text, rsPedidosOrigenEliminacion, StrMsgError
+        If StrMsgError <> "" Then GoTo Err
+    End If
     
 '    FacturacionEntreEmpresasElimina StrMsgError, txt_serie.Text, txt_numdoc.Text
 '    If StrMsgError <> "" Then GoTo Err
@@ -17809,6 +17913,13 @@ Dim strSucursalDes As String
             Cn.Execute (csql)
         End If
     End If
+
+    If strTipoDoc = "86" Then
+        ' Luego de eliminar la guia, se recompone cada pedido que estuvo asociado.
+        RecalculaPedidosImportados rsPedidosOrigenEliminacion, StrMsgError
+        If StrMsgError <> "" Then GoTo Err
+    End If
+
     Cn.CommitTrans
     
     AsientoContableVentas StrMsgError, "E"

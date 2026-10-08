@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -9,6 +9,7 @@ GO
 -- Author:        FRANCO LARA
 -- Create date:   20/05/2026
 -- Description:   Tabla de fechas feriadas y tabla de tarifas por feriado (sin DiaSemana) para aplicar precios por rango horario.
+-- Firma:         FRANCO LARA - 06/10/2026 | Conserva CodigoMoneda canonico de la tarifa de feriado.
 -- =============================================
 
 IF OBJECT_ID(N'dbo.Feriados', N'U') IS NULL
@@ -38,13 +39,16 @@ BEGIN
         HoraInicio TIME NOT NULL,
         HoraFin TIME NOT NULL,
         Precio DECIMAL(10,2) NOT NULL,
+        CodigoMoneda NVARCHAR(10) NOT NULL,
         Activa BIT NOT NULL CONSTRAINT DF_TarifaFeriado_Activa DEFAULT (1),
         FechaCreacion DATETIME2 NOT NULL CONSTRAINT DF_TarifaFeriado_FechaCreacion DEFAULT (SYSUTCDATETIME()),
         UsuarioCreacion NVARCHAR(200) NULL,
         FechaActualizacion DATETIME2 NULL,
         UsuarioActualizacion NVARCHAR(200) NULL,
         CONSTRAINT FK_TarifaFeriado_EspaciosDeportivos_EspacioDeportivoId
-            FOREIGN KEY (EspacioDeportivoId) REFERENCES dbo.EspaciosDeportivos(Id)
+            FOREIGN KEY (EspacioDeportivoId) REFERENCES dbo.EspaciosDeportivos(Id),
+        CONSTRAINT FK_TarifaFeriado_MonedasSuperMaestro_CodigoMoneda
+            FOREIGN KEY (CodigoMoneda) REFERENCES dbo.MonedasSuperMaestro(Codigo)
     );
 END;
 GO

@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -10,6 +10,8 @@ GO
 -- Description:   Combo de reservas pagadas para emision de comprobantes (sin duplicar reserva ya comprobada).
 -- Firma:         Codex - 09/04/2026 | Excluye reservas que ya tengan comprobante activo (estado distinto de Anulado).
 -- Firma:         Codex - 13/04/2026 | Permite listar reserva para reemision cuando el comprobante principal tiene NC activa (07), sin anular el comprobante inicial.
+-- Firma:         Codex - 01/10/2026 | Muestra y permite buscar por el correlativo visible completo R-000000 de la reserva por negocio, sin respaldo al Id tecnico.
+-- Firma:         FRANCO LARA - 06/10/2026 | Evalua notas de credito mediante CodigoTipoComprobante SUNAT canonico.
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.Sp_Combos_ReservasPagadas_Buscar
     @NegocioId INT,
@@ -22,6 +24,13 @@ BEGIN
 
     BEGIN TRY
         DECLARE @BuscarNorm NVARCHAR(150) = NULLIF(LTRIM(RTRIM(@Buscar)), N'');
+        DECLARE @BuscarNumeroReserva INT = TRY_CONVERT(
+            INT,
+            CASE
+                WHEN UPPER(LEFT(@BuscarNorm, 2)) = N'R-' THEN SUBSTRING(@BuscarNorm, 3, 150)
+                ELSE NULL
+            END
+        );
         SET @Top = CASE WHEN ISNULL(@Top, 0) < 1 THEN 40 WHEN @Top > 100 THEN 100 ELSE @Top END;
 
         ;WITH Fuente AS
@@ -29,7 +38,7 @@ BEGIN
             SELECT
                 r.Id,
                 CONCAT(
-                    N'#', r.Id,
+                    N'R-', RIGHT(N'000000' + CONVERT(NVARCHAR(20), r.NumeroPorNegocio), 6),
                     N' - ',
                     c.NombresORazonSocial,
                     CASE
@@ -69,18 +78,18 @@ BEGIN
                     (
                         SELECT 1
                         FROM dbo.ComprobantesElectronicos nc
-                        INNER JOIN dbo.NegociosTiposDocumentoComprobante ntdNc ON ntdNc.Id = nc.TipoComprobante
                         WHERE nc.NegocioId = ce.NegocioId
                           AND nc.ComprobanteReferenciaId = ce.Id
                           AND nc.Estado <> 5
-                          AND ntdNc.CodigoSunat = N'07'
+                          AND nc.CodigoTipoComprobante = N'07'
                     )
               )
               AND
               (
                   (@BuscarNorm IS NOT NULL AND
                    (
-                       CONVERT(NVARCHAR(20), r.Id) LIKE N'%' + @BuscarNorm + N'%'
+                       CONVERT(NVARCHAR(20), r.NumeroPorNegocio) LIKE N'%' + @BuscarNorm + N'%'
+                       OR (@BuscarNumeroReserva IS NOT NULL AND r.NumeroPorNegocio = @BuscarNumeroReserva)
                        OR c.NombresORazonSocial LIKE N'%' + @BuscarNorm + N'%'
                        OR ISNULL(c.NombreEquipo, N'') LIKE N'%' + @BuscarNorm + N'%'
                        OR s.Nombre LIKE N'%' + @BuscarNorm + N'%'

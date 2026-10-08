@@ -35,6 +35,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .HasIndex(e => new { e.SedeId, e.Codigo })
             .IsUnique();
 
+        builder.Entity<EspacioDeportivo>()
+            .HasIndex(e => e.TipoDeporteSuperId);
+
+        builder.Entity<EspacioDeportivo>()
+            .HasIndex(e => e.TipoSueloSuperId);
+
         builder.Entity<Tarifa>()
             .HasIndex(t => new { t.EspacioDeportivoId, t.DiaSemana, t.HoraInicio, t.HoraFin });
 
@@ -50,8 +56,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .IsUnique();
 
         builder.Entity<ComprobanteElectronico>()
-            .HasIndex(c => new { c.NegocioId, c.TipoComprobante, c.Serie, c.Numero })
+            .HasIndex(c => new { c.NegocioId, c.CodigoTipoComprobante, c.Serie, c.Numero })
+            .HasDatabaseName("UX_ComprobantesElectronicos_Negocio_CodigoTipo_Serie_Numero")
             .IsUnique();
+
+        builder.Entity<Negocio>().Property(n => n.CodigoMoneda).HasMaxLength(10);
+        builder.Entity<Reserva>().Property(r => r.CodigoMoneda).HasMaxLength(10);
+        builder.Entity<Pago>().Property(p => p.CodigoMoneda).HasMaxLength(10);
 
         builder.Entity<ComprobanteElectronico>()
             .HasIndex(c => c.ReservaId)

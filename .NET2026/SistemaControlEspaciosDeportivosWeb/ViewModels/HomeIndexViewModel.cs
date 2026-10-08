@@ -96,6 +96,8 @@ public class EspacioDisponibleViewModel
     public string TipoDeporteNombre { get; set; } = string.Empty;
     public string? TipoSueloNombre { get; set; }
     public decimal? TarifaDesde { get; set; }
+    public string CodigoMoneda { get; set; } = "PEN";
+    public string MonedaSimbolo { get; set; } = "S/";
     public bool TieneIluminacion { get; set; }
     public bool Techada { get; set; }
     public string? CorreoNotificacion { get; set; }
@@ -179,6 +181,7 @@ public class SolicitudReservaPublicaFormViewModel
 public class ReservaPublicaPageViewModel
 {
     public int NegocioId { get; set; }
+    public int? NumeroReservaCreada { get; set; }
     public int HorasMaximasReservaCliente { get; set; } = 1;
     public EspacioDisponibleViewModel Espacio { get; set; } = new();
     public SedePublicaViewModel? Sede { get; set; }

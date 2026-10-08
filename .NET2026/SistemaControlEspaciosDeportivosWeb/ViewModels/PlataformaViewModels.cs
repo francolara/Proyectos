@@ -127,6 +127,9 @@ public class PlataformaNegocioLimiteItemViewModel
     public List<PlataformaNegocioSuscripcionPagoViewModel> HistorialCobros { get; set; } = new();
     public int CantidadCobrosRegistrados { get; set; }
     public decimal MontoTotalCobrado { get; set; }
+    public bool CobrosEsMultimoneda { get; set; }
+    public string? CobrosCodigoMoneda { get; set; }
+    public string? CobrosMonedaSimbolo { get; set; }
     public DateTime? UltimoCobroFecha { get; set; }
     public decimal? UltimoCobroMonto { get; set; }
     public string? UltimoCobroTipoPago { get; set; }
@@ -169,6 +172,8 @@ public class PlataformaNegocioSuscripcionPagoViewModel
     public string EstadoPago { get; set; } = string.Empty;
     public decimal Monto { get; set; }
     public string Moneda { get; set; } = "PEN";
+    public string CodigoMoneda { get; set; } = string.Empty;
+    public string MonedaSimbolo { get; set; } = string.Empty;
     public DateTime FechaPago { get; set; }
     public DateTime? FechaVencimiento { get; set; }
     public string? OperacionNumero { get; set; }

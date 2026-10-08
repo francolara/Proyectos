@@ -1,4 +1,4 @@
-﻿
+
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Reservas_Actualizar]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -15,6 +15,8 @@ GO
 -- Firma: FRANCO LARA - 16/07/2026 | Elimina el limite de dos pagos y valida que la reserva tenga saldo y que el nuevo pago no lo exceda.
 -- Firma: FRANCO LARA - 07/09/2026 | Evalua la fecha de pago con la fecha operativa de Peru, independiente del hosting.
 -- Firma: FRANCO LARA - 17/09/2026 | Confirma automaticamente la reserva al registrar un pago que alcance la politica del negocio.
+-- Firma: Codex - 01/10/2026 | Asigna correlativo visible por negocio al pago registrado desde la edicion de una reserva.
+-- Firma: FRANCO LARA - 06/10/2026 | Conserva CodigoMoneda de la reserva en pagos creados durante la edicion.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Reservas_Actualizar]
     @Id INT,
     @NegocioId INT,
@@ -57,8 +59,10 @@ BEGIN
         DECLARE @PorcentajeAdelantoMinimo DECIMAL(5,2);
         DECLARE @PagoMinimoRequerido DECIMAL(10,2);
         DECLARE @EstadoFinal INT;
+        DECLARE @CodigoMoneda NVARCHAR(10);
 
-        SELECT @AdelantoActual = r.Adelanto
+        SELECT @AdelantoActual = r.Adelanto,
+               @CodigoMoneda = r.CodigoMoneda
         FROM dbo.Reservas r
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
@@ -67,6 +71,9 @@ BEGIN
 
         IF @AdelantoActual IS NULL
             RAISERROR('No se encontro la reserva para actualizar.', 16, 1);
+
+        IF @CodigoMoneda IS NULL
+            RAISERROR('La reserva no tiene una moneda canonica valida.', 16, 1);
 
         SET @PagoNuevo = CASE WHEN @RegistrarPago = 1 THEN @Adelanto ELSE 0 END;
         SET @SaldoPendienteActual = @Total - @AdelantoActual;
@@ -295,14 +302,20 @@ BEGIN
 
         IF @RegistrarPago = 1 AND @PagoNuevo > 0
         BEGIN
+            DECLARE @NumeroPagoPorNegocio INT;
+            EXEC dbo.Sp_NegocioCorrelativos_ObtenerSiguiente
+                @NegocioId = @NegocioId,
+                @Entidad = N'PAGO',
+                @Numero = @NumeroPagoPorNegocio OUTPUT;
+
             INSERT INTO dbo.Pagos
             (
-                ReservaId, FechaPago, Monto, FormaPago, NumeroOperacion, Observacion,
+                ReservaId, NumeroPorNegocio, FechaPago, Monto, CodigoMoneda, FormaPago, NumeroOperacion, Observacion,
                 FechaCreacion, UsuarioCreacion
             )
             VALUES
             (
-                @Id, @FechaPago, @PagoNuevo, @FormaPagoId, @NumeroOperacion, N'Pago registrado en edicion de reserva.',
+                @Id, @NumeroPagoPorNegocio, @FechaPago, @PagoNuevo, @CodigoMoneda, @FormaPagoId, @NumeroOperacion, N'Pago registrado en edicion de reserva.',
                 SYSUTCDATETIME(), @Usuario
             );
         END

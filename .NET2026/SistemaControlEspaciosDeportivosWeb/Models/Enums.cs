@@ -38,15 +38,6 @@ public enum RolNegocio
     Supervisor = 5
 }
 
-public enum TipoComprobante
-{
-    Boleta = 1,
-    Factura = 2,
-    ReciboInterno = 3,
-    NotaCredito = 4,
-    NotaDebito = 5
-}
-
 public enum EstadoComprobanteElectronico
 {
     PendienteEnvio = 1,
@@ -54,10 +45,4 @@ public enum EstadoComprobanteElectronico
     AceptadoSunat = 3,
     RechazadoSunat = 4,
     Anulado = 5
-}
-
-public enum TipoMoneda
-{
-    PEN = 1,
-    USD = 2
 }

@@ -12,6 +12,9 @@ public class ReportesIndexViewModel : ModuloBaseViewModel
     public int DiasPeriodo { get; set; } = 7;
     public int? SedeId { get; set; }
     public List<SelectListItem> SedesFiltro { get; set; } = new();
+    public string CodigoMoneda { get; set; } = "PEN";
+    public string MonedaSimbolo { get; set; } = "S/";
+    public List<SelectListItem> MonedasFiltro { get; set; } = new();
     public ReporteResumenOperativoViewModel ResumenActual { get; set; } = new();
     public ReporteResumenOperativoViewModel ResumenAnterior { get; set; } = new();
     public ReporteResumenCobranzaViewModel CobranzaActual { get; set; } = new();
@@ -28,8 +31,12 @@ public class ReportesIndexViewModel : ModuloBaseViewModel
 public class ReportePagoDetalleItemViewModel
 {
     public int PagoId { get; set; }
+    public int NumeroPagoPorNegocio { get; set; }
+    public string CodigoPago => $"P-{NumeroPagoPorNegocio:D6}";
     public DateTime FechaPago { get; set; }
     public int ReservaId { get; set; }
+    public int NumeroReservaPorNegocio { get; set; }
+    public string CodigoReserva => $"R-{NumeroReservaPorNegocio:D6}";
     public DateOnly FechaReserva { get; set; }
     public TimeOnly HoraInicio { get; set; }
     public TimeOnly HoraFin { get; set; }
@@ -40,11 +47,15 @@ public class ReportePagoDetalleItemViewModel
     public string FormaPago { get; set; } = string.Empty;
     public string? NumeroOperacion { get; set; }
     public decimal Monto { get; set; }
+    public string CodigoMoneda { get; set; } = "PEN";
+    public string MonedaSimbolo { get; set; } = "S/";
 }
 
 public class ReporteReservaDetalleItemViewModel
 {
     public int ReservaId { get; set; }
+    public int NumeroPorNegocio { get; set; }
+    public string CodigoReserva => $"R-{NumeroPorNegocio:D6}";
     public DateOnly Fecha { get; set; }
     public TimeOnly HoraInicio { get; set; }
     public TimeOnly HoraFin { get; set; }
@@ -60,6 +71,8 @@ public class ReporteReservaDetalleItemViewModel
     public decimal MontoPagado { get; set; }
     public decimal SaldoPendiente { get; set; }
     public string? CodigoCupon { get; set; }
+    public string CodigoMoneda { get; set; } = "PEN";
+    public string MonedaSimbolo { get; set; } = "S/";
 }
 
 public class ReporteOcupacionItemViewModel

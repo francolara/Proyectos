@@ -8,6 +8,7 @@
 @* Firma: FRANCO LARA - 21/07/2026 | Muestra el plan comercial vigente, permite aplicarlo con sus limites al guardar cada cobro y agrega reportes HTML imprimibles por complejo y consolidado. *@
 @* Firma: FRANCO LARA - 01/09/2026 | Integra suspension manual/automatica, baja logica definitiva y reactivaciones auditadas del complejo y su servicio. *@
 @* Firma: FRANCO LARA - 03/09/2026 | Rediseña el listado como resumen por complejo, concentra sus opciones en un detalle horizontal y adopta la paleta administrativa compartida. *@
+@* Firma: FRANCO LARA - 06/10/2026 | Muestra cobros con su moneda canonica y evita acumular importes de monedas distintas. *@
 <div class="page-header-card mb-3">
     <div class="page-header-main">
         <h1 class="page-title">Complejos deportivos registrados</h1>
@@ -413,7 +414,7 @@
                                         <div class="small text-muted">Sin contrato activo.</div>
                                     }
                                     <div class="platform-negocio-metric-line mt-2">
-                                        <span>Cobrado: <strong>S/ @item.MontoTotalCobrado.ToString("0.00")</strong></span>
+                                        <span>Cobrado: <strong>@(item.CobrosEsMultimoneda ? "Varias monedas" : string.IsNullOrWhiteSpace(item.CobrosCodigoMoneda) ? "Sin cobros pagados" : $"{item.CobrosMonedaSimbolo} {item.MontoTotalCobrado:0.00}")</strong></span>
                                         <span>Cobros: <strong>@item.CantidadCobrosRegistrados</strong></span>
                                         <span>Movimientos: <strong>@item.HistorialComercial.Count</strong></span>
                                     </div>
@@ -1217,7 +1218,7 @@
                                                                                 <small class="text-muted">@pago.FechaPago.ToString("dd/MM/yyyy HH:mm")</small>
                                                                             </div>
                                                                             <div class="small mt-2">
-                                                                                <div>Monto: @(pago.Moneda == "PEN" ? "S/" : pago.Moneda) @pago.Monto.ToString("0.00")</div>
+                                                                                <div>Monto: @pago.MonedaSimbolo @pago.Monto.ToString("0.00") (@pago.CodigoMoneda)</div>
                                                                                 @if (pago.FechaVencimiento.HasValue)
                                                                                 {
                                                                                     <div>Vencimiento: @pago.FechaVencimiento.Value.ToString("dd/MM/yyyy")</div>

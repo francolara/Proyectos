@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
+using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
 using System.Text.Json;
@@ -68,6 +69,8 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "ESPACIOS");
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
+        NormalizarCamposInternosEspacio(model);
+
         var configNegocio = await spService.ConfiguracionClubObtenerAsync(model.NegocioId);
         var espaciosActuales = await spService.EspaciosListarAsync(model.NegocioId, null);
         var totalActivos = espaciosActuales.Count(x => string.Equals(x.Estado, "Activo", StringComparison.OrdinalIgnoreCase));
@@ -129,6 +132,7 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
         if (vm is null) return NotFound();
         if (!SedePermitida(baseVm, vm.SedeId))
             return Forbid();
+        NormalizarCamposInternosEspacio(vm);
         vm.NegocioNombre = baseVm.NegocioNombre;
         vm.RolActual = baseVm.RolActual;
         await CargarCombosEspacioAsync(vm, AplicarSedeAsignada(baseVm, null));
@@ -190,6 +194,8 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "ESPACIOS");
         if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
+        NormalizarCamposInternosEspacio(model);
+
         if (!baseVm.EsAdministrador && baseVm.SedeIdAsignada.HasValue)
             model.SedeId = baseVm.SedeIdAsignada.Value;
         var urlsEliminar = ObtenerUrlsAEliminar(model);
@@ -227,7 +233,7 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
         }
         catch (SqlException ex)
         {
-            ModelState.AddModelError(string.Empty, ex.Message);
+            ModelState.AddModelError(string.Empty, NormalizarMensajeEstadoEspacio(ex.Message));
             return View(model);
         }
 
@@ -236,6 +242,19 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
 
         return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
     }
+
+    private void NormalizarCamposInternosEspacio(EspacioFormViewModel model)
+    {
+        model.Capacidad = 10;
+        model.Estado = model.Estado == EstadoEspacioDeportivo.Activo
+            ? EstadoEspacioDeportivo.Activo
+            : EstadoEspacioDeportivo.Inactivo;
+        ModelState.Remove(nameof(model.Capacidad));
+        ModelState.Remove(nameof(model.Estado));
+    }
+
+    private static string NormalizarMensajeEstadoEspacio(string mensaje) =>
+        mensaje.Replace("mantenimiento/inactivo", "inactivo", StringComparison.OrdinalIgnoreCase);
 
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -421,11 +440,11 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
         var monedas = await spService.ConfiguracionClubComboMonedasAsync(model.NegocioId);
         var monedaSeleccionada = configuracion is null
             ? null
-            : monedas.FirstOrDefault(x => x.Value == configuracion.MonedaId.ToString());
+            : monedas.FirstOrDefault(x => string.Equals(x.Value, configuracion.CodigoMoneda, StringComparison.OrdinalIgnoreCase));
 
-        model.MonedaIdConfigurada = monedaSeleccionada is null ? null : configuracion!.MonedaId;
+        model.CodigoMonedaConfigurada = monedaSeleccionada is null ? string.Empty : configuracion!.CodigoMoneda;
         model.MonedaEtiqueta = ResolverEtiquetaMoneda(monedaSeleccionada);
-        model.PuedeEditarTarifas = model.MonedaIdConfigurada.HasValue && !string.IsNullOrWhiteSpace(model.MonedaEtiqueta);
+        model.PuedeEditarTarifas = !string.IsNullOrWhiteSpace(model.CodigoMonedaConfigurada) && !string.IsNullOrWhiteSpace(model.MonedaEtiqueta);
     }
 
     private static string ResolverEtiquetaMoneda(SelectListItem? monedaSeleccionada)

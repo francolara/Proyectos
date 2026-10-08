@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -8,6 +8,8 @@ GO
 -- SOURCE: 35_Maestros_FormasPago.sql (linea 186)
 -- Firma: Codex - 09/04/2026 | Limita a maximo 2 pagos por reserva, valida politica de confirmacion del negocio, exige que el 2do pago sea exactamente el saldo restante y ajusta estado automatico segun pago acumulado.
 -- Firma: FRANCO LARA - 16/07/2026 | Permite pagos parciales sin limite de cantidad y bloquea reservas pagadas o montos mayores al saldo pendiente.
+-- Firma: FRANCO LARA - 01/10/2026 | Asigna el correlativo visible de pago por negocio al crear el registro.
+-- Firma: FRANCO LARA - 06/10/2026 | Conserva el CodigoMoneda de la reserva en el pago.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Pagos_Crear]
     @NegocioId INT,
     @ReservaId INT,
@@ -35,9 +37,11 @@ BEGIN
         DECLARE @PoliticaConfirmacionPago TINYINT = 0;
         DECLARE @PorcentajeAdelantoMinimo DECIMAL(5,2) = NULL;
         DECLARE @MontoMinimoAdelanto DECIMAL(10,2) = NULL;
+        DECLARE @CodigoMoneda NVARCHAR(10);
 
         SELECT
             @TotalReserva = r.Total,
+            @CodigoMoneda = r.CodigoMoneda,
             @PoliticaConfirmacionPago = ISNULL(n.PoliticaConfirmacionPago, 0),
             @PorcentajeAdelantoMinimo = n.PorcentajeAdelantoMinimo
         FROM dbo.Reservas r
@@ -47,8 +51,8 @@ BEGIN
         WHERE r.Id = @ReservaId
           AND s.NegocioId = @NegocioId;
 
-        IF @TotalReserva IS NULL
-            RAISERROR('Reserva invalida para el negocio.', 16, 1);
+        IF @TotalReserva IS NULL OR @CodigoMoneda IS NULL
+            RAISERROR('Reserva invalida o sin moneda canonica para el negocio.', 16, 1);
 
         SELECT
             @PagadoActual = COALESCE(SUM(p.Monto), 0)
@@ -83,14 +87,17 @@ BEGIN
 
         BEGIN TRANSACTION;
 
+        DECLARE @NumeroPorNegocio INT;
+        EXEC dbo.Sp_NegocioCorrelativos_ObtenerSiguiente @NegocioId, N'PAGO', @Usuario, @NumeroPorNegocio OUTPUT;
+
         INSERT INTO dbo.Pagos
         (
-            ReservaId, FechaPago, Monto, FormaPago, NumeroOperacion, Observacion,
+            NumeroPorNegocio, ReservaId, FechaPago, Monto, CodigoMoneda, FormaPago, NumeroOperacion, Observacion,
             FechaCreacion, UsuarioCreacion
         )
         VALUES
         (
-            @ReservaId, @FechaPago, @Monto, @FormaPago, @NumeroOperacion, @Observacion,
+            @NumeroPorNegocio, @ReservaId, @FechaPago, @Monto, @CodigoMoneda, @FormaPago, @NumeroOperacion, @Observacion,
             SYSUTCDATETIME(), @Usuario
         );
 

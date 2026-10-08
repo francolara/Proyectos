@@ -1,5 +1,6 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ClientesIndexViewModel
 @* Firma: FRANCO LARA - 01/09/2026 | Presenta el listado con un titulo operativo y directo. *@
+@* Firma: FRANCO LARA - 01/10/2026 | Muestra y permite buscar el correlativo visible de cliente por negocio. *@
 @{
     ViewData["Title"] = "Clientes";
     var totalClientes = Model.TotalActivos + Model.TotalInactivos;
@@ -64,8 +65,8 @@
             <input type="hidden" name="pagina" value="1" />
             <div class="row g-2 align-items-end px-3 pb-3">
                 <div class="col-lg-5 col-md-5">
-                    <label class="form-label">Buscar por nombre, documento, telefono o correo</label>
-                    <input type="text" id="filtroClientes" name="buscar" value="@Model.Buscar" class="form-control" placeholder="Ejemplo: BORIS, 12345678, gmail.com..." />
+                    <label class="form-label">Buscar por codigo, nombre, documento, telefono o correo</label>
+                    <input type="text" id="filtroClientes" name="buscar" value="@Model.Buscar" class="form-control" placeholder="Ejemplo: C-000012, BORIS, 12345678, gmail.com..." />
                 </div>
                 <div class="col-lg-3 col-md-3">
                     <label class="form-label">Estado</label>
@@ -135,7 +136,7 @@
                             var correo = string.IsNullOrWhiteSpace(item.Correo) ? "-" : item.Correo!;
                             <tr>
                                 <td class="text-center">
-                                    <span class="sc-id-chip">#@item.Id</span>
+                                    <span class="sc-id-chip">@item.CodigoVisible</span>
                                 </td>
                                 <td class="text-start">
                                     <span class="sc-list-mini-card">

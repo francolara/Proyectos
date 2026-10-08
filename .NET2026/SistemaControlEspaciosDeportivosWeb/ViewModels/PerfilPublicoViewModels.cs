@@ -95,7 +95,8 @@ public class UsuarioPublicoPerfilViewModel
 public class UsuarioPublicoReservaItemViewModel
 {
     public int ReservaId { get; set; }
-    public string CodigoReserva => $"R-{ReservaId:D6}";
+    public int NumeroPorNegocio { get; set; }
+    public string CodigoReserva => $"R-{NumeroPorNegocio:D6}";
     public DateOnly Fecha { get; set; }
     public TimeOnly HoraInicio { get; set; }
     public TimeOnly HoraFin { get; set; }
@@ -103,6 +104,8 @@ public class UsuarioPublicoReservaItemViewModel
     public decimal Total { get; set; }
     public decimal Adelanto { get; set; }
     public decimal SaldoPendiente { get; set; }
+    public string CodigoMoneda { get; set; } = "PEN";
+    public string MonedaSimbolo { get; set; } = "S/";
     public string NegocioNombre { get; set; } = string.Empty;
     public string SedeNombre { get; set; } = string.Empty;
     public string EspacioNombre { get; set; } = string.Empty;
@@ -122,7 +125,8 @@ public class UsuarioPublicoReservaItemViewModel
 public class UsuarioPublicoReservaCalendarioViewModel
 {
     public int ReservaId { get; set; }
-    public string CodigoReserva => $"R-{ReservaId:D6}";
+    public int NumeroPorNegocio { get; set; }
+    public string CodigoReserva => $"R-{NumeroPorNegocio:D6}";
     public int EstadoId { get; set; }
     public string EstadoTexto { get; set; } = string.Empty;
     public string NegocioNombre { get; set; } = string.Empty;

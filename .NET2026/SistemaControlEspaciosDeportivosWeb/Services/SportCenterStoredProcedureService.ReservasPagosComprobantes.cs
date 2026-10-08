@@ -43,7 +43,10 @@ public partial class SportCenterStoredProcedureService
                 Total = dr.GetDecimal(8),
                 Adelanto = dr.FieldCount > 9 && !dr.IsDBNull(9) ? dr.GetDecimal(9) : 0m,
                 SaldoPendiente = dr.FieldCount > 10 && !dr.IsDBNull(10) ? dr.GetDecimal(10) : dr.GetDecimal(8),
-                Estado = dr.GetString(dr.FieldCount > 11 ? 11 : 9)
+                Estado = dr.GetString(dr.FieldCount > 11 ? 11 : 9),
+                NumeroPorNegocio = ReadRequiredInt32(dr, 12, "NumeroPorNegocio"),
+                CodigoMoneda = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetString(13) : "PEN",
+                MonedaSimbolo = dr.FieldCount > 14 && !dr.IsDBNull(14) ? dr.GetString(14) : "S/"
             });
         }
         await dr.CloseAsync();
@@ -76,6 +79,8 @@ public partial class SportCenterStoredProcedureService
                 resumen.TotalPendientes = dr.IsDBNull(1) ? 0 : Convert.ToInt32(dr.GetValue(1));
                 resumen.TotalPagadas = dr.IsDBNull(2) ? 0 : Convert.ToInt32(dr.GetValue(2));
                 resumen.SaldoTotal = dr.IsDBNull(3) ? 0m : Convert.ToDecimal(dr.GetValue(3));
+                resumen.EsMultimoneda = dr.FieldCount > 4 && !dr.IsDBNull(4) && Convert.ToInt32(dr.GetValue(4)) > 1;
+                resumen.MonedaSimbolo = dr.FieldCount > 5 && !dr.IsDBNull(5) ? dr.GetString(5) : "S/";
             }
             else
             {
@@ -115,6 +120,9 @@ public partial class SportCenterStoredProcedureService
             FechaRegistro = dr.FieldCount > 12 && !dr.IsDBNull(12) ? dr.GetDateTime(12) : null,
             UsuarioActualizacion = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetString(13) : null,
             FechaActualizacion = dr.FieldCount > 14 && !dr.IsDBNull(14) ? dr.GetDateTime(14) : null,
+            NumeroPorNegocio = ReadRequiredInt32(dr, 15, "NumeroPorNegocio"),
+            CodigoMoneda = dr.FieldCount > 16 && !dr.IsDBNull(16) ? dr.GetString(16) : string.Empty,
+            MonedaSimbolo = dr.FieldCount > 17 && !dr.IsDBNull(17) ? dr.GetString(17) : string.Empty,
             NegocioId = negocioId
         };
     }
@@ -260,7 +268,8 @@ public partial class SportCenterStoredProcedureService
             HoraInicio = TimeOnly.FromTimeSpan(dr.GetTimeSpan(7)),
             HoraFin = TimeOnly.FromTimeSpan(dr.GetTimeSpan(8)),
             CorreoNotificacion = dr.IsDBNull(9) ? null : dr.GetString(9),
-            WhatsappContacto = dr.IsDBNull(10) ? null : dr.GetString(10)
+            WhatsappContacto = dr.IsDBNull(10) ? null : dr.GetString(10),
+            NumeroPorNegocio = ReadRequiredInt32(dr, 11, "NumeroPorNegocio")
         };
     }
 
@@ -293,7 +302,8 @@ public partial class SportCenterStoredProcedureService
             HoraInicio = TimeOnly.FromTimeSpan(dr.GetTimeSpan(11)),
             HoraFin = TimeOnly.FromTimeSpan(dr.GetTimeSpan(12)),
             NotificacionesActivasSede = ReadBool(dr, 13),
-            CorreoNotificacionSede = dr.IsDBNull(14) ? null : dr.GetString(14)
+            CorreoNotificacionSede = dr.IsDBNull(14) ? null : dr.GetString(14),
+            NumeroPorNegocio = ReadRequiredInt32(dr, 15, "NumeroPorNegocio")
         };
     }
 
@@ -312,10 +322,15 @@ public partial class SportCenterStoredProcedureService
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
         {
+            var tipoEvento = dr.GetString(1);
+            int? numeroPorNegocio = tipoEvento.StartsWith("RESERVA", StringComparison.OrdinalIgnoreCase)
+                ? ReadRequiredInt32(dr, 15, "NumeroPorNegocio")
+                : null;
+
             list.Add(new ReservaCalendarioEventoViewModel
             {
                 Id = dr.GetInt32(0),
-                TipoEvento = dr.GetString(1),
+                TipoEvento = tipoEvento,
                 Titulo = dr.GetString(2),
                 Fecha = DateOnly.FromDateTime(dr.GetDateTime(3)),
                 HoraInicio = TimeOnly.FromTimeSpan(dr.GetTimeSpan(4)),
@@ -328,7 +343,8 @@ public partial class SportCenterStoredProcedureService
                 Motivo = dr.FieldCount > 11 && !dr.IsDBNull(11) ? dr.GetString(11) : null,
                 EstadoCodigo = dr.FieldCount > 12 && !dr.IsDBNull(12) ? dr.GetString(12) : null,
                 EstadoTexto = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetString(13) : null,
-                TotalReserva = dr.FieldCount > 14 && !dr.IsDBNull(14) ? dr.GetDecimal(14) : 0m
+                TotalReserva = dr.FieldCount > 14 && !dr.IsDBNull(14) ? dr.GetDecimal(14) : 0m,
+                NumeroPorNegocio = numeroPorNegocio
             });
         }
         return list;
@@ -529,7 +545,9 @@ public partial class SportCenterStoredProcedureService
         {
             NegocioId = negocioId,
             ReservaId = dr.GetInt32(0),
-            ReservaCodigo = dr.IsDBNull(1) ? $"#{dr.GetInt32(0)}" : dr.GetString(1),
+            ReservaCodigo = !dr.IsDBNull(1)
+                ? dr.GetString(1)
+                : throw new InvalidOperationException("Sp_Pagos_ObtenerPorId no devolvio el codigo visible de la reserva."),
             Sede = dr.IsDBNull(2) ? string.Empty : dr.GetString(2),
             Espacio = dr.IsDBNull(3) ? string.Empty : dr.GetString(3),
             Cliente = dr.IsDBNull(4) ? string.Empty : dr.GetString(4),
@@ -544,6 +562,7 @@ public partial class SportCenterStoredProcedureService
             PorcentajeAdelantoMinimo = dr.IsDBNull(13) ? null : dr.GetDecimal(13),
             TieneComprobanteActivo = dr.FieldCount > 14 && !dr.IsDBNull(14) && dr.GetBoolean(14),
             ReferenciaComprobante = dr.FieldCount > 15 && !dr.IsDBNull(15) ? dr.GetString(15) : string.Empty,
+            CodigoMoneda = dr.FieldCount > 16 && !dr.IsDBNull(16) ? dr.GetString(16) : string.Empty,
             NuevaFechaPago = DateTime.Today
         };
 
@@ -563,7 +582,8 @@ public partial class SportCenterStoredProcedureService
                     UsuarioCreacion = dr.FieldCount > 7 && !dr.IsDBNull(7) ? dr.GetString(7) : null,
                     FechaRegistro = dr.FieldCount > 8 && !dr.IsDBNull(8) ? dr.GetDateTime(8) : null,
                     UsuarioActualizacion = dr.FieldCount > 9 && !dr.IsDBNull(9) ? dr.GetString(9) : null,
-                    FechaActualizacion = dr.FieldCount > 10 && !dr.IsDBNull(10) ? dr.GetDateTime(10) : null
+                    FechaActualizacion = dr.FieldCount > 10 && !dr.IsDBNull(10) ? dr.GetDateTime(10) : null,
+                    NumeroPorNegocio = ReadRequiredInt32(dr, 11, "NumeroPorNegocio")
                 });
             }
         }
@@ -693,7 +713,9 @@ public partial class SportCenterStoredProcedureService
             list.Add(new PagoReservaResumenViewModel
             {
                 ReservaId = dr.GetInt32(0),
-                ReservaCodigo = dr.IsDBNull(1) ? $"#{dr.GetInt32(0)}" : dr.GetString(1),
+                ReservaCodigo = !dr.IsDBNull(1)
+                    ? dr.GetString(1)
+                    : throw new InvalidOperationException("El listado de pagos no devolvio el codigo visible de la reserva."),
                 Sede = dr.IsDBNull(2) ? string.Empty : dr.GetString(2),
                 Espacio = dr.IsDBNull(3) ? string.Empty : dr.GetString(3),
                 Cliente = dr.IsDBNull(4) ? string.Empty : dr.GetString(4),
@@ -711,7 +733,8 @@ public partial class SportCenterStoredProcedureService
                     : false,
                 Referencia = dr.FieldCount > 13 && !dr.IsDBNull(13)
                     ? dr.GetString(13)
-                    : string.Empty
+                    : string.Empty,
+                CodigoMoneda = dr.FieldCount > 14 && !dr.IsDBNull(14) ? dr.GetString(14) : "PEN"
             });
         }
         await dr.CloseAsync();
@@ -758,7 +781,10 @@ public partial class SportCenterStoredProcedureService
                 TieneNotasRelacionadas = dr.FieldCount > 10 && !dr.IsDBNull(10) && dr.GetBoolean(10),
                 ReservaId = dr.IsDBNull(11) ? 0 : dr.GetInt32(11),
                 EsTributario = dr.FieldCount > 12 && !dr.IsDBNull(12) && dr.GetBoolean(12),
-                UrlDescargaProveedor = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetString(13) : null
+                UrlDescargaProveedor = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetString(13) : null,
+                NumeroReservaPorNegocio = ReadRequiredInt32(dr, 14, "NumeroReservaPorNegocio"),
+                CodigoMoneda = dr.FieldCount > 15 && !dr.IsDBNull(15) ? dr.GetString(15) : "PEN",
+                MonedaSimbolo = dr.FieldCount > 16 && !dr.IsDBNull(16) ? dr.GetString(16) : "S/"
             });
         }
         await dr.CloseAsync();
@@ -781,7 +807,6 @@ public partial class SportCenterStoredProcedureService
             Id = dr.GetInt32(0),
             NegocioId = dr.GetInt32(1),
             ReservaId = dr.GetInt32(2),
-            TipoComprobante = dr.GetInt32(3),
             CodigoDocumentoComprobante = codigoDocumento,
             TipoDocumentoNombre = NombreDocumentoPorCodigoSunat(codigoDocumento),
             EsTributario = dr.GetBoolean(6),
@@ -812,7 +837,8 @@ public partial class SportCenterStoredProcedureService
             FechaReserva = DateOnly.FromDateTime(dr.GetDateTime(31)),
             HoraInicioReserva = TimeOnly.FromTimeSpan(dr.GetTimeSpan(32)),
             HoraFinReserva = TimeOnly.FromTimeSpan(dr.GetTimeSpan(33)),
-            UrlDescargaProveedor = dr.IsDBNull(34) ? null : dr.GetString(34)
+            UrlDescargaProveedor = dr.IsDBNull(34) ? null : dr.GetString(34),
+            NumeroReservaPorNegocio = ReadRequiredInt32(dr, 35, "NumeroReservaPorNegocio")
         };
     }
 
@@ -843,11 +869,9 @@ public partial class SportCenterStoredProcedureService
         {
             Id = dr.GetInt32(0),
             ReservaId = dr.GetInt32(1),
-            TipoComprobante = (TipoComprobante)dr.GetInt32(2),
             Serie = dr.GetString(3),
             Numero = dr.GetInt32(4),
             FechaEmision = dr.GetDateTime(5),
-            TipoMoneda = (TipoMoneda)dr.GetInt32(6),
             SubTotal = dr.GetDecimal(7),
             Igv = dr.GetDecimal(8),
             Total = dr.GetDecimal(9),
@@ -865,6 +889,7 @@ public partial class SportCenterStoredProcedureService
             FechaRegistro = dr.FieldCount > 21 && !dr.IsDBNull(21) ? dr.GetDateTime(21) : null,
             UsuarioActualizacion = dr.FieldCount > 22 && !dr.IsDBNull(22) ? dr.GetString(22) : null,
             FechaActualizacion = dr.FieldCount > 23 && !dr.IsDBNull(23) ? dr.GetDateTime(23) : null,
+            CodigoMoneda = dr.FieldCount > 24 && !dr.IsDBNull(24) ? dr.GetString(24) : string.Empty,
             NegocioId = negocioId
         };
     }
@@ -876,13 +901,11 @@ public partial class SportCenterStoredProcedureService
         await using var cmd = new SqlCommand("Sp_Comprobantes_Crear", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
         AddParam(cmd, "@ReservaId", model.ReservaId, SqlDbType.Int);
-        AddParam(cmd, "@TipoComprobante", (int)model.TipoComprobante, SqlDbType.Int);
         AddParam(cmd, "@CodigoDocumentoComprobante", model.CodigoDocumentoComprobante, SqlDbType.NVarChar);
         AddParam(cmd, "@NegocioSerieId", model.NegocioSerieId, SqlDbType.Int);
         AddParam(cmd, "@Serie", model.Serie, SqlDbType.NVarChar);
         AddParam(cmd, "@Numero", model.Numero > 0 ? model.Numero : null, SqlDbType.Int);
         AddParam(cmd, "@FechaEmision", model.FechaEmision, SqlDbType.DateTime2);
-        AddParam(cmd, "@TipoMoneda", (int)model.TipoMoneda, SqlDbType.Int);
         AddParam(cmd, "@SubTotal", model.SubTotal, SqlDbType.Decimal);
         AddParam(cmd, "@Igv", model.Igv, SqlDbType.Decimal);
         AddParam(cmd, "@Total", model.Total, SqlDbType.Decimal);
@@ -1097,10 +1120,12 @@ public partial class SportCenterStoredProcedureService
             TotalPagado = pago.TotalPagado,
             SaldoPendiente = pago.SaldoPendiente,
             MonedaSimbolo = pago.MonedaSimbolo,
+            CodigoMoneda = pago.CodigoMoneda,
             PorcentajeIgvConfigurado = 18,
             PagosReserva = pago.Pagos.Select(x => new PagoPrevioItemViewModel
             {
                 PagoId = x.PagoId,
+                NumeroPorNegocio = x.NumeroPorNegocio,
                 FechaPago = x.FechaPago,
                 Monto = x.Monto,
                 FormaPago = x.FormaPagoNombre,

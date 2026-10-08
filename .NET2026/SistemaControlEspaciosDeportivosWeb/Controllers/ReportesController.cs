@@ -10,25 +10,25 @@ namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 public class ReportesController(IModuloPermisoService moduloPermisoService, ISportCenterStoredProcedureService spService)
     : ModuloControllerBase(moduloPermisoService)
 {
-    public async Task<IActionResult> Index(int negocioId, DateOnly? fechaDesde, DateOnly? fechaHasta, int? sedeId, string? preset = null)
+    public async Task<IActionResult> Index(int negocioId, DateOnly? fechaDesde, DateOnly? fechaHasta, int? sedeId, string? codigoMoneda, string? preset = null)
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "REPORTES");
         if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje))
             return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Acceso denegado." });
 
         // El explorador maestro-detalle de Reportes muestra clientes, espacios y movimientos del elemento seleccionado.
-        var vm = await ConstruirReporteAsync(baseVm, fechaDesde, fechaHasta, sedeId, preset, incluirDetalle: true);
+        var vm = await ConstruirReporteAsync(baseVm, fechaDesde, fechaHasta, sedeId, codigoMoneda, preset, incluirDetalle: true);
         return View(vm);
     }
 
     [HttpGet]
-    public async Task<IActionResult> Imprimir(int negocioId, DateOnly? fechaDesde, DateOnly? fechaHasta, int? sedeId, string? preset = null)
+    public async Task<IActionResult> Imprimir(int negocioId, DateOnly? fechaDesde, DateOnly? fechaHasta, int? sedeId, string? codigoMoneda, string? preset = null)
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "REPORTES");
         if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje))
             return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Acceso denegado." });
 
-        var vm = await ConstruirReporteAsync(baseVm, fechaDesde, fechaHasta, sedeId, preset, incluirDetalle: true);
+        var vm = await ConstruirReporteAsync(baseVm, fechaDesde, fechaHasta, sedeId, codigoMoneda, preset, incluirDetalle: true);
         return View(vm);
     }
 
@@ -37,6 +37,7 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
         DateOnly? fechaDesde,
         DateOnly? fechaHasta,
         int? sedeId,
+        string? codigoMoneda,
         string? preset,
         bool incluirDetalle)
     {
@@ -46,26 +47,39 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
         if (baseVm.EsAdministrador && sedeFiltro.HasValue && !sedes.Any(x => x.Value == sedeFiltro.Value.ToString()))
             sedeFiltro = null;
 
+        var monedas = await spService.MaestrosMonedasListarAsync(negocioId);
+        var configuracion = await spService.ConfiguracionClubObtenerAsync(negocioId);
+        var monedaActual = monedas.FirstOrDefault(x => string.Equals(x.Codigo, configuracion?.CodigoMoneda, StringComparison.OrdinalIgnoreCase));
+        var codigoSolicitado = (codigoMoneda ?? string.Empty).Trim().ToUpperInvariant();
+        var monedaSeleccionada = monedas.FirstOrDefault(x => string.Equals(x.Codigo, codigoSolicitado, StringComparison.OrdinalIgnoreCase))
+            ?? monedaActual
+            ?? monedas.FirstOrDefault(x => string.Equals(x.Codigo, "PEN", StringComparison.OrdinalIgnoreCase))
+            ?? monedas.FirstOrDefault();
+        var codigoMonedaSeleccionado = monedaSeleccionada?.Codigo ?? "PEN";
+        var simboloMonedaSeleccionado = string.IsNullOrWhiteSpace(monedaSeleccionada?.Simbolo)
+            ? codigoMonedaSeleccionado
+            : monedaSeleccionada.Simbolo!;
+
         var (desde, hasta, presetNormalizado) = ResolverRango(preset, fechaDesde, fechaHasta);
         var diasPeriodo = Math.Max(1, (hasta.DayNumber - desde.DayNumber) + 1);
         var hastaAnterior = desde.AddDays(-1);
         var desdeAnterior = hastaAnterior.AddDays(-(diasPeriodo - 1));
 
-        var ocupacionTask = spService.ReportesOcupacionPorEspacioAsync(negocioId, desde, hasta, sedeFiltro);
-        var ingresosTask = spService.ReportesIngresosPorDiaAsync(negocioId, desde, hasta, sedeFiltro);
-        var reservasTask = spService.ReportesReservasPorDiaAsync(negocioId, desde, hasta, sedeFiltro);
-        var resumenActualTask = spService.ReportesResumenOperativoAsync(negocioId, desde, hasta, sedeFiltro);
-        var cobranzaActualTask = spService.ReportesResumenCobranzaAsync(negocioId, desde, hasta, sedeFiltro);
+        var ocupacionTask = spService.ReportesOcupacionPorEspacioAsync(negocioId, desde, hasta, sedeFiltro, codigoMonedaSeleccionado);
+        var ingresosTask = spService.ReportesIngresosPorDiaAsync(negocioId, desde, hasta, sedeFiltro, codigoMonedaSeleccionado);
+        var reservasTask = spService.ReportesReservasPorDiaAsync(negocioId, desde, hasta, sedeFiltro, codigoMonedaSeleccionado);
+        var resumenActualTask = spService.ReportesResumenOperativoAsync(negocioId, desde, hasta, sedeFiltro, codigoMonedaSeleccionado);
+        var cobranzaActualTask = spService.ReportesResumenCobranzaAsync(negocioId, desde, hasta, sedeFiltro, codigoMonedaSeleccionado);
 
-        var ingresosAnteriorTask = spService.ReportesIngresosPorDiaAsync(negocioId, desdeAnterior, hastaAnterior, sedeFiltro);
-        var reservasAnteriorTask = spService.ReportesReservasPorDiaAsync(negocioId, desdeAnterior, hastaAnterior, sedeFiltro);
-        var resumenAnteriorTask = spService.ReportesResumenOperativoAsync(negocioId, desdeAnterior, hastaAnterior, sedeFiltro);
-        var cobranzaAnteriorTask = spService.ReportesResumenCobranzaAsync(negocioId, desdeAnterior, hastaAnterior, sedeFiltro);
+        var ingresosAnteriorTask = spService.ReportesIngresosPorDiaAsync(negocioId, desdeAnterior, hastaAnterior, sedeFiltro, codigoMonedaSeleccionado);
+        var reservasAnteriorTask = spService.ReportesReservasPorDiaAsync(negocioId, desdeAnterior, hastaAnterior, sedeFiltro, codigoMonedaSeleccionado);
+        var resumenAnteriorTask = spService.ReportesResumenOperativoAsync(negocioId, desdeAnterior, hastaAnterior, sedeFiltro, codigoMonedaSeleccionado);
+        var cobranzaAnteriorTask = spService.ReportesResumenCobranzaAsync(negocioId, desdeAnterior, hastaAnterior, sedeFiltro, codigoMonedaSeleccionado);
         var detallePagosTask = incluirDetalle
-            ? spService.ReportesDetallePagosAsync(negocioId, desde, hasta, sedeFiltro)
+            ? spService.ReportesDetallePagosAsync(negocioId, desde, hasta, sedeFiltro, codigoMonedaSeleccionado)
             : Task.FromResult(new List<ReportePagoDetalleItemViewModel>());
         var detalleReservasTask = incluirDetalle
-            ? spService.ReportesDetalleReservasAsync(negocioId, desde, hasta, sedeFiltro)
+            ? spService.ReportesDetalleReservasAsync(negocioId, desde, hasta, sedeFiltro, codigoMonedaSeleccionado)
             : Task.FromResult(new List<ReporteReservaDetalleItemViewModel>());
 
         await Task.WhenAll(
@@ -101,6 +115,18 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
             DiasPeriodo = diasPeriodo,
             SedeId = sedeFiltro,
             SedesFiltro = PrepararSedesFiltro(sedes, baseVm.EsAdministrador, sedeFiltro),
+            CodigoMoneda = codigoMonedaSeleccionado,
+            MonedaSimbolo = simboloMonedaSeleccionado,
+            MonedasFiltro = monedas
+                .OrderByDescending(x => x.Activo)
+                .ThenBy(x => x.Codigo)
+                .Select(x => new SelectListItem
+                {
+                    Value = x.Codigo,
+                    Text = $"{x.Codigo} - {x.Nombre}{(x.Activo ? string.Empty : " (inactiva)")}",
+                    Selected = string.Equals(x.Codigo, codigoMonedaSeleccionado, StringComparison.OrdinalIgnoreCase)
+                })
+                .ToList(),
             Ocupacion = ocupacionTask.Result,
             ReservasPorDia = reservasTask.Result,
             ReservasPeriodoAnterior = reservasAnteriorTask.Result,
@@ -118,7 +144,7 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
     }
 
     [HttpGet]
-    public async Task<IActionResult> ExportCsv(int negocioId, DateOnly? fechaDesde, DateOnly? fechaHasta, int? sedeId, string? preset = null, string? bloque = null)
+    public async Task<IActionResult> ExportCsv(int negocioId, DateOnly? fechaDesde, DateOnly? fechaHasta, int? sedeId, string? codigoMoneda, string? preset = null, string? bloque = null)
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "REPORTES");
         if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje)) return Forbid();
@@ -129,15 +155,23 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
             sedeFiltro = null;
 
         var (desde, hasta, _) = ResolverRango(preset, fechaDesde, fechaHasta);
+        var monedas = await spService.MaestrosMonedasListarAsync(negocioId);
+        var configuracion = await spService.ConfiguracionClubObtenerAsync(negocioId);
+        var codigoSolicitado = (codigoMoneda ?? string.Empty).Trim().ToUpperInvariant();
+        var codigoMonedaSeleccionado = monedas.FirstOrDefault(x => string.Equals(x.Codigo, codigoSolicitado, StringComparison.OrdinalIgnoreCase))?.Codigo
+            ?? monedas.FirstOrDefault(x => string.Equals(x.Codigo, configuracion?.CodigoMoneda, StringComparison.OrdinalIgnoreCase))?.Codigo
+            ?? monedas.FirstOrDefault(x => string.Equals(x.Codigo, "PEN", StringComparison.OrdinalIgnoreCase))?.Codigo
+            ?? monedas.FirstOrDefault()?.Codigo
+            ?? "PEN";
         var bloqueNormalizado = (bloque ?? "todo").Trim().ToLowerInvariant();
         if (bloqueNormalizado is not ("todo" or "resumen" or "ocupacion" or "ingresos"))
             bloqueNormalizado = "todo";
 
-        var resumen = await spService.ReportesResumenOperativoAsync(negocioId, desde, hasta, sedeFiltro);
-        var cobranza = await spService.ReportesResumenCobranzaAsync(negocioId, desde, hasta, sedeFiltro);
-        var ocupacion = await spService.ReportesOcupacionPorEspacioAsync(negocioId, desde, hasta, sedeFiltro);
-        var ingresos = await spService.ReportesIngresosPorDiaAsync(negocioId, desde, hasta, sedeFiltro);
-        var reservas = await spService.ReportesReservasPorDiaAsync(negocioId, desde, hasta, sedeFiltro);
+        var resumen = await spService.ReportesResumenOperativoAsync(negocioId, desde, hasta, sedeFiltro, codigoMonedaSeleccionado);
+        var cobranza = await spService.ReportesResumenCobranzaAsync(negocioId, desde, hasta, sedeFiltro, codigoMonedaSeleccionado);
+        var ocupacion = await spService.ReportesOcupacionPorEspacioAsync(negocioId, desde, hasta, sedeFiltro, codigoMonedaSeleccionado);
+        var ingresos = await spService.ReportesIngresosPorDiaAsync(negocioId, desde, hasta, sedeFiltro, codigoMonedaSeleccionado);
+        var reservas = await spService.ReportesReservasPorDiaAsync(negocioId, desde, hasta, sedeFiltro, codigoMonedaSeleccionado);
 
         var sb = new StringBuilder();
         const string sep = ";";
@@ -151,13 +185,14 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
             sb.AppendLine("[RESUMEN_OPERATIVO]");
             sb.AppendLine(string.Join(sep, new[]
             {
-                "NegocioId","SedeId","FechaDesde","FechaHasta","Dias","TotalReservas","Pendientes","Confirmadas","Pagadas","Canceladas","NoShow",
+                "NegocioId","SedeId","CodigoMoneda","FechaDesde","FechaHasta","Dias","TotalReservas","Pendientes","Confirmadas","Pagadas","Canceladas","NoShow",
                 "MontoReservado","SaldoPendiente"
             }));
             sb.AppendLine(string.Join(sep, new[]
             {
                 negocioId.ToString(),
                 sedeFiltro?.ToString() ?? string.Empty,
+                codigoMonedaSeleccionado,
                 desde.ToString("yyyy-MM-dd"),
                 hasta.ToString("yyyy-MM-dd"),
                 diasPeriodo.ToString(),
@@ -174,12 +209,13 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
             sb.AppendLine("[RESUMEN_COBRANZA]");
             sb.AppendLine(string.Join(sep, new[]
             {
-                "NegocioId","SedeId","FechaDesde","FechaHasta","Dias","CantidadPagos","ReservasCobradas","MontoCobrado","TicketPromedioCobranza","CobranzaPctSobreReservado"
+                "NegocioId","SedeId","CodigoMoneda","FechaDesde","FechaHasta","Dias","CantidadPagos","ReservasCobradas","MontoCobrado","TicketPromedioCobranza","CobranzaPctSobreReservado"
             }));
             sb.AppendLine(string.Join(sep, new[]
             {
                 negocioId.ToString(),
                 sedeFiltro?.ToString() ?? string.Empty,
+                codigoMonedaSeleccionado,
                 desde.ToString("yyyy-MM-dd"),
                 hasta.ToString("yyyy-MM-dd"),
                 diasPeriodo.ToString(),
@@ -197,7 +233,7 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
             sb.AppendLine("[OCUPACION]");
             sb.AppendLine(string.Join(sep, new[]
             {
-                "SedeId","EspacioDeportivoId","Sede","Espacio","CantidadReservas","HorasReservadas","MontoReservado","MontoCobrado","TicketPromedio","CobranzaPct"
+                "CodigoMoneda","SedeId","EspacioDeportivoId","Sede","Espacio","CantidadReservas","HorasReservadas","MontoReservado","MontoCobrado","TicketPromedio","CobranzaPct"
             }));
             foreach (var o in ocupacion)
             {
@@ -205,6 +241,7 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
                 var cobranzaOcupacion = o.MontoReservado > 0 ? (o.MontoCobrado / o.MontoReservado) * 100m : 0m;
                 sb.AppendLine(string.Join(sep, new[]
                 {
+                    codigoMonedaSeleccionado,
                     o.SedeId.ToString(),
                     o.EspacioDeportivoId.ToString(),
                     EscapeCsv(o.Sede, sep),
@@ -224,7 +261,7 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
             var cobranzaTotalOcup = totalReservadoOcup > 0 ? (totalCobradoOcup / totalReservadoOcup) * 100m : 0m;
             sb.AppendLine(string.Join(sep, new[]
             {
-                "TOTAL","","","",
+                codigoMonedaSeleccionado,"TOTAL","","","",
                 totalReservasOcup.ToString(),
                 FormatoNumero(ocupacion.Sum(x => x.HorasReservadas), cultura),
                 FormatoNumero(totalReservadoOcup, cultura),
@@ -238,12 +275,13 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
         if (bloqueNormalizado is "todo" or "ingresos")
         {
             sb.AppendLine("[INGRESOS]");
-            sb.AppendLine(string.Join(sep, new[] { "FechaPago", "ReservasCobradas", "Ingresos", "TicketPromedioDia" }));
+            sb.AppendLine(string.Join(sep, new[] { "CodigoMoneda", "FechaPago", "ReservasCobradas", "Ingresos", "TicketPromedioDia" }));
             foreach (var i in ingresos)
             {
                 var ticketDia = i.CantidadReservas > 0 ? i.Ingresos / i.CantidadReservas : 0m;
                 sb.AppendLine(string.Join(sep, new[]
                 {
+                    codigoMonedaSeleccionado,
                     i.Fecha.ToString("yyyy-MM-dd"),
                     i.CantidadReservas.ToString(),
                     FormatoNumero(i.Ingresos, cultura),
@@ -255,6 +293,7 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
             var ticketPromedioIngreso = totalReservasIngreso > 0 ? totalIngresos / totalReservasIngreso : 0m;
             sb.AppendLine(string.Join(sep, new[]
             {
+                codigoMonedaSeleccionado,
                 "TOTAL",
                 totalReservasIngreso.ToString(),
                 FormatoNumero(totalIngresos, cultura),
@@ -266,11 +305,12 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
         {
             sb.AppendLine();
             sb.AppendLine("[RESERVAS_POR_DIA]");
-            sb.AppendLine(string.Join(sep, new[] { "FechaReserva", "CantidadReservas", "MontoReservado" }));
+            sb.AppendLine(string.Join(sep, new[] { "CodigoMoneda", "FechaReserva", "CantidadReservas", "MontoReservado" }));
             foreach (var r in reservas)
             {
                 sb.AppendLine(string.Join(sep, new[]
                 {
+                    codigoMonedaSeleccionado,
                     r.Fecha.ToString("yyyy-MM-dd"),
                     r.CantidadReservas.ToString(),
                     FormatoNumero(r.MontoReservado, cultura)
@@ -280,7 +320,7 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
 
         var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(sb.ToString())).ToArray();
         var nombreSede = sedeFiltro.HasValue ? $"_S{sedeFiltro.Value}" : "_ALL";
-        var fileName = $"Reporte_{bloqueNormalizado}_{negocioId}{nombreSede}_{desde:yyyyMMdd}_{hasta:yyyyMMdd}.csv";
+        var fileName = $"Reporte_{bloqueNormalizado}_{negocioId}{nombreSede}_{codigoMonedaSeleccionado}_{desde:yyyyMMdd}_{hasta:yyyyMMdd}.csv";
         return File(bytes, "text/csv; charset=utf-8", fileName);
     }
 

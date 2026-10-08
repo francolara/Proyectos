@@ -1,5 +1,6 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.SedesIndexViewModel
 @* Firma: FRANCO LARA - 01/09/2026 | Presenta el listado con un titulo operativo y directo. *@
+@* Firma: FRANCO LARA - 01/10/2026 | Muestra el correlativo visible de sede por negocio. *@
 @{
     ViewData["Title"] = "Sedes";
     var totalSedes = Model.Sedes.Count;
@@ -114,7 +115,7 @@
                             <tr data-search="@($"{item.Nombre} {item.Direccion} {serviciosTexto} {diasTexto} {horarioTexto} {correoTexto} {whatsappTexto} {(item.Activo ? "Activa" : "Inactiva")}".ToLowerInvariant())">
                                 <td>
                                     <div class="sc-list-main">
-                                        <div class="sc-list-title">@item.Nombre</div>
+                                        <div class="sc-list-title">@item.Nombre <span class="sc-id-chip ms-1">@item.CodigoVisible</span></div>
                                         <small class="text-muted"><i class="bi bi-geo-alt me-1"></i>@item.Direccion</small>
                                     </div>
                                 </td>

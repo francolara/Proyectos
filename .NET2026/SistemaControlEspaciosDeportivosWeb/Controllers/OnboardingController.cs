@@ -49,7 +49,7 @@ public class OnboardingController(ISportCenterStoredProcedureService spService) 
         model.NombreComercial = form.NombreComercial?.Trim() ?? string.Empty;
         model.TipoDocumento = form.TipoDocumento?.Trim() ?? "1";
         model.NumeroDocumento = string.IsNullOrWhiteSpace(form.NumeroDocumento) ? null : form.NumeroDocumento.Trim();
-        model.MonedaId = form.MonedaId;
+        model.CodigoMoneda = form.CodigoMoneda?.Trim().ToUpperInvariant() ?? string.Empty;
 
         var ok = await spService.ConfiguracionClubActualizarAsync(model, User.Identity?.Name ?? "sistema");
         if (ok)
@@ -117,8 +117,8 @@ public class OnboardingController(ISportCenterStoredProcedureService spService) 
         {
             NegocioId = form.NegocioId,
             SedeId = form.SedeId,
-            TipoDeporteId = form.TipoDeporteId,
-            TipoSueloId = form.TipoSueloId,
+            TipoDeporteSuperId = form.TipoDeporteSuperId,
+            TipoSueloSuperId = form.TipoSueloSuperId,
             Codigo = form.Codigo.Trim(),
             Nombre = form.Nombre.Trim(),
             Capacidad = form.Capacidad,
@@ -286,7 +286,7 @@ public class OnboardingController(ISportCenterStoredProcedureService spService) 
                 NombreComercial = config.NombreComercial,
                 TipoDocumento = config.TipoDocumento,
                 NumeroDocumento = config.NumeroDocumento,
-                MonedaId = config.MonedaId,
+                CodigoMoneda = config.CodigoMoneda,
                 TiposDocumento = await spService.CombosTiposDocumentoIdentidadSunatAsync(),
                 Monedas = await spService.ConfiguracionClubComboMonedasAsync(negocioId)
             },

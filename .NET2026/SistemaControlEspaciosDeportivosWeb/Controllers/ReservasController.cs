@@ -31,9 +31,41 @@ public class ReservasController(
         sedeId = AplicarSedeAsignada(baseVm, sedeId);
 
         var sedes = await spService.EspaciosComboSedesAsync(resolvedNegocioId.Value, baseVm.SedeIdAsignada);
+        if (!sedeId.HasValue && sedes.Count == 1 && int.TryParse(sedes[0].Value, out var unicaSedeId))
+        {
+            sedeId = unicaSedeId;
+        }
+        else if (!sedeId.HasValue && sedes.Count > 1)
+        {
+            var espacioObjetivo = espacioDeportivoId;
+            if (!espacioObjetivo.HasValue)
+            {
+                var espaciosNegocio = await spService.ReservasComboEspaciosAsync(resolvedNegocioId.Value);
+                if (espaciosNegocio.Count == 1 && int.TryParse(espaciosNegocio[0].Value, out var unicoEspacioId))
+                    espacioObjetivo = unicoEspacioId;
+            }
+
+            if (espacioObjetivo.HasValue)
+            {
+                foreach (var sede in sedes)
+                {
+                    if (!int.TryParse(sede.Value, out var sedeCandidataId)) continue;
+
+                    var espaciosSede = await spService.ReservasComboEspaciosAsync(resolvedNegocioId.Value, sedeCandidataId);
+                    if (!espaciosSede.Any(x => x.Value == espacioObjetivo.Value.ToString(CultureInfo.InvariantCulture))) continue;
+
+                    sedeId = sedeCandidataId;
+                    espacioDeportivoId = espacioObjetivo;
+                    break;
+                }
+            }
+        }
+
         var espacios = await spService.ReservasComboEspaciosAsync(resolvedNegocioId.Value, sedeId);
         if (espacioDeportivoId.HasValue && !espacios.Any(x => x.Value == espacioDeportivoId.Value.ToString()))
             espacioDeportivoId = null;
+        if (!espacioDeportivoId.HasValue && espacios.Count == 1 && int.TryParse(espacios[0].Value, out var unicoEspacioSedeId))
+            espacioDeportivoId = unicoEspacioSedeId;
         var tiposDocumentoClientes = await spService.CombosTiposDocumentoIdentidadSunatAsync();
         var formasPago = await spService.PagosComboFormasPagoAsync(resolvedNegocioId.Value);
         var configClub = await spService.ConfiguracionClubObtenerAsync(resolvedNegocioId.Value);
@@ -117,6 +149,8 @@ public class ReservasController(
             TotalPendientesListadoGlobal = resumenListadoGlobal.TotalPendientes,
             TotalPagadasListadoGlobal = resumenListadoGlobal.TotalPagadas,
             SaldoTotalListadoGlobal = resumenListadoGlobal.SaldoTotal,
+            SaldoListadoEsMultimoneda = resumenListadoGlobal.EsMultimoneda,
+            SaldoListadoMonedaSimbolo = resumenListadoGlobal.MonedaSimbolo,
             TotalPaginasListado = totalPaginasListado,
             EstadosListadoSeleccionados = estadosListadoLimpios,
             SedesFiltro = sedes,
@@ -137,8 +171,8 @@ public class ReservasController(
         vm.PoliticaConfirmacionPago = configClub?.PoliticaConfirmacionPago ?? 0;
         vm.PorcentajeAdelantoMinimo = configClub?.PorcentajeAdelantoMinimo;
         vm.PermitirModificarPrecioReserva = configClub?.PermitirModificarPrecioReserva ?? false;
-        vm.MonedaNombre = "PEN";
-        vm.MonedaSimbolo = "S/";
+        vm.MonedaNombre = configClub?.CodigoMoneda ?? string.Empty;
+        vm.MonedaSimbolo = configClub?.MonedaSimbolo ?? string.Empty;
 
         if (sedeId.HasValue)
         {
@@ -364,6 +398,7 @@ public class ReservasController(
         {
             ok = true,
             id = vm.Id,
+            numeroPorNegocio = vm.NumeroPorNegocio,
             espacioDeportivoId = vm.EspacioDeportivoId,
             clienteId = vm.ClienteId,
             fecha = vm.Fecha.ToString("yyyy-MM-dd"),
@@ -372,6 +407,8 @@ public class ReservasController(
             estado = (int)vm.Estado,
             total = vm.Total,
             adelanto = vm.Adelanto,
+            codigoMoneda = vm.CodigoMoneda,
+            monedaSimbolo = vm.MonedaSimbolo,
             comentario = vm.Comentario,
             usuarioCreacion = vm.UsuarioCreacion,
             fechaRegistro = vm.FechaRegistro?.ToString("dd/MM/yyyy HH:mm", CultureInfo.GetCultureInfo("es-PE")),
@@ -627,6 +664,7 @@ public class ReservasController(
         {
             id = $"{r.TipoEvento}-{r.Id}",
             reservaId = r.TipoEvento == "RESERVA" || r.TipoEvento == "RESERVA_COMPARTIDA" ? r.Id : (int?)null,
+            numeroPorNegocio = r.NumeroPorNegocio,
             bloqueoId = r.TipoEvento == "BLOQUEO" || r.TipoEvento == "BLOQUEO_COMPARTIDO" ? r.Id : (int?)null,
             tipoEvento = r.TipoEvento,
             title = r.Titulo,
@@ -729,7 +767,7 @@ public class ReservasController(
                 await emailService.SendEmailAsync(
                     reserva.Correo,
                     reserva.Cliente,
-                    $"Recordatorio de reserva - #{reserva.ReservaId}",
+                    $"Recordatorio de reserva - {reserva.CodigoVisible}",
                     ConstruirHtmlRecordatorio(reserva));
 
                 if (!string.IsNullOrWhiteSpace(reserva.CorreoNotificacion))
@@ -737,7 +775,7 @@ public class ReservasController(
                     await emailService.SendEmailAsync(
                         reserva.CorreoNotificacion,
                         reserva.Sede,
-                        $"Recordatorio de reserva - #{reserva.ReservaId}",
+                        $"Recordatorio de reserva - {reserva.CodigoVisible}",
                         ConstruirHtmlRecordatorio(reserva));
                 }
 
@@ -746,7 +784,7 @@ public class ReservasController(
             }
             catch (Exception ex)
             {
-                errores.Add($"Reserva #{reservaId}: {ex.Message}");
+                errores.Add($"No se pudo procesar una de las reservas seleccionadas: {ex.Message}");
             }
         }
 
@@ -777,7 +815,7 @@ $"""
 <p>Hola {reserva.Cliente},</p>
 <p>Te recordamos tu reserva programada.</p>
 <ul>
-  <li><strong>Reserva:</strong> #{reserva.ReservaId}</li>
+  <li><strong>Reserva:</strong> {reserva.CodigoVisible}</li>
   <li><strong>Sede:</strong> {reserva.Sede}</li>
   <li><strong>Espacio:</strong> {reserva.Espacio}</li>
   <li><strong>Fecha:</strong> {reserva.Fecha:dd/MM/yyyy}</li>
@@ -858,6 +896,7 @@ $"""
             .Select(e => new
             {
                 reservaId = e.Id,
+                numeroPorNegocio = e.NumeroPorNegocio,
                 titulo = e.Titulo,
                 horaInicio = e.HoraInicio.ToString("HH\\:mm"),
                 horaFin = e.HoraFin.ToString("HH\\:mm")

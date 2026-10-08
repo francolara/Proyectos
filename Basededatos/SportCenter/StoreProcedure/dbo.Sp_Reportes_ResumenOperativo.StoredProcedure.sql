@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -6,11 +6,13 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- Firma: Codex - 13/04/2026 | Resumen operativo de Reportes por rango/sede con exclusión de reservas canceladas (Estado=5) en total de reservas y KPIs de monto/saldo.
+-- Firma: FRANCO LARA - 06/10/2026 | Calcula importes y conteos exclusivamente en la moneda canonica seleccionada.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Reportes_ResumenOperativo]
     @NegocioId INT,
     @FechaDesde DATE,
     @FechaHasta DATE,
-    @SedeId INT = NULL
+    @SedeId INT = NULL,
+    @CodigoMoneda NVARCHAR(10)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -27,6 +29,7 @@ BEGIN
             INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
             WHERE s.NegocioId = @NegocioId
               AND (@SedeId IS NULL OR s.Id = @SedeId)
+              AND r.CodigoMoneda = @CodigoMoneda
               AND r.Fecha >= @FechaDesde
               AND r.Fecha <= @FechaHasta
         ),

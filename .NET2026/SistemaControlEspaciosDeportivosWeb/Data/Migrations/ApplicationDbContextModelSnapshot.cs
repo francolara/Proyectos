@@ -414,6 +414,11 @@ namespace SistemaControlEspaciosDeportivosWeb.Data.Migrations
                         .HasMaxLength(8)
                         .HasColumnType("nvarchar(8)");
 
+                    b.Property<string>("CodigoMoneda")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
                     b.Property<string>("CodigoRespuestaSunat")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -424,6 +429,11 @@ namespace SistemaControlEspaciosDeportivosWeb.Data.Migrations
                         .HasColumnType("nvarchar(4)");
 
                     b.Property<string>("CodigoTipoOperacionSunat")
+                        .IsRequired()
+                        .HasMaxLength(4)
+                        .HasColumnType("nvarchar(4)");
+
+                    b.Property<string>("CodigoTipoComprobante")
                         .IsRequired()
                         .HasMaxLength(4)
                         .HasColumnType("nvarchar(4)");
@@ -470,12 +480,6 @@ namespace SistemaControlEspaciosDeportivosWeb.Data.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
 
-                    b.Property<int>("TipoComprobante")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TipoMoneda")
-                        .HasColumnType("int");
-
                     b.Property<decimal>("Total")
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
@@ -493,7 +497,8 @@ namespace SistemaControlEspaciosDeportivosWeb.Data.Migrations
                     b.HasIndex("ReservaId")
                         .IsUnique();
 
-                    b.HasIndex("NegocioId", "TipoComprobante", "Serie", "Numero")
+                    b.HasIndex("NegocioId", "CodigoTipoComprobante", "Serie", "Numero")
+                        .HasDatabaseName("UX_ComprobantesElectronicos_Negocio_CodigoTipo_Serie_Numero")
                         .IsUnique();
 
                     b.ToTable("ComprobantesElectronicos");
@@ -536,10 +541,10 @@ namespace SistemaControlEspaciosDeportivosWeb.Data.Migrations
                     b.Property<bool>("TieneIluminacion")
                         .HasColumnType("bit");
 
-                    b.Property<int>("TipoDeporteId")
+                    b.Property<int>("TipoDeporteSuperId")
                         .HasColumnType("int");
 
-                    b.Property<int>("TipoSueloId")
+                    b.Property<int>("TipoSueloSuperId")
                         .HasColumnType("int");
 
                     b.Property<string>("UsuarioActualizacion")
@@ -550,9 +555,9 @@ namespace SistemaControlEspaciosDeportivosWeb.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TipoDeporteId");
+                    b.HasIndex("TipoDeporteSuperId");
 
-                    b.HasIndex("TipoSueloId");
+                    b.HasIndex("TipoSueloSuperId");
 
                     b.HasIndex("SedeId", "Codigo")
                         .IsUnique();
@@ -603,6 +608,11 @@ namespace SistemaControlEspaciosDeportivosWeb.Data.Migrations
                     b.Property<string>("CodigoUbigeo")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("CodigoMoneda")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
                     b.Property<string>("DireccionFiscal")
                         .HasColumnType("nvarchar(max)");
 
@@ -611,9 +621,6 @@ namespace SistemaControlEspaciosDeportivosWeb.Data.Migrations
 
                     b.Property<DateTime>("FechaRegistro")
                         .HasColumnType("datetime2");
-
-                    b.Property<int?>("MonedaId")
-                        .HasColumnType("int");
 
                     b.Property<string>("NombreComercial")
                         .IsRequired()
@@ -643,6 +650,11 @@ namespace SistemaControlEspaciosDeportivosWeb.Data.Migrations
 
                     b.Property<DateTime?>("FechaActualizacion")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("CodigoMoneda")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<DateTime>("FechaCreacion")
                         .HasColumnType("datetime2");
@@ -693,6 +705,11 @@ namespace SistemaControlEspaciosDeportivosWeb.Data.Migrations
 
                     b.Property<int>("ClienteId")
                         .HasColumnType("int");
+
+                    b.Property<string>("CodigoMoneda")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<int>("EspacioDeportivoId")
                         .HasColumnType("int");
@@ -1056,23 +1073,7 @@ namespace SistemaControlEspaciosDeportivosWeb.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SistemaControlEspaciosDeportivosWeb.Models.TipoDeporte", "TipoDeporte")
-                        .WithMany("EspaciosDeportivos")
-                        .HasForeignKey("TipoDeporteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SistemaControlEspaciosDeportivosWeb.Models.TipoSuelo", "TipoSuelo")
-                        .WithMany("EspaciosDeportivos")
-                        .HasForeignKey("TipoSueloId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Sede");
-
-                    b.Navigation("TipoDeporte");
-
-                    b.Navigation("TipoSuelo");
                 });
 
             modelBuilder.Entity("SistemaControlEspaciosDeportivosWeb.Models.Pago", b =>
@@ -1224,16 +1225,6 @@ namespace SistemaControlEspaciosDeportivosWeb.Data.Migrations
                 });
 
             modelBuilder.Entity("SistemaControlEspaciosDeportivosWeb.Models.Sede", b =>
-                {
-                    b.Navigation("EspaciosDeportivos");
-                });
-
-            modelBuilder.Entity("SistemaControlEspaciosDeportivosWeb.Models.TipoDeporte", b =>
-                {
-                    b.Navigation("EspaciosDeportivos");
-                });
-
-            modelBuilder.Entity("SistemaControlEspaciosDeportivosWeb.Models.TipoSuelo", b =>
                 {
                     b.Navigation("EspaciosDeportivos");
                 });

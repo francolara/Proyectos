@@ -1,5 +1,6 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteFormViewModel
 @* Firma: FRANCO LARA - 17/09/2026 | Agrega trazabilidad del comprobante durante la edicion. *@
+@* Firma: Codex - 01/10/2026 | Muestra el correlativo visible por negocio de los pagos asociados. *@
 @{
     ViewData["Title"] = "Editar comprobante";
     var puedeEditarCliente = Model.PuedeEditarDatosCliente;
@@ -80,7 +81,7 @@
                             @foreach (var p in Model.PagosReserva)
                             {
                                 <tr>
-                                    <td class="text-center">#@p.PagoId</td>
+                                    <td class="text-center">@p.CodigoVisible</td>
                                     <td class="text-center">@p.FechaPago.ToString("dd/MM/yyyy")</td>
                                     <td class="text-center">@p.Monto.ToString("N2")</td>
                                     <td class="text-center">@p.FormaPago</td>

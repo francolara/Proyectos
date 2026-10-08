@@ -1,4 +1,4 @@
-﻿
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -7,11 +7,13 @@ GO
 
 -- Firma: Codex - 13/04/2026 | Normaliza script a CREATE OR ALTER, mantiene filtro por sede y excluye canceladas (Estado=5) del conteo/monto KPI diario.
 -- Firma: Codex - 18/06/2026 | Reorienta el reporte de ingresos a fecha de pago para que cobros adelantados y parciales se agrupen por el dia real de cobranza.
+-- Firma: FRANCO LARA - 06/10/2026 | Filtra la cobranza por CodigoMoneda canonico para impedir sumas entre monedas distintas.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Reportes_IngresosPorDia]
     @NegocioId INT,
     @FechaDesde DATE,
     @FechaHasta DATE,
-    @SedeId INT = NULL
+    @SedeId INT = NULL,
+    @CodigoMoneda NVARCHAR(10)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -29,6 +31,7 @@ BEGIN
             INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
             WHERE s.NegocioId = @NegocioId
               AND (@SedeId IS NULL OR s.Id = @SedeId)
+              AND p.CodigoMoneda = @CodigoMoneda
               AND CAST(p.FechaPago AS DATE) >= @FechaDesde
               AND CAST(p.FechaPago AS DATE) <= @FechaHasta
               AND r.Estado <> 5

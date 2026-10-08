@@ -1,6 +1,8 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobantesIndexViewModel
 @* Firma: FRANCO LARA - 01/09/2026 | Presenta el listado con un titulo operativo y directo. *@
 @* Firma: FRANCO LARA - 03/09/2026 | Sustituye las superficies azul petroleo del modo oscuro por la paleta antracita administrativa. *@
+@* Firma: Codex - 01/10/2026 | Muestra el correlativo visible de la reserva por negocio y orienta la busqueda a dicho codigo. *@
+@* Firma: FRANCO LARA - 06/10/2026 | Presenta moneda historica por comprobante y evita totalizar monedas distintas. *@
 @{
     ViewData["Title"] = "Comprobantes";
     var totalComprobantes = Model.TotalRegistros;
@@ -64,7 +66,7 @@
         </article>
         <article class="kpi-card">
             <p class="kpi-card-label">Monto emitido</p>
-            <h3 class="kpi-card-value">S/ @Model.TotalMontoEmitidoGeneral.ToString("N2")</h3>
+            <h3 class="kpi-card-value">@(Model.EsMultimoneda ? "Varias monedas" : $"{Model.MonedaSimbolo} {Model.TotalMontoEmitidoGeneral:N2}")</h3>
         </article>
         <article class="kpi-card">
             <p class="kpi-card-label">Pendientes</p>
@@ -85,7 +87,7 @@
             <div class="row g-2 align-items-end px-3 pb-3">
                 <div class="col-lg-5 col-md-6">
                     <label class="form-label">Buscar por comprobante, reserva, cliente, tipo o estado</label>
-                    <input type="text" name="buscar" value="@Model.Buscar" class="form-control" placeholder="Ejemplo: B001-10, #12, BORIS, Boleta, Pendiente..." />
+                    <input type="text" name="buscar" value="@Model.Buscar" class="form-control" placeholder="Ejemplo: B001-10, R-000012, BORIS, Boleta, Pendiente..." />
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <label class="form-label">Tipo de documento</label>
@@ -209,7 +211,7 @@
                                         </div>
                                         <div class="comprobante-meta-item">
                                             <small>Nro reserva</small>
-                                            <div>#@item.ReservaId</div>
+                                            <div>@item.CodigoReserva</div>
                                         </div>
                                     </div>
                                 </td>
@@ -230,8 +232,8 @@
                                 </td>
                                 <td class="text-center">
                                     <div class="d-flex flex-wrap justify-content-center gap-1">
-                                        <span class="badge @estadoClase(item.Estado) sc-estado-pill">@item.Estado</span>
-                                        <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle sc-estado-pill">S/ @item.Total.ToString("N2")</span>
+                                        <span class="badge @estadoClase(item.Estado ?? string.Empty) sc-estado-pill">@item.Estado</span>
+                                        <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle sc-estado-pill">@item.MonedaSimbolo @item.Total.ToString("N2")</span>
                                     </div>
                                 </td>
                                 <td class="text-end">

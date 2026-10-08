@@ -167,8 +167,9 @@
                     <span asp-validation-for="PorcentajeAdelantoMinimo" class="text-danger"></span>
                 </div>
                 <div class="col-md-6">
-                    <label asp-for="MonedaId" class="form-label">Moneda de trabajo</label>
-                    <select asp-for="MonedaId" asp-items="Model.Monedas" class="form-select"></select>
+                    <label asp-for="CodigoMoneda" class="form-label">Moneda de trabajo</label>
+                    <select asp-for="CodigoMoneda" asp-items="Model.Monedas" class="form-select"></select>
+                    <span asp-validation-for="CodigoMoneda" class="text-danger"></span>
                 </div>
                 <div class="col-md-6">
                     <label asp-for="HorasMaximasReservaCliente" class="form-label">Hora(s) maxima de reserva por cliente</label>

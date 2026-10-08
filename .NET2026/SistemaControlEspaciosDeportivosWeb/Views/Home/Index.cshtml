@@ -8,6 +8,7 @@
 @* Firma: FRANCO LARA - 02/09/2026 | Actualiza el mensaje prellenado de la burbuja de WhatsApp para solicitar información de afiliación y gestión de reservas. *@
 @* Firma: FRANCO LARA - 18/09/2026 | Moderniza la búsqueda, resultados, tarjetas, planes, cierre comercial y pie público con composición adaptable a cada monitor, sin alterar cabecera, banners ni presentación del logo. *@
 @* Firma: FRANCO LARA - 25/09/2026 | Muestra el precio del plan de prueba con dos decimales, igual que los demás importes comerciales. *@
+@* Firma: FRANCO LARA - 06/10/2026 | Muestra en cada espacio publico el simbolo canonico de su tarifa. *@
 
 @{
     ViewData["Title"] = "Portal deportivo";
@@ -472,7 +473,7 @@
                                      data-hora-inicio="@Model.HoraInicio.ToString("HH\\:mm")"
                                      data-hora-fin="@Model.HoraFin.ToString("HH\\:mm")">
                                     <span class="home-item-label">Precio por hora</span>
-                                    <div class="home-price-main">Desde <strong>S/ @item.TarifaDesde.Value.ToString("0.00", CultureInfo.InvariantCulture)</strong></div>
+                                    <div class="home-price-main">Desde <strong>@item.MonedaSimbolo @item.TarifaDesde.Value.ToString("0.00", CultureInfo.InvariantCulture)</strong></div>
                                     <div class="home-price-promo d-none">
                                         <span class="home-price-base"></span>
                                         <span class="home-price-discount-badge"></span>

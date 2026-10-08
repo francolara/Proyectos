@@ -57,7 +57,7 @@ public class ReservaAutomationHostedService(
                 await emailService.SendEmailAsync(
                     reserva.Correo,
                     reserva.Cliente,
-                    $"Recordatorio de reserva - #{reserva.ReservaId}",
+                    $"Recordatorio de reserva - {reserva.CodigoVisible}",
                     ConstruirHtmlRecordatorio(reserva));
 
                 if (!string.IsNullOrWhiteSpace(reserva.CorreoNotificacion))
@@ -65,7 +65,7 @@ public class ReservaAutomationHostedService(
                     await emailService.SendEmailAsync(
                         reserva.CorreoNotificacion,
                         reserva.Sede,
-                        $"Recordatorio de reserva - #{reserva.ReservaId}",
+                        $"Recordatorio de reserva - {reserva.CodigoVisible}",
                         ConstruirHtmlRecordatorio(reserva));
                 }
 
@@ -110,7 +110,7 @@ $"""
 <p>Hola {reserva.Cliente},</p>
 <p>Te recordamos tu reserva programada.</p>
 <ul>
-  <li><strong>Reserva:</strong> #{reserva.ReservaId}</li>
+  <li><strong>Reserva:</strong> {reserva.CodigoVisible}</li>
   <li><strong>Sede:</strong> {reserva.Sede}</li>
   <li><strong>Espacio:</strong> {reserva.Espacio}</li>
   <li><strong>Fecha:</strong> {reserva.Fecha:dd/MM/yyyy}</li>

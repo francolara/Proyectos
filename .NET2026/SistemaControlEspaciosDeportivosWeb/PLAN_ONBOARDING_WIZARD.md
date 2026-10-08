@@ -29,7 +29,7 @@ Implementar un wizard de primer ingreso para administradores de complejo deporti
 ### Paso 1 - Configuracion (minimo)
 1. `NombreComercial`
 2. `TipoDocumento`
-3. `MonedaId`
+3. `CodigoMoneda` canonico (`PEN`, `USD`, etc.)
 
 Condicional para comprobante electronico:
 1. `TipoDocumento = 6` (RUC)

@@ -37,7 +37,8 @@ public partial class SportCenterStoredProcedureService
                 DiasAtencion = dr.IsDBNull(10) ? string.Empty : dr.GetString(10),
                 HorarioAtencion = dr.IsDBNull(11) ? string.Empty : dr.GetString(11),
                 FechasNoLaborablesCount = dr.GetInt32(12),
-                Activo = ReadBool(dr, 13)
+                Activo = ReadBool(dr, 13),
+                NumeroPorNegocio = ReadRequiredInt32(dr, 14, "NumeroPorNegocio")
             });
         }
         return list;
@@ -262,7 +263,8 @@ public partial class SportCenterStoredProcedureService
                     : dr.GetString(9),
                 AdministracionPrivada = dr.FieldCount > 10 && ReadBool(dr, 10),
                 TieneEspaciosCompartidos = dr.FieldCount > 11 && ReadBool(dr, 11),
-                TotalEspaciosCompartidos = dr.FieldCount > 12 && !dr.IsDBNull(12) ? dr.GetInt32(12) : 0
+                TotalEspaciosCompartidos = dr.FieldCount > 12 && !dr.IsDBNull(12) ? dr.GetInt32(12) : 0,
+                NumeroPorNegocio = ReadRequiredInt32(dr, 13, "NumeroPorNegocio")
             });
         }
         return list;
@@ -281,8 +283,8 @@ public partial class SportCenterStoredProcedureService
         {
             Id = dr.GetInt32(0),
             SedeId = dr.GetInt32(1),
-            TipoDeporteId = dr.GetInt32(2),
-            TipoSueloId = dr.GetInt32(3),
+            TipoDeporteSuperId = dr.GetInt32(2),
+            TipoSueloSuperId = dr.GetInt32(3),
             Codigo = dr.GetString(4),
             Nombre = dr.GetString(5),
             Capacidad = dr.GetInt32(6),
@@ -372,8 +374,8 @@ public partial class SportCenterStoredProcedureService
         await using var cmd = new SqlCommand("Sp_Espacios_Crear", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
         AddParam(cmd, "@SedeId", model.SedeId, SqlDbType.Int);
-        AddParam(cmd, "@TipoDeporteId", model.TipoDeporteId, SqlDbType.Int);
-        AddParam(cmd, "@TipoSueloId", model.TipoSueloId, SqlDbType.Int);
+        AddParam(cmd, "@TipoDeporteSuperId", model.TipoDeporteSuperId, SqlDbType.Int);
+        AddParam(cmd, "@TipoSueloSuperId", model.TipoSueloSuperId, SqlDbType.Int);
         AddParam(cmd, "@Codigo", model.Codigo, SqlDbType.NVarChar);
         AddParam(cmd, "@Nombre", model.Nombre, SqlDbType.NVarChar);
         AddParam(cmd, "@Capacidad", model.Capacidad, SqlDbType.Int);
@@ -411,8 +413,8 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@Id", model.Id, SqlDbType.Int);
         AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
         AddParam(cmd, "@SedeId", model.SedeId, SqlDbType.Int);
-        AddParam(cmd, "@TipoDeporteId", model.TipoDeporteId, SqlDbType.Int);
-        AddParam(cmd, "@TipoSueloId", model.TipoSueloId, SqlDbType.Int);
+        AddParam(cmd, "@TipoDeporteSuperId", model.TipoDeporteSuperId, SqlDbType.Int);
+        AddParam(cmd, "@TipoSueloSuperId", model.TipoSueloSuperId, SqlDbType.Int);
         AddParam(cmd, "@Codigo", model.Codigo, SqlDbType.NVarChar);
         AddParam(cmd, "@Nombre", model.Nombre, SqlDbType.NVarChar);
         AddParam(cmd, "@Capacidad", model.Capacidad, SqlDbType.Int);

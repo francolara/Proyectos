@@ -1,3 +1,5 @@
+@* Firma: Codex - 01/10/2026 | Imprime codigos visibles de reservas y pagos por negocio. *@
+@* Firma: FRANCO LARA - 06/10/2026 | Filtra la impresion por moneda canonica y muestra su simbolo en resumen y detalle. *@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReportesIndexViewModel
 @{
     Layout = null;
@@ -260,15 +262,15 @@
             </header>
 
             <section class="metrics" aria-label="Indicadores principales">
-                <article class="metric green"><span>Cobrado</span><strong>S/ @totalCobrado.ToString("N2")</strong><small>@Model.DetallePagos.Count pagos registrados</small></article>
-                <article class="metric"><span>Reservado</span><strong>S/ @totalReservado.ToString("N2")</strong><small>@Model.DetalleReservas.Count reservas</small></article>
-                <article class="metric amber"><span>Saldo pendiente</span><strong>S/ @totalPendiente.ToString("N2")</strong><small>@Model.DetalleReservas.Count(x => x.SaldoPendiente > 0 && x.EstadoCodigo != 5) reservas con saldo</small></article>
+                <article class="metric green"><span>Cobrado</span><strong>@Model.MonedaSimbolo @totalCobrado.ToString("N2")</strong><small>@Model.DetallePagos.Count pagos registrados</small></article>
+                <article class="metric"><span>Reservado</span><strong>@Model.MonedaSimbolo @totalReservado.ToString("N2")</strong><small>@Model.DetalleReservas.Count reservas</small></article>
+                <article class="metric amber"><span>Saldo pendiente</span><strong>@Model.MonedaSimbolo @totalPendiente.ToString("N2")</strong><small>@Model.DetalleReservas.Count(x => x.SaldoPendiente > 0 && x.EstadoCodigo != 5) reservas con saldo</small></article>
                 <article class="metric"><span>Nivel de cobranza</span><strong>@porcentajeCobranza.ToString("N1")%</strong><small>Sobre el monto reservado</small></article>
-                <article class="metric"><span>Ticket promedio</span><strong>S/ @ticketPromedio.ToString("N2")</strong><small>Por reserva cobrada</small></article>
+                <article class="metric"><span>Ticket promedio</span><strong>@Model.MonedaSimbolo @ticketPromedio.ToString("N2")</strong><small>Por reserva cobrada</small></article>
             </section>
 
             <section class="visual-summary" aria-label="Panorama visual del periodo">
-                <article class="visual-card"><span class="visual-donut" style="--value:@cobranzaPctCss%"><span>@porcentajeCobranza.ToString("N0")%</span></span><div><strong>Cobranza frente a lo reservado</strong><small>S/ @totalCobrado.ToString("N2") cobrados de S/ @totalReservado.ToString("N2") reservados.</small></div></article>
+                <article class="visual-card"><span class="visual-donut" style="--value:@cobranzaPctCss%"><span>@porcentajeCobranza.ToString("N0")%</span></span><div><strong>Cobranza frente a lo reservado</strong><small>@Model.MonedaSimbolo @totalCobrado.ToString("N2") cobrados de @Model.MonedaSimbolo @totalReservado.ToString("N2") reservados.</small></div></article>
                 <article class="visual-card"><span class="visual-donut operacion" style="--value:@reservasAtendidasPctCss%"><span>@reservasAtendidasPct.ToString("N0")%</span></span><div><strong>Reservas confirmadas o pagadas</strong><small>@reservasAtendidas de @Model.ResumenActual.TotalReservas reservas del periodo.</small></div></article>
             </section>
 
@@ -281,7 +283,7 @@
                             <tbody>
                             @foreach (var item in pagosPorForma)
                             {
-                                <tr><td class="strong">@item.Forma</td><td class="text-end">@item.Cantidad</td><td class="text-end">S/ @item.Monto.ToString("N2")</td><td class="text-end">@((totalCobrado > 0 ? item.Monto / totalCobrado * 100m : 0m).ToString("N1"))%</td></tr>
+                                <tr><td class="strong">@item.Forma</td><td class="text-end">@item.Cantidad</td><td class="text-end">@Model.MonedaSimbolo @item.Monto.ToString("N2")</td><td class="text-end">@((totalCobrado > 0 ? item.Monto / totalCobrado * 100m : 0m).ToString("N1"))%</td></tr>
                             }
                             </tbody>
                         </table>
@@ -296,7 +298,7 @@
                             <tbody>
                             @foreach (var item in reservasPorEstado)
                             {
-                                <tr><td class="strong">@item.Estado</td><td class="text-end">@item.Cantidad</td><td class="text-end">S/ @item.Total.ToString("N2")</td><td class="text-end">S/ @item.Saldo.ToString("N2")</td></tr>
+                                <tr><td class="strong">@item.Estado</td><td class="text-end">@item.Cantidad</td><td class="text-end">@Model.MonedaSimbolo @item.Total.ToString("N2")</td><td class="text-end">@Model.MonedaSimbolo @item.Saldo.ToString("N2")</td></tr>
                             }
                             </tbody>
                         </table>
@@ -307,7 +309,7 @@
                     <header class="panel-header"><span class="section-kicker">Indicadores financieros</span><h2>Lectura del periodo</h2></header>
                     <div class="panel-body">
                         <ul class="insights">
-                            <li><span>Descuentos aplicados</span><strong>S/ @totalDescuento.ToString("N2")</strong></li>
+                            <li><span>Descuentos aplicados</span><strong>@Model.MonedaSimbolo @totalDescuento.ToString("N2")</strong></li>
                             <li><span>Reservas cobradas</span><strong>@Model.CobranzaActual.ReservasCobradas</strong></li>
                             <li><span>Dias con ingresos</span><strong>@Model.Ingresos.Count</strong></li>
                             <li><span>Espacios con actividad</span><strong>@Model.Ocupacion.Count</strong></li>
@@ -339,8 +341,8 @@
             <div class="section-summary">
                 <div class="mini-metric"><span>Pagos</span><strong>@Model.DetallePagos.Count</strong></div>
                 <div class="mini-metric"><span>Reservas cobradas</span><strong>@Model.DetallePagos.Select(x => x.ReservaId).Distinct().Count()</strong></div>
-                <div class="mini-metric"><span>Total cobrado</span><strong>S/ @totalCobrado.ToString("N2")</strong></div>
-                <div class="mini-metric"><span>Ticket por pago</span><strong>S/ @((Model.DetallePagos.Count > 0 ? totalCobrado / Model.DetallePagos.Count : 0m).ToString("N2"))</strong></div>
+                <div class="mini-metric"><span>Total cobrado</span><strong>@Model.MonedaSimbolo @totalCobrado.ToString("N2")</strong></div>
+                <div class="mini-metric"><span>Ticket por pago</span><strong>@Model.MonedaSimbolo @((Model.DetallePagos.Count > 0 ? totalCobrado / Model.DetallePagos.Count : 0m).ToString("N2"))</strong></div>
             </div>
             @if (Model.DetallePagos.Any())
             {
@@ -351,13 +353,13 @@
                     {
                         <tr>
                             <td class="nowrap"><span class="strong">@item.FechaPago.ToString("dd/MM/yyyy")</span><br /><span class="muted">@item.FechaPago.ToString("HH:mm")</span></td>
-                            <td><span class="strong">P-@item.PagoId</span><br /><span class="muted">Reserva #@item.ReservaId</span></td>
+                            <td><span class="strong">@item.CodigoPago</span><br /><span class="muted">Reserva @item.CodigoReserva</span></td>
                             <td><span class="strong">@item.Cliente</span><br /><span class="muted">@item.ClienteDocumento</span></td>
                             <td class="nowrap">@item.FechaReserva.ToString("dd/MM/yyyy")<br /><span class="muted">@item.HoraInicio.ToString("HH:mm") - @item.HoraFin.ToString("HH:mm")</span></td>
                             <td><span class="strong">@item.Sede</span><br /><span class="muted">@item.Espacio</span></td>
                             <td>@item.FormaPago</td>
                             <td>@(string.IsNullOrWhiteSpace(item.NumeroOperacion) ? "-" : item.NumeroOperacion)</td>
-                            <td class="text-end strong nowrap">S/ @item.Monto.ToString("N2")</td>
+                            <td class="text-end strong nowrap">@item.MonedaSimbolo @item.Monto.ToString("N2")</td>
                         </tr>
                     }
                     </tbody>
@@ -367,7 +369,7 @@
             {
                 <div class="empty">No se registraron pagos en el periodo consultado.</div>
             }
-            <footer class="report-footer"><span>Detalle de pagos | @Model.NegocioNombre</span><span>Total: S/ @totalCobrado.ToString("N2")</span></footer>
+            <footer class="report-footer"><span>Detalle de pagos | @Model.NegocioNombre</span><span>Total: @Model.MonedaSimbolo @totalCobrado.ToString("N2")</span></footer>
         </section>
 
         <section class="report-page page-break">
@@ -377,9 +379,9 @@
             </header>
             <div class="section-summary">
                 <div class="mini-metric"><span>Reservas</span><strong>@Model.DetalleReservas.Count</strong></div>
-                <div class="mini-metric"><span>Monto reservado</span><strong>S/ @totalReservado.ToString("N2")</strong></div>
-                <div class="mini-metric"><span>Pagado acumulado</span><strong>S/ @Model.DetalleReservas.Where(x => x.EstadoCodigo != 5).Sum(x => x.MontoPagado).ToString("N2")</strong></div>
-                <div class="mini-metric"><span>Saldo pendiente</span><strong>S/ @totalPendiente.ToString("N2")</strong></div>
+                <div class="mini-metric"><span>Monto reservado</span><strong>@Model.MonedaSimbolo @totalReservado.ToString("N2")</strong></div>
+                <div class="mini-metric"><span>Pagado acumulado</span><strong>@Model.MonedaSimbolo @Model.DetalleReservas.Where(x => x.EstadoCodigo != 5).Sum(x => x.MontoPagado).ToString("N2")</strong></div>
+                <div class="mini-metric"><span>Saldo pendiente</span><strong>@Model.MonedaSimbolo @totalPendiente.ToString("N2")</strong></div>
             </div>
             @if (Model.DetalleReservas.Any())
             {
@@ -389,16 +391,16 @@
                     @foreach (var item in Model.DetalleReservas)
                     {
                         <tr>
-                            <td class="strong">#@item.ReservaId</td>
+                            <td class="strong">@item.CodigoReserva</td>
                             <td class="nowrap"><span class="strong">@item.Fecha.ToString("dd/MM/yyyy")</span><br /><span class="muted">@item.HoraInicio.ToString("HH:mm") - @item.HoraFin.ToString("HH:mm")</span></td>
                             <td><span class="strong">@item.Cliente</span><br /><span class="muted">@item.ClienteDocumento</span></td>
                             <td><span class="strong">@item.Sede</span><br /><span class="muted">@item.Espacio</span></td>
                             <td>@item.Estado</td>
                             <td><span class="strong">@item.CanalOrigen</span><br /><span class="muted">@(string.IsNullOrWhiteSpace(item.CodigoCupon) ? "Sin cupon" : item.CodigoCupon)</span></td>
-                            <td class="text-end nowrap">S/ @item.Total.ToString("N2")</td>
-                            <td class="text-end nowrap">S/ @item.Descuento.ToString("N2")</td>
-                            <td class="text-end nowrap">S/ @item.MontoPagado.ToString("N2")</td>
-                            <td class="text-end strong nowrap">S/ @item.SaldoPendiente.ToString("N2")</td>
+                            <td class="text-end nowrap">@item.MonedaSimbolo @item.Total.ToString("N2")</td>
+                            <td class="text-end nowrap">@item.MonedaSimbolo @item.Descuento.ToString("N2")</td>
+                            <td class="text-end nowrap">@item.MonedaSimbolo @item.MontoPagado.ToString("N2")</td>
+                            <td class="text-end strong nowrap">@item.MonedaSimbolo @item.SaldoPendiente.ToString("N2")</td>
                         </tr>
                     }
                     </tbody>
@@ -408,7 +410,7 @@
             {
                 <div class="empty">No se registraron reservas en el periodo consultado.</div>
             }
-            <footer class="report-footer"><span>Detalle de reservas | @Model.NegocioNombre</span><span>Saldo total: S/ @totalPendiente.ToString("N2")</span></footer>
+            <footer class="report-footer"><span>Detalle de reservas | @Model.NegocioNombre</span><span>Saldo total: @Model.MonedaSimbolo @totalPendiente.ToString("N2")</span></footer>
         </section>
     </main>
 

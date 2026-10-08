@@ -1,4 +1,4 @@
-﻿
+
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Espacios_ObtenerPorId]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -11,6 +11,7 @@ GO
 -- Firma: FRANCO LARA - 26/05/2026 | Devuelve configuracion de horario por espacio deportivo (switch, dias y rango horario).
 -- Firma: FRANCO LARA - 06/06/2026 | Devuelve configuracion y lista de espacios compartidos para bloqueo bidireccional.
 -- Firma: FRANCO LARA - 08/06/2026 | Devuelve por separado bloqueo directo y componentes del espacio compuesto, e incluye fotos del espacio deportivo.
+-- Firma: FRANCO LARA - 06/10/2026 | Devuelve los identificadores globales de deporte y suelo persistidos en el espacio.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Espacios_ObtenerPorId]
     @NegocioId INT,
     @Id INT
@@ -21,8 +22,8 @@ BEGIN
         SELECT
             e.Id,
             e.SedeId,
-            e.TipoDeporteId,
-            e.TipoSueloId,
+            e.TipoDeporteSuperId,
+            e.TipoSueloSuperId,
             e.Codigo,
             e.Nombre,
             e.Capacidad,

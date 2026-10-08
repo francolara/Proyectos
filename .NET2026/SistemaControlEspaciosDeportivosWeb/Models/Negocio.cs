@@ -10,7 +10,7 @@ public class Negocio
     public string? NumeroDocumentoFiscal { get; set; }
     public string? DireccionFiscal { get; set; }
     public string? CodigoUbigeo { get; set; }
-    public int? MonedaId { get; set; }
+    public string CodigoMoneda { get; set; } = "PEN";
     public bool Activo { get; set; } = true;
     public DateTime FechaRegistro { get; set; } = DateTime.UtcNow;
 

@@ -1,4 +1,4 @@
-﻿
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -12,6 +12,7 @@ GO
 -- Firma: Codex - 16/04/2026 | Se agregan flags de reserva (precio/cancelacion) y limites operativos de negocio (SedesPermitidas/EspaciosPermitidos).
 -- Firma: Codex - 06/05/2026 | Se agrega EnviarComprobanteAutomatico en salida de configuracion del negocio.
 -- Firma: FRANCO LARA - 09/06/2026 | Se agrega HorasMaximasReservaCliente para controlar la duracion maxima permitida en la reserva publica.
+-- Firma: FRANCO LARA - 06/10/2026 | Expone CodigoMoneda y simbolo canonicos; conserva un ordinal reservado nulo durante la transicion ADO.NET.
 CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Obtener
     @NegocioId INT
 AS
@@ -26,7 +27,7 @@ BEGIN
             COALESCE(NULLIF(n.TipoDocumentoFiscal, N''), N'1') AS TipoDocumentoFiscal,
             COALESCE(NULLIF(n.NumeroDocumentoFiscal, N''), n.DocumentoFiscal) AS NumeroDocumentoFiscal,
             n.DireccionFiscal,
-            COALESCE(n.MonedaId, 1) AS MonedaId,
+            CAST(NULL AS INT) AS CompatibilidadMonedaReservada,
             n.CodigoUbigeo,
             CAST(COALESCE(n.PoliticaConfirmacionPago, 0) AS TINYINT) AS PoliticaConfirmacionPago,
             n.PorcentajeAdelantoMinimo,
@@ -40,8 +41,11 @@ BEGIN
             CAST(COALESCE(n.MinutosCancelacionNoConfirmada, 30) AS INT) AS MinutosCancelacionNoConfirmada,
             CAST(COALESCE(n.SedesPermitidas, 2) AS INT) AS SedesPermitidas,
             CAST(COALESCE(n.EspaciosPermitidos, 6) AS INT) AS EspaciosPermitidos,
-            CAST(COALESCE(n.HorasMaximasReservaCliente, 1) AS INT) AS HorasMaximasReservaCliente
+            CAST(COALESCE(n.HorasMaximasReservaCliente, 1) AS INT) AS HorasMaximasReservaCliente,
+            n.CodigoMoneda,
+            COALESCE(ms.Simbolo, n.CodigoMoneda) AS MonedaSimbolo
         FROM dbo.Negocios n
+        LEFT JOIN dbo.MonedasSuperMaestro ms ON ms.Codigo = n.CodigoMoneda
         WHERE n.Id = @NegocioId
           AND n.Activo = 1;
     END TRY

@@ -4,6 +4,7 @@
 -- Firma:         Registra cobro manual de suscripcion por negocio contemplando tipo y estado de pago.
 -- Firma:         10/06/2026 | Soporta conciliacion y aplicacion automatica a la suscripcion cuando el cobro se confirma.
 -- Firma:         FRANCO LARA - 21/07/2026 | Aplica al guardar el plan comercial, contrato y limites, conservando la fotografia anterior y nueva en el historial.
+-- Firma:         FRANCO LARA - 06/10/2026 | Valida y persiste CodigoMoneda canonico en el cobro de suscripcion.
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.Sp_NegociosSuscripcionPago_Registrar
     @NegocioId INT,
@@ -53,6 +54,9 @@ BEGIN
 
         IF @NegocioId IS NULL OR @NegocioId <= 0
             RAISERROR('Negocio invalido.', 16, 1);
+
+        IF NOT EXISTS (SELECT 1 FROM dbo.MonedasSuperMaestro WHERE Codigo = @MonedaNorm AND Activo = 1)
+            RAISERROR('El codigo de moneda del cobro no es valido.', 16, 1);
 
         IF NOT EXISTS (SELECT 1 FROM dbo.Negocios WHERE Id = @NegocioId)
             RAISERROR('Negocio no encontrado.', 16, 1);
@@ -142,7 +146,7 @@ BEGIN
         INSERT INTO dbo.NegociosSuscripcionPago
         (
             NegocioId, NegocioSuscripcionId, NegocioSuscripcionMovimientoId,
-            TipoPago, EstadoPago, Monto, Moneda,
+            TipoPago, EstadoPago, Monto, Moneda, CodigoMoneda,
             FechaPago, FechaVencimiento, OperacionNumero, EntidadFinanciera,
             ReferenciaExterna, AccionAplicacion, AplicarAlConfirmar, AplicadoSuscripcion,
             FechaAplicacion, UsuarioAplicacion, TipoCobroObjetivo, PlanComercialObjetivo,
@@ -152,7 +156,7 @@ BEGIN
         VALUES
         (
             @NegocioId, @NegocioSuscripcionId, @NegocioSuscripcionMovimientoId,
-            @TipoPagoNorm, @EstadoPagoNorm, @Monto, @MonedaNorm,
+            @TipoPagoNorm, @EstadoPagoNorm, @Monto, @MonedaNorm, @MonedaNorm,
             COALESCE(@FechaPago, SYSUTCDATETIME()), @FechaVencimiento,
             NULLIF(LTRIM(RTRIM(COALESCE(@OperacionNumero, N''))), N''),
             NULLIF(LTRIM(RTRIM(COALESCE(@EntidadFinanciera, N''))), N''),
