@@ -11,6 +11,7 @@ GO
 -- Create date:   27/04/2026
 -- =============================================
 -- Firma: Codex - 27/04/2026 | Script de limpieza total (negocios, sedes, clientes, reservas y usuarios) conservando solo cuentas con rol OwnerPlataforma, con modo PREVIEW/EXECUTE y borrado seguro por dependencias FK.
+-- Firma: FRANCO LARA - 08/10/2026 | Retira la tabla heredada de solicitudes publicas del alcance de limpieza.
 
 /*
     OBJETIVO
@@ -143,12 +144,6 @@ SELECT N'ReservasUsuariosPublicos', COUNT(1)
 FROM dbo.ReservasUsuariosPublicos rup
 WHERE EXISTS (SELECT 1 FROM @Reservas r WHERE r.Id = rup.ReservaId)
    OR EXISTS (SELECT 1 FROM @UsuariosEliminar u WHERE u.UsuarioId = rup.UsuarioId);
-
-INSERT INTO @Resumen (Tabla, Filas)
-SELECT N'SolicitudesReservaPublica', COUNT(1)
-FROM dbo.SolicitudesReservaPublica srp
-WHERE EXISTS (SELECT 1 FROM @Espacios e WHERE e.Id = srp.EspacioDeportivoId)
-   OR EXISTS (SELECT 1 FROM @Reservas r WHERE r.Id = srp.ReservaId);
 
 INSERT INTO @Resumen (Tabla, Filas)
 SELECT N'Pagos', COUNT(1)
@@ -290,11 +285,6 @@ BEGIN TRY
     WHERE EXISTS (SELECT 1 FROM @Reservas r WHERE r.Id = rup.ReservaId)
        OR EXISTS (SELECT 1 FROM @UsuariosEliminar u WHERE u.UsuarioId = rup.UsuarioId);
 
-    DELETE srp
-    FROM dbo.SolicitudesReservaPublica srp
-    WHERE EXISTS (SELECT 1 FROM @Espacios e WHERE e.Id = srp.EspacioDeportivoId)
-       OR EXISTS (SELECT 1 FROM @Reservas r WHERE r.Id = srp.ReservaId);
-
     DELETE cd
     FROM dbo.ComprobantesDetalle cd
     WHERE EXISTS (SELECT 1 FROM @Comprobantes c WHERE c.Id = cd.ComprobanteElectronicoId);
@@ -435,4 +425,3 @@ BEGIN CATCH
 
     RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
 END CATCH;
-

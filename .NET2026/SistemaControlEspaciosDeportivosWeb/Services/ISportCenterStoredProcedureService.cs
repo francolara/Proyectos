@@ -19,8 +19,6 @@ public interface ISportCenterStoredProcedureService
     Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId, int? negocioId, bool omitirFechaHorario = false, bool buscarCercaDeMi = false, decimal? latitudUsuario = null, decimal? longitudUsuario = null, decimal? radioKm = null);
     Task<(List<EspacioDisponibleViewModel> Espacios, int TotalRegistros)> HomeBuscarEspaciosDisponiblesPaginadoAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId, int? negocioId, int pagina = 1, int tamanoPagina = 9, bool omitirFechaHorario = false, bool buscarCercaDeMi = false, decimal? latitudUsuario = null, decimal? longitudUsuario = null, decimal? radioKm = null);
     Task<(int ReservaId, int NumeroPorNegocio)> HomeSolicitarReservaPublicaAsync(SolicitudReservaPublicaFormViewModel model);
-    Task<SolicitudNotificacionEmailViewModel?> HomeObtenerSolicitudParaNotificacionAsync(string codigoSolicitud);
-    Task<bool> HomeMarcarSolicitudNotificadaAsync(string codigoSolicitud);
     Task<ConfiguracionClubViewModel?> ConfiguracionClubObtenerAsync(int negocioId);
     Task<OnboardingChecklistViewModel> OnboardingChecklistValidarAsync(int negocioId);
     Task<bool> ConfiguracionClubActualizarAsync(ConfiguracionClubViewModel model, string usuario);
@@ -150,9 +148,6 @@ public interface ISportCenterStoredProcedureService
     Task<bool> NotificacionesMarcarLeidaAsync(int negocioId, int notificacionId, string? userId);
     Task<int> NotificacionesMarcarTodasLeidasAsync(int negocioId, string? userId);
 
-    Task<List<SolicitudPublicaItemViewModel>> SolicitudesPublicasListarAsync(int negocioId, DateOnly? fechaDesde = null, DateOnly? fechaHasta = null, int? estado = null);
-    Task<bool> SolicitudesPublicasActualizarEstadoAsync(SolicitudEstadoFormViewModel model, string usuario);
-    Task<(int ReservaId, int NumeroPorNegocio)> SolicitudesPublicasConvertirAReservaAsync(SolicitudConvertirFormViewModel model, string usuario);
     Task<string> HomeSolicitarAltaClubAsync(AltaClubSolicitudFormViewModel model);
     Task<string> HomeRegistrarClubConPruebaAsync(AltaClubSolicitudFormViewModel model, string usuarioId);
     Task<(List<AltaClubItemViewModel> Solicitudes, int TotalRegistros, int TotalPendientes, int TotalAprobados, int TotalRechazados)> AltasClubesListarAsync(int? estado = null, int pagina = 1, int tamanoPagina = 20);

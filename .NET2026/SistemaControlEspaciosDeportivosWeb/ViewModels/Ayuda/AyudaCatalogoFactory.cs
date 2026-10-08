@@ -229,7 +229,7 @@ public static class AyudaCatalogoFactory
         {
             "PANEL" => "DASHBOARD",
             "ESPACIOSDEPORTIVOS" => "ESPACIOS",
-            "SOLICITUDES" or "NOTIFICACIONES" => "RESERVAS",
+            "NOTIFICACIONES" => "RESERVAS",
             "CUENTA" => "USUARIOS",
             _ => clave
         };

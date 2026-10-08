@@ -190,16 +190,3 @@ public class ReservaPublicaPageViewModel
     public List<UsuarioPublicoResenaItemViewModel> Resenas { get; set; } = new();
     public List<SelectListItem> HorasFinDisponibles { get; set; } = new();
 }
-
-public class SolicitudNotificacionEmailViewModel
-{
-    public string CodigoSolicitud { get; set; } = string.Empty;
-    public string NombreSolicitante { get; set; } = string.Empty;
-    public string Correo { get; set; } = string.Empty;
-    public string Sede { get; set; } = string.Empty;
-    public string Espacio { get; set; } = string.Empty;
-    public DateOnly Fecha { get; set; }
-    public TimeOnly HoraInicio { get; set; }
-    public TimeOnly HoraFin { get; set; }
-    public bool NotificadoCliente { get; set; }
-}

@@ -11,6 +11,7 @@ GO
 -- Create date:   27/04/2026
 -- =============================================
 -- Firma: Codex - 27/04/2026 | Script de limpieza transaccional por NegocioId con modo PREVIEW/EXECUTE, borrado en orden de dependencias FK y resumen de filas afectadas.
+-- Firma: FRANCO LARA - 08/10/2026 | Retira la tabla heredada de solicitudes publicas del alcance de limpieza.
 
 /*
     OBJETIVO
@@ -27,7 +28,6 @@ GO
     - dbo.ComprobantesDetalle
     - dbo.ComprobantesElectronicos
     - dbo.Pagos
-    - dbo.SolicitudesReservaPublica
     - dbo.ReservasUsuariosPublicos
     - dbo.Reservas
     - dbo.BloqueosHorario
@@ -107,12 +107,6 @@ FROM dbo.Pagos p
 WHERE EXISTS (SELECT 1 FROM @Reservas r WHERE r.Id = p.ReservaId);
 
 INSERT INTO @Resumen (Tabla, Filas)
-SELECT 'SolicitudesReservaPublica', COUNT(1)
-FROM dbo.SolicitudesReservaPublica srp
-WHERE EXISTS (SELECT 1 FROM @Espacios e WHERE e.Id = srp.EspacioDeportivoId)
-   OR EXISTS (SELECT 1 FROM @Reservas r WHERE r.Id = srp.ReservaId);
-
-INSERT INTO @Resumen (Tabla, Filas)
 SELECT 'ReservasUsuariosPublicos', COUNT(1)
 FROM dbo.ReservasUsuariosPublicos rup
 WHERE EXISTS (SELECT 1 FROM @Reservas r WHERE r.Id = rup.ReservaId);
@@ -167,11 +161,6 @@ BEGIN TRY
     FROM dbo.Pagos p
     WHERE EXISTS (SELECT 1 FROM @Reservas r WHERE r.Id = p.ReservaId);
 
-    DELETE srp
-    FROM dbo.SolicitudesReservaPublica srp
-    WHERE EXISTS (SELECT 1 FROM @Espacios e WHERE e.Id = srp.EspacioDeportivoId)
-       OR EXISTS (SELECT 1 FROM @Reservas r WHERE r.Id = srp.ReservaId);
-
     DELETE rup
     FROM dbo.ReservasUsuariosPublicos rup
     WHERE EXISTS (SELECT 1 FROM @Reservas r WHERE r.Id = rup.ReservaId);
@@ -210,4 +199,3 @@ BEGIN CATCH
 
     RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
 END CATCH;
-

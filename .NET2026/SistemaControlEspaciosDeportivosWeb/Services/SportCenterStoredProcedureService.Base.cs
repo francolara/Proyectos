@@ -721,39 +721,6 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         throw new InvalidOperationException("El procedimiento Sp_Home_SolicitarReservaPublica no devolvio el contrato ReservaId/NumeroPorNegocio.");
     }
 
-    public async Task<SolicitudNotificacionEmailViewModel?> HomeObtenerSolicitudParaNotificacionAsync(string codigoSolicitud)
-    {
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_Home_ObtenerSolicitudParaNotificacion", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@CodigoSolicitud", codigoSolicitud, SqlDbType.NVarChar);
-        await using var dr = await cmd.ExecuteReaderAsync();
-        if (!await dr.ReadAsync()) return null;
-
-        return new SolicitudNotificacionEmailViewModel
-        {
-            CodigoSolicitud = dr.GetString(0),
-            NombreSolicitante = dr.GetString(1),
-            Correo = dr.IsDBNull(2) ? string.Empty : dr.GetString(2),
-            Sede = dr.GetString(3),
-            Espacio = dr.GetString(4),
-            Fecha = DateOnly.FromDateTime(dr.GetDateTime(5)),
-            HoraInicio = TimeOnly.FromTimeSpan(dr.GetTimeSpan(6)),
-            HoraFin = TimeOnly.FromTimeSpan(dr.GetTimeSpan(7)),
-            NotificadoCliente = ReadBool(dr, 8)
-        };
-    }
-
-    public async Task<bool> HomeMarcarSolicitudNotificadaAsync(string codigoSolicitud)
-    {
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_Home_MarcarSolicitudNotificada", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@CodigoSolicitud", codigoSolicitud, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-        return true;
-    }
-
     public async Task<List<NegocioAccesoViewModel>> PanelListarNegociosUsuarioAsync(string usuarioId)
     {
         var list = new List<NegocioAccesoViewModel>();

@@ -1,4 +1,4 @@
-﻿-- =============================================
+-- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   12/06/2026
 -- Firma:         Limpieza integral de datos de negocio y usuarios (excepto superadmin),
@@ -6,6 +6,7 @@
 --                referencias externas y tablas operativas adicionales con reinicio de IDENTITY.
 -- =============================================
 -- Firma:         FRANCO LARA - 22/09/2026 | Corrige la fecha de creacion e incorpora la limpieza y reinicio de identidad de resenas publicas de reservas.
+-- Firma:         FRANCO LARA - 08/10/2026 | Retira la tabla heredada de solicitudes publicas del proceso de limpieza.
 
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -36,7 +37,6 @@ BEGIN TRY
     DELETE FROM dbo.ReservasUsuariosPublicosResenas;
     DELETE FROM dbo.ReservasUsuariosPublicos;
     DELETE FROM dbo.CuponesUso;
-    DELETE FROM dbo.SolicitudesReservaPublica;
     DELETE FROM dbo.ComprobantesDetalle;
     DELETE FROM dbo.Pagos;
     DELETE FROM dbo.ComprobantesElectronicos;
@@ -155,7 +155,6 @@ BEGIN TRY
         (N'ReservasUsuariosPublicosResenas'),
         (N'ReservasUsuariosPublicos'),
         (N'CuponesUso'),
-        (N'SolicitudesReservaPublica'),
         (N'ComprobantesDetalle'),
         (N'Pagos'),
         (N'ComprobantesElectronicos'),

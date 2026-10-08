@@ -1,4 +1,4 @@
-﻿
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -9,12 +9,13 @@ GO
 -- Create date:   06/10/2026
 -- Description:   Fase 2. Persiste codigos monetarios canonicos en rutas de escritura.
 -- Firma:         FRANCO LARA - 06/10/2026 | Migra escrituras canonicas, corrige parametros de auditoria, valida SP publicados y cierra columnas transaccionales como obligatorias.
+-- Firma:         FRANCO LARA - 08/10/2026 | Retira la validacion del flujo heredado de solicitudes publicas; la reserva publica vigente usa Sp_Home_SolicitarReservaPublica y Sp_Reservas_Crear.
 -- Requiere:      20261006_CatalogosCanonicos_MonedasYComprobantes.sql
 -- Despliegue:    Publicar primero los SP de escritura enumerados al final de este encabezado
 --                y ejecutar despues este script para validar/backfillear y cerrar NOT NULL.
 -- SP requeridos: Sp_Reservas_Crear, Sp_Reservas_Actualizar, Sp_Pagos_Crear,
 --                Sp_Espacios_Crear, Sp_Espacios_Actualizar, Sp_Cupones_Crear,
---                Sp_SolicitudesPublicas_ConvertirAReserva, Sp_Comprobantes_Crear,
+--                Sp_Comprobantes_Crear,
 --                Sp_NegociosSuscripcionPago_Registrar, Sp_Maestros_Monedas_Crear
 --                y Sp_Maestros_Monedas_Actualizar.
 -- =============================================
@@ -116,8 +117,6 @@ BEGIN TRY
         RAISERROR('Fase 2 incompleta: publique Sp_Espacios_Actualizar con moneda canonica.', 16, 1);
     IF COALESCE(OBJECT_DEFINITION(OBJECT_ID(N'dbo.Sp_Cupones_Crear')), N'') NOT LIKE N'%CodigoMoneda%'
         RAISERROR('Fase 2 incompleta: publique Sp_Cupones_Crear con moneda canonica.', 16, 1);
-    IF COALESCE(OBJECT_DEFINITION(OBJECT_ID(N'dbo.Sp_SolicitudesPublicas_ConvertirAReserva')), N'') NOT LIKE N'%CodigoMoneda%'
-        RAISERROR('Fase 2 incompleta: publique Sp_SolicitudesPublicas_ConvertirAReserva con moneda canonica.', 16, 1);
     IF COALESCE(OBJECT_DEFINITION(OBJECT_ID(N'dbo.Sp_Comprobantes_Crear')), N'') NOT LIKE N'%CodigoTipoComprobante%'
        OR COALESCE(OBJECT_DEFINITION(OBJECT_ID(N'dbo.Sp_Comprobantes_Crear')), N'') NOT LIKE N'%CodigoMoneda%'
         RAISERROR('Fase 2 incompleta: publique Sp_Comprobantes_Crear con codigos canonicos.', 16, 1);

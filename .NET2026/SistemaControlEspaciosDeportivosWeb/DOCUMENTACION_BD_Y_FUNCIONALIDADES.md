@@ -1,5 +1,12 @@
 # SistemaControlEspaciosDeportivosWeb
 
+## Actualizacion 08/10/2026 - Retiro del flujo heredado de solicitudes publicas
+- La reserva publica vigente crea directamente una reserva mediante `Sp_Home_SolicitarReservaPublica` y `Sp_Reservas_Crear`; no utiliza una entidad intermedia de solicitudes.
+- Se retiran el controlador y las vistas heredadas que permitian abrir por URL el mantenimiento anterior, junto con sus contratos ADO.NET y modelos exclusivos.
+- Se retiran los procedimientos y la tabla del flujo anterior, asi como el modulo de permisos que lo exponia. El script incremental de retiro valida primero que la tabla no contenga historicos.
+- Las altas de clubes continúan administrándose desde `PlataformaController` y sus procedimientos propios; no dependen del modulo retirado.
+- Orden de despliegue: publicar la aplicación sin las rutas heredadas, publicar `Sp_Seguridad_SeedModulosPermisosBase` y ejecutar `Basededatos/SportCenter/Script/20261008_RetirarSolicitudesPublicasHeredadas.sql`. Si existen filas históricas, el script se detiene antes de modificar la base.
+
 ## Actualizacion 08/10/2026 - Reserva publica y correlativo visible
 - Se corrigio el contrato encadenado entre `Sp_Home_SolicitarReservaPublica` y `Sp_Reservas_Crear`. El procedimiento interno devolvia anticipadamente un result set con un solo Id y la capa ADO.NET lo interpretaba como el resultado final, antes de recibir `ReservaId` y `NumeroPorNegocio`.
 - `Sp_Reservas_Crear` incorpora `@DevolverResultado BIT = 1`; conserva el comportamiento de las llamadas directas y permite que los procedimientos orquestadores utilicen solamente `@ReservaId OUTPUT`.
@@ -89,7 +96,7 @@
 - `Sp_Maestros_Monedas_Actualizar`, utilizado tambien por la eliminacion logica, impide inactivar la moneda predeterminada o una moneda con reservas, pagos, comprobantes, tarifas normales/de feriado o cupones del negocio.
 - `Sp_Maestros_Monedas_Crear` permite habilitar mas de una moneda para el negocio, sin repetir la misma moneda del supermaestro. Asi el club puede cambiar su moneda predeterminada sin alterar ni deshabilitar la utilizada por sus operaciones historicas.
 - El script `Basededatos/SportCenter/Script/20261006_Fase2_EscriturasMonetariasCanonicas.sql` vuelve a completar los historicos, detiene el despliegue si queda algun codigo nulo y cambia a `NOT NULL` las columnas canonicas de las tablas transaccionales.
-- Orden de despliegue: ejecutar primero `20261006_CatalogosCanonicos_MonedasYComprobantes.sql`; publicar despues los SP `Sp_Reservas_Crear`, `Sp_Reservas_Actualizar`, `Sp_Pagos_Crear`, `Sp_Espacios_Crear`, `Sp_Espacios_Actualizar`, `Sp_Cupones_Crear`, `Sp_SolicitudesPublicas_ConvertirAReserva`, `Sp_Comprobantes_Crear`, `Sp_NegociosSuscripcionPago_Registrar`, `Sp_Maestros_Monedas_Crear` y `Sp_Maestros_Monedas_Actualizar`; finalmente ejecutar `20261006_Fase2_EscriturasMonetariasCanonicas.sql`.
+- Orden de despliegue: ejecutar primero `20261006_CatalogosCanonicos_MonedasYComprobantes.sql`; publicar despues los SP `Sp_Reservas_Crear`, `Sp_Reservas_Actualizar`, `Sp_Pagos_Crear`, `Sp_Espacios_Crear`, `Sp_Espacios_Actualizar`, `Sp_Cupones_Crear`, `Sp_Comprobantes_Crear`, `Sp_NegociosSuscripcionPago_Registrar`, `Sp_Maestros_Monedas_Crear` y `Sp_Maestros_Monedas_Actualizar`; finalmente ejecutar `20261006_Fase2_EscriturasMonetariasCanonicas.sql`.
 - La retirada definitiva de `MonedaId`, `TipoMoneda` y `TipoComprobante` queda fuera de esta fase: se hara despues de migrar las lecturas, reportes y contratos ADO.NET para evitar una ruptura de compatibilidad.
 
 ## Actualizacion 06/10/2026 - Fase 1: Catalogos canonicos en operaciones
@@ -144,7 +151,6 @@
   - `Services/SportCenterStoredProcedureService.ReservasPagosComprobantes.cs`
   - `Services/SportCenterStoredProcedureService.Clientes.cs`
   - `Services/SportCenterStoredProcedureService.Reportes.cs`
-- `Services/SportCenterStoredProcedureService.Solicitudes.cs`
 - `Services/SportCenterStoredProcedureService.Usuarios.cs`
 - `Services/SportCenterStoredProcedureService.Promociones.cs`
 - `Services/SportCenterStoredProcedureService.Maestros.cs`
@@ -165,7 +171,6 @@
 - `Controllers/ClientesController.cs`
 - `Controllers/EspaciosController.cs`
 - `Controllers/ReservasController.cs`
-- `Controllers/SolicitudesController.cs`
 - `Controllers/UsuariosController.cs`
 - `Controllers/PromocionesController.cs`
 - `Controllers/PagosController.cs`
@@ -391,8 +396,6 @@
   - Los botones `Imprimir` de Reportes y Dashboard abren vistas HTML independientes del panel administrativo; Reportes separa pagos y reservas, mientras Dashboard organiza resumen gerencial, desempeno y seguimiento operativo.
 
 ### 10_Home_Solicitudes_Publicas.sql
-- Tabla:
-  - `SolicitudesReservaPublica`
 - `Sp_Home_SolicitarReservaPublica`
 - Actualizacion 14/04/2026:
   - `Sp_Home_SolicitarReservaPublica` ahora crea **reserva real** (canal `CLIENTE_WEB`) en lugar de solicitud.
@@ -405,17 +408,6 @@
   - Con esto se elimina el error `Cannot use the ROLLBACK statement within an INSERT-EXEC statement` y `ReservasUsuariosPublicos.ReservaId` mantiene el Id real de `Reservas`.
 - Actualizacion 18/06/2026:
   - La reserva publica exige `Telefono` obligatorio antes de confirmar el registro desde `Home/Reservar`.
-
-### 11_Solicitudes_Gestion.sql
-- `Sp_Seguridad_SeedModulosPermisosBase` (agrega modulo `SOLICITUDES`)
-- `Sp_SolicitudesPublicas_Listar`
-- `Sp_SolicitudesPublicas_ActualizarEstado`
-- `Sp_SolicitudesPublicas_ConvertirAReserva`
-- `Sp_SolicitudesPublicas_ActualizarEstado` devuelve error si la solicitud no existe o no pertenece al negocio.
-
-### 12_Home_Notificaciones_Seguimiento.sql
-- `Sp_Home_ObtenerSolicitudParaNotificacion`
-- `Sp_Home_MarcarSolicitudNotificada`
 
 ### 13_Usuarios_Negocio_Gestion.sql
 - `Sp_Seguridad_SeedModulosPermisosBase` (agrega modulo `USUARIOS`)
@@ -469,7 +461,6 @@
 - `Sp_Notificaciones_MarcarTodasLeidas`
 - Actualizacion 14/04/2026:
   - Campanita en barra admin consulta cada 20 segundos (ajustable a 30) y muestra acumulado de notificaciones no leidas por negocio.
-  - `Sp_SolicitudesPublicas_ConvertirAReserva` crea notificacion de tipo `RESERVA_CLIENTE_WEB` al generar reserva desde solicitud de portal cliente.
 - Actualizacion 16/04/2026:
   - Al hacer click en una notificacion de la campanita se marca como leida y se descuenta del badge.
   - Se agrega accion `Marcar todas` en campanita para limpiar en bloque las pendientes del negocio.
@@ -1070,7 +1061,6 @@
   - `dbo.Sp_ConfiguracionClub_Obtener.StoredProcedure.sql`
   - `dbo.Sp_ConfiguracionClub_Actualizar.StoredProcedure.sql`
   - `dbo.Sp_Comprobantes_Crear.StoredProcedure.sql`
-  - `dbo.Sp_SolicitudesPublicas_ConvertirAReserva.StoredProcedure.sql`
 49. Ejecutar `Basededatos/SportCenter/Script/20260406_Maestros_TiposSueloSuperMaestro.sql`.
 50. Ejecutar los SP individuales actualizados/nuevos:
   - `dbo.Sp_Maestros_TiposSueloSuper_Listar.StoredProcedure.sql`
@@ -1090,7 +1080,6 @@
   - `dbo.Sp_Reservas_Crear.StoredProcedure.sql`
   - `dbo.Sp_Reservas_Actualizar.StoredProcedure.sql`
   - `dbo.Sp_Reservas_CambiarEstadoRapido.StoredProcedure.sql`
-  - `dbo.Sp_SolicitudesPublicas_ConvertirAReserva.StoredProcedure.sql`
 55. Ejecutar `Basededatos/SportCenter/Script/20260406_Sedes_ConsideracionesReserva.sql` (solo estructura).
 56. Ejecutar los SP individuales actualizados:
   - `dbo.Sp_Sedes_Crear.StoredProcedure.sql`
@@ -1118,7 +1107,6 @@
   - `dbo.Sp_Clientes_Listar.StoredProcedure.sql`
   - `dbo.Sp_Clientes_Eliminar.StoredProcedure.sql` (inactivacion logica)
   - `dbo.Sp_Combos_Clientes.StoredProcedure.sql`
-  - `dbo.Sp_SolicitudesPublicas_ConvertirAReserva.StoredProcedure.sql`
 66. Ejecutar scripts de validaciones operativas y listado:
   - `Basededatos/SportCenter/Script/20260407_Validaciones_Inactivacion_Clientes_Espacios_ReservasListado.sql`
   - `Basededatos/SportCenter/Script/20260407_Clientes_Documento_Reglas.sql`
@@ -1270,7 +1258,7 @@
   - `Sp_Comprobantes_Crear` soporta documento `RI` (recibo interno), forzando `Igv = 0` y `SubTotal = Total`.
   - Sp_Comprobantes_ObtenerPorId`r
 - Actualizacion 07/05/2026:
-  - Sp_Comprobantes_ObtenerVisualizacion corrige EsTributario para evaluarse por CodigoSunat ( 1, 3, 7, 8) y no por IDs fijos de TipoComprobante. devuelve `CodigoDocumentoComprobante` para la UI.
+  - Sp_Comprobantes_ObtenerVisualizacion corrige EsTributario para evaluarse por CodigoSunat (01,03,07,08) y no por IDs fijos de TipoComprobante. devuelve `CodigoDocumentoComprobante` para la UI.
   - `Sp_Comprobantes_Listar` muestra etiquetas legibles para tipo (`Factura/Boleta/Recibo Interno`) y estado.
 - Pagos (integracion con comprobantes):
   - el listado agrega botones `Emitir CPE` y `Emitir Recibo` segun checks de configuracion del negocio.
@@ -1320,7 +1308,7 @@
   - al generar `NC (07)`, el comprobante referencia se mantiene activo; la reemision del comprobante principal se habilita por regla de negocio en `Sp_Comprobantes_Crear` cuando existe NC activa sobre el comprobante principal.
   - Sp_Comprobantes_ObtenerPorId`r
 - Actualizacion 07/05/2026:
-  - Sp_Comprobantes_ObtenerVisualizacion corrige EsTributario para evaluarse por CodigoSunat ( 1, 3, 7, 8) y no por IDs fijos de TipoComprobante., `Sp_Comprobantes_Listar` y `Sp_Comprobantes_ObtenerVisualizacion` ahora soportan codigos `07/08` y datos de nota/referencia.
+  - Sp_Comprobantes_ObtenerVisualizacion corrige EsTributario para evaluarse por CodigoSunat (01,03,07,08) y no por IDs fijos de TipoComprobante., `Sp_Comprobantes_Listar` y `Sp_Comprobantes_ObtenerVisualizacion` ahora soportan codigos `07/08` y datos de nota/referencia.
   - `Sp_Comprobantes_Listar` obtiene tipo/codigo/referencias desde `NegociosTiposDocumentoComprobante` + `TiposDocumentoComprobanteSuperMaestro` (sin mapeo rigido por Id), manteniendo comportamiento multi-negocio.
   - en columnas `Referencia` (listado de comprobantes y pagos), el prefijo del documento usa `TiposDocumentoComprobanteSuperMaestro.Abreviatura` (con fallback a `Nombre`).
   - en pagos y combos de reservas para comprobantes, la reserva se considera disponible para reemision cuando el comprobante principal activo tiene una NC activa asociada.

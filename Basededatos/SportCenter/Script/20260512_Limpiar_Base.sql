@@ -1,10 +1,11 @@
-﻿-- =============================================
+-- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   12/05/2026
 -- Firma:         Limpieza integral de datos de negocio y usuarios (excepto superadmin),
 --                conservando ModulosSistema, incluyendo desafios, usuarios publicos,
 --                referencias externas y tablas operativas adicionales con reinicio de IDENTITY.
 -- =============================================
+-- Firma:         FRANCO LARA - 08/10/2026 | Retira la tabla heredada de solicitudes publicas del proceso de limpieza.
 
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -27,7 +28,6 @@ BEGIN TRY
     DELETE FROM dbo.Desafio;
     DELETE FROM dbo.ReservasUsuariosPublicos;
     DELETE FROM dbo.CuponesUso;
-    DELETE FROM dbo.SolicitudesReservaPublica;
     DELETE FROM dbo.ComprobantesDetalle;
     DELETE FROM dbo.Pagos;
     DELETE FROM dbo.ComprobantesElectronicos;
@@ -135,7 +135,6 @@ BEGIN TRY
         (N'Desafio'),
         (N'ReservasUsuariosPublicos'),
         (N'CuponesUso'),
-        (N'SolicitudesReservaPublica'),
         (N'ComprobantesDetalle'),
         (N'Pagos'),
         (N'ComprobantesElectronicos'),
