@@ -1,16 +1,14 @@
-﻿-- =============================================
+-- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   06/10/2026
 -- Description:   Valida el retiro de dependencias runtime de IDs locales antes de la Fase 4B.
+-- Firma:         FRANCO LARA - 08/10/2026 | Permite negocios pendientes de configuracion aunque conserven un CodigoMoneda aparente sin asociacion activa.
 -- =============================================
 
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
 BEGIN TRY
-    IF EXISTS (SELECT 1 FROM dbo.Negocios WHERE CodigoMoneda IS NULL OR LTRIM(RTRIM(CodigoMoneda)) = N'')
-        RAISERROR('Fase 4A bloqueada: existen negocios sin CodigoMoneda.', 16, 1);
-
     IF EXISTS (SELECT 1 FROM dbo.Reservas WHERE CodigoMoneda IS NULL OR LTRIM(RTRIM(CodigoMoneda)) = N'')
         RAISERROR('Fase 4A bloqueada: existen reservas sin CodigoMoneda.', 16, 1);
 
@@ -27,21 +25,6 @@ BEGIN TRY
            OR LTRIM(RTRIM(ce.CodigoTipoComprobante)) = N''
     )
         RAISERROR('Fase 4A bloqueada: existen comprobantes sin codigos canonicos.', 16, 1);
-
-    IF EXISTS
-    (
-        SELECT 1
-        FROM dbo.Negocios n
-        WHERE n.CodigoMoneda IS NOT NULL
-          AND NOT EXISTS
-          (
-              SELECT 1
-              FROM dbo.Monedas m
-              WHERE m.NegocioId = n.Id
-                AND m.Codigo = n.CodigoMoneda
-          )
-    )
-        RAISERROR('Fase 4A bloqueada: hay monedas configuradas sin asociacion al negocio.', 16, 1);
 
     IF COALESCE(OBJECT_DEFINITION(OBJECT_ID(N'dbo.Sp_ConfiguracionClub_Actualizar')), N'') NOT LIKE N'%@CodigoMoneda%'
         RAISERROR('Fase 4A bloqueada: Sp_ConfiguracionClub_Actualizar no usa @CodigoMoneda.', 16, 1);

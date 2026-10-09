@@ -9,6 +9,7 @@ GO
 -- Firma: Codex - 19/04/2026 | Agrega UsuariosPermitidos como limite operativo adicional para gestion de usuarios por negocio.
 -- Firma: FRANCO LARA - 18/06/2026 | Agrega TipoPlan en Negocios para distinguir capacidades Basico y Full.
 -- Firma: FRANCO LARA - 06/10/2026 | Usa CodigoMoneda canonico y retira MonedaId de la configuracion del negocio.
+-- Firma: FRANCO LARA - 08/10/2026 | Permite CodigoMoneda nulo hasta que el negocio complete su configuracion.
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -20,7 +21,7 @@ CREATE TABLE [dbo].[Negocios](
     [DocumentoFiscal] [nvarchar](max) NULL,
     [Activo] [bit] NOT NULL,
     [FechaRegistro] [datetime2](7) NOT NULL,
-    [CodigoMoneda] [nvarchar](10) NOT NULL,
+    [CodigoMoneda] [nvarchar](10) NULL,
     [PoliticaConfirmacionPago] [tinyint] NOT NULL,
     [PorcentajeAdelantoMinimo] [decimal](5,2) NULL,
     [PorcentajeIgv] [int] NOT NULL,
@@ -45,8 +46,6 @@ CREATE TABLE [dbo].[Negocios](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_PoliticaConfirmacionPago]  DEFAULT ((0)) FOR [PoliticaConfirmacionPago]
-GO
-ALTER TABLE [dbo].[Negocios] ADD CONSTRAINT [DF_Negocios_CodigoMoneda] DEFAULT (N'PEN') FOR [CodigoMoneda]
 GO
 ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_PorcentajeIgv]  DEFAULT ((18)) FOR [PorcentajeIgv]
 GO

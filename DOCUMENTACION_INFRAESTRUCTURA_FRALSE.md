@@ -659,7 +659,7 @@ El script `/usr/local/sbin/fralse-deploy` debe aplicar una lista cerrada de serv
 9. Validar página, función modificada, health checks y logs.
 10. Conservar la versión anterior hasta cerrar la validación.
 
-Para Zona Deportiva, `/healthz/live` confirma que el proceso responde y `/healthz/ready` confirma además la conexión SQL y el contrato canónico `CANONICO_MAESTROS_V2` (moneda, comprobantes, deporte y suelo). Antes de publicar una imagen que incluya esta validación se debe desplegar `dbo.Sp_Sistema_ValidarContratoCanonico`; de lo contrario readiness permanecerá no saludable. Las conciliaciones históricas completas se ejecutan mediante los scripts de Fase 5 y Fase 6, no dentro de cada sonda HTTP. La migración de espacios se despliega en dos pasos: Fase 7A aditiva antes de la aplicación y Fase 7B destructiva solo después de pruebas y con respaldo restaurable verificado.
+Para Zona Deportiva, `/healthz/live` confirma que el proceso responde y `/healthz/ready` confirma la conexión con SQL Server. La aplicación no ejecuta ni requiere `dbo.Sp_Sistema_ValidarContratoCanonico` en tiempo de ejecución. La auditoría canónica y las conciliaciones históricas se ejecutan de manera manual mediante los scripts de Fase 5 y Fase 6. La migración de espacios se despliega en dos pasos: Fase 7A aditiva antes de la aplicación y Fase 7B destructiva solo después de pruebas y con respaldo restaurable verificado.
 
 ---
 

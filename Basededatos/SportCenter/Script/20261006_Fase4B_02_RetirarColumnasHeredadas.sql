@@ -1,7 +1,8 @@
-﻿-- =============================================
+-- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   06/10/2026
 -- Description:   Elimina fisicamente IDs locales despues de publicar y validar contratos canonicos.
+-- Firma:         FRANCO LARA - 08/10/2026 | Repite la migracion segura de MonedaId, permite CodigoMoneda nulo y retira dependencias heredadas.
 -- =============================================
 -- Requisitos:
 -- 1. Backup verificado.
@@ -24,15 +25,6 @@ BEGIN TRY
     IF EXISTS
     (
         SELECT 1
-        FROM dbo.Negocios n
-        WHERE n.CodigoMoneda IS NULL
-           OR LTRIM(RTRIM(n.CodigoMoneda)) = N''
-    )
-        RAISERROR('Fase 4B bloqueada: existen negocios sin CodigoMoneda.', 16, 1);
-
-    IF EXISTS
-    (
-        SELECT 1
         FROM dbo.ComprobantesElectronicos ce
         WHERE ce.CodigoMoneda IS NULL
            OR LTRIM(RTRIM(ce.CodigoMoneda)) = N''
@@ -47,9 +39,9 @@ BEGIN TRY
         FROM sys.columns c
         WHERE c.object_id = OBJECT_ID(N'dbo.Negocios')
           AND c.name = N'CodigoMoneda'
-          AND c.is_nullable = 1
+          AND c.is_nullable = 0
     )
-        RAISERROR('Fase 4B bloqueada: Negocios.CodigoMoneda aun permite valores nulos; ejecute primero 4B_01.', 16, 1);
+        RAISERROR('Fase 4B bloqueada: Negocios.CodigoMoneda aun es obligatorio; ejecute primero 4B_01.', 16, 1);
 
     IF NOT EXISTS
     (
@@ -114,6 +106,30 @@ BEGIN TRY
     BEGIN TRANSACTION;
 
     DECLARE @Sql NVARCHAR(MAX);
+
+    IF COL_LENGTH(N'dbo.Negocios', N'MonedaId') IS NOT NULL
+    BEGIN
+        EXEC sys.sp_executesql
+            N'UPDATE n
+              SET n.CodigoMoneda = COALESCE(msm.Codigo, m.Codigo)
+              FROM dbo.Negocios n
+              INNER JOIN dbo.Monedas m ON m.Id = n.MonedaId
+              LEFT JOIN dbo.MonedasSuperMaestro msm ON msm.Id = m.MonedaSuperId
+              WHERE NULLIF(LTRIM(RTRIM(n.CodigoMoneda)), N'''') IS NULL;';
+    END;
+
+    UPDATE n
+    SET n.CodigoMoneda = NULL
+    FROM dbo.Negocios n
+    WHERE NULLIF(LTRIM(RTRIM(n.CodigoMoneda)), N'') IS NULL
+       OR NOT EXISTS
+          (
+              SELECT 1
+              FROM dbo.Monedas m
+              WHERE m.NegocioId = n.Id
+                AND m.Codigo = n.CodigoMoneda
+                AND m.Activo = 1
+          );
 
     SELECT @Sql = STRING_AGG(cmd.Comando, NCHAR(10))
     FROM

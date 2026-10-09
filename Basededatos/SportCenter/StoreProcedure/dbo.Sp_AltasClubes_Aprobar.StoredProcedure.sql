@@ -6,6 +6,7 @@
 -- Firma:         FRANCO LARA - 21/07/2026 | Conserva TipoPlan Basico y los limites predeterminados, sin asociarlos al plan comercial publico, y usa 15 dias de prueba por defecto.
 -- Firma:         Codex - 01/10/2026 | Asigna el correlativo visible de sede al crear el negocio aprobado.
 -- Firma:         FRANCO LARA - 06/10/2026 | Inicializa exclusivamente CodigoMoneda canonico PEN al crear el negocio.
+-- Firma:         FRANCO LARA - 08/10/2026 | Deja CodigoMoneda nulo hasta completar la configuracion del negocio.
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.Sp_AltasClubes_Aprobar
     @Id INT,
@@ -42,7 +43,7 @@ BEGIN
         BEGIN TRANSACTION;
 
         INSERT INTO dbo.Negocios (NombreComercial, RazonSocial, DocumentoFiscal, Activo, FechaRegistro, CodigoMoneda, TipoPlan)
-        VALUES (@NombreClub, NULL, NULL, 1, SYSUTCDATETIME(), N'PEN', N'Basico');
+        VALUES (@NombreClub, NULL, NULL, 1, SYSUTCDATETIME(), NULL, N'Basico');
         SET @NegocioId = SCOPE_IDENTITY();
 
         EXEC dbo.Sp_NegocioCorrelativos_ObtenerSiguiente

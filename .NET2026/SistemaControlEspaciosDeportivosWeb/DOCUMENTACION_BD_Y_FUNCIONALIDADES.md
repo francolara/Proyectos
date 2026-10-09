@@ -1,5 +1,24 @@
 # SistemaControlEspaciosDeportivosWeb
 
+## Actualizacion 08/10/2026 - Limpieza integral alineada al esquema final
+- `ZonaDeportiva_Limpiar_Base.sql` elimina los datos operativos y de negocio conservando el superadministrador y los catalogos globales del sistema.
+- La limpieza incluye explicitamente `NegocioCorrelativos` y no hace referencia a `NegocioOnboardingEstado`, ya que esta tabla no forma parte de la base desplegada.
+- `HomeEspaciosReferencialesExternos` y `WebBanners` se conservan durante la limpieza porque contienen configuracion global que no debe reiniciarse.
+- Se retiraron las referencias heredadas a `SolicitudesReservaPublica` y `Negocios.MonedaId` para que el script pueda ejecutarse despues de consolidar el esquema canonico.
+- Solo se reinician tablas con columna `IDENTITY`; `NegocioCorrelativos` no requiere reseed.
+
+## Actualizacion 08/10/2026 - Moneda opcional durante el alta del negocio
+- `Negocios.CodigoMoneda` permanece nullable mientras el negocio esta registrado pero aun no completa su configuracion; no se asigna `PEN` de forma implicita.
+- Fase 4A permite negocios sin moneda configurada e ignora codigos aparentes heredados que no tengan una asociacion local activa; mantiene las validaciones de los datos transaccionales.
+- `20261006_Fase4B_01_PrepararRetiroColumnasHeredadas.sql` recupera el codigo desde `MonedaId` cuando la configuracion heredada es valida, vuelve nullable `CodigoMoneda`, convierte cadenas vacias y asociaciones inactivas a `NULL`, y elimina cualquier restriccion DEFAULT de la columna.
+- `20261006_Fase4B_02_RetirarColumnasHeredadas.sql` puede retirar `Negocios.MonedaId` y sus dependencias aunque existan negocios pendientes de configuracion.
+- La moneda sigue siendo obligatoria e historica en reservas, pagos, tarifas, cupones y comprobantes. `Sp_ConfiguracionClub_Actualizar` la valida y la asigna cuando el negocio completa su configuracion.
+
+## Actualizacion 08/10/2026 - Readiness sin auditoria canonica en tiempo de ejecucion
+- `/healthz/ready` comprueba exclusivamente que la aplicacion pueda conectarse a SQL Server; ya no ejecuta `Sp_Sistema_ValidarContratoCanonico` en cada sonda.
+- La integridad canonica ya certificada en QA no forma parte del flujo operativo ni condiciona el arranque o la disponibilidad de la aplicacion.
+- `Sp_Sistema_ValidarContratoCanonico` se conserva como auditor manual para las Fases 5 y 6 y para futuras migraciones controladas; la aplicacion publicada no depende de su existencia.
+
 ## Actualizacion 08/10/2026 - Retiro del flujo heredado de solicitudes publicas
 - La reserva publica vigente crea directamente una reserva mediante `Sp_Home_SolicitarReservaPublica` y `Sp_Reservas_Crear`; no utiliza una entidad intermedia de solicitudes.
 - Se retiran el controlador y las vistas heredadas que permitian abrir por URL el mantenimiento anterior, junto con sus contratos ADO.NET y modelos exclusivos.
@@ -28,9 +47,9 @@
 - Orden de despliegue: respaldo verificado; ejecutar Fase 7A; publicar los procedimientos de espacios, combos, Home, onboarding y el validador; publicar la aplicación; probar alta/edición/listado/búsqueda pública; habilitar y ejecutar Fase 7B; ejecutar Fases 5 y 6 para la certificación final.
 - La auditoría confirmó que los tipos de documento ya se persisten mediante códigos SUNAT. `FormasPago` aún es un catálogo exclusivamente local y no dispone de supermaestro global, por lo que queda fuera de esta migración y requiere un diseño canónico propio antes de reemplazar sus identificadores.
 
-## Actualizacion 06/10/2026 - Fase 6: Certificacion y readiness de publicacion
-- El endpoint `/healthz/ready` ya no valida solamente la conexion a SQL Server. Ejecuta `Sp_Sistema_ValidarContratoCanonico @ValidarDatos = 0` y solo informa disponibilidad cuando el esquema y los contratos canonicos estan vigentes, sin recorrer historicos en cada sonda.
-- La aplicacion debe publicarse despues del procedimiento validador. Si la base conserva columnas heredadas, tiene inconsistencias monetarias o carece de un contrato requerido, readiness responde como no saludable y evita declarar lista una instancia incompatible.
+## Actualizacion 06/10/2026 - Fase 6: Certificacion de publicacion
+- La certificacion canonica se ejecuta de manera controlada mediante los scripts de Fase 5 y Fase 6; no forma parte de las sondas HTTP de la aplicacion.
+- `/healthz/ready` informa exclusivamente la disponibilidad de la conexion a SQL Server y no requiere que el procedimiento auditor este desplegado.
 - `20261006_Fase6_CertificarPublicacionCanonica.sql` ejecuta nuevamente la auditoria integral, verifica la presencia de los procedimientos criticos, busca dependencias SQL hacia columnas heredadas y devuelve evidencia de las fechas de publicacion.
 - La certificacion es de solo lectura. Debe ejecutarse despues de publicar la aplicacion y antes de habilitar trafico; luego se deben probar configuracion, reserva administrativa y publica, pago, comprobante, nota y los reportes filtrados por moneda.
 - Resultado esperado: `FASE_6_CERTIFICADA` y contrato `CANONICO_MAESTROS_V2`.
@@ -48,8 +67,8 @@
 - `Sp_ConfiguracionClub_Actualizar` deja de sincronizar identificadores locales. Valida la asociacion activa de `CodigoMoneda` con el negocio y actualiza solo el codigo canonico.
 - `Sp_Comprobantes_Crear` deja de resolver y guardar IDs locales; valida que la moneda y el documento esten habilitados y persiste exclusivamente sus codigos canonicos.
 - `Sp_ConfiguracionClub_Obtener`, `Sp_Comprobantes_ObtenerPorId` y `Sp_Comprobantes_ObtenerVisualizacion` mantienen temporalmente ordinales reservados nulos para no desplazar los campos ADO.NET existentes durante el despliegue coordinado, pero ya no consultan columnas heredadas.
-- `Sp_AltasClubes_Aprobar`, `Sp_Home_RegistrarClubConPrueba` y el script historico de altas crean negocios usando exclusivamente `CodigoMoneda = 'PEN'`.
-- La tabla base `Negocios` ya no declara `MonedaId`, establece `CodigoMoneda` como obligatorio con predeterminado `PEN` y conserva su FK global. La tabla base `ComprobantesElectronicos` ya no declara los dos IDs locales y agrega unicidad por `(NegocioId, CodigoTipoComprobante, Serie, Numero)`.
+- `Sp_AltasClubes_Aprobar`, `Sp_Home_RegistrarClubConPrueba` y el script historico de altas crean el negocio con `CodigoMoneda = NULL`; la moneda se define al completar la configuracion.
+- La tabla base `Negocios` ya no declara `MonedaId`, mantiene `CodigoMoneda` nullable sin valor predeterminado y conserva su FK global. La tabla base `ComprobantesElectronicos` ya no declara los dos IDs locales y agrega unicidad por `(NegocioId, CodigoTipoComprobante, Serie, Numero)`.
 - `20261006_Fase4B_01_PrepararRetiroColumnasHeredadas.sql` valida integridad y duplicados, vuelve nullable las columnas heredadas del comprobante y crea el indice unico canonico. Esto permite publicar los SP finales sin interrumpir escrituras durante la transicion.
 - Despues de publicar y validar la aplicacion y los SP finales, `20261006_Fase4B_02_RetirarColumnasHeredadas.sql` detecta modulos SQL dependientes, elimina restricciones, indices y estadisticas asociados, y retira fisicamente las tres columnas dentro de una transaccion.
 - Ambos scripts permanecen bloqueados por defecto. Para ejecutarlos se debe confirmar un backup verificado y cambiar explicitamente sus banderas de autorizacion. El segundo script exige ademas confirmar que los contratos canonicos ya fueron publicados.
@@ -62,7 +81,7 @@
 - `Sp_ConfiguracionClub_Actualizar` recibe `@CodigoMoneda`, valida que este habilitado para el negocio y sincroniza `MonedaId` unicamente como espejo transitorio para instalaciones que aun conservan la columna heredada.
 - Panel, reportes y configuracion de tarifas resuelven la moneda vigente por codigo, sin comparar identificadores locales de `Monedas`.
 - `Sp_OnboardingChecklist_Validar` considera completa la moneda solo cuando `Negocios.CodigoMoneda` tiene una asociacion activa en el maestro del negocio.
-- Las altas de clubes inicializan `Negocios.CodigoMoneda = 'PEN'`, evitando que una instalacion nueva nazca dependiendo de un identificador local predeterminado.
+- Las altas de clubes dejan `Negocios.CodigoMoneda = NULL` hasta que el club seleccione una moneda habilitada durante su configuracion.
 - El contrato ADO.NET de `Sp_Comprobantes_Crear` deja de enviar `TipoComprobante` y `TipoMoneda`: recibe el codigo SUNAT, hereda `CodigoMoneda` de la reserva y resuelve internamente los IDs solo para poblar las columnas fisicas de compatibilidad.
 - `ComprobanteFormViewModel` y `ComprobanteVisualizacionViewModel` dejan de transportar los enums heredados. La lectura de comprobantes expone `CodigoMoneda` y conserva los ordinales anteriores solo durante esta transicion.
 - El modelo EF incorpora las columnas canonicas, define la unicidad de comprobantes con `CodigoTipoComprobante` y retira las propiedades/enums heredados. Las columnas fisicas antiguas permanecen temporalmente en SQL Server y solo los SP de escritura las completan como compatibilidad.

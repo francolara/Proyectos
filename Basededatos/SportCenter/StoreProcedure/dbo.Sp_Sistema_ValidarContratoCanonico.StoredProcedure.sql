@@ -8,6 +8,7 @@ GO
 -- Author:        FRANCO LARA
 -- Create date:   06/10/2026
 -- Description:   Valida continuamente contratos canonicos de moneda, comprobantes, deporte y suelo.
+-- Firma:         FRANCO LARA - 08/10/2026 | Acepta negocios pendientes de configuracion sin CodigoMoneda.
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.Sp_Sistema_ValidarContratoCanonico
     @ValidarDatos BIT = 1
@@ -42,7 +43,7 @@ BEGIN
               AND c.name IN (N'CodigoMoneda', N'CodigoTipoComprobante')
               AND t.name IN
               (
-                  N'Negocios', N'Reservas', N'Pagos', N'Tarifas', N'TarifaFeriado',
+                  N'Reservas', N'Pagos', N'Tarifas', N'TarifaFeriado',
                   N'Cupones', N'CuponesUso', N'ComprobantesElectronicos',
                   N'ComprobantesDetalle', N'NegociosSuscripcionPago'
               )
@@ -93,11 +94,10 @@ BEGIN
                     ON m.NegocioId = n.Id
                    AND m.Codigo = n.CodigoMoneda
                    AND m.Activo = 1
-                WHERE NULLIF(LTRIM(RTRIM(n.CodigoMoneda)), N'') IS NULL
-                   OR msm.Codigo IS NULL
-                   OR m.Id IS NULL
+                WHERE NULLIF(LTRIM(RTRIM(n.CodigoMoneda)), N'') IS NOT NULL
+                  AND (msm.Codigo IS NULL OR m.Id IS NULL)
             )
-                RAISERROR('Integridad canonica invalida: hay negocios sin moneda global y local activa.', 16, 1);
+                RAISERROR('Integridad canonica invalida: hay negocios con una moneda configurada que no es global o no esta activa localmente.', 16, 1);
 
             IF EXISTS
             (

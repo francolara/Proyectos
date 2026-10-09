@@ -1,7 +1,8 @@
-﻿-- =============================================
+-- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   06/10/2026
 -- Description:   Prepara el retiro fisico de IDs locales sin interrumpir el despliegue coordinado.
+-- Firma:         FRANCO LARA - 08/10/2026 | Migra MonedaId cuando es valido, mantiene CodigoMoneda nullable, convierte asociaciones inactivas a NULL y elimina su valor por defecto.
 -- =============================================
 -- Orden obligatorio:
 -- 1. Confirmar backup verificado y cambiar @RespaldoVerificado a 1.
@@ -33,15 +34,6 @@ BEGIN TRY
     IF EXISTS
     (
         SELECT 1
-        FROM dbo.Negocios n
-        WHERE n.CodigoMoneda IS NULL
-           OR LTRIM(RTRIM(n.CodigoMoneda)) = N''
-    )
-        RAISERROR('Fase 4B bloqueada: existen negocios sin CodigoMoneda.', 16, 1);
-
-    IF EXISTS
-    (
-        SELECT 1
         FROM dbo.ComprobantesElectronicos ce
         WHERE ce.CodigoMoneda IS NULL
            OR LTRIM(RTRIM(ce.CodigoMoneda)) = N''
@@ -69,21 +61,47 @@ BEGIN TRY
 
     BEGIN TRANSACTION;
 
-    ALTER TABLE dbo.Negocios ALTER COLUMN CodigoMoneda NVARCHAR(10) NOT NULL;
+    ALTER TABLE dbo.Negocios ALTER COLUMN CodigoMoneda NVARCHAR(10) NULL;
 
-    IF NOT EXISTS
-    (
-        SELECT 1
-        FROM sys.default_constraints dc
-        INNER JOIN sys.columns c
-            ON c.object_id = dc.parent_object_id
-           AND c.column_id = dc.parent_column_id
-        WHERE dc.parent_object_id = OBJECT_ID(N'dbo.Negocios')
-          AND c.name = N'CodigoMoneda'
-    )
+    IF COL_LENGTH(N'dbo.Negocios', N'MonedaId') IS NOT NULL
     BEGIN
-        ALTER TABLE dbo.Negocios
-            ADD CONSTRAINT DF_Negocios_CodigoMoneda DEFAULT (N'PEN') FOR CodigoMoneda;
+        EXEC sys.sp_executesql
+            N'UPDATE n
+              SET n.CodigoMoneda = COALESCE(msm.Codigo, m.Codigo)
+              FROM dbo.Negocios n
+              INNER JOIN dbo.Monedas m ON m.Id = n.MonedaId
+              LEFT JOIN dbo.MonedasSuperMaestro msm ON msm.Id = m.MonedaSuperId
+              WHERE NULLIF(LTRIM(RTRIM(n.CodigoMoneda)), N'''') IS NULL;';
+    END;
+
+    UPDATE n
+    SET n.CodigoMoneda = NULL
+    FROM dbo.Negocios n
+    WHERE NULLIF(LTRIM(RTRIM(n.CodigoMoneda)), N'') IS NULL
+       OR NOT EXISTS
+          (
+              SELECT 1
+              FROM dbo.Monedas m
+              WHERE m.NegocioId = n.Id
+                AND m.Codigo = n.CodigoMoneda
+                AND m.Activo = 1
+          );
+
+    DECLARE @DefaultCodigoMoneda SYSNAME;
+    DECLARE @SqlDefault NVARCHAR(MAX);
+
+    SELECT @DefaultCodigoMoneda = dc.name
+    FROM sys.default_constraints dc
+    INNER JOIN sys.columns c
+        ON c.object_id = dc.parent_object_id
+       AND c.column_id = dc.parent_column_id
+    WHERE dc.parent_object_id = OBJECT_ID(N'dbo.Negocios')
+      AND c.name = N'CodigoMoneda';
+
+    IF @DefaultCodigoMoneda IS NOT NULL
+    BEGIN
+        SET @SqlDefault = N'ALTER TABLE dbo.Negocios DROP CONSTRAINT ' + QUOTENAME(@DefaultCodigoMoneda) + N';';
+        EXEC sys.sp_executesql @SqlDefault;
     END;
 
     IF COL_LENGTH(N'dbo.ComprobantesElectronicos', N'TipoComprobante') IS NOT NULL

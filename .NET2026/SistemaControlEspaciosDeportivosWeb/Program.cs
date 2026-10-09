@@ -11,7 +11,6 @@ using SistemaControlEspaciosDeportivosWeb.Data;
 using SistemaControlEspaciosDeportivosWeb.Configuration;
 using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
-using System.Data;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Globalization;
@@ -409,37 +408,13 @@ sealed class DatabaseHealthCheck(IServiceScopeFactory scopeFactory) : IHealthChe
             await using var scope = scopeFactory.CreateAsyncScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-            if (!await dbContext.Database.CanConnectAsync(cancellationToken))
-            {
-                return HealthCheckResult.Unhealthy("No se pudo establecer conexion con SQL Server.");
-            }
-
-            await dbContext.Database.OpenConnectionAsync(cancellationToken);
-            try
-            {
-                await using var command = dbContext.Database.GetDbConnection().CreateCommand();
-                command.CommandText = "dbo.Sp_Sistema_ValidarContratoCanonico";
-                command.CommandType = CommandType.StoredProcedure;
-                command.CommandTimeout = 15;
-                var validarDatos = command.CreateParameter();
-                validarDatos.ParameterName = "@ValidarDatos";
-                validarDatos.DbType = DbType.Boolean;
-                validarDatos.Value = false;
-                command.Parameters.Add(validarDatos);
-
-                var result = await command.ExecuteScalarAsync(cancellationToken);
-                return result is bool esValido && esValido
-                    ? HealthCheckResult.Healthy("SQL Server y el contrato canonico estan disponibles.")
-                    : HealthCheckResult.Unhealthy("El validador canonico no confirmo la integridad del contrato.");
-            }
-            finally
-            {
-                await dbContext.Database.CloseConnectionAsync();
-            }
+            return await dbContext.Database.CanConnectAsync(cancellationToken)
+                ? HealthCheckResult.Healthy("SQL Server esta disponible.")
+                : HealthCheckResult.Unhealthy("No se pudo establecer conexion con SQL Server.");
         }
         catch (Exception ex)
         {
-            return HealthCheckResult.Unhealthy("Fallo la validacion de disponibilidad del contrato canonico.", ex);
+            return HealthCheckResult.Unhealthy("Fallo la comprobacion de disponibilidad de SQL Server.", ex);
         }
     }
 }

@@ -6,7 +6,7 @@
 --                referencias externas y tablas operativas adicionales con reinicio de IDENTITY.
 -- =============================================
 -- Firma:         FRANCO LARA - 22/09/2026 | Corrige la fecha de creacion e incorpora la limpieza y reinicio de identidad de resenas publicas de reservas.
--- Firma:         FRANCO LARA - 08/10/2026 | Retira la tabla heredada de solicitudes publicas del proceso de limpieza.
+-- Firma:         FRANCO LARA - 08/10/2026 | Alinea la limpieza con el esquema final, incorpora correlativos, conserva referencias externas y banners, y retira objetos heredados.
 
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -47,7 +47,6 @@ BEGIN TRY
     DELETE FROM dbo.Tarifas;
 
     DELETE FROM dbo.UsuariosPublicosPerfil;
-    --DELETE FROM dbo.HomeEspaciosReferencialesExternos;
     DELETE FROM dbo.Cupones;
     DELETE FROM dbo.PopupPromocion;
 
@@ -71,11 +70,7 @@ BEGIN TRY
     DELETE FROM dbo.NegociosSeriesDocumentoComprobante;
     DELETE FROM dbo.NegociosSuscripcion;
     DELETE FROM dbo.NegociosTiposDocumentoComprobante;
-
-    /* Romper FK circular entre Negocios y Monedas antes de eliminar */
-    UPDATE dbo.Negocios
-    SET MonedaId = NULL
-    WHERE MonedaId IS NOT NULL;
+    DELETE FROM dbo.NegocioCorrelativos;
 
     DELETE FROM dbo.TarifaFeriado;
     DELETE FROM dbo.BitacoraAuditoria;
@@ -143,7 +138,6 @@ BEGIN TRY
     DECLARE @TablasReseed TABLE (
         TableName SYSNAME NOT NULL PRIMARY KEY
     );
-    -- (N'HomeEspaciosReferencialesExternos'),
     INSERT INTO @TablasReseed (TableName)
     VALUES
         (N'BoletinesDeportivos'),
@@ -164,7 +158,7 @@ BEGIN TRY
         (N'PromocionesHorario'),
         (N'Tarifas'),
 
-        (N'UsuariosPublicosPerfil'),        
+        (N'UsuariosPublicosPerfil'),
         (N'Cupones'),
         (N'PopupPromocion'),
         (N'EspaciosDeportivosCompartidos'),
