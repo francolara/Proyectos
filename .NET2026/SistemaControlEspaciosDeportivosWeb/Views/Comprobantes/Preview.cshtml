@@ -57,6 +57,7 @@
 }
 @* Firma: FRANCO LARA - 15/07/2026 | Vista previa de recibo interno corrige modo oscuro y reemplaza descarga PDF por impresion directa de la previsualizacion. *@
 @* Firma: FRANCO LARA - 20/07/2026 | Recibo interno abre una impresion HTML independiente; comprobantes tributarios conservan el flujo oficial del proveedor. *@
+@* Firma: FRANCO LARA - 09/10/2026 | Ordena el detalle de reserva del recibo interno por espacio, fecha y horario, evitando repetir el total. *@
 
 <div class="admin-page-frame comprobante-preview-page">
     @if (TempData["ComprobanteError"] is string comprobanteError && !string.IsNullOrWhiteSpace(comprobanteError))
@@ -196,22 +197,22 @@
             <article class="detalle-item-card">
                 <header>
                     <span class="detalle-item-tag">Item 1</span>
-                    <span class="detalle-item-unidad">UND x 1</span>
+                    <span class="detalle-item-unidad">Reserva de espacio</span>
                 </header>
-                <p class="detalle-item-desc">@descripcionDetalle</p>
-                <footer>
-                    <div><small>Valor unitario</small><strong>@Model.MonedaSimbolo @Model.Total.ToString("N2")</strong></div>
-                    <div><small>Importe</small><strong>@Model.MonedaSimbolo @Model.Total.ToString("N2")</strong></div>
-                </footer>
+                <div class="detalle-reserva-grid">
+                    <div><small>Nombre del espacio</small><strong>@Model.EspacioNombre</strong></div>
+                    <div><small>Fecha</small><strong>@Model.FechaReserva.ToString("dd/MM/yyyy")</strong></div>
+                    <div><small>Horario</small><strong>@Model.HoraInicioReserva.ToString("HH:mm") - @Model.HoraFinReserva.ToString("HH:mm")</strong></div>
+                </div>
             </article>
         </div>
     </section>
 
-    <section class="table-card mb-3">
-        <h2 class="section-title"><i class="bi bi-calculator me-1"></i>Resumen de importes</h2>
-        <div class="row g-2 px-3 pb-3 justify-content-end">
-            @if (Model.EsTributario)
-            {
+    @if (Model.EsTributario)
+    {
+        <section class="table-card mb-3">
+            <h2 class="section-title"><i class="bi bi-calculator me-1"></i>Resumen de importes</h2>
+            <div class="row g-2 px-3 pb-3 justify-content-end">
                 <div class="col-lg-3 col-md-4">
                     <div class="amount-card">
                         <small>Subtotal</small>
@@ -224,15 +225,15 @@
                         <strong>@Model.MonedaSimbolo @Model.Igv.ToString("N2")</strong>
                     </div>
                 </div>
-            }
-            <div class="col-lg-3 col-md-4">
-                <div class="amount-card amount-card-total">
-                    <small>Total</small>
-                    <strong>@Model.MonedaSimbolo @Model.Total.ToString("N2")</strong>
+                <div class="col-lg-3 col-md-4">
+                    <div class="amount-card amount-card-total">
+                        <small>Total</small>
+                        <strong>@Model.MonedaSimbolo @Model.Total.ToString("N2")</strong>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+    }
 
     @if (puedeEnviarCorreoComprobante)
     {
@@ -394,11 +395,21 @@
         line-height: 1.35;
     }
 
-    .detalle-item-card footer div {
-        text-align: right;
+    .detalle-reserva-grid {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr 1fr;
+        gap: .6rem;
+        margin-top: .75rem;
     }
 
-    .detalle-item-card footer small {
+    .detalle-reserva-grid div {
+        border: 1px solid var(--cp-border);
+        border-radius: .55rem;
+        background: var(--cp-surface);
+        padding: .65rem .7rem;
+    }
+
+    .detalle-reserva-grid small {
         display: block;
         font-size: .68rem;
         color: var(--cp-muted);
@@ -406,10 +417,16 @@
         letter-spacing: .03em;
     }
 
-    .detalle-item-card footer strong {
+    .detalle-reserva-grid strong {
+        display: block;
+        margin-top: .2rem;
         font-size: .95rem;
         color: var(--cp-text);
         font-weight: 800;
+    }
+
+    @@media (max-width: 576px) {
+        .detalle-reserva-grid { grid-template-columns: 1fr; }
     }
 
     .amount-card {

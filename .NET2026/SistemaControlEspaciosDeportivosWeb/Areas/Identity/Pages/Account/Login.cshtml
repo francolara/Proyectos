@@ -3,6 +3,7 @@
 @* Firma: FRANCO LARA - 19/09/2026 | El inicio de sesión muestra el indicador de carga del panel administrativo y un spinner en el botón mientras se validan las credenciales. *@
 @* Firma: FRANCO LARA - 18/09/2026 | Adapta el inicio de sesión a una experiencia deportiva que conserva la proporción del banner sin recortes. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Oculta el reenvio de confirmacion cuando IdentityBehavior no requiere validar el correo. *@
+@* Firma: FRANCO LARA - 09/10/2026 | Muestra avisos claros para limites de intentos y correo sin confirmar, conservando las redirecciones posteriores. *@
 @inject Microsoft.Extensions.Options.IOptions<SistemaControlEspaciosDeportivosWeb.Services.SedeImagenStorageSettings> SedeImagenStorageOptions
 @* Firma: FRANCO LARA - 15/07/2026 | Login publico agrega captcha manual de respaldo cuando Turnstile falla o no queda disponible. *@
 @{
@@ -73,6 +74,19 @@
                 {
                     <div class="alert alert-success py-2 px-3 mb-3" role="alert">
                         @Model.SuccessMessage
+                    </div>
+                }
+                @if (Model.UnconfirmedAccountWarning)
+                {
+                    <div class="alert alert-warning py-3 px-3 mb-3" role="alert">
+                        <div class="d-flex gap-2">
+                            <i class="bi bi-envelope-exclamation-fill fs-5" aria-hidden="true"></i>
+                            <div>
+                                <strong>Tu correo aun no ha sido confirmado.</strong>
+                                <div class="mt-1">Revisa tu bandeja de entrada o Spam. Busca un mensaje de <strong>noreply@lazonadeportiva.com</strong> con el asunto <strong>Confirma tu cuenta - La Zona Deportiva</strong>.</div>
+                                <div class="mt-1">Si no lo encuentras, selecciona <strong>Reenviar confirmacion</strong>.</div>
+                            </div>
+                        </div>
                     </div>
                 }
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-2" role="alert"></div>
@@ -152,6 +166,21 @@
     </section>
 </section>
 
+<div class="modal fade" id="loginRateLimitModal" tabindex="-1" aria-labelledby="loginRateLimitModalTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body p-4 text-center">
+                <div class="text-warning fs-1 mb-2" aria-hidden="true"><i class="bi bi-clock-history"></i></div>
+                <h2 class="h4 mb-3" id="loginRateLimitModalTitulo">Espera un momento</h2>
+                <p class="mb-0">Por seguridad, hemos limitado temporalmente los intentos de inicio de sesion desde esta conexión. Espera un minuto antes de volver a intentarlo.</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pt-0 pb-4">
+                <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     @if (Model.MostrarTurnstile && !Model.MostrarCaptchaManual)
     {
@@ -191,8 +220,26 @@
                 document.body.classList.add('workspace-loading-active');
             };
 
+            const hideLoginLoadingOverlay = () => {
+                document.getElementById('login-loading-overlay')?.classList.remove('is-visible');
+                document.body.classList.remove('workspace-loading-active');
+            };
+
+            const restoreLoginSubmit = () => {
+                isSubmitting = false;
+                loginForm?.querySelectorAll('button[type="submit"]').forEach((button) => {
+                    button.disabled = false;
+                    button.removeAttribute('aria-disabled');
+                });
+                if (loginSubmit) {
+                    loginSubmit.removeAttribute('aria-busy');
+                    loginSubmit.textContent = 'Iniciar sesion';
+                }
+                hideLoginLoadingOverlay();
+            };
+
             if (loginForm) {
-                loginForm.addEventListener('submit', (event) => {
+                loginForm.addEventListener('submit', async (event) => {
                     if (isSubmitting) {
                         event.preventDefault();
                         return;
@@ -211,6 +258,9 @@
 
                     isSubmitting = true;
 
+                    const submitter = event.submitter;
+                    const isStandardLogin = submitter === loginSubmit;
+
                     const submitButtons = loginForm.querySelectorAll('button[type="submit"]');
                     submitButtons.forEach((button) => {
                         button.disabled = true;
@@ -223,6 +273,48 @@
                     }
 
                     showLoginLoadingOverlay();
+
+                    if (!isStandardLogin) return;
+
+                    event.preventDefault();
+                    try {
+                        const response = await fetch(submitter.formAction || loginForm.action, {
+                            method: 'POST',
+                            body: new FormData(loginForm)
+                        });
+
+                        if (response.status === 429) {
+                            const modal = document.getElementById('loginRateLimitModal');
+                            if (modal && window.bootstrap) {
+                                bootstrap.Modal.getOrCreateInstance(modal).show();
+                            }
+                            return;
+                        }
+
+                        if (response.redirected) {
+                            const destination = new URL(response.url, window.location.origin);
+                            if (destination.pathname.toLowerCase() === '/identity/account/login') {
+                                const html = await response.text();
+                                window.history.replaceState(null, '', response.url);
+                                document.open();
+                                document.write(html);
+                                document.close();
+                                return;
+                            }
+
+                            window.location.assign(response.url);
+                            return;
+                        }
+
+                        const html = await response.text();
+                        document.open();
+                        document.write(html);
+                        document.close();
+                    } catch {
+                        loginForm.submit();
+                    } finally {
+                        restoreLoginSubmit();
+                    }
                 });
             }
 

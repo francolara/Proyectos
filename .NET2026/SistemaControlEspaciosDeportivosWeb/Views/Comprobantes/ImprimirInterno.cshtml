@@ -1,5 +1,6 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteVisualizacionViewModel
 @* Firma: Codex - 01/10/2026 | Imprime el correlativo visible de la reserva por negocio. *@
+@* Firma: FRANCO LARA - 09/10/2026 | Ordena el detalle de reserva por espacio, fecha y horario y evita repetir el total del recibo interno. *@
 @{
     Layout = null;
     var numeroComprobante = $"{Model.Serie}-{Model.Numero:D8}";
@@ -132,15 +133,10 @@
         .data-list strong { font-size: 10px; word-break: break-word; }
 
         .detail { padding: 12px; }
-        .detail-head { display: flex; justify-content: space-between; gap: 16px; color: var(--muted); font-size: 9px; font-weight: 700; text-transform: uppercase; }
-        .detail-description { margin: 11px 0 15px; color: var(--navy); font-size: 12px; font-weight: 700; }
-        .detail-values { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .detail-values div:last-child { text-align: right; }
-        .detail-values strong { display: block; margin-top: 3px; color: var(--navy); font-size: 13px; }
-
-        .totals { display: flex; justify-content: flex-end; padding: 12px; }
-        .total-box { width: 245px; padding: 12px 14px; border: 2px solid var(--navy); background: var(--soft); text-align: right; }
-        .total-box strong { display: block; margin-top: 5px; color: var(--navy); font-size: 20px; }
+        .detail-head { color: var(--muted); font-size: 9px; font-weight: 700; text-transform: uppercase; }
+        .reservation-detail-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .reservation-detail-grid div { padding: 9px 10px; border: 1px solid var(--line); background: var(--soft); }
+        .reservation-detail-grid strong { display: block; margin-top: 4px; color: var(--navy); font-size: 12px; }
 
         .receipt-footer {
             display: flex;
@@ -222,19 +218,12 @@
         <section class="section">
             <header class="section-header"><span class="label">Item 1</span><h2>Detalle del comprobante</h2></header>
             <div class="detail">
-                <div class="detail-head"><span>Servicio reservado</span><span>UND x 1</span></div>
-                <p class="detail-description">@descripcionDetalle</p>
-                <div class="detail-values">
-                    <div><span class="label">Valor unitario</span><strong>@Model.MonedaSimbolo @Model.Total.ToString("N2")</strong></div>
-                    <div><span class="label">Importe</span><strong>@Model.MonedaSimbolo @Model.Total.ToString("N2")</strong></div>
+                <div class="detail-head">Reserva de espacio</div>
+                <div class="reservation-detail-grid">
+                    <div><span class="label">Nombre del espacio</span><strong>@Model.EspacioNombre</strong></div>
+                    <div><span class="label">Fecha</span><strong>@Model.FechaReserva.ToString("dd/MM/yyyy")</strong></div>
+                    <div><span class="label">Horario</span><strong>@Model.HoraInicioReserva.ToString("HH:mm") - @Model.HoraFinReserva.ToString("HH:mm")</strong></div>
                 </div>
-            </div>
-        </section>
-
-        <section class="section">
-            <header class="section-header"><span class="label">Importes</span><h2>Resumen de importes</h2></header>
-            <div class="totals">
-                <div class="total-box"><span class="label">Total</span><strong>@Model.MonedaSimbolo @Model.Total.ToString("N2")</strong></div>
             </div>
         </section>
 

@@ -16,7 +16,7 @@
           "Microsoft.AspNetCore.Identity.UI": "10.0.5",
           "Microsoft.EntityFrameworkCore.SqlServer": "10.0.5",
           "Microsoft.EntityFrameworkCore.Tools": "10.0.5",
-          "SixLabors.ImageSharp": "3.1.11"
+          "SixLabors.ImageSharp": "4.1.2"
         },
         "runtime": {
           "SistemaControlEspaciosDeportivosWeb.dll": {}
@@ -766,11 +766,14 @@
           }
         }
       },
-      "SixLabors.ImageSharp/3.1.11": {
+      "SixLabors.ImageSharp/4.1.2": {
+        "dependencies": {
+          "System.IO.Hashing": "8.0.0"
+        },
         "runtime": {
-          "lib/net6.0/SixLabors.ImageSharp.dll": {
-            "assemblyVersion": "3.0.0.0",
-            "fileVersion": "3.1.11.0"
+          "lib/net8.0/SixLabors.ImageSharp.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "4.1.2.0"
           }
         }
       },
@@ -873,6 +876,14 @@
           "lib/net8.0/System.IdentityModel.Tokens.Jwt.dll": {
             "assemblyVersion": "7.7.1.0",
             "fileVersion": "7.7.1.50719"
+          }
+        }
+      },
+      "System.IO.Hashing/8.0.0": {
+        "runtime": {
+          "lib/net8.0/System.IO.Hashing.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.23.53103"
           }
         }
       },
@@ -1223,12 +1234,12 @@
       "path": "sixlabors.fonts/1.0.0",
       "hashPath": "sixlabors.fonts.1.0.0.nupkg.sha512"
     },
-    "SixLabors.ImageSharp/3.1.11": {
+    "SixLabors.ImageSharp/4.1.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-JfPLyigLthuE50yi6tMt7Amrenr/fA31t2CvJyhy/kQmfulIBAqo5T/YFUSRHtuYPXRSaUHygFeh6Qd933EoSw==",
-      "path": "sixlabors.imagesharp/3.1.11",
-      "hashPath": "sixlabors.imagesharp.3.1.11.nupkg.sha512"
+      "sha512": "sha512-AQ0oouhH/6qmXJC70/k50iVt7SiZRjCgd4tXXiC5ZrB5CvyBwA81HTqb5twcXz8CvTAFxUNV0TAcL83OhyRA1g==",
+      "path": "sixlabors.imagesharp/4.1.2",
+      "hashPath": "sixlabors.imagesharp.4.1.2.nupkg.sha512"
     },
     "System.ClientModel/1.5.1": {
       "type": "package",
@@ -1299,6 +1310,13 @@
       "sha512": "sha512-rQkO1YbAjLwnDJSMpRhRtrc6XwIcEOcUvoEcge+evurpzSZM3UNK+MZfD3sKyTlYsvknZ6eJjSBfnmXqwOsT9Q==",
       "path": "system.identitymodel.tokens.jwt/7.7.1",
       "hashPath": "system.identitymodel.tokens.jwt.7.7.1.nupkg.sha512"
+    },
+    "System.IO.Hashing/8.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ne1843evDugl0md7Fjzy6QjJrzsjh46ZKbhf8GwBXb5f/gw97J4bxMs0NQKifDuThh/f0bZ0e62NPl1jzTuRqA==",
+      "path": "system.io.hashing/8.0.0",
+      "hashPath": "system.io.hashing.8.0.0.nupkg.sha512"
     },
     "System.IO.Packaging/8.0.1": {
       "type": "package",

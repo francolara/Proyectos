@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "omsM74EPJ6M=",
+  "dgSpecHash": "5U7T2RQcALM=",
   "success": true,
   "projectFilePath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\SistemaControlEspaciosDeportivosWeb.csproj",
   "expectedPackageFiles": [
@@ -52,7 +52,7 @@
     "C:\\Users\\Franco Lara\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\rbush.signed\\4.0.0\\rbush.signed.4.0.0.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\sixlabors.fonts\\1.0.0\\sixlabors.fonts.1.0.0.nupkg.sha512",
-    "C:\\Users\\Franco Lara\\.nuget\\packages\\sixlabors.imagesharp\\3.1.11\\sixlabors.imagesharp.3.1.11.nupkg.sha512",
+    "C:\\Users\\Franco Lara\\.nuget\\packages\\sixlabors.imagesharp\\4.1.2\\sixlabors.imagesharp.4.1.2.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\system.clientmodel\\1.5.1\\system.clientmodel.1.5.1.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\system.codedom\\6.0.0\\system.codedom.6.0.0.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\system.composition\\9.0.0\\system.composition.9.0.0.nupkg.sha512",
@@ -63,71 +63,11 @@
     "C:\\Users\\Franco Lara\\.nuget\\packages\\system.composition.typedparts\\9.0.0\\system.composition.typedparts.9.0.0.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\system.configuration.configurationmanager\\9.0.4\\system.configuration.configurationmanager.9.0.4.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\system.identitymodel.tokens.jwt\\7.7.1\\system.identitymodel.tokens.jwt.7.7.1.nupkg.sha512",
+    "C:\\Users\\Franco Lara\\.nuget\\packages\\system.io.hashing\\8.0.0\\system.io.hashing.8.0.0.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\system.io.packaging\\8.0.1\\system.io.packaging.8.0.1.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\system.memory.data\\8.0.1\\system.memory.data.8.0.1.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\system.security.cryptography.pkcs\\9.0.4\\system.security.cryptography.pkcs.9.0.4.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\system.security.cryptography.protecteddata\\9.0.4\\system.security.cryptography.protecteddata.9.0.4.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "NU1902",
-      "level": "Warning",
-      "message": "El paquete \"SixLabors.ImageSharp\" 3.1.11 tiene una vulnerabilidad de gravedad moderada conocida, https://github.com/advisories/GHSA-gwg2-r3hj-4w44",
-      "projectPath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\SistemaControlEspaciosDeportivosWeb.csproj",
-      "warningLevel": 1,
-      "filePath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\SistemaControlEspaciosDeportivosWeb.csproj",
-      "libraryId": "SixLabors.ImageSharp",
-      "targetGraphs": [
-        "net10.0"
-      ]
-    },
-    {
-      "code": "NU1903",
-      "level": "Warning",
-      "message": "El paquete \"SixLabors.ImageSharp\" 3.1.11 tiene una vulnerabilidad de gravedad alta conocida, https://github.com/advisories/GHSA-j3p4-wp97-rph4",
-      "projectPath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\SistemaControlEspaciosDeportivosWeb.csproj",
-      "warningLevel": 1,
-      "filePath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\SistemaControlEspaciosDeportivosWeb.csproj",
-      "libraryId": "SixLabors.ImageSharp",
-      "targetGraphs": [
-        "net10.0"
-      ]
-    },
-    {
-      "code": "NU1903",
-      "level": "Warning",
-      "message": "El paquete \"SixLabors.ImageSharp\" 3.1.11 tiene una vulnerabilidad de gravedad alta conocida, https://github.com/advisories/GHSA-j9gm-c75j-xc9q",
-      "projectPath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\SistemaControlEspaciosDeportivosWeb.csproj",
-      "warningLevel": 1,
-      "filePath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\SistemaControlEspaciosDeportivosWeb.csproj",
-      "libraryId": "SixLabors.ImageSharp",
-      "targetGraphs": [
-        "net10.0"
-      ]
-    },
-    {
-      "code": "NU1903",
-      "level": "Warning",
-      "message": "El paquete \"SixLabors.ImageSharp\" 3.1.11 tiene una vulnerabilidad de gravedad alta conocida, https://github.com/advisories/GHSA-jjfr-hcj7-qf5w",
-      "projectPath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\SistemaControlEspaciosDeportivosWeb.csproj",
-      "warningLevel": 1,
-      "filePath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\SistemaControlEspaciosDeportivosWeb.csproj",
-      "libraryId": "SixLabors.ImageSharp",
-      "targetGraphs": [
-        "net10.0"
-      ]
-    },
-    {
-      "code": "NU1902",
-      "level": "Warning",
-      "message": "El paquete \"SixLabors.ImageSharp\" 3.1.11 tiene una vulnerabilidad de gravedad moderada conocida, https://github.com/advisories/GHSA-wmxv-xphr-5c9g",
-      "projectPath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\SistemaControlEspaciosDeportivosWeb.csproj",
-      "warningLevel": 1,
-      "filePath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\SistemaControlEspaciosDeportivosWeb.csproj",
-      "libraryId": "SixLabors.ImageSharp",
-      "targetGraphs": [
-        "net10.0"
-      ]
-    }
-  ]
+  "logs": []
 }

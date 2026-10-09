@@ -28,6 +28,7 @@ public class LoginModel(
 {
     // Firma: FRANCO LARA - 21/07/2026 | Respeta la confirmacion de cuenta configurada y oculta el reenvio cuando la autoconfirmacion esta activa.
     // Firma: FRANCO LARA - 13/09/2026 | Aplica POST-Redirect-GET ante fallos de login para evitar reenvios del formulario al volver atras.
+    // Firma: FRANCO LARA - 09/10/2026 | Identifica el intento de acceso con correo sin confirmar para orientar al usuario hacia el mensaje de verificacion y su reenvio.
     private const string LoginFailuresSessionKey = "Auth:LoginFailures";
     private const string ResendAttemptsSessionKey = "Auth:ResendAttempts";
     private const string LoginCaptchaScope = "LOGIN";
@@ -61,6 +62,9 @@ public class LoginModel(
 
     [TempData]
     public string? LoginEmail { get; set; }
+
+    [TempData]
+    public bool UnconfirmedAccountWarning { get; set; }
 
     public class InputModel
     {
@@ -126,7 +130,7 @@ public class LoginModel(
         if (RequiereConfirmacionCorreo && !await userManager.IsEmailConfirmedAsync(user))
         {
             IncrementarContador(LoginFailuresSessionKey);
-            return RedirigirLoginConError(returnUrl, "Tu cuenta aun no esta confirmada. Revisa tu correo o reenvia el enlace de confirmacion.");
+            return RedirigirLoginCuentaNoConfirmada(returnUrl);
         }
 
         var result = await signInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: true);
@@ -179,6 +183,13 @@ public class LoginModel(
     {
         LoginEmail = (Input.Email ?? string.Empty).Trim();
         ErrorMessage = mensaje;
+        return RedirectToPage("./Login", new { returnUrl });
+    }
+
+    private IActionResult RedirigirLoginCuentaNoConfirmada(string? returnUrl)
+    {
+        LoginEmail = (Input.Email ?? string.Empty).Trim();
+        UnconfirmedAccountWarning = true;
         return RedirectToPage("./Login", new { returnUrl });
     }
 

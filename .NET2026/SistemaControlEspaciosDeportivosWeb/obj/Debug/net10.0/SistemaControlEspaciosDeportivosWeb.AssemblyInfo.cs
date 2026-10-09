@@ -16,7 +16,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SistemaControlEspaciosDeportivosWeb")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a683cd468de0e3a1257e89a526c2827626281ce6")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b83c2f1941397b23e5987132a677f7a57caee078")]
 [assembly: System.Reflection.AssemblyProductAttribute("SistemaControlEspaciosDeportivosWeb")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SistemaControlEspaciosDeportivosWeb")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

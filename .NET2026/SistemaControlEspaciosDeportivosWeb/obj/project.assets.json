@@ -1029,20 +1029,24 @@
           }
         }
       },
-      "SixLabors.ImageSharp/3.1.11": {
+      "SixLabors.ImageSharp/4.1.2": {
         "type": "package",
+        "dependencies": {
+          "System.IO.Hashing": "8.0.0"
+        },
         "compile": {
-          "lib/net6.0/SixLabors.ImageSharp.dll": {
+          "lib/net8.0/SixLabors.ImageSharp.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/net6.0/SixLabors.ImageSharp.dll": {
+          "lib/net8.0/SixLabors.ImageSharp.dll": {
             "related": ".xml"
           }
         },
         "build": {
-          "build/SixLabors.ImageSharp.props": {}
+          "build/SixLabors.ImageSharp.props": {},
+          "build/SixLabors.ImageSharp.targets": {}
         }
       },
       "System.ClientModel/1.5.1": {
@@ -1221,6 +1225,22 @@
           "lib/net8.0/System.IdentityModel.Tokens.Jwt.dll": {
             "related": ".xml"
           }
+        }
+      },
+      "System.IO.Hashing/8.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/System.IO.Hashing.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/System.IO.Hashing.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net6.0/_._": {}
         }
       },
       "System.IO.Packaging/8.0.1": {
@@ -3375,19 +3395,22 @@
         "sixlabors.fonts.nuspec"
       ]
     },
-    "SixLabors.ImageSharp/3.1.11": {
-      "sha512": "JfPLyigLthuE50yi6tMt7Amrenr/fA31t2CvJyhy/kQmfulIBAqo5T/YFUSRHtuYPXRSaUHygFeh6Qd933EoSw==",
+    "SixLabors.ImageSharp/4.1.2": {
+      "sha512": "AQ0oouhH/6qmXJC70/k50iVt7SiZRjCgd4tXXiC5ZrB5CvyBwA81HTqb5twcXz8CvTAFxUNV0TAcL83OhyRA1g==",
       "type": "package",
-      "path": "sixlabors.imagesharp/3.1.11",
+      "path": "sixlabors.imagesharp/4.1.2",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "LICENSE",
         "build/SixLabors.ImageSharp.props",
-        "lib/net6.0/SixLabors.ImageSharp.dll",
-        "lib/net6.0/SixLabors.ImageSharp.xml",
+        "build/SixLabors.ImageSharp.targets",
+        "build/net472/SixLabors.Licensing.dll",
+        "build/net8.0/SixLabors.Licensing.dll",
+        "lib/net8.0/SixLabors.ImageSharp.dll",
+        "lib/net8.0/SixLabors.ImageSharp.xml",
         "sixlabors.imagesharp.128.png",
-        "sixlabors.imagesharp.3.1.11.nupkg.sha512",
+        "sixlabors.imagesharp.4.1.2.nupkg.sha512",
         "sixlabors.imagesharp.nuspec"
       ]
     },
@@ -3647,6 +3670,36 @@
         "system.identitymodel.tokens.jwt.nuspec"
       ]
     },
+    "System.IO.Hashing/8.0.0": {
+      "sha512": "ne1843evDugl0md7Fjzy6QjJrzsjh46ZKbhf8GwBXb5f/gw97J4bxMs0NQKifDuThh/f0bZ0e62NPl1jzTuRqA==",
+      "type": "package",
+      "path": "system.io.hashing/8.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "LICENSE.TXT",
+        "PACKAGE.md",
+        "THIRD-PARTY-NOTICES.TXT",
+        "buildTransitive/net461/System.IO.Hashing.targets",
+        "buildTransitive/net462/_._",
+        "buildTransitive/net6.0/_._",
+        "buildTransitive/netcoreapp2.0/System.IO.Hashing.targets",
+        "lib/net462/System.IO.Hashing.dll",
+        "lib/net462/System.IO.Hashing.xml",
+        "lib/net6.0/System.IO.Hashing.dll",
+        "lib/net6.0/System.IO.Hashing.xml",
+        "lib/net7.0/System.IO.Hashing.dll",
+        "lib/net7.0/System.IO.Hashing.xml",
+        "lib/net8.0/System.IO.Hashing.dll",
+        "lib/net8.0/System.IO.Hashing.xml",
+        "lib/netstandard2.0/System.IO.Hashing.dll",
+        "lib/netstandard2.0/System.IO.Hashing.xml",
+        "system.io.hashing.8.0.0.nupkg.sha512",
+        "system.io.hashing.nuspec",
+        "useSharedDesignerContext.txt"
+      ]
+    },
     "System.IO.Packaging/8.0.1": {
       "sha512": "KYkIOAvPexQOLDxPO2g0BVoWInnQhPpkFzRqvNrNrMhVT6kqhVr0zEb6KCHlptLFukxnZrjuMVAnxK7pOGUYrw==",
       "type": "package",
@@ -3784,7 +3837,7 @@
       "Microsoft.AspNetCore.Identity.UI >= 10.0.5",
       "Microsoft.EntityFrameworkCore.SqlServer >= 10.0.5",
       "Microsoft.EntityFrameworkCore.Tools >= 10.0.5",
-      "SixLabors.ImageSharp >= 3.1.11"
+      "SixLabors.ImageSharp >= 4.1.2"
     ]
   },
   "packageFolders": {
@@ -3874,7 +3927,7 @@
           },
           "SixLabors.ImageSharp": {
             "target": "Package",
-            "version": "[3.1.11, )"
+            "version": "[4.1.2, )"
           }
         },
         "imports": [
@@ -4313,57 +4366,5 @@
         }
       }
     }
-  },
-  "logs": [
-    {
-      "code": "NU1902",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "El paquete \"SixLabors.ImageSharp\" 3.1.11 tiene una vulnerabilidad de gravedad moderada conocida, https://github.com/advisories/GHSA-gwg2-r3hj-4w44",
-      "libraryId": "SixLabors.ImageSharp",
-      "targetGraphs": [
-        "net10.0"
-      ]
-    },
-    {
-      "code": "NU1903",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "El paquete \"SixLabors.ImageSharp\" 3.1.11 tiene una vulnerabilidad de gravedad alta conocida, https://github.com/advisories/GHSA-j3p4-wp97-rph4",
-      "libraryId": "SixLabors.ImageSharp",
-      "targetGraphs": [
-        "net10.0"
-      ]
-    },
-    {
-      "code": "NU1903",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "El paquete \"SixLabors.ImageSharp\" 3.1.11 tiene una vulnerabilidad de gravedad alta conocida, https://github.com/advisories/GHSA-j9gm-c75j-xc9q",
-      "libraryId": "SixLabors.ImageSharp",
-      "targetGraphs": [
-        "net10.0"
-      ]
-    },
-    {
-      "code": "NU1903",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "El paquete \"SixLabors.ImageSharp\" 3.1.11 tiene una vulnerabilidad de gravedad alta conocida, https://github.com/advisories/GHSA-jjfr-hcj7-qf5w",
-      "libraryId": "SixLabors.ImageSharp",
-      "targetGraphs": [
-        "net10.0"
-      ]
-    },
-    {
-      "code": "NU1902",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "El paquete \"SixLabors.ImageSharp\" 3.1.11 tiene una vulnerabilidad de gravedad moderada conocida, https://github.com/advisories/GHSA-wmxv-xphr-5c9g",
-      "libraryId": "SixLabors.ImageSharp",
-      "targetGraphs": [
-        "net10.0"
-      ]
-    }
-  ]
+  }
 }
