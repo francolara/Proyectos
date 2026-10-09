@@ -4,12 +4,14 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.EventLog;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Threading.RateLimiting;
 using SistemaAdministrativoWeb.Configuration;
 using SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 using SistemaAdministrativoWeb.Data;
@@ -203,6 +205,55 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
     options.IdleTimeout = TimeSpan.FromMinutes(20);
 });
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, _) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json; charset=utf-8";
+        await context.HttpContext.Response.WriteAsync("{\"ok\":false,\"mensaje\":\"Demasiadas solicitudes. Intenta nuevamente en unos minutos.\"}");
+    };
+
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+    {
+        static string KeyByIp(HttpContext context, string scope)
+        {
+            var ip = context.Connection.RemoteIpAddress?.ToString();
+            return $"{scope}:{(string.IsNullOrWhiteSpace(ip) ? "sin-ip" : ip)}";
+        }
+
+        var path = httpContext.Request.Path.Value?.ToLowerInvariant() ?? string.Empty;
+        if (HttpMethods.IsPost(httpContext.Request.Method) && path == "/identity/account/login")
+        {
+            return RateLimitPartition.GetFixedWindowLimiter(
+                KeyByIp(httpContext, "login"),
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 5,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0,
+                    AutoReplenishment = true
+                });
+        }
+
+        if (HttpMethods.IsPost(httpContext.Request.Method) && path == "/identity/account/register")
+        {
+            return RateLimitPartition.GetFixedWindowLimiter(
+                KeyByIp(httpContext, "register"),
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 3,
+                    Window = TimeSpan.FromMinutes(10),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0,
+                    AutoReplenishment = true
+                });
+        }
+
+        return RateLimitPartition.GetNoLimiter("sin-limite");
+    });
+});
 
 builder.Services.AddScoped<IDbConnectionFactory, SqlConnectionFactory>();
 builder.Services.AddScoped<IPlanCuentaRepository, PlanCuentaRepository>();
@@ -304,6 +355,7 @@ else
 app.UseHttpsRedirection();
 app.UseRequestLocalization();
 app.UseRouting();
+app.UseRateLimiter();
 app.UseSession();
 app.UseAuthentication();
 app.UseMiddleware<TemporaryPasswordEnforcementMiddleware>();

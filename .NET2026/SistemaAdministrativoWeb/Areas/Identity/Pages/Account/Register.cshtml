@@ -10,6 +10,7 @@
 @* Firma: FRANCO LARA - 26/08/2026 | Lee la ubicacion publica de recursos desde la seccion local y variable de entorno identificada con el prefijo FRALSECONT_. *@
 @* Firma: FRANCO LARA - 29/08/2026 | Activa automaticamente el captcha de respaldo cuando Turnstile reporta error o tiempo agotado. *@
 @* Firma: FRANCO LARA - 31/08/2026 | Hace visibles los errores, muestra el procesamiento y versiona los recursos remotos para evitar cache obsoleta. *@
+@* Firma: FRANCO LARA - 09/10/2026 | Muestra un pop-up cuando se supera el limite de registros para evitar la pagina blanca de error. *@
 @{
     ViewData["Title"] = "Crear cuenta";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -165,6 +166,21 @@
     </section>
 </section>
 
+<div class="modal fade" id="registerRateLimitModal" tabindex="-1" aria-labelledby="registerRateLimitModalTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body p-4 text-center">
+                <div class="text-warning fs-1 mb-2" aria-hidden="true"><i class="bi bi-clock-history"></i></div>
+                <h2 class="h4 mb-3" id="registerRateLimitModalTitulo">Espera un momento</h2>
+                <p class="mb-0">Hemos recibido varios intentos de registro desde esta conexion. Por seguridad, espera unos minutos antes de volver a intentarlo.</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pt-0 pb-4">
+                <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         window.registerTurnstileFallback = () => {
@@ -213,7 +229,7 @@
 
             const form = document.getElementById("registerForm");
             const submitButton = document.getElementById("registerSubmitButton");
-            form?.addEventListener("submit", (event) => {
+            form?.addEventListener("submit", async (event) => {
                 if (event.submitter !== submitButton || !form.checkValidity()) {
                     return;
                 }
@@ -223,10 +239,42 @@
                     return;
                 }
 
+                event.preventDefault();
                 submitButton.dataset.submitting = "true";
                 submitButton.setAttribute("aria-disabled", "true");
                 submitButton.classList.add("disabled");
                 submitButton.textContent = submitButton.dataset.submittingText ?? "Creando cuenta...";
+
+                try {
+                    const response = await fetch(submitButton.formAction || form.action, {
+                        method: "POST",
+                        body: new FormData(form)
+                    });
+
+                    if (response.status === 429) {
+                        const modal = document.getElementById("registerRateLimitModal");
+                        if (modal && window.bootstrap) bootstrap.Modal.getOrCreateInstance(modal).show();
+                        return;
+                    }
+
+                    if (response.redirected) {
+                        document.open();
+                        document.write(await response.text());
+                        document.close();
+                        return;
+                    }
+
+                    document.open();
+                    document.write(await response.text());
+                    document.close();
+                } catch {
+                    form.submit();
+                } finally {
+                    submitButton.dataset.submitting = "false";
+                    submitButton.removeAttribute("aria-disabled");
+                    submitButton.classList.remove("disabled");
+                    submitButton.textContent = submitButton.dataset.defaultText ?? "Registrar usuario";
+                }
             });
         })();
     </script>

@@ -7662,6 +7662,10 @@ html[data-theme="dark"] .voucher-header {
   height: 2rem;
   border-radius: 0.62rem;
   font-size: 0.82rem;
+  border: 1px solid #86efac;
+  background: linear-gradient(145deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #15803d;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
 }
 
 .subscription-shell .subscription-info-label,

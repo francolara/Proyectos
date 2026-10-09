@@ -68,6 +68,9 @@ public class LoginModel(
     [TempData]
     public string? LoginEmail { get; set; }
 
+    [TempData]
+    public bool UnconfirmedAccountWarning { get; set; }
+
     public sealed class InputModel
     {
         [Required(ErrorMessage = "Ingrese su correo.")]
@@ -137,6 +140,12 @@ public class LoginModel(
             logger.LogWarning("Intento de inicio de sesion rechazado.");
             IncrementarContador(LoginFailuresSessionKey);
             return RedirigirLoginConError(returnUrl, "Credenciales invalidas.");
+        }
+
+        if (RequiresEmailConfirmation && !await userManager.IsEmailConfirmedAsync(authenticatedUser))
+        {
+            logger.LogInformation("Intento de acceso con correo sin confirmar para {UserId}.", authenticatedUser.Id);
+            return RedirigirLoginCuentaNoConfirmada(returnUrl);
         }
 
         var result = await signInManager.PasswordSignInAsync(
@@ -209,6 +218,13 @@ public class LoginModel(
     {
         LoginEmail = (Input.Email ?? string.Empty).Trim();
         AccountErrorMessage = mensaje;
+        return RedirectToPage("./Login", new { returnUrl });
+    }
+
+    private IActionResult RedirigirLoginCuentaNoConfirmada(string? returnUrl)
+    {
+        LoginEmail = (Input.Email ?? string.Empty).Trim();
+        UnconfirmedAccountWarning = true;
         return RedirectToPage("./Login", new { returnUrl });
     }
 

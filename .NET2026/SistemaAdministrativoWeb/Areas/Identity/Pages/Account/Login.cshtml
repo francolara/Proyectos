@@ -9,6 +9,7 @@
 @* Firma: FRANCO LARA - 26/08/2026 | Lee la ubicacion publica de recursos desde la seccion local y variable de entorno identificada con el prefijo FRALSECONT_. *@
 @* Firma: FRANCO LARA - 29/08/2026 | Retira la eleccion manual del captcha y prepara automaticamente el respaldo cuando Turnstile reporta error o tiempo agotado. *@
 @* Firma: FRANCO LARA - 31/08/2026 | Agrega recuperacion y reenvio, diferencia fallos de correo y usa version global para evitar cache obsoleta en recursos remotos. *@
+@* Firma: FRANCO LARA - 09/10/2026 | Muestra pop-up ante limite de intentos y orienta claramente al usuario cuando su correo aun no fue confirmado, indicando el remitente y asunto exactos del mensaje de verificacion. *@
 @{
     ViewData["Title"] = "Iniciar sesion";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -48,6 +49,22 @@
                         ? "alert-warning"
                         : "alert-success";
                     <div class="alert @accountAlertClass mb-3" role="alert">@Model.AccountSuccessMessage</div>
+                }
+                @if (Model.UnconfirmedAccountWarning)
+                {
+                    <div class="alert alert-warning py-3 px-3 mb-3" role="alert">
+                        <div class="d-flex gap-2">
+                            <i class="bi bi-envelope-exclamation-fill fs-5" aria-hidden="true"></i>
+                            <div>
+                                <strong>Tu correo aun no ha sido confirmado.</strong>
+                                <div class="mt-1">Revisa tu bandeja de entrada o Spam. Busca un mensaje de <strong>noreply@fralsetech.com</strong> con el asunto <strong>Confirma tu cuenta de FralseCont</strong>.</div>
+                                @if (Model.EmailsEnabled)
+                                {
+                                    <div class="mt-1">Si no encuentras el mensaje, selecciona <strong>Reenviar confirmacion</strong>.</div>
+                                }
+                            </div>
+                        </div>
+                    </div>
                 }
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
@@ -143,6 +160,21 @@
     </section>
 </section>
 
+<div class="modal fade" id="loginRateLimitModal" tabindex="-1" aria-labelledby="loginRateLimitModalTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body p-4 text-center">
+                <div class="text-warning fs-1 mb-2" aria-hidden="true"><i class="bi bi-clock-history"></i></div>
+                <h2 class="h4 mb-3" id="loginRateLimitModalTitulo">Espera un momento</h2>
+                <p class="mb-0">Por seguridad, hemos limitado temporalmente los intentos de inicio de sesion desde esta conexion. Espera un minuto antes de volver a intentarlo.</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pt-0 pb-4">
+                <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         window.loginTurnstileFallback = () => {
@@ -157,4 +189,51 @@
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer onerror="window.loginTurnstileFallback?.()"></script>
     }
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const form = document.getElementById("account");
+            const loginSubmit = document.getElementById("login-submit");
+            if (!form || !loginSubmit) return;
+
+            form.addEventListener("submit", async (event) => {
+                if (event.submitter !== loginSubmit || !form.checkValidity()) return;
+
+                event.preventDefault();
+                loginSubmit.disabled = true;
+                try {
+                    const response = await fetch(loginSubmit.formAction || form.action, {
+                        method: "POST",
+                        body: new FormData(form)
+                    });
+
+                    if (response.status === 429) {
+                        const modal = document.getElementById("loginRateLimitModal");
+                        if (modal && window.bootstrap) bootstrap.Modal.getOrCreateInstance(modal).show();
+                        return;
+                    }
+
+                    if (response.redirected) {
+                        const destination = new URL(response.url, window.location.origin);
+                        if (destination.pathname.toLowerCase() === "/identity/account/login") {
+                            document.open();
+                            document.write(await response.text());
+                            document.close();
+                            return;
+                        }
+
+                        window.location.assign(response.url);
+                        return;
+                    }
+
+                    document.open();
+                    document.write(await response.text());
+                    document.close();
+                } catch {
+                    form.submit();
+                } finally {
+                    loginSubmit.disabled = false;
+                }
+            });
+        })();
+    </script>
 }
