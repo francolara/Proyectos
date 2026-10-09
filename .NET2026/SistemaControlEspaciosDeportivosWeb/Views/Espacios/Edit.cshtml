@@ -24,7 +24,7 @@
 @* Firma: FRANCO LARA - 20/05/2026 | En tarifas de espacios muestra 24:00 en hora fin y guarda internamente 23:59 para cierre de jornada. *@
 @* Firma: FRANCO LARA - 06/06/2026 | Agrega configuracion visual de espacios compartidos con carga dinamica por sede. *@
 @* Firma: FRANCO LARA - 08/06/2026 | Reemplaza la seleccion multiple por checkboxes, separa relaciones operativas entre bloqueo directo y espacios compuestos, y agrega galeria de fotos para espacios deportivos. *@
-@* Firma: FRANCO LARA - 08/10/2026 | Oculta capacidad usando valor interno 10 y limita el estado visible a Activo/Inactivo. *@
+@* Firma: FRANCO LARA - 08/10/2026 | Oculta capacidad usando valor interno 10, limita el estado visible a Activo/Inactivo y conserva la seleccion de horarios entre Windows y Linux. *@
 
 <div class="admin-page-frame">
     <section class="page-header">
@@ -350,7 +350,7 @@
                         <select asp-for="HoraApertura" class="form-select">
                             @foreach (var hora in horasMediaHora)
                             {
-                                <option value="@hora.ToString("HH\\:mm")">@hora.ToString("HH\\:mm")</option>
+                                <option value="@hora.ToString("HH\\:mm")" selected="@(hora == Model.HoraApertura ? "selected" : null)">@hora.ToString("HH\\:mm")</option>
                             }
                         </select>
                     </div>
@@ -362,7 +362,7 @@
                                 var etiquetaHora = hora == new TimeOnly(23, 59)
                                     ? "24:00"
                                     : hora.ToString("HH\\:mm");
-                                <option value="@hora.ToString("HH\\:mm")">@etiquetaHora</option>
+                                <option value="@hora.ToString("HH\\:mm")" selected="@(hora == Model.HoraCierre ? "selected" : null)">@etiquetaHora</option>
                             }
                         </select>
                     </div>
@@ -1139,4 +1139,3 @@
         })();
     </script>
 }
-

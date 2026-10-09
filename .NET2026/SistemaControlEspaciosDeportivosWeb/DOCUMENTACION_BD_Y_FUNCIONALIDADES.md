@@ -1,5 +1,18 @@
 # SistemaControlEspaciosDeportivosWeb
 
+## Actualizacion 08/10/2026 - Validacion y presentacion estable de horarios
+- Los formularios de creacion y edicion validan en MVC que `HoraCierre` sea estrictamente mayor que `HoraApertura` antes de ejecutar `Sp_Sedes_Crear` o `Sp_Sedes_Actualizar`.
+- Cuando las horas son iguales o el cierre es anterior, el formulario conserva los datos y muestra el mensaje junto al campo de cierre, evitando la pagina generica de error de produccion.
+- Los combos de apertura y cierre marcan explicitamente el valor `TimeOnly` del modelo para evitar que una hora SQL correcta vuelva visualmente a `00:00` por diferencias de formato entre Windows y Linux.
+- La misma seleccion explicita se aplica a horarios propios de espacios, promociones, alta/edicion independiente de reservas y hora tentativa de desafios.
+- La reserva publica y el modal principal de calendario ya construyen o asignan sus valores en formato canonico `HH:mm`; los rangos tarifarios de espacios se hidratan mediante JSON normalizado y no requieren este ajuste.
+
+## Actualizacion 08/10/2026 - Correccion de correlativos historicos
+- `20261001_CorrelativosPorNegocio.sql` completa de forma idempotente los valores `NumeroPorNegocio` nulos o no positivos en reservas, pagos, clientes, sedes, espacios, cupones y promociones.
+- La numeracion se calcula independientemente por negocio, conserva los correlativos positivos existentes y continua desde el maximo de cada entidad.
+- Al finalizar, `NegocioCorrelativos.UltimoNumero` se sincroniza con el maximo persistido para que las altas posteriores no repitan numeros historicos.
+- La migracion se detiene y revierte si detecta correlativos positivos duplicados o si alguna fila queda sin correlativo valido.
+
 ## Actualizacion 08/10/2026 - Limpieza integral alineada al esquema final
 - `ZonaDeportiva_Limpiar_Base.sql` elimina los datos operativos y de negocio conservando el superadministrador y los catalogos globales del sistema.
 - La limpieza incluye explicitamente `NegocioCorrelativos` y no hace referencia a `NegocioOnboardingEstado`, ya que esta tabla no forma parte de la base desplegada.
@@ -133,7 +146,7 @@
 - `Sp_NegocioCorrelativos_ObtenerSiguiente` reserva de forma transaccional el siguiente numero para `RESERVA`, `PAGO`, `CLIENTE`, `SEDE`, `ESPACIO`, `CUPON` o `PROMOCION`.
 - `Reservas`, `Pagos`, `Clientes`, `Sedes`, `EspaciosDeportivos`, `Cupones` y `PromocionesHorario` incorporan `NumeroPorNegocio`; sus identificadores globales permanecen como claves tecnicas y relaciones internas.
 - Los procedimientos de creacion solicitan el correlativo antes del `INSERT`, incluida la sede principal creada durante el alta de un club y los pagos registrados desde una reserva. No se utilizan triggers.
-- El script idempotente `Script/20261001_CorrelativosPorNegocio.sql` actualiza las tablas existentes: crea `NegocioCorrelativos` si no existe y agrega `NumeroPorNegocio` a las siete entidades sin completar registros historicos.
+- El script idempotente `Script/20261001_CorrelativosPorNegocio.sql` crea `NegocioCorrelativos` si no existe, agrega `NumeroPorNegocio` a las siete entidades, completa los registros historicos por negocio y sincroniza el ultimo numero de cada entidad.
 - Los codigos visibles se presentan como `R-000001`, `P-000001`, `C-000001`, `S-001`, `E-001`, `CUP-000001` y `PRO-000001`, reiniciando de forma independiente para cada negocio y entidad.
 - Se actualizan reserva publica, Mis reservas, calendario, pendientes, pop-up de edicion, pagos, comprobantes, solicitudes convertidas, listados administrativos, correos, recordatorios, reportes, resenas y mensajes de bloqueo para mostrar el correlativo del negocio sin exponer el ID tecnico. Los buscadores de clientes, pagos, comprobantes y seleccion de reservas aceptan los codigos visibles `C-000000` y `R-000000`. El calendario entrega `NumeroPorNegocio` como dato independiente del titulo y las lecturas visibles exigen que el procedimiento devuelva dicho correlativo, sin recurrir al Id global como respaldo.
 - No se incluye migracion ni numeracion retroactiva de registros historicos, porque la base de datos se reiniciara antes de usar esta estructura.

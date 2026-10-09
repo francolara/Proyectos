@@ -6,6 +6,7 @@
         .Select(i => TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(i * 30)))
         .ToList();
 }
+@* Firma: FRANCO LARA - 08/10/2026 | Conserva la seleccion de horas con formato estable entre Windows y Linux. *@
 
 <div class="admin-page-frame">
     <section class="page-header">
@@ -45,7 +46,7 @@
                         <select asp-for="HoraInicio" class="form-select">
                             @foreach (var hora in horasMediaHora)
                             {
-                                <option value="@hora.ToString("HH\\:mm")">@hora.ToString("HH\\:mm")</option>
+                                <option value="@hora.ToString("HH\\:mm")" selected="@(hora == Model.HoraInicio ? "selected" : null)">@hora.ToString("HH\\:mm")</option>
                             }
                         </select>
                     </div>
@@ -54,7 +55,7 @@
                         <select asp-for="HoraFin" class="form-select">
                             @foreach (var hora in horasMediaHora)
                             {
-                                <option value="@hora.ToString("HH\\:mm")">@hora.ToString("HH\\:mm")</option>
+                                <option value="@hora.ToString("HH\\:mm")" selected="@(hora == Model.HoraFin ? "selected" : null)">@hora.ToString("HH\\:mm")</option>
                             }
                         </select>
                     </div>

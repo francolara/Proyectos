@@ -5,7 +5,8 @@ using SistemaControlEspaciosDeportivosWeb.Models;
 
 namespace SistemaControlEspaciosDeportivosWeb.ViewModels;
 
-public class SedeFormViewModel
+// Firma: FRANCO LARA - 08/10/2026 | Valida que el cierre de la sede sea posterior a la apertura antes de ejecutar SQL.
+public class SedeFormViewModel : IValidatableObject
 {
     public int Id { get; set; }
     public int NegocioId { get; set; }
@@ -134,6 +135,16 @@ public class SedeFormViewModel
     public List<SelectListItem> ProvinciasUbigeo { get; set; } = new();
     public List<SelectListItem> DistritosUbigeo { get; set; } = new();
     public List<SedeSerieDocumentoConfigItemViewModel> SeriesDocumentoConfig { get; set; } = new();
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (HoraCierre <= HoraApertura)
+        {
+            yield return new ValidationResult(
+                "La hora de cierre debe ser mayor a la hora de apertura.",
+                new[] { nameof(HoraCierre) });
+        }
+    }
 }
 
 public class SedeSerieDocumentoConfigItemViewModel

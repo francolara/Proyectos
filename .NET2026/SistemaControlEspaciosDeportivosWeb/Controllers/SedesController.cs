@@ -6,6 +6,7 @@ using SistemaControlEspaciosDeportivosWeb.ViewModels;
 
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
+// Firma: FRANCO LARA - 08/10/2026 | Evita ejecutar cargas y SQL cuando el horario u otros datos de la sede son invalidos.
 public class SedesController(IModuloPermisoService moduloPermisoService, ISportCenterStoredProcedureService spService, ISedeImagenStorageService sedeImagenStorageService)
     : ModuloControllerBase(moduloPermisoService)
 {
@@ -77,8 +78,11 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
         ComponerTelefonos(model);
         NormalizarUbicacionYFotos(model);
         await ValidarUbigeoSedeAsync(model);
-        AplicarEliminacionImagenes(model);
-        await ProcesarCargaImagenesAsync(model);
+        if (ModelState.IsValid)
+        {
+            AplicarEliminacionImagenes(model);
+            await ProcesarCargaImagenesAsync(model);
+        }
         if (!ModelState.IsValid)
         {
             await CargarCatalogoSedeAsync(model);
@@ -122,8 +126,11 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
         ComponerTelefonos(model);
         NormalizarUbicacionYFotos(model);
         await ValidarUbigeoSedeAsync(model);
-        AplicarEliminacionImagenes(model);
-        await ProcesarCargaImagenesAsync(model);
+        if (ModelState.IsValid)
+        {
+            AplicarEliminacionImagenes(model);
+            await ProcesarCargaImagenesAsync(model);
+        }
         if (!ModelState.IsValid)
         {
             await CargarCatalogoSedeAsync(model);

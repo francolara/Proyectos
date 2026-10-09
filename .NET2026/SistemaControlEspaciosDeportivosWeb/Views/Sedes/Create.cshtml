@@ -1,5 +1,6 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.SedeFormViewModel
 @inject IConfiguration Configuration
+@* Firma: FRANCO LARA - 08/10/2026 | Conserva las horas predeterminadas o publicadas al volver a mostrar el formulario. *@
 @{
     ViewData["Title"] = "Nueva sede";
     var mapsApiKey = Configuration["GoogleMaps:ApiKey"];
@@ -207,7 +208,7 @@
                         <select asp-for="HoraApertura" class="form-select">
                             @foreach (var hora in horasMediaHora)
                             {
-                                <option value="@hora.ToString("HH\\:mm")">@hora.ToString("HH\\:mm")</option>
+                                <option value="@hora.ToString("HH\\:mm")" selected="@(hora == Model.HoraApertura ? "selected" : null)">@hora.ToString("HH\\:mm")</option>
                             }
                         </select>
                         <span asp-validation-for="HoraApertura" class="text-danger"></span>
@@ -220,7 +221,7 @@
                                 var etiquetaHora = hora == new TimeOnly(23, 59)
                                     ? "24:00"
                                     : hora.ToString("HH\\:mm");
-                                <option value="@hora.ToString("HH\\:mm")">@etiquetaHora</option>
+                                <option value="@hora.ToString("HH\\:mm")" selected="@(hora == Model.HoraCierre ? "selected" : null)">@etiquetaHora</option>
                             }
                         </select>
                         <span asp-validation-for="HoraCierre" class="text-danger"></span>

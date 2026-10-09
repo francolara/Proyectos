@@ -1,13 +1,14 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.DesafiosIndexViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.DesafiosIndexViewModel
 @{
     ViewData["Title"] = "Desafios";
     var abrirModal = (ViewData["AbrirModalDesafio"] as bool?) == true;
     var horasDesafio = Enumerable.Range(0, 24)
-        .Select(x => new SelectListItem($"{x:00}:00", $"{x:00}:00"))
+        .Select(x => new TimeOnly(x, 0))
         .ToList();
     string EstadoClave(string? estado) => string.IsNullOrWhiteSpace(estado) ? "sin-estado" : estado.Trim().ToLowerInvariant();
 }
 @* Firma: FRANCO LARA - 21/07/2026 | Renombra el acceso del perfil a Preguntas Frecuentes. *@
+@* Firma: FRANCO LARA - 08/10/2026 | Conserva la hora tentativa seleccionada con formato estable entre Windows y Linux. *@
 <div class="container py-4 desafios-page">
     <header class="desafios-hero">
         <div>
@@ -797,8 +798,13 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Hora tentativa</label>
-                            <select asp-for="NuevoDesafio.HoraTentativa" asp-items="horasDesafio" class="form-select">
+                            <select asp-for="NuevoDesafio.HoraTentativa" class="form-select">
                                 <option value="">Selecciona</option>
+                                @foreach (var hora in horasDesafio)
+                                {
+                                    var valorHora = hora.ToString("HH\\:mm");
+                                    <option value="@valorHora" selected="@(Model.NuevoDesafio.HoraTentativa == hora ? "selected" : null)">@valorHora</option>
+                                }
                             </select>
                             <span asp-validation-for="NuevoDesafio.HoraTentativa" class="text-danger"></span>
                         </div>

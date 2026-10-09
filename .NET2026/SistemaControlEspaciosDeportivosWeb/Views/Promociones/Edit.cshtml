@@ -7,6 +7,7 @@
         .ToList();
 }
 @* Firma: FRANCO LARA - 20/05/2026 | En promociones muestra 24:00 en hora fin y persiste 23:59 internamente. *@
+@* Firma: FRANCO LARA - 08/10/2026 | Conserva la seleccion de horas con formato estable entre Windows y Linux. *@
 
 <div class="admin-page-frame">
     <section class="page-header">
@@ -76,7 +77,7 @@
                         <select asp-for="HoraInicio" class="form-select">
                             @foreach (var hora in horasMediaHora)
                             {
-                                <option value="@hora.ToString("HH\\:mm")">@hora.ToString("HH\\:mm")</option>
+                                <option value="@hora.ToString("HH\\:mm")" selected="@(hora == Model.HoraInicio ? "selected" : null)">@hora.ToString("HH\\:mm")</option>
                             }
                         </select>
                         <span asp-validation-for="HoraInicio" class="text-danger"></span>
@@ -87,9 +88,9 @@
                             @foreach (var hora in horasMediaHora)
                             {
                                 var valorHoraFin = hora.ToString("HH\\:mm");
-                                <option value="@valorHoraFin">@valorHoraFin</option>
+                                <option value="@valorHoraFin" selected="@(hora == Model.HoraFin ? "selected" : null)">@valorHoraFin</option>
                             }
-                            <option value="23:59">24:00</option>
+                            <option value="23:59" selected="@(Model.HoraFin == new TimeOnly(23, 59) ? "selected" : null)">24:00</option>
                         </select>
                         <span asp-validation-for="HoraFin" class="text-danger"></span>
                     </div>
