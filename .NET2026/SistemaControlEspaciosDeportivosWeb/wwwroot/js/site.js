@@ -430,6 +430,16 @@ document.addEventListener("DOMContentLoaded", function () {
         display.setAttribute("inputmode", "none");
         display.setAttribute("aria-haspopup", "dialog");
         display.setAttribute("aria-controls", panelId);
+        const associatedLabel = Array.from(document.querySelectorAll("label[for]")).find(function (label) {
+            return label.htmlFor === originalId;
+        });
+        const fieldLabel = (associatedLabel?.textContent || original.getAttribute("aria-label") || original.name || "Fecha").trim();
+        if (associatedLabel) {
+            associatedLabel.id = associatedLabel.id || `${originalId}__label`;
+            display.setAttribute("aria-labelledby", associatedLabel.id);
+        } else {
+            display.setAttribute("aria-label", fieldLabel);
+        }
         if (original.getAttribute("aria-describedby")) {
             display.setAttribute("aria-describedby", original.getAttribute("aria-describedby"));
         }
@@ -438,7 +448,7 @@ document.addEventListener("DOMContentLoaded", function () {
         trigger.type = "button";
         trigger.className = "app-date-picker-trigger";
         trigger.innerHTML = "<i class='bi bi-calendar3' aria-hidden='true'></i>";
-        trigger.setAttribute("aria-label", "Abrir calendario");
+        trigger.setAttribute("aria-label", `Abrir calendario de ${fieldLabel}`);
         trigger.setAttribute("aria-expanded", "false");
         trigger.setAttribute("aria-controls", panelId);
 

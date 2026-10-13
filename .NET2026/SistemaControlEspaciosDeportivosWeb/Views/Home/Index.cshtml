@@ -9,6 +9,8 @@
 @* Firma: FRANCO LARA - 18/09/2026 | Moderniza la búsqueda, resultados, tarjetas, planes, cierre comercial y pie público con composición adaptable a cada monitor, sin alterar cabecera, banners ni presentación del logo. *@
 @* Firma: FRANCO LARA - 25/09/2026 | Muestra el precio del plan de prueba con dos decimales, igual que los demás importes comerciales. *@
 @* Firma: FRANCO LARA - 06/10/2026 | Muestra en cada espacio publico el simbolo canonico de su tarifa. *@
+@* Firma: FRANCO LARA - 12/10/2026 | Diferencia los resultados exploratorios de los espacios cuya disponibilidad fue comprobada para el horario seleccionado. *@
+@* Firma: FRANCO LARA - 13/10/2026 | Envia explicitamente el modo de busqueda por fecha y horario para reflejar la disponibilidad comprobada en las tarjetas. *@
 
 @{
     ViewData["Title"] = "Portal deportivo";
@@ -291,13 +293,15 @@
                                    id="omitirFechaHorario"
                                    name="omitirFechaHorario"
                                    value="true"
+                                   aria-describedby="filtroHorarioAyuda"
                                    @(Model.OmitirFechaHorario == true ? "checked" : null) />
+                            <input type="hidden" name="omitirFechaHorario" value="false" />
                             <label class="form-check-label small fw-semibold" for="omitirFechaHorario">Mostrar todos los espacios (sin filtrar por dia y horario)</label>
                         </div>
                     </div>
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label class="form-label">Fecha</label>
+                            <label class="form-label" for="fechaFiltro">Fecha</label>
                             <input class="form-control" type="date" id="fechaFiltro" name="fecha" value="@Model.Fecha.ToString("yyyy-MM-dd")" />
                         </div>
                         <div class="col-md-4">
@@ -335,7 +339,7 @@
                             </select>
                         </div>
                     </div>
-                    <div class="form-text mt-2">Recomendado: deja activado este modo para explorar opciones y luego ajusta fecha/hora exacta al reservar.</div>
+                    <div class="form-text mt-2" id="filtroHorarioAyuda">Desactiva “Mostrar todos” para comprobar la disponibilidad en la fecha y el horario seleccionados.</div>
                 </div>
             </div>
             <div class="col-md-12 d-flex align-items-end">
@@ -425,7 +429,14 @@
                                 </div>
                                 @if (item.SedeId.HasValue)
                                 {
-                                    <span class="badge text-bg-success">Disponible</span>
+                                    @if (Model.OmitirFechaHorario == true)
+                                    {
+                                        <span class="badge home-availability-pending">Ver disponibilidad</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge text-bg-success">Disponible</span>
+                                    }
                                 }
                             </div>
                             @if (item.DistanciaKm.HasValue)
