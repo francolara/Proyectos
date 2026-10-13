@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Díptico | La Zona Deportiva</title>
+  <style>
+    :root { --blue:#06469b; --deep:#022c68; --green:#17a82b; --ink:#12324e; --soft:#eef8f0; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#d9e1e8; font-family:Arial, Helvetica, sans-serif; color:var(--ink); }
+    .sheet { width:297mm; height:210mm; margin:18px auto; position:relative; overflow:hidden; background:#fff; box-shadow:0 9px 30px rgba(0,0,0,.18); }
+    .spread { display:grid; grid-template-columns:1fr 1fr; width:100%; height:100%; }
+    .panel { position:relative; overflow:hidden; padding:16mm 15mm; }
+    .fold { position:absolute; z-index:8; top:0; bottom:0; left:50%; width:1px; background:rgba(12,34,64,.16); border-left:1px dashed rgba(255,255,255,.38); }
+    .outer { background:url('fondo-exterior-referencia-v2.png') center/cover no-repeat; }
+    .outer .back { color:#fff; display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(90deg,rgba(0,31,83,.08),rgba(0,31,83,.44)); }
+    .outer .cover { display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-start; padding-left:19mm; }
+    .brand { width:64%; max-width:285px; height:auto; margin:4mm 0 12mm; mix-blend-mode:multiply; }
+    h1 { font-size:23pt; line-height:1.02; margin:0; letter-spacing:-.8px; color:var(--deep); max-width:205px; }
+    h1 strong { color:var(--green); display:block; }
+    .lead { font-size:11pt; line-height:1.4; max-width:190px; margin:6mm 0 0; color:#17476f; }
+    .pill { display:inline-block; margin-top:8mm; padding:3.2mm 5mm; background:var(--green); color:#fff; border-radius:99px; font-size:10pt; font-weight:bold; }
+    .eyebrow { font-size:10pt; font-weight:bold; letter-spacing:1.3px; text-transform:uppercase; color:#90ffab; }
+    .back h2 { font-size:25pt; line-height:1.05; margin:5mm 0 0; max-width:225px; color:#fff; }
+    .back p { font-size:11pt; line-height:1.45; margin:5mm 0; max-width:210px; }
+    .contact { width:100%; background:rgba(255,255,255,.97); color:var(--deep); padding:5mm 5mm 4mm; border-radius:4mm; box-shadow:0 8px 22px rgba(0,15,52,.38); font-size:10.5pt; line-height:1.45; border-left:3mm solid var(--green); }
+    .contact b { color:var(--deep); }
+    .contact .contact-title { display:block; color:var(--green); letter-spacing:1px; font-size:8.2pt; font-weight:800; margin-bottom:1.5mm; }
+    .contact .whatsapp { display:inline-block; color:#fff; background:#16a34a; padding:1.6mm 3mm; border-radius:99px; font-weight:bold; margin-top:2mm; }
+    .contact .small { font-size:8.4pt; color:#496277; margin-top:2mm; }
+    .inside { background:linear-gradient(135deg,#f8fcff 0%,#eef8f2 68%,#dff5e4 100%); }
+    .inside .panel:first-child { background:linear-gradient(160deg,#f8fbff 0%,#e5f1ff 100%); border-right:1px solid #bfd7e9; }
+    .inside h2 { font-size:23pt; line-height:1.04; margin:0 0 4mm; color:var(--deep); letter-spacing:-.5px; }
+    .inside h2 span { color:var(--green); }
+    .intro { font-size:10.5pt; line-height:1.38; margin:0 0 6mm; max-width:245px; }
+    .items { display:grid; grid-template-columns:1fr 1fr; gap:3.3mm; position:relative; z-index:2; }
+    .item { min-height:27mm; display:flex; flex-direction:column; gap:1.8mm; padding:4mm; background:rgba(255,255,255,.94); border-radius:4mm; box-shadow:0 5px 16px rgba(11,64,116,.12); border:1px solid rgba(20,95,164,.08); }
+    .item:last-child { grid-column:span 2; min-height:20mm; flex-direction:row; align-items:center; background:linear-gradient(100deg,#06469b,#1671c9); color:#fff; }
+    .icon { width:9mm; height:9mm; border-radius:3mm; background:var(--blue); color:#fff; display:grid; place-items:center; font-weight:bold; font-size:13pt; }
+    .item:nth-child(2) .icon, .item:nth-child(4) .icon { background:var(--green); }
+    .item:last-child .icon { background:var(--green); flex:0 0 auto; }
+    .item b { font-size:10.3pt; color:var(--deep); }
+    .item p { margin:0; font-size:8.5pt; line-height:1.25; color:#3e5870; }
+    .item:last-child b, .item:last-child p { color:#fff; }
+    .admin-orb { position:absolute; width:78mm; height:78mm; right:-36mm; bottom:-35mm; border-radius:50%; background:radial-gradient(circle at 35% 35%,rgba(39,169,52,.35),rgba(6,70,155,.18) 58%,transparent 60%); }
+    .discover { position:absolute; right:-15mm; bottom:-20mm; width:125mm; height:85mm; border-radius:50% 0 0 0; background:linear-gradient(135deg,var(--blue),#1874d5 55%,var(--green)); opacity:.98; }
+    .discover::before { content:''; position:absolute; inset:13mm 15mm auto auto; width:58mm; height:38mm; border:1.5px solid rgba(255,255,255,.55); border-radius:4mm; transform:rotate(-8deg); }
+    .tagline { position:relative; z-index:2; display:inline-block; color:#fff; background:var(--blue); padding:3mm 4mm; font-size:9.5pt; font-weight:bold; border-radius:3mm; margin:2mm 0 5mm; }
+    .discover-list { position:relative; z-index:3; display:grid; grid-template-columns:1fr 1fr; gap:3mm; max-width:248px; }
+    .discover-list div { min-height:30mm; display:flex; flex-direction:column; justify-content:center; gap:2mm; padding:4mm; color:#fff; background:var(--blue); border-radius:4mm; font-size:9.2pt; line-height:1.2; box-shadow:0 6px 13px rgba(1,60,100,.15); }
+    .discover-list div:nth-child(2), .discover-list div:nth-child(3) { background:var(--green); }
+    .discover-list div:last-child { grid-column:span 2; min-height:16mm; flex-direction:row; align-items:center; background:#fff; color:var(--deep); }
+    .tick { color:#b8ffc1; font-size:17pt; font-weight:bold; line-height:1; }
+    .discover-list div:last-child .tick { color:var(--green); }
+    .qr-block { position:absolute; z-index:4; bottom:11mm; right:15mm; display:flex; gap:4mm; align-items:center; background:#fff; padding:3mm; border-radius:3mm; box-shadow:0 4px 12px rgba(0,0,0,.12); }
+    .qr-block img { width:23mm; height:23mm; }
+    .qr-block b { font-size:10pt; color:var(--deep); display:block; max-width:50mm; }
+    .qr-block small { display:block; font-size:7.8pt; margin-top:1mm; color:#536a7d; }
+    .print-note { position:absolute; z-index:10; bottom:3mm; left:4mm; font-size:6pt; color:rgba(0,0,0,.28); }
+    @media print { body { background:#fff; } .sheet { margin:0; box-shadow:none; page-break-after:always; } .print-note { display:none; } }
+  </style>
+</head>
+<body>
+  <section class="sheet outer" aria-label="Exterior del díptico">
+    <div class="spread">
+      <article class="panel back">
+        <div>
+          <div class="eyebrow">Tu operación, bajo control</div>
+          <h2>Convierte cada cancha en una oportunidad.</h2>
+          <p>Centraliza tus reservas, cobros y equipo de trabajo en una plataforma diseñada para complejos deportivos.</p>
+        </div>
+        <div class="contact">
+          <span class="contact-title">¿LISTO PARA IMPULSAR TU COMPLEJO?</span>
+          <div><b>Web</b> · www.lazonadeportiva.com</div>
+          <div class="whatsapp">WhatsApp · +51 937 528 701</div>
+          <div class="small">Escanea el QR y conoce La Zona Deportiva.</div>
+        </div>
+      </article>
+      <article class="panel cover">
+        <img class="brand" src="logo-referencia.jpg" alt="La Zona Deportiva">
+        <h1>Gestiona tu complejo.<strong>Haz que te encuentren.</strong></h1>
+        <p class="lead">Reservas, control y visibilidad para impulsar el crecimiento de tu negocio deportivo.</p>
+        <div class="pill">La plataforma para complejos deportivos</div>
+      </article>
+    </div>
+    <div class="fold"></div><div class="print-note">EXTERIOR · Línea punteada: pliegue</div>
+  </section>
+
+  <section class="sheet inside" aria-label="Interior del díptico">
+    <div class="spread">
+      <article class="panel">
+        <div class="tagline">ADMINISTRA CON CLARIDAD</div>
+        <h2>Gestiona más.<br><span>Coordina menos.</span></h2>
+        <p class="intro">Reduce la coordinación manual y mantén el control de la operación diaria desde un solo panel.</p>
+        <div class="items">
+          <div class="item"><div class="icon">▦</div><div><b>Agenda de reservas</b><p>Calendario por sede y cancha, disponibilidad y estados de cada reserva.</p></div></div>
+          <div class="item"><div class="icon">S/</div><div><b>Pagos y comprobantes</b><p>Registra adelantos, saldos y operaciones de forma ordenada.</p></div></div>
+          <div class="item"><div class="icon">♟</div><div><b>Clientes y equipo</b><p>Gestiona clientes, usuarios y permisos para cada sede.</p></div></div>
+          <div class="item"><div class="icon">%</div><div><b>Promociones y cupones</b><p>Crea campañas por fecha, horario, sede o espacio deportivo.</p></div></div>
+          <div class="item"><div class="icon">↗</div><div><b>Indicadores y reportes</b><p>Conoce ocupación, reservas e ingresos para tomar mejores decisiones.</p></div></div>
+        </div>
+        <div class="admin-orb"></div>
+      </article>
+      <article class="panel">
+        <div class="tagline">MÁS VISIBILIDAD, MÁS RESERVAS</div>
+        <h2>Tu complejo, <span>visible para más jugadores.</span></h2>
+        <p class="intro">Publica tus sedes y canchas para que el público encuentre y reserve el espacio que busca con rapidez.</p>
+        <div class="discover-list">
+          <div><span class="tick">✓</span><span>Fotos de tus canchas y espacios deportivos.</span></div>
+          <div><span class="tick">✓</span><span>Deporte, piso, precio, horarios, servicios y ubicación.</span></div>
+          <div><span class="tick">✓</span><span>Disponibilidad y reservas en línea desde la web.</span></div>
+          <div><span class="tick">✓</span><span>Contacto directo por WhatsApp y reseñas de jugadores.</span></div>
+          <div><span class="tick">✓</span><span>Recordatorios y reservas listas para el calendario del cliente.</span></div>
+        </div>
+        <div class="qr-block">
+          <img src="qr-lazonadeportiva.png" alt="QR para www.lazonadeportiva.com">
+          <div><b>Conoce la plataforma</b><small>www.lazonadeportiva.com<br>+51 937 528 701</small></div>
+        </div>
+        <div class="discover"></div>
+      </article>
+    </div>
+    <div class="fold"></div><div class="print-note">INTERIOR · Línea punteada: pliegue</div>
+  </section>
+</body>
+</html>
