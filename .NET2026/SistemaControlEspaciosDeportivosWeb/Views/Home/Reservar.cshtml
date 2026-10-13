@@ -8,6 +8,7 @@
 @* Firma: FRANCO LARA - 07/09/2026 | Valida horarios publicos con la hora operativa de Peru, independiente de la ubicacion del visitante o hosting. *@
 @* Firma: FRANCO LARA - 18/09/2026 | Recompone la reserva pública para aprovechar monitores amplios, priorizar el calendario y organizar el formulario en bloques de reserva, cliente y opciones. *@
 @* Firma: FRANCO LARA - 08/10/2026 | Mantiene la confirmacion en la vista de reserva, muestra el correlativo y refresca el calendario sin cache. *@
+@* Firma: FRANCO LARA - 12/10/2026 | Asocia etiquetas del formulario publico, prioriza la vista diaria en movil y amplía objetivos táctiles de reserva. *@
 
 @{
     ViewData["Title"] = "Registrar reserva";
@@ -245,7 +246,7 @@
                 <input type="hidden" name="OmitirFechaHorario" value="@(Model.Formulario.OmitirFechaHorario == true ? "true" : "false")" />
 
                 <div class="col-md-3">
-                    <label class="form-label">Fecha</label>
+                    <label class="form-label" for="formFecha">Fecha</label>
                     <input id="formFecha"
                            name="Fecha"
                            type="date"
@@ -254,8 +255,8 @@
                            required />
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Hora inicio</label>
-                    <select id="formHoraInicio" name="HoraInicio" class="form-select" required>
+                    <label class="form-label" for="formHoraInicio">Hora inicio</label>
+                    <select id="formHoraInicio" name="HoraInicio" class="form-select" aria-describedby="formHoraInicioAyuda" required>
                         @foreach (var hora in horasInicioReservaPublica)
                         {
                             var valor = hora.ToString("HH\\:mm");
@@ -269,12 +270,12 @@
                             }
                         }
                     </select>
-                    <small class="text-muted">Hora maxima de inicio: 23:00.</small>
+                    <small id="formHoraInicioAyuda" class="text-muted">Hora maxima de inicio: 23:00.</small>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Hora fin</label>
+                    <label class="form-label" for="formHoraFinDisplay">Hora fin</label>
                     <input id="formHoraFin" name="HoraFin" type="hidden" value="@Model.Formulario.HoraFin.ToString("HH\\:mm")" />
-                    <select id="formHoraFinDisplay" class="form-select" @(permiteSeleccionarHoraFin ? null : "disabled")>
+                    <select id="formHoraFinDisplay" class="form-select" aria-describedby="formHoraFinAyuda" @(permiteSeleccionarHoraFin ? null : "disabled")>
                         @foreach (var item in horasFinDisponibles)
                         {
                             if (string.Equals(item.Value, Model.Formulario.HoraFin.ToString("HH\\:mm"), StringComparison.OrdinalIgnoreCase))
@@ -287,7 +288,7 @@
                             }
                         }
                     </select>
-                    <small class="text-muted">
+                    <small id="formHoraFinAyuda" class="text-muted">
                         @(horasMaximasReservaCliente <= 1
                             ? "La hora fin se ajusta automaticamente a +1 hora."
                             : $"Puedes elegir la hora fin en bloques de 1 hora hasta un maximo de {horasMaximasReservaCliente} hora(s).")
@@ -352,7 +353,7 @@
                 </div>
 
                 <div class="col-md-6">
-                    <label class="form-label">Tipo de documento</label>
+                    <label class="form-label" for="formTipoDocumento">Tipo de documento</label>
                     <select id="formTipoDocumento" name="TipoDocumento" class="form-select">
                         @foreach (var item in Model.Formulario.TiposDocumentoIdentidad)
                         {
@@ -368,7 +369,7 @@
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Numero de documento</label>
+                    <label class="form-label" for="formNumeroDocumento">Numero de documento</label>
                     <input id="formNumeroDocumento"
                            name="NumeroDocumento"
                            class="form-control"
@@ -376,31 +377,31 @@
                            value="@Model.Formulario.NumeroDocumento" />
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Nombres</label>
-                    <input name="Nombres"
+                    <label class="form-label" for="formNombres">Nombres</label>
+                    <input id="formNombres" name="Nombres"
                            class="form-control"
                            maxlength="120"
                            value="@Model.Formulario.Nombres"
                            required />
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Apellidos</label>
-                    <input name="Apellidos"
+                    <label class="form-label" for="formApellidos">Apellidos</label>
+                    <input id="formApellidos" name="Apellidos"
                            class="form-control"
                            maxlength="120"
                            value="@Model.Formulario.Apellidos"
                            required />
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Nombre de equipo</label>
-                    <input name="NombreEquipo"
+                    <label class="form-label" for="formNombreEquipo">Nombre de equipo</label>
+                    <input id="formNombreEquipo" name="NombreEquipo"
                            class="form-control"
                            maxlength="120"
                            value="@Model.Formulario.NombreEquipo" />
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Telefono</label>
-                    <input name="Telefono"
+                    <label class="form-label" for="formTelefono">Telefono</label>
+                    <input id="formTelefono" name="Telefono"
                            class="form-control"
                            maxlength="30"
                            required
@@ -409,8 +410,8 @@
                            value="@Model.Formulario.Telefono" />
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Correo</label>
-                    <input name="Correo"
+                    <label class="form-label" for="formCorreo">Correo</label>
+                    <input id="formCorreo" name="Correo"
                            type="email"
                            class="form-control"
                            maxlength="200"
@@ -418,14 +419,14 @@
                 </div>
 
                 <div class="col-12">
-                    <label class="form-label">Comentario (opcional)</label>
-                    <textarea name="Comentario" class="form-control" rows="3">@Model.Formulario.Comentario</textarea>
+                    <label class="form-label" for="formComentario">Comentario (opcional)</label>
+                    <textarea id="formComentario" name="Comentario" class="form-control" rows="3">@Model.Formulario.Comentario</textarea>
                 </div>
                 <div class="col-12 pt-2">
                     <h3 class="h6 mb-2 sc-public-section-title"><i class="bi bi-sliders me-1"></i>Opciones</h3>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Codigo de cupon (opcional)</label>
+                    <label class="form-label" for="formCodigoCupon">Codigo de cupon (opcional)</label>
                     <div class="input-group">
                         <input id="formCodigoCupon" name="CodigoCupon" class="form-control" maxlength="30" value="@Model.Formulario.CodigoCupon" />
                         <button type="button" class="btn btn-outline-primary btn-public-accion" id="btnValidarCuponPublico">Validar</button>
@@ -700,6 +701,7 @@
         .home-reservar-page .sc-public-space-map-btn {
             margin-top: auto;
             align-self: flex-start;
+            min-height: 2.75rem;
         }
         .home-reservar-page .sc-contact-actions {
             display: flex;
@@ -708,8 +710,8 @@
             gap: .42rem;
         }
         .home-reservar-page .sc-social-btn {
-            width: 1.9rem;
-            height: 1.9rem;
+            width: 2.75rem;
+            height: 2.75rem;
             border-radius: 50%;
             border: 1px solid #c8d8f6;
             background: #f2f7ff;
@@ -1255,6 +1257,22 @@
             .home-reservar-page .sc-public-reservation-workspace #calendarioPublicoReserva .fc {
                 min-width: 760px;
             }
+            .home-reservar-page .sc-public-cal-scroll[data-calendar-view="timeGridWeek"]::after {
+                content: 'Desliza para ver otros días';
+                display: block;
+                padding-top: .45rem;
+                color: #52657d;
+                font-size: .78rem;
+                font-weight: 700;
+                text-align: center;
+            }
+            .home-reservar-page .sc-public-reservation-workspace #calendarioPublicoReserva .fc.fc-timeGridDay {
+                min-width: 0;
+            }
+            .home-reservar-page #formReservaPublica .btn,
+            .home-reservar-page #formReservaPublica .btn-public-cancelar {
+                min-height: 2.75rem;
+            }
         }
 
         /* Bloques del formulario: separan selección, cliente y acciones opcionales. */
@@ -1301,6 +1319,7 @@
             const calendarEl = document.getElementById('calendarioPublicoReserva');
             if (!calendarEl || typeof FullCalendar === 'undefined') return;
 
+            const calendarScroll = calendarEl.closest('.sc-public-cal-scroll');
             const negocioId = @Model.NegocioId;
             const espacioId = @Model.Espacio.EspacioDeportivoId;
             const businessNowAtRender = new Date('@ahoraNegocioIso');
@@ -1592,9 +1611,13 @@
                 if (formContainer) formContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
 
+            const vistaInicialCalendario = window.matchMedia('(max-width: 575.98px)').matches
+                ? 'timeGridDay'
+                : 'timeGridWeek';
+
             const calendar = new FullCalendar.Calendar(calendarEl, {
                 locale: 'es',
-                initialView: 'timeGridWeek',
+                initialView: vistaInicialCalendario,
                 initialDate: '@fecha.ToString("yyyy-MM-dd")',
                 firstDay: 1,
                 weekends: true,
@@ -1655,6 +1678,7 @@
                     }
                 },
                 datesSet: (info) => {
+                    calendarScroll?.setAttribute('data-calendar-view', info.view.type);
                     const titulo = formatAdminRangeTitle(info.start, info.end, info.view.type);
                     const tituloEl = calendarEl.querySelector('.fc-toolbar-title');
                     if (tituloEl) tituloEl.textContent = titulo;

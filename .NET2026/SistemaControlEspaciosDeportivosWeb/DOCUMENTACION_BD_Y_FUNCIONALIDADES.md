@@ -617,6 +617,10 @@
   - Home publica incorpora checkbox `Obviar filtro de dia y horario` habilitado al seleccionar `Club/negocio`; se conserva en paginacion y navegacion hacia `Reservar`.
 - Actualizacion 16/04/2026:
   - `Sp_Home_ListarSedesPublicas` agrega `CodigoUbigeoNegocio`, `CodigoDepartamentoNegocio` y `CodigoProvinciaNegocio` para filtrar el combo `Club/negocio` por ubicacion seleccionada en Home (departamento/provincia/distrito).
+- Actualizacion 13/10/2026:
+  - `Sp_Home_BuscarEspaciosDisponibles` alinea la disponibilidad del portal publico con `Sp_Reservas_ValidarDisponibilidad`.
+  - Cuando `@IgnorarFechaHorario = 0`, cada espacio administrado valida el horario efectivo del espacio o de su sede, el dia habilitado, las fechas inhabilitadas, los bloqueos y los cruces de reservas del propio espacio y de sus espacios relacionados.
+  - Cuando `@IgnorarFechaHorario = 1`, se conserva el modo de exploracion sin filtrar por fecha ni horario. Los espacios referenciales externos permanecen informativos y no exponen disponibilidad administrada por la plataforma.
 
 ### 21_Altas_Clubes.sql
 - Tabla:

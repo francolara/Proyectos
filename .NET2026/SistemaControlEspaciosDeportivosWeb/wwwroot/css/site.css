@@ -161,6 +161,15 @@ body {
   z-index: 150;
 }
 
+/* Firma: FRANCO LARA - 13/10/2026 | Convierte el lateral administrativo en un menú compacto desplegable para tableta y móvil, preservando el panel lateral completo en escritorio. */
+.sc-admin-mobile-menu-toggle {
+  display: none;
+}
+
+.sc-admin-mobile-menu.collapse {
+  display: contents;
+}
+
 /* Firma: FRANCO LARA - 08/07/2026 | Replica modo oscuro administrativo, traslada el scroll principal al sidebar y agrega overlay de carga para la navegacion interna. */
 .sc-admin-sidebar::-webkit-scrollbar {
   width: 0.68rem;
@@ -2058,6 +2067,13 @@ html[data-theme="dark"] .form-check-input:checked {
   background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
 }
 
+.sc-reservas-filter-context {
+  margin: 0 0 0.7rem;
+  color: var(--sc-admin-muted, #64748b);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
 .sc-listado-filtro-form .form-control {
   border-radius: 0.7rem;
   border-color: #cbd8ea;
@@ -2507,13 +2523,66 @@ html[data-theme="dark"] .form-check-input:checked {
 
   .sc-admin-sidebar {
     position: relative;
-    top: auto;
+    top: 0;
     left: auto;
     width: auto;
     height: auto;
     overflow: visible;
-    padding-bottom: 1.55rem;
-    z-index: auto;
+    padding: 0.7rem 0.8rem;
+    z-index: 150;
+    position: sticky;
+  }
+
+  .sc-admin-mobile-menu-toggle {
+    width: 100%;
+    min-height: 2.9rem;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid var(--sc-admin-sidebar-border, rgba(255, 255, 255, 0.24));
+    border-radius: 0.82rem;
+    background: color-mix(in srgb, var(--sc-admin-header-end, #087a5b) 72%, transparent);
+    color: var(--sc-admin-on-color, #fff);
+    font: inherit;
+    text-align: left;
+  }
+
+  .sc-admin-mobile-menu-toggle > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 800;
+  }
+
+  .sc-admin-mobile-menu-toggle > strong {
+    overflow: hidden;
+    font-size: 0.86rem;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sc-admin-mobile-menu-toggle > .bi {
+    transition: transform 0.18s ease;
+  }
+
+  .sc-admin-mobile-menu-toggle[aria-expanded="true"] > .bi {
+    transform: rotate(180deg);
+  }
+
+  .sc-admin-mobile-menu.collapse:not(.show) {
+    display: none;
+  }
+
+  .sc-admin-mobile-menu.collapse.show {
+    display: block;
+    max-height: calc(100dvh - 4.8rem);
+    overflow-y: auto;
+    margin-top: 0.55rem;
+    padding: 0.15rem 0.15rem 0.9rem;
+    scrollbar-gutter: stable;
   }
 
   .sc-admin-main {
@@ -10647,6 +10716,13 @@ html[data-theme="dark"] .form-check-input[type="checkbox"][disabled] {
 .home-map-btn { min-width: auto; min-height: 2.3rem; border-color: #d2dfec; box-shadow: none; }
 .home-sede-social { gap: .35rem; }
 .home-sede-social a { width: 2rem; height: 2rem; }
+/* Firma: FRANCO LARA - 12/10/2026 | Distingue disponibilidad no confirmada y amplía objetivos táctiles de las tarjetas públicas en móvil. */
+.home-availability-pending {
+  border: 1px solid #b7d6f4;
+  background: #edf6ff;
+  color: #164b86;
+  font-weight: 700;
+}
 
 .home-benefits-section {
   padding: clamp(1.5rem, 3vw, 3.25rem);
@@ -10724,6 +10800,12 @@ html[data-theme="dark"] .form-check-input[type="checkbox"][disabled] {
   .home-section-head-actions > * { width: 100%; }
   .home-head-radio-wrap { justify-content: space-between; }
   .home-results-grid { grid-template-columns: 1fr; }
+  .home-reserve-btn,
+  .home-map-btn,
+  .home-sede-social a {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
   .home-benefits-grid { grid-template-columns: 1fr; }
   .home-benefit-card { padding: 1.2rem; }
   .home-pricing-grid { max-width: none; }

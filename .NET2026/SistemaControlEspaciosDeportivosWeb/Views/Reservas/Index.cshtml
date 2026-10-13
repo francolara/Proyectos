@@ -8,6 +8,7 @@
 @* Firma: FRANCO LARA - 01/10/2026 | Muestra el correlativo visible de reserva por negocio en listado, calendario, pendientes y pop-up; conserva el Id tecnico solo para acciones internas. *@
 @* Firma: FRANCO LARA - 02/10/2026 | Selecciona sede y espacio unicos, reorganiza la vista en tres bloques operativos, presenta Agenda y Bloqueos plegados bajo demanda y alinea cabeceras y detalle del listado con el estandar: texto plano sin iconos ni chips decorativos por columna. *@
 @* Firma: FRANCO LARA - 06/10/2026 | Amplia fechas del pop-up, ajusta pagos, muestra moneda historica por reserva y evita sumar monedas distintas. *@
+@* Firma: FRANCO LARA - 13/10/2026 | Diferencia los filtros de operación actual e historial para reducir cruces de contexto; refuerza etiquetas asociadas en ambos formularios. *@
 @{
     ViewData["Title"] = "Reservas";
     var ahoraNegocio = BusinessClock.LocalNow;
@@ -63,8 +64,8 @@
 <section class="sc-reservas-group sc-operacion-group mb-4" aria-labelledby="operacionDiariaTitulo">
     <header class="sc-reservas-group-head">
         <div>
-            <h2 id="operacionDiariaTitulo" class="sc-reservas-group-title"><i class="bi bi-sliders2"></i>Operacion del dia</h2>
-            <p>Indicadores, filtros y estados para trabajar con la seleccion actual.</p>
+            <h2 id="operacionDiariaTitulo" class="sc-reservas-group-title"><i class="bi bi-sliders2"></i>Operacion actual</h2>
+            <p>Indicadores, disponibilidad y agenda para la sede y espacio que selecciones aqui.</p>
         </div>
     </header>
     <div class="sc-reservas-group-body">
@@ -101,9 +102,10 @@
             <input id="fechaDesde" type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
             <input id="fechaHasta" type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
             <div class="sc-reservas-subpanel-title"><i class="bi bi-funnel"></i>Filtros operativos</div>
+            <p class="sc-reservas-filter-context">Estos filtros actualizan la operacion actual. El historial de reservas conserva su propio rango y estados mas abajo.</p>
             <div class="row g-2 align-items-end">
                 <div class="col-md-4">
-                    <label class="form-label">Sede</label>
+                    <label class="form-label" for="sedeId">Sede</label>
                     <select id="sedeId" class="form-select" name="sedeId">
                         <option value="">Seleccione sede</option>
                         @foreach (var s in Model.SedesFiltro)
@@ -120,7 +122,7 @@
                     </select>
                 </div>
                 <div id="espacioFiltroCol" class="col-md-4">
-                    <label class="form-label">Espacio</label>
+                    <label class="form-label" for="espacioDeportivoId">Espacio</label>
                     <select id="espacioDeportivoId" class="form-select" name="espacioDeportivoId" @(habilitarFiltroEspacio ? "" : "disabled")>
                         <option value="">@(habilitarFiltroEspacio ? "Selecciona espacio" : "Selecciona sede primero")</option>
                         @foreach (var e in Model.EspaciosFiltro)
@@ -137,7 +139,7 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Estado</label>
+                    <label class="form-label" for="estado">Estado</label>
                     <select id="estado" class="form-select" name="estado">
                         @foreach (var est in Model.EstadosFiltro)
                         {
@@ -262,8 +264,8 @@
 <section class="sc-reservas-group sc-gestion-group mb-4" aria-labelledby="gestionReservasTitulo">
     <header class="sc-reservas-group-head">
         <div>
-            <h2 id="gestionReservasTitulo" class="sc-reservas-group-title"><i class="bi bi-calendar-check"></i>Gestion de reservas</h2>
-            <p>Consulta reservas registradas y administra los bloqueos del espacio seleccionado.</p>
+            <h2 id="gestionReservasTitulo" class="sc-reservas-group-title"><i class="bi bi-calendar-check"></i>Historial y gestion de reservas</h2>
+            <p>Consulta reservas registradas por rango propio y administra bloqueos del espacio seleccionado.</p>
         </div>
     </header>
     <div class="sc-reservas-group-body">
@@ -273,7 +275,7 @@
         <div class="sc-reservas-list-head">
             <div>
                 <h2 class="section-title"><i class="bi bi-calendar-check me-1"></i>Reservas registradas</h2>
-                <p class="mb-0 text-muted small">Consulta con filtro independiente de rango y estados multiples.</p>
+                <p class="mb-0 text-muted small">Usa un rango y estados propios; mantiene la sede y espacio seleccionados en la operacion actual.</p>
             </div>
             <div class="sc-reservas-metrics">
                 <div class="sc-reservas-metric">
@@ -304,12 +306,12 @@
             <input type="hidden" name="paginaListado" value="@Model.PaginaListado" />
             <div class="row g-2 align-items-end">
                 <div class="col-md-2">
-                    <label class="form-label">Desde</label>
-                    <input type="date" class="form-control" name="listadoDesde" value="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" />
+                    <label class="form-label" for="listadoDesde">Desde</label>
+                    <input id="listadoDesde" type="date" class="form-control" name="listadoDesde" value="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Hasta</label>
-                    <input type="date" class="form-control" name="listadoHasta" value="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" />
+                    <label class="form-label" for="listadoHasta">Hasta</label>
+                    <input id="listadoHasta" type="date" class="form-control" name="listadoHasta" value="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" />
                 </div>
                 <div class="col-md-3">
                     <label class="form-label d-block mb-1">Seleccion rapida</label>

@@ -199,15 +199,16 @@
     @* Firma: FRANCO LARA - 16/07/2026 | Imprimir abre un documento ejecutivo independiente con detalle separado de pagos y reservas. *@
     @* Firma: FRANCO LARA - 30/09/2026 | Agrega torres clicables y distribuciones visuales de cobranza y operacion para acceso amigable al detalle. *@
     @* Firma: FRANCO LARA - 01/10/2026 | Reemplaza los listados planos por exploradores maestro-detalle de cobros, reservas y operacion por espacio, y corrige la activacion del panel de detalle. *@
-    <section class="sc-report-tabs no-print" aria-label="Cambiar bloque de reportes">
-        <button type="button" class="sc-report-tab is-active" data-report-tab-trigger="cobros" aria-pressed="true">
+    @* Firma: FRANCO LARA - 13/10/2026 | Declara las vistas excluyentes de Reportes como pestañas accesibles con navegación de teclado. *@
+    <section class="sc-report-tabs no-print" role="tablist" aria-label="Cambiar bloque de reportes">
+        <button type="button" class="sc-report-tab is-active" id="scReportTabCobros" role="tab" data-report-tab-trigger="cobros" aria-selected="true" aria-controls="scReportPaneCobros" tabindex="0">
             <span class="sc-report-tab-icon sc-report-tab-icon--cobros"><i class="bi bi-cash-coin"></i></span>
             <span class="sc-report-tab-text">
                 <strong>Cobros</strong>
                 <small>Lectura por fecha de pago</small>
             </span>
         </button>
-        <button type="button" class="sc-report-tab" data-report-tab-trigger="operacion" aria-pressed="false">
+        <button type="button" class="sc-report-tab" id="scReportTabOperacion" role="tab" data-report-tab-trigger="operacion" aria-selected="false" aria-controls="scReportPaneOperacion" tabindex="-1">
             <span class="sc-report-tab-icon sc-report-tab-icon--operacion"><i class="bi bi-clipboard2-data"></i></span>
             <span class="sc-report-tab-text">
                 <strong>Datos operativos</strong>
@@ -217,7 +218,7 @@
     </section>
 
     <div class="sc-report-pane-group no-print">
-        <section class="sc-report-pane is-active" data-report-tab-pane="cobros">
+        <section class="sc-report-pane is-active" id="scReportPaneCobros" role="tabpanel" aria-labelledby="scReportTabCobros" data-report-tab-pane="cobros">
             <section class="sc-dash-kpis mb-3">
                 <article class="sc-dash-kpi-card">
                     <div class="sc-dash-kpi-head">
@@ -438,7 +439,7 @@
             </section>
         </section>
 
-        <section class="sc-report-pane" data-report-tab-pane="operacion">
+        <section class="sc-report-pane" id="scReportPaneOperacion" role="tabpanel" aria-labelledby="scReportTabOperacion" data-report-tab-pane="operacion" hidden>
             <section class="sc-dash-kpis mb-3">
                 <article class="sc-dash-kpi-card">
                     <div class="sc-dash-kpi-head">
@@ -958,16 +959,30 @@
             triggers.forEach((trigger) => {
                 const active = trigger.getAttribute('data-report-tab-trigger') === target;
                 trigger.classList.toggle('is-active', active);
-                trigger.setAttribute('aria-pressed', active ? 'true' : 'false');
+                trigger.setAttribute('aria-selected', active ? 'true' : 'false');
+                trigger.tabIndex = active ? 0 : -1;
             });
 
             panes.forEach((pane) => {
-                pane.classList.toggle('is-active', pane.getAttribute('data-report-tab-pane') === target);
+                const active = pane.getAttribute('data-report-tab-pane') === target;
+                pane.classList.toggle('is-active', active);
+                pane.hidden = !active;
             });
         };
 
         triggers.forEach((trigger) => {
             trigger.addEventListener('click', () => activate(trigger.getAttribute('data-report-tab-trigger')));
+            trigger.addEventListener('keydown', (event) => {
+                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                event.preventDefault();
+                const currentIndex = triggers.indexOf(trigger);
+                const nextIndex = event.key === 'Home' ? 0
+                    : event.key === 'End' ? triggers.length - 1
+                    : (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + triggers.length) % triggers.length;
+                const next = triggers[nextIndex];
+                activate(next.getAttribute('data-report-tab-trigger'));
+                next.focus();
+            });
         });
 
         const modalElement = document.getElementById('visualDetailModal');

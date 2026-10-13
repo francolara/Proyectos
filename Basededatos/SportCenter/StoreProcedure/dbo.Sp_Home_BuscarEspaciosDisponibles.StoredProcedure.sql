@@ -20,6 +20,7 @@ GO
 -- Firma: FRANCO LARA - 08/06/2026 | Expone fotos propias del espacio deportivo para priorizarlas en las tarjetas del Home, completa con fotos de la sede cuando existan y propaga las nuevas columnas en la tabla temporal de paginacion.
 -- Firma: FRANCO LARA - 09/06/2026 | Limita el home publico a espacios de negocios con suscripcion publica habilitada (EstadoSuscripcion = 1 o 2), ocultando pendientes, vencidos y suspendidos en tarjetas y resultados directos.
 -- Firma: FRANCO LARA - 06/10/2026 | Expone moneda canonica y resuelve deporte/suelo desde los identificadores globales persistidos por el espacio.
+-- Firma: Codex - 13/10/2026 | Alinea la disponibilidad publica con reservas: valida horario efectivo de sede/espacio, dia habilitado, fechas inhabilitadas, bloqueos y cruces en espacios relacionados.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Home_BuscarEspaciosDisponibles]
     @Fecha DATE,
     @HoraInicio TIME,
@@ -41,7 +42,79 @@ AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
-        ;WITH Resultados AS
+        ;WITH EspaciosAfectados AS
+        (
+            SELECT
+                e.Id AS EspacioBaseId,
+                e.Id AS EspacioAfectadoId
+            FROM dbo.EspaciosDeportivos e
+            WHERE e.Estado = 1
+
+            UNION
+
+            SELECT
+                e.Id AS EspacioBaseId,
+                ec.EspacioRelacionadoId AS EspacioAfectadoId
+            FROM dbo.EspaciosDeportivos e
+            INNER JOIN dbo.EspaciosDeportivosCompartidos ec
+                ON ec.EspacioDeportivoId = e.Id
+               AND ec.Activo = 1
+               AND ec.TipoRelacion IN (N'DIRECTO', N'COMPUESTO_COMPONENTE')
+            INNER JOIN dbo.EspaciosDeportivos er
+                ON er.Id = ec.EspacioRelacionadoId
+               AND er.Estado = 1
+
+            UNION
+
+            SELECT
+                e.Id AS EspacioBaseId,
+                ec.EspacioDeportivoId AS EspacioAfectadoId
+            FROM dbo.EspaciosDeportivos e
+            INNER JOIN dbo.EspaciosDeportivosCompartidos ec
+                ON ec.EspacioRelacionadoId = e.Id
+               AND ec.Activo = 1
+               AND ec.TipoRelacion = N'COMPUESTO_COMPONENTE'
+            INNER JOIN dbo.EspaciosDeportivos er
+                ON er.Id = ec.EspacioDeportivoId
+               AND er.Estado = 1
+
+            UNION
+
+            SELECT
+                e.Id AS EspacioBaseId,
+                ed.EspacioRelacionadoId AS EspacioAfectadoId
+            FROM dbo.EspaciosDeportivos e
+            INNER JOIN dbo.EspaciosDeportivosCompartidos ecComp
+                ON ecComp.EspacioDeportivoId = e.Id
+               AND ecComp.Activo = 1
+               AND ecComp.TipoRelacion = N'COMPUESTO_COMPONENTE'
+            INNER JOIN dbo.EspaciosDeportivosCompartidos ed
+                ON ed.EspacioDeportivoId = ecComp.EspacioRelacionadoId
+               AND ed.Activo = 1
+               AND ed.TipoRelacion = N'DIRECTO'
+            INNER JOIN dbo.EspaciosDeportivos er
+                ON er.Id = ed.EspacioRelacionadoId
+               AND er.Estado = 1
+
+            UNION
+
+            SELECT
+                e.Id AS EspacioBaseId,
+                ep.EspacioDeportivoId AS EspacioAfectadoId
+            FROM dbo.EspaciosDeportivos e
+            INNER JOIN dbo.EspaciosDeportivosCompartidos edActual
+                ON edActual.EspacioDeportivoId = e.Id
+               AND edActual.Activo = 1
+               AND edActual.TipoRelacion = N'DIRECTO'
+            INNER JOIN dbo.EspaciosDeportivosCompartidos ep
+                ON ep.EspacioRelacionadoId = edActual.EspacioRelacionadoId
+               AND ep.Activo = 1
+               AND ep.TipoRelacion = N'COMPUESTO_COMPONENTE'
+            INNER JOIN dbo.EspaciosDeportivos er
+                ON er.Id = ep.EspacioDeportivoId
+               AND er.Estado = 1
+        ),
+        Resultados AS
         (
             SELECT
                 0 AS OrdenFuente,
@@ -93,6 +166,8 @@ BEGIN
             LEFT JOIN dbo.UbigeoProvincias prov ON prov.CodigoProvincia = dist.CodigoProvincia
             LEFT JOIN dbo.UbigeoDepartamentos dep ON dep.CodigoDepartamento = dist.CodigoDepartamento
             LEFT JOIN dbo.SedeConfiguracionNotificacion scn ON scn.SedeId = s.Id
+            LEFT JOIN dbo.SedeHorarioAtencion sha ON sha.SedeId = s.Id
+            LEFT JOIN dbo.EspacioHorarioAtencion eha ON eha.EspacioDeportivoId = e.Id
             OUTER APPLY
             (
                 SELECT TOP (1)
@@ -121,15 +196,59 @@ BEGIN
               AND
               (
                   @IgnorarFechaHorario = 1
-                  OR NOT EXISTS
+                  OR
                   (
-                      SELECT 1
-                      FROM dbo.Reservas r
-                      WHERE r.EspacioDeportivoId = e.Id
-                        AND r.Fecha = @Fecha
-                        AND r.Estado NOT IN (5, 6)
-                        AND @HoraInicio < r.HoraFin
-                        AND @HoraFin > r.HoraInicio
+                      @HoraFin > @HoraInicio
+                      AND CASE (DATEDIFF(DAY, '19000101', @Fecha) % 7) + 1
+                              WHEN 1 THEN CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeLunes, 1) ELSE COALESCE(sha.AtiendeLunes, 1) END
+                              WHEN 2 THEN CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeMartes, 1) ELSE COALESCE(sha.AtiendeMartes, 1) END
+                              WHEN 3 THEN CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeMiercoles, 1) ELSE COALESCE(sha.AtiendeMiercoles, 1) END
+                              WHEN 4 THEN CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeJueves, 1) ELSE COALESCE(sha.AtiendeJueves, 1) END
+                              WHEN 5 THEN CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeViernes, 1) ELSE COALESCE(sha.AtiendeViernes, 1) END
+                              WHEN 6 THEN CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeSabado, 1) ELSE COALESCE(sha.AtiendeSabado, 1) END
+                              WHEN 7 THEN CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeDomingo, 1) ELSE COALESCE(sha.AtiendeDomingo, 1) END
+                              ELSE 0
+                          END = 1
+                      AND @HoraInicio >= CASE
+                              WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1
+                                  THEN COALESCE(eha.HoraApertura, CAST('08:00' AS TIME))
+                              ELSE COALESCE(sha.HoraApertura, CAST('08:00' AS TIME))
+                          END
+                      AND @HoraFin <= CASE
+                              WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1
+                                  THEN COALESCE(eha.HoraCierre, CAST('23:00' AS TIME))
+                              ELSE COALESCE(sha.HoraCierre, CAST('23:00' AS TIME))
+                          END
+                      AND NOT EXISTS
+                      (
+                          SELECT 1
+                          FROM dbo.SedeFechasInhabilitadas sfi
+                          WHERE sfi.SedeId = s.Id
+                            AND sfi.Fecha = @Fecha
+                            AND sfi.Activo = 1
+                      )
+                      AND NOT EXISTS
+                      (
+                          SELECT 1
+                          FROM dbo.Reservas r
+                          INNER JOIN EspaciosAfectados ea ON ea.EspacioAfectadoId = r.EspacioDeportivoId
+                          WHERE ea.EspacioBaseId = e.Id
+                            AND r.Fecha = @Fecha
+                            AND r.Estado NOT IN (5, 6)
+                            AND @HoraInicio < r.HoraFin
+                            AND @HoraFin > r.HoraInicio
+                      )
+                      AND NOT EXISTS
+                      (
+                          SELECT 1
+                          FROM dbo.BloqueosHorario b
+                          INNER JOIN EspaciosAfectados ea ON ea.EspacioAfectadoId = b.EspacioDeportivoId
+                          WHERE ea.EspacioBaseId = e.Id
+                            AND b.Fecha = @Fecha
+                            AND b.Activo = 1
+                            AND @HoraInicio < b.HoraFin
+                            AND @HoraFin > b.HoraInicio
+                      )
                   )
               )
 
