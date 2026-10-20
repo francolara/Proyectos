@@ -1335,6 +1335,8 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
+' Firma Codex 15/10/2026: listado, cabecera y estados de entidades obtenidos mediante procedimientos almacenados.
+' Firma Codex 17/10/2026: parametros del mantenimiento obtenidos desde la cache cargada en el login.
 Private indCopiaDireccion               As Boolean
 Private indEditando                     As Boolean
 Dim CIdContacto                         As String
@@ -1594,7 +1596,7 @@ Dim StrMsgError As String
     fraListado.Visible = True
     fraGeneral.Visible = False
     
-    If leeParametro("VISUALIZA_NOMBRE_COMERCIAL") = "S" Then
+    If STR_VISUALIZA_NOMBRE_COMERCIAL = "S" Then
         
         gLista.Columns.ColumnByFieldName("GlsNombreComercial").Visible = True
     
@@ -1720,19 +1722,8 @@ Dim indHabilitar As Boolean
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
-On Error GoTo Err
-Dim StrMsgError As String
-    
-    If glsEnterAyudaClientes = False Then
-        listaPersona StrMsgError
-        If StrMsgError <> "" Then GoTo Err
-    End If
-    
-    Exit Sub
-    
-Err:
-    If StrMsgError = "" Then StrMsgError = Err.Description
-    MsgBox StrMsgError, vbInformation, App.Title
+
+    'La consulta se ejecuta al presionar Enter para evitar una llamada por cada tecla.
 
 End Sub
 
@@ -1991,27 +1982,7 @@ Dim CSqlC                       As String
 Dim rsdatos                     As New ADODB.Recordset
     'PQS 07-01-15
     
-    strCond = ""
-    If Trim(txt_TextoBuscar.Text) <> "" Then
-    
-        strCond = Trim(txt_TextoBuscar.Text)
-        strCond = "Where (GlsPersona Like'%" & strCond & "%' Or IdPersona Like'%" & strCond & "%' Or TipoPersona Like'%" & strCond & "%' " & _
-                  "Or Direccion Like'%" & strCond & "%' Or Ruc Like'%" & strCond & "%' Or GlsNombreComercial Like'%" & strCond & "%') "
-                    
-    End If
-    
-    CSqlC = "Select IdPersona,GlsPersona,case when TipoPersona = '01001' then 'Natural' else 'Juridica' end TipoPersona,Ruc," & _
-            "(Direccion + ', ' + isnull(U.GlsUbigeo, '')) Direccion,GlsNombreComercial,CASE WHEN isnull(B.IdProveedor,'') <> '' THEN '1' ELSE '0' END IndProveedor," & _
-            "CASE WHEN isnull(C.IdCliente,'') <> '' THEN '1' ELSE '0' END IndCliente " & _
-            "From Personas P " & _
-            "Left Join Ubigeo U " & _
-                "On P.IdDistrito = U.IdDistrito And P.IdPais = U.IdPais " & _
-            "Left Join Proveedores B " & _
-                "On '" & glsEmpresa & "' = B.IdEmpresa And P.IdPersona = B.IdProveedor " & _
-            "Left Join Clientes C " & _
-                "On '" & glsEmpresa & "' = C.IdEmpresa And P.IdPersona = C.IdCliente " & _
-            " " & strCond & _
-            "Order By IdPersona"
+    CSqlC = "EXEC dbo.spu_MantPersonas_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
             
     If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
     rsdatos.Open CSqlC, Cn, adOpenStatic, adLockOptimistic
@@ -2042,12 +2013,7 @@ Dim CSqlC                       As String
     
     'PQS 07-01-15
     
-    CSqlC = "Select IdPersona,GlsPersona,ApellidoPaterno,ApellidoMaterno,Nombres,TipoPersona,Ruc,Direccion,P.IdPais,P.IdDistrito,U.IdDpto,U.IdProv,Telefonos," & _
-            "Mail,FechaNacimiento,DireccionEntrega,GlsContacto,IdTipoDocIdentidad,GlsNombreComercial,IdContacto " & _
-            "From Personas P " & _
-            "Left Join Ubigeo U " & _
-                "On P.IdDistrito = U.IdDistrito And P.IdPais = U.IdPais " & _
-            "Where IdPersona = '" & strCodPer & "'"
+    CSqlC = "EXEC dbo.spu_MantPersonas_Obtener '" & Replace(strCodPer, "'", "''") & "'"
     rst.Open CSqlC, Cn, adOpenStatic, adLockReadOnly
     
     txtCod_Depa.Tag = "TidDpto"
@@ -2059,63 +2025,41 @@ Dim CSqlC                       As String
     mostrarDatosFormSQL Me, rst, StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
-    If traerCampo("Clientes", "IdCliente", "IdCliente", txtCod_Persona.Text, True) = "" Then
+    CSqlC = "EXEC dbo.spu_MantPersonas_Estado_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodPer, "'", "''") & "'"
+    rst.Open CSqlC, Cn, adOpenStatic, adLockReadOnly
+
+    If Val("" & rst.Fields("EsCliente")) = 0 Then
         chk_Cliente.Value = 0
         chk_Cliente.Enabled = True
     Else
         chk_Cliente.Value = 1
         chk_Cliente.Enabled = False
     End If
- 
-    If traerCampo("Proveedores", "IdProveedor", "IdProveedor", txtCod_Persona.Text, True) = "" Then
+    If Val("" & rst.Fields("EsProveedor")) = 0 Then
         chk_Proveedor.Value = 0
         chk_Proveedor.Enabled = True
     Else
         chk_Proveedor.Value = 1
         chk_Proveedor.Enabled = False
     End If
-    
     txtCod_Depa.Tag = ""
     txtCod_Prov.Tag = ""
     indCopiaDireccion = False
-    
-    CSqlC = "Select IndMatriz,IndSubSidiaria,IndAsociada " & _
-            "From EmpresasRelacionadas " & _
-            "Where IdEmpresa = '" & glsEmpresa & "' And IdPersona = '" & strCodPer & "'"
-    rst.Open CSqlC, Cn, adOpenStatic, adLockReadOnly
-    If Not rst.EOF Then
-    
+    If Val("" & rst.Fields("EsRelacionada")) = 1 Then
         ChkRelacionada.Value = 1
-        
         OptRelacionadaTipo(0).Value = IIf(Trim("" & rst.Fields("IndMatriz")) = "1", True, False)
         OptRelacionadaTipo(1).Value = IIf(Trim("" & rst.Fields("IndSubSidiaria")) = "1", True, False)
         OptRelacionadaTipo(2).Value = IIf(Trim("" & rst.Fields("IndAsociada")) = "1", True, False)
-    
     Else
-        
         ChkRelacionada.Value = 0
-    
     End If
-    
-    rst.Close: Set rst = Nothing
-    
-    CSqlC = "Select IndPersonal,IndSocio " & _
-            "From Personal " & _
-            "Where IdEmpresa = '" & glsEmpresa & "' And IdPersona = '" & strCodPer & "'"
-    rst.Open CSqlC, Cn, adOpenStatic, adLockReadOnly
-    If Not rst.EOF Then
-    
+    If Val("" & rst.Fields("EsPersonal")) = 1 Then
         ChkPersonal.Value = 1
-        
         OptEmpleadoTipo(0).Value = IIf(Trim("" & rst.Fields("IndPersonal")) = "1", True, False)
         OptEmpleadoTipo(1).Value = IIf(Trim("" & rst.Fields("IndSocio")) = "1", True, False)
-        
     Else
-        
         ChkPersonal.Value = 0
-    
     End If
-    
     rst.Close: Set rst = Nothing
     
     Me.Refresh

@@ -1,6 +1,6 @@
 VERSION 5.00
 Object = "{6A24B331-7634-11D3-A5B0-0050044A7E1A}#1.5#0"; "DXDBGrid.dll"
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "mscomctl.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "MSCOMCTL.OCX"
 Object = "{F41D1D30-7878-4923-8CB3-6CCACDC9C9DE}#1.0#0"; "CATControls.ocx"
 Begin VB.Form frmMantEmpTrans 
    Appearance      =   0  'Flat
@@ -639,6 +639,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma Codex 15/10/2026: listado y carga consolidada de empresas de transporte mediante procedimientos almacenados.
 
 Dim indBoton As Integer
 
@@ -759,14 +760,17 @@ Err:
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
+    ' La consulta se ejecuta al presionar Enter.
+End Sub
+
+Private Sub txt_TextoBuscar_KeyPress(KeyAscii As Integer)
 On Error GoTo Err
 Dim StrMsgError As String
-
+    If KeyAscii <> 13 Then Exit Sub
+    KeyAscii = 0
     listaEmpTrans StrMsgError
     If StrMsgError <> "" Then GoTo Err
-    
     Exit Sub
-    
 Err:
     If StrMsgError = "" Then StrMsgError = Err.Description
     MsgBox StrMsgError, vbInformation, App.Title
@@ -888,11 +892,7 @@ Dim rsdatos                     As New ADODB.Recordset
         strCond = " AND GlsPersona LIKE '%" & strCond & "%'"
     End If
     
-    csql = "SELECT v.idEmpTrans ,p.GlsPersona ," & _
-            "concat(p.direccion,', ',u.GlsUbigeo) as Direccion " & _
-            "FROM EmpTrans v,personas p,ubigeo u " & _
-            "WHERE v.idEmpTrans = p.idPersona AND v.idEmpresa = '" & glsEmpresa & "' AND p.iddistrito = u.iddistrito " & strCond & _
-            "ORDER BY v.idEmpTrans"
+    csql = "EXEC dbo.spu_MantEmpTrans_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
             
 
 If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
@@ -923,18 +923,23 @@ Private Sub mostrarEmpTrans(strCodEmpTrans As String, ByRef StrMsgError As Strin
 On Error GoTo Err
 Dim rst As New ADODB.Recordset
 
-    csql = "SELECT v.idEmpTrans " & _
-           "FROM EmpTrans v " & _
-           "WHERE v.idEmpTrans = '" & strCodEmpTrans & "' and v.idEmpresa = '" & glsEmpresa & "'"
+    csql = "EXEC dbo.spu_MantEmpTrans_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodEmpTrans, "'", "''") & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     
+   If Not rst.EOF Then
+        txtCod_Pais.Text = "02001"
+        txtCod_Depa.Text = "" & rst.Fields("IdDpto")
+        txtCod_Prov.Text = "" & rst.Fields("IdProv")
+        txtCod_Distrito.Text = "" & rst.Fields("IdDistrito")
+        txtGls_Direccion.Text = "" & rst.Fields("Direccion")
+        txtGls_Persona.Text = "" & rst.Fields("GlsPersona")
+    End If
+    Me.Refresh
+'''
     mostrarDatosFormSQL Me, rst, StrMsgError
     If StrMsgError <> "" Then GoTo Err
-    mostrarDatosPersona
-    Me.Refresh
     
-    Exit Sub
-    
+Exit Sub
 Err:
     If StrMsgError = "" Then StrMsgError = Err.Description
 End Sub

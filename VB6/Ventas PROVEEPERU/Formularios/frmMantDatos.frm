@@ -427,6 +427,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma Codex 16/10/2026: tipos, listado y carga del mantenimiento de datos mediante procedimientos almacenados.
 
 Private Sub CboDatos_Click()
 On Error GoTo Err
@@ -442,12 +443,40 @@ Err:
     MsgBox StrMsgError, vbInformation, App.Title
 End Sub
 
+Private Sub cargarTiposDatos(ByRef StrMsgError As String)
+On Error GoTo Err
+Dim rst As New ADODB.Recordset
+
+    cbodatos.Clear
+    rst.Open "EXEC dbo.spu_MantDatos_Tipos_Listar", Cn, adOpenForwardOnly, adLockReadOnly
+    Do While Not rst.EOF
+        cbodatos.AddItem Trim("" & rst.Fields("DescDatos")) & Space(100) & Trim("" & rst.Fields("IdTipoDatos"))
+        rst.MoveNext
+    Loop
+    If cbodatos.ListCount > 0 Then cbodatos.ListIndex = 0
+    If rst.State = 1 Then rst.Close: Set rst = Nothing
+    Exit Sub
+
+Err:
+    If rst.State = 1 Then rst.Close: Set rst = Nothing
+    If StrMsgError = "" Then StrMsgError = Err.Description
+End Sub
+
+Private Function descripcionTipoSeleccionado() As String
+    If Len(cbodatos.Text) > 2 Then
+        descripcionTipoSeleccionado = Trim(left(cbodatos.Text, Len(cbodatos.Text) - 2))
+    Else
+        descripcionTipoSeleccionado = ""
+    End If
+End Function
+
 Private Sub Form_Load()
 On Error GoTo Err
 Dim StrMsgError As String
     
     ConfGrid gLista, False, False, False, False
-    llenaCombo cbodatos, "datosCab", "descDatos", True, "idTipoDatos"
+    cargarTiposDatos StrMsgError
+    If StrMsgError <> "" Then GoTo Err
     fraListado.Visible = True
     fraGeneral.Visible = False
     habilitaBotones 7
@@ -497,7 +526,7 @@ End Sub
 Private Sub nuevo()
     
     limpiaForm Me
-    lblTipoDatos.Caption = traerCampo("datosCab", "descDatos", "idTipoDatos", right(cbodatos.Text, 2), False)
+    lblTipoDatos.Caption = descripcionTipoSeleccionado()
     txtCod_TipoDatos.Text = gLista.Columns.ColumnByFieldName("idTipoDatos").Value
 
 End Sub
@@ -523,7 +552,7 @@ Dim StrMsgError As String
     fraListado.Visible = False
     fraGeneral.Visible = True
     fraGeneral.Enabled = False
-    lblTipoDatos.Caption = traerCampo("datosCab", "descDatos", "idTipoDatos", right(cbodatos.Text, 2), False)
+    lblTipoDatos.Caption = descripcionTipoSeleccionado()
     habilitaBotones 2
     
     Exit Sub
@@ -599,9 +628,7 @@ Private Sub llenargrid(ByRef StrMsgError As String)
 Dim rsdatos                     As New ADODB.Recordset
 On Error GoTo Err
         
-    csql = "SELECT * " & _
-           "FROM datos WHERE idTipoDatos = '" & right(cbodatos.Text, 2) & "'"
-    csql = csql & " ORDER BY idDato"
+    csql = "EXEC dbo.spu_MantDatos_Listar '" & Replace(right(cbodatos.Text, 2), "'", "''") & "'"
     
 
     If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
@@ -632,9 +659,7 @@ Private Sub MostrarDatos(strCodDato As String, ByRef StrMsgError As String)
 On Error GoTo Err
 Dim rst As New ADODB.Recordset
 
-    csql = "SELECT * " & _
-           "FROM datos " & _
-           "WHERE idDato = '" & strCodDato & "'"
+    csql = "EXEC dbo.spu_MantDatos_Obtener '" & Replace(right(cbodatos.Text, 2), "'", "''") & "','" & Replace(strCodDato, "'", "''") & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     
     mostrarDatosFormSQL Me, rst, StrMsgError

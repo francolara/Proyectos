@@ -933,6 +933,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma Codex 16/10/2026: listado principal de productos y niveles mediante procedimientos almacenados; stock por sucursal/almacén y retorno de unidad de medida.
 Private SqlAdic         As String
 Private sqlBus          As String
 Private sqlCond         As String
@@ -1309,6 +1310,7 @@ Dim Orden           As String
 Dim Valida          As String
 Dim intFor          As Integer
 Dim StrtipProduct   As String
+Dim strCodNivel      As String
 
     Valida = "N"
     'sqlBus = setSqlAlm(strCodAlmacen)
@@ -1320,9 +1322,11 @@ Dim StrtipProduct   As String
 '    End If
             
     sqlCond = sqlBus + " like '%" & Trim(TxtBusq.Text) & "%' OR P.IdProducto like '%" & Trim(TxtBusq.Text) & "%' OR CodigoRapido like '%" & Trim(TxtBusq.Text) & "%' OR IdFabricante like '%" & Trim(TxtBusq.Text) & "%') "
+    strCodNivel = ""
     If glsNumNiveles > 0 Then
-        If txtCod_Nivel(glsNumNiveles - 1).Text <> "" Then
-            sqlCond = sqlCond & " AND idNivel = '" & txtCod_Nivel(glsNumNiveles - 1).Text & "'"
+        strCodNivel = Trim("" & txtCod_Nivel(glsNumNiveles - 1).Text)
+        If strCodNivel <> "" Then
+            sqlCond = sqlCond & " AND idNivel = '" & strCodNivel & "'"
         End If
     End If
     If opt_Producto.Value Then
@@ -1345,7 +1349,7 @@ Dim StrtipProduct   As String
 '    Else
 '        sqlCond = sqlCond & Orden
 '    End If
-    sqlCond = "EXEC spu_Docventa_Lista_Productos '" & glsEmpresa & "','" & strCodLista & "','" & strCodAlmacen & "','" & StrtipProduct & "','" & Trim("" & txtCod_Nivel(glsNumNiveles - 1).Text) & "','%" & Trim(TxtBusq.Text) & "%'"
+    sqlCond = "EXEC dbo.spu_Docventa_Lista_Productos '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodLista, "'", "''") & "','" & Replace(strCodAlmacen, "'", "''") & "','" & Replace(StrtipProduct, "'", "''") & "','" & Replace(strCodNivel, "'", "''") & "','" & Replace(Trim(TxtBusq.Text), "'", "''") & "','" & Replace(glsSucursal, "'", "''") & "'"
     If rsdatos.State = 1 Then rsdatos.Close
     rsdatos.Open sqlCond, Cn, adOpenStatic, adLockReadOnly
     If rsg.State = 1 Then rsg.Close
@@ -1394,13 +1398,14 @@ Dim StrtipProduct   As String
             item = (rsg.RecordCount) + 1
             rsg.AddNew
             rsg.Fields("CHK") = 0
-            rsg.Fields("idProducto") = "" & rsdatos.Fields("idProducto")
-            rsg.Fields("GlsProducto") = "" & rsdatos.Fields("GlsProducto")
-            rsg.Fields("GlsMarca") = "" & rsdatos.Fields("GlsMarca")
-            rsg.Fields("GlsUM") = "" & rsdatos.Fields("GlsUM")
-            rsg.Fields("GlsMoneda") = "" & rsdatos.Fields("GlsMoneda")
-            rsg.Fields("GlsTallaPeso") = "" & rsdatos.Fields("GlsTallaPeso")
+            rsg.Fields("idProducto") = Trim("" & rsdatos.Fields("idProducto"))
+            rsg.Fields("GlsProducto") = Trim("" & rsdatos.Fields("GlsProducto"))
+            rsg.Fields("GlsMarca") = Trim("" & rsdatos.Fields("GlsMarca"))
+            rsg.Fields("GlsUM") = Trim("" & rsdatos.Fields("GlsUM"))
+            rsg.Fields("GlsMoneda") = Trim("" & rsdatos.Fields("GlsMoneda"))
+            rsg.Fields("GlsTallaPeso") = Trim("" & rsdatos.Fields("GlsTallaPeso"))
             rsg.Fields("Afecto") = rsdatos.Fields("Afecto")
+            rsg.Fields("idUMVenta") = Trim("" & rsdatos.Fields("idUMVenta"))
             rsg.Fields("Stock") = Val(Format(rsdatos.Fields("Stock"), "0.00"))
             rsg.Fields("CodigoRapido") = rsdatos.Fields("CodigoRapido")
             rsg.Fields("IdFabricante") = rsdatos.Fields("IdFabricante")
@@ -1538,6 +1543,7 @@ Dim CIdTipoProducto                 As String
             rsg.Fields("GlsMoneda") = "" & rsdatos.Fields("GlsMoneda")
             rsg.Fields("GlsTallaPeso") = "" & rsdatos.Fields("GlsTallaPeso")
             rsg.Fields("Afecto") = rsdatos.Fields("Afecto")
+            rsg.Fields("idUMVenta") = "" & rsdatos.Fields("idUMVenta")
             rsg.Fields("Stock") = Val(Format(rsdatos.Fields("Stock"), "0.00"))
             rsg.Fields("CodigoRapido") = rsdatos.Fields("CodigoRapido")
             rsg.Fields("IdFabricante") = rsdatos.Fields("IdFabricante")
@@ -2217,7 +2223,7 @@ On Error GoTo Err
 Dim rsj As New ADODB.Recordset
 Dim i As Integer
 
-    rsj.Open "SELECT GlsTipoNivel FROM tiposniveles WHERE idEmpresa = '" & glsEmpresa & "' Order BY Peso ASC", Cn, adOpenForwardOnly, adLockReadOnly
+    rsj.Open "EXEC dbo.spu_AyudaProductos_Niveles_Listar '" & Replace(glsEmpresa, "'", "''") & "'", Cn, adOpenForwardOnly, adLockReadOnly
     fraNivel.Height = 355 * glsNumNiveles
     i = 0
     

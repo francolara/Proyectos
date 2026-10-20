@@ -1,7 +1,7 @@
 VERSION 5.00
 Object = "{6A24B331-7634-11D3-A5B0-0050044A7E1A}#1.5#0"; "DXDBGrid.dll"
-Object = "{BDC217C8-ED16-11CD-956C-0000C04E4C0A}#1.1#0"; "TabCtl32.Ocx"
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "mscomctl.OCX"
+Object = "{BDC217C8-ED16-11CD-956C-0000C04E4C0A}#1.1#0"; "TABCTL32.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "MSCOMCTL.OCX"
 Object = "{F41D1D30-7878-4923-8CB3-6CCACDC9C9DE}#1.0#0"; "CATControls.ocx"
 Begin VB.Form frmMantVendedores 
    Appearance      =   0  'Flat
@@ -1277,8 +1277,11 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma Codex 16/10/2026: listado, carga integral y comisiones de vendedores mediante procedimientos almacenados; consultas auxiliares suprimidas durante la visualización.
+' Firma Codex 17/10/2026: parametros del mantenimiento obtenidos desde la cache cargada en el login.
 Option Explicit
 Dim indBoton As Integer
+Dim mCargandoVendedor As Boolean
 
 Private Sub ChkJefe_Click()
     If ChkJefe = 1 Then
@@ -1395,7 +1398,7 @@ Dim strRUC          As String
     
     nuevo
     
-    If leeParametro("VISUALIZA_TIPOVENTA") = "S" Then
+    If STR_VISUALIZA_TIPOVENTA = "S" Then
         
         FraTipoVenta.Visible = True
     
@@ -1505,30 +1508,17 @@ Err:
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
-On Error GoTo Err
-Dim StrMsgError As String
-    
-    If glsEnterAyudaClientes = False Then
-        listaVendedor StrMsgError
-        If StrMsgError <> "" Then GoTo Err
-    End If
-    
-    Exit Sub
-    
-Err:
-    If StrMsgError = "" Then StrMsgError = Err.Description
-    MsgBox StrMsgError, vbInformation, App.Title
-
+    ' La consulta se ejecuta al presionar Enter para evitar una llamada por cada tecla.
 End Sub
 
 Private Sub txt_TextoBuscar_KeyPress(KeyAscii As Integer)
 On Error GoTo Err
 Dim StrMsgError As String
 
-    If KeyAscii = 13 Then
-        listaVendedor StrMsgError
-        If StrMsgError <> "" Then GoTo Err
-    End If
+    If KeyAscii <> 13 Then Exit Sub
+    KeyAscii = 0
+    listaVendedor StrMsgError
+    If StrMsgError <> "" Then GoTo Err
 
     Exit Sub
     
@@ -1539,12 +1529,14 @@ Err:
 End Sub
 
 Private Sub TxtCod_Jefe_Change()
+    If mCargandoVendedor Then Exit Sub
 
     TxtGls_Jefe.Text = traerCampo("Personas", "GlsPersona", "idPersona", TxtCod_Jefe.Text, False)
     
 End Sub
 
 Private Sub txtCod_ListaPrecio_Change()
+    If mCargandoVendedor Then Exit Sub
     
     txtGls_ListaPrecio.Text = traerCampo("listaprecios", "GlsLista", "idLista", txtCod_ListaPrecio.Text, True)
 
@@ -1561,24 +1553,28 @@ Private Sub txtCod_ListaPrecio_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub txtCod_Persona_Change()
+    If mCargandoVendedor Then Exit Sub
     
     txtGls_Persona.Text = traerCampo("personas", "GlsPersona", "idPersona", txtCod_Persona.Text, False)
 
 End Sub
 
 Private Sub txtCod_Depa_Change()
+    If mCargandoVendedor Then Exit Sub
     
     txtGls_Depa.Text = traerCampo("Ubigeo", "GlsUbigeo", "idDpto", txtCod_Depa.Text, False, " idProv = '00'")
 
 End Sub
 
 Private Sub txtCod_Distrito_Change()
+    If mCargandoVendedor Then Exit Sub
     
     txtGls_Distrito.Text = traerCampo("Ubigeo", "GlsUbigeo", "idDistrito", txtCod_Distrito.Text, False)
 
 End Sub
 
 Private Sub txtCod_Pais_Change()
+    If mCargandoVendedor Then Exit Sub
     
     txtGls_Pais.Text = traerCampo("Datos", "GlsDato", "idDato", txtCod_Pais.Text, False)
 
@@ -1598,6 +1594,7 @@ Private Sub txtCod_Persona_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub txtCod_Prov_Change()
+    If mCargandoVendedor Then Exit Sub
     
     txtGls_Prov.Text = traerCampo("Ubigeo", "GlsUbigeo", "idProv", txtCod_Prov.Text, False, " idDpto = '" & txtCod_Depa.Text & "' and idProv <> '00' and idDist = '00'")
 
@@ -1720,19 +1717,7 @@ End Sub
 Private Sub listaVendedor(ByRef StrMsgError As String)
 Dim rsdatos                     As New ADODB.Recordset
 On Error GoTo Err
-Dim strCond As String
-
-    strCond = ""
-    If Trim(txt_TextoBuscar.Text) <> "" Then
-        strCond = Trim(txt_TextoBuscar.Text)
-        strCond = " AND GlsPersona LIKE '%" & strCond & "%'"
-    End If
-    
-    csql = "SELECT v.idVendedor ,p.GlsPersona ," & _
-            "(p.direccion + ', ' + isnull(u.glsUbigeo, '')) as Direccion " & _
-            "FROM vendedores v inner join personas p on v.idVendedor = p.idPersona " & _
-            "left join ubigeo u on p.iddistrito = u.iddistrito and p.idPais = u.idPais WHERE v.idEmpresa = '" & glsEmpresa & "'" & strCond & _
-            "ORDER BY v.idVendedor"
+    csql = "EXEC dbo.spu_MantVendedores_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
             
  If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
  rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
@@ -1764,9 +1749,7 @@ Dim rst As New ADODB.Recordset
 Dim RsC As New ADODB.Recordset
 Dim RsD As New ADODB.Recordset
    
-    csql = "SELECT v.idVendedor,v.idLista,v.IndVendedor, v.indResponsable,v.indVisualizaclientes,v.Rpm,v.Nextel,v.indJefe,v.idJefe,V.IndTipoVenta " & _
-           "FROM vendedores v " & _
-           "WHERE v.idVendedor = '" & strCodVen & "' AND IDEMPRESA='" & glsEmpresa & "'"
+    csql = "EXEC dbo.spu_MantVendedores_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodVen, "'", "''") & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     
     If Not rst.EOF Then
@@ -1786,65 +1769,82 @@ Dim RsD As New ADODB.Recordset
             
         End If
             
+        mCargandoVendedor = True
+
+
+        txtCod_Pais.Text = "02001"
+        txtCod_Depa.Text = "" & rst.Fields("IdDpto")
+        txtCod_Prov.Text = "" & rst.Fields("IdProv")
+        txtCod_Distrito.Text = "" & rst.Fields("IdDistrito")
+        txtGls_Direccion.Text = "" & rst.Fields("Direccion")
+        txtGls_Persona.Text = "" & rst.Fields("GlsPersona")
+        txtGls_ListaPrecio.Text = "" & rst.Fields("GlsLista")
+        TxtGls_Jefe.Text = "" & rst.Fields("GlsJefe")
+        txtGls_Pais.Text = "" & rst.Fields("GlsPais")
+        txtGls_Depa.Text = "" & rst.Fields("GlsDepa")
+        txtGls_Prov.Text = "" & rst.Fields("GlsProv")
+        txtGls_Distrito.Text = "" & rst.Fields("GlsDistrito")
+        
         mostrarDatosFormSQL Me, rst, StrMsgError
         If StrMsgError <> "" Then GoTo Err
-    
+        mCargandoVendedor = False
     End If
     
     txtIndResponsable_Change
     TxtIndVendedor_Change
     txtIndVisualizaclientes_Change
     TxtInd_Jefe_Change
-    mostrarDatosPersona
+
+    If rst.State = 1 Then rst.Close
+    Set rst = Nothing
+
+'''    csql = "EXEC dbo.spu_MantVendedores_Comisiones_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(txtCod_Persona.Text, "'", "''") & "'"
+'''    RsC.Open csql, Cn, adOpenStatic, adLockReadOnly
+'''
+'''
+'''    RsD.Fields.Append "Item", adInteger, , adFldRowID
+'''    RsD.Fields.Append "PeriodoIni", adVarChar, 8, adFldIsNullable
+'''    RsD.Fields.Append "Monto1", adDouble, 14, adFldIsNullable
+'''    RsD.Fields.Append "Monto2", adDouble, 14, adFldIsNullable
+'''    RsD.Fields.Append "Porcentaje1", adDouble, 14, adFldIsNullable
+'''    RsD.Fields.Append "Porcentaje2", adDouble, 14, adFldIsNullable
+'''    RsD.Fields.Append "Porcentaje3", adDouble, 14, adFldIsNullable
+'''    RsD.Fields.Append "indJefe", adChar, 1, adFldIsNullable
+'''    RsD.Open
+'''
+'''    If RsC.RecordCount = 0 Then
+'''        RsD.AddNew
+'''        RsD.Fields("Item") = 1
+'''        RsD.Fields("PeriodoIni") = ""
+'''        RsD.Fields("Monto1") = 0
+'''        RsD.Fields("Monto2") = 0
+'''        RsD.Fields("Porcentaje1") = 0
+'''        RsD.Fields("Porcentaje2") = 0
+'''        RsD.Fields("Porcentaje3") = 0
+'''        RsD.Fields("indJefe") = ""
+'''    Else
+'''        If Not RsC.EOF Then
+'''            RsC.MoveFirst
+'''            Do While Not RsC.EOF
+'''                RsD.AddNew
+'''                RsD.Fields("Item") = RsC.Fields("Item")
+'''                RsD.Fields("PeriodoIni") = RsC.Fields("PeriodoIni")
+'''                RsD.Fields("Monto1") = RsC.Fields("Monto1")
+'''                RsD.Fields("Monto2") = RsC.Fields("Monto2")
+'''                RsD.Fields("Porcentaje1") = RsC.Fields("Porcentaje1")
+'''                RsD.Fields("Porcentaje2") = RsC.Fields("Porcentaje2")
+'''                RsD.Fields("Porcentaje3") = RsC.Fields("Porcentaje3")
+'''                RsD.Fields("indJefe") = RsC.Fields("indJefe")
+'''
+'''                RsC.MoveNext
+'''            Loop
+'''        End If
+'''    End If
+'''    mostrarDatosGridSQL gComision, RsD, StrMsgError
+'''    If StrMsgError <> "" Then GoTo Err
     
-    
-    csql = "Select item, PeriodoIni, Monto1, Monto2, Porcentaje1, Porcentaje2, Porcentaje3, indJefe " & _
-            "From comisionxvendedor Where idEmpresa  = '" & glsEmpresa & "' And idVendedor = '" & txtCod_Persona.Text & "'"
-    RsC.Open csql, Cn, adOpenStatic, adLockReadOnly
-    
-    
-    RsD.Fields.Append "Item", adInteger, , adFldRowID
-    RsD.Fields.Append "PeriodoIni", adVarChar, 8, adFldIsNullable
-    RsD.Fields.Append "Monto1", adDouble, 14, adFldIsNullable
-    RsD.Fields.Append "Monto2", adDouble, 14, adFldIsNullable
-    RsD.Fields.Append "Porcentaje1", adDouble, 14, adFldIsNullable
-    RsD.Fields.Append "Porcentaje2", adDouble, 14, adFldIsNullable
-    RsD.Fields.Append "Porcentaje3", adDouble, 14, adFldIsNullable
-    RsD.Fields.Append "indJefe", adChar, 1, adFldIsNullable
-    RsD.Open
-    
-    If RsC.RecordCount = 0 Then
-        RsD.AddNew
-        RsD.Fields("Item") = 1
-        RsD.Fields("PeriodoIni") = ""
-        RsD.Fields("Monto1") = 0
-        RsD.Fields("Monto2") = 0
-        RsD.Fields("Porcentaje1") = 0
-        RsD.Fields("Porcentaje2") = 0
-        RsD.Fields("Porcentaje3") = 0
-        RsD.Fields("indJefe") = ""
-    Else
-        If Not RsC.EOF Then
-            RsC.MoveFirst
-            Do While Not RsC.EOF
-                RsD.AddNew
-                RsD.Fields("Item") = RsC.Fields("Item")
-                RsD.Fields("PeriodoIni") = RsC.Fields("PeriodoIni")
-                RsD.Fields("Monto1") = RsC.Fields("Monto1")
-                RsD.Fields("Monto2") = RsC.Fields("Monto2")
-                RsD.Fields("Porcentaje1") = RsC.Fields("Porcentaje1")
-                RsD.Fields("Porcentaje2") = RsC.Fields("Porcentaje2")
-                RsD.Fields("Porcentaje3") = RsC.Fields("Porcentaje3")
-                RsD.Fields("indJefe") = RsC.Fields("indJefe")
-                
-                RsC.MoveNext
-            Loop
-        End If
-    End If
-    mostrarDatosGridSQL gComision, RsD, StrMsgError
-    If StrMsgError <> "" Then GoTo Err
-    
-    If RsC.State = 0 Then RsC.Close: Set RsC = Nothing
+    If RsC.State = 1 Then RsC.Close
+    Set RsC = Nothing
     SSTab1.Tab = 0
     
     Me.Refresh
@@ -1853,6 +1853,12 @@ Exit Sub
 
 Err:
     If StrMsgError = "" Then StrMsgError = Err.Description
+    mCargandoVendedor = False
+    On Error Resume Next
+    If rst.State = 1 Then rst.Close
+    If RsC.State = 1 Then RsC.Close
+    Set rst = Nothing
+    Set RsC = Nothing
 End Sub
 
 Private Sub eliminar(ByRef StrMsgError As String)

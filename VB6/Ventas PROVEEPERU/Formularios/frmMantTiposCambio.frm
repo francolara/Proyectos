@@ -615,6 +615,8 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
+' Firma Codex 15/10/2026: listado y carga de tipos de cambio obtenidos mediante procedimientos almacenados.
+' Firma Codex 17/10/2026: parametros del mantenimiento obtenidos desde la cache cargada en el login.
  
 Private Sub Form_Load()
 On Error GoTo Err
@@ -630,7 +632,7 @@ Dim StrMsgError As String
     habilitaBotones 7
     nuevo
     
-    If traerCampo("PARAMETROS", "VALPARAMETRO", "GLSPARAMETRO", "TIPO_CAMBIO_BANCOS", True) = "S" Then
+    If STR_TIPO_CAMBIO_BANCOS = "S" Then
         FraTCSBS.Visible = True
     Else
         FraTCSBS.Visible = False
@@ -653,7 +655,7 @@ Dim rst         As New ADODB.Recordset
 Dim sw          As Boolean
 Dim NMontoTC    As Integer
     
-    NMontoTC = Val("" & traerCampo("Parametros", "ValParametro", "GlsParametro", "MONTO_MAXIMO_TIPO_DE_CAMBIO", True))
+    NMontoTC = Val("" & STR_MONTO_MAXIMO_TIPO_DE_CAMBIO)
     validaFormSQL Me, StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
@@ -806,9 +808,15 @@ Dim indHabilitar As Boolean
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
+    ' La consulta se ejecuta al presionar Enter.
+End Sub
+
+Private Sub txt_TextoBuscar_KeyPress(KeyAscii As Integer)
 On Error GoTo Err
 Dim StrMsgError As String
 
+    If KeyAscii <> 13 Then Exit Sub
+    KeyAscii = 0
     listaTC StrMsgError
     If StrMsgError <> "" Then GoTo Err
     Exit Sub
@@ -826,20 +834,9 @@ End Sub
 
 Private Sub listaTC(ByRef StrMsgError As String)
 On Error GoTo Err
-Dim strCond As String
 Dim rsdatos                     As New ADODB.Recordset
 
-    strCond = ""
-    If Trim(txt_TextoBuscar.Text) <> "" Then
-        strCond = Trim(txt_TextoBuscar.Text)
-        strCond = " WHERE a.Fecha LIKE '%" & strCond & "%'"
-    End If
-    
-    csql = "SELECT CAST(a.Fecha AS DATE) as Fecha, a.TCCompra, a.TcVenta, a.TCFacturacion " & _
-           "FROM tiposdecambio a "
-    If strCond <> "" Then csql = csql & strCond
-
-    csql = csql & " ORDER BY A.FECHA DESC"
+    csql = "EXEC dbo.spu_MantTiposCambio_Listar '" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
     
     If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
     rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
@@ -869,9 +866,7 @@ Private Sub mostrarTC(strCod As String, ByRef StrMsgError As String)
 On Error GoTo Err
 Dim rst As New ADODB.Recordset
 
-    csql = "SELECT a.* " & _
-           "FROM tiposdecambio a " & _
-           "WHERE YEAR(A.FECHA) = '" & right(strCod, 4) & "' AND MONTH(A.FECHA) = '" & Mid(strCod, 4, 2) & "' AND DAY(A.FECHA) = '" & left(strCod, 2) & "'"
+    csql = "EXEC dbo.spu_MantTiposCambio_Obtener '" & right(strCod, 4) & "-" & Mid(strCod, 4, 2) & "-" & left(strCod, 2) & "'"
     If rst.State = adStateOpen Then rst.Close
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     mostrarDatosFormSQL Me, rst, StrMsgError

@@ -1391,6 +1391,8 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma Codex 16/10/2026: listado dinámico y carga de niveles mediante procedimientos almacenados; búsqueda ejecutada con Enter.
+' Firma Codex 17/10/2026: parametros del mantenimiento obtenidos desde la cache cargada en el login.
 Option Explicit
 Dim indCargando As Boolean
 
@@ -1523,7 +1525,7 @@ Dim cWhereNiveles                       As String
         strMsg = "Modificó"
     End If
     
-    If traerCampo("Parametros", "ValParametro", "GlsParametro", "ACTUALIZA_DESCUENTO_NIVEL", True) = "1" Then
+    If STR_ACTUALIZA_DESCUENTO_NIVEL = "1" Then
         cWhereNiveles = ""
         If Len(Trim(txtCod_NivelPred(0).Text)) > 0 Then
             cWhereNiveles = cWhereNiveles & "And N.IdNivel" & Format(glsNumNiveles, "00") & " = '" & txtCod_NivelPred(0).Text & "' "
@@ -1698,18 +1700,22 @@ Dim indHabilitar As Boolean
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
+    ' La consulta se ejecuta al presionar Enter para evitar una llamada por cada tecla.
+End Sub
+
+Private Sub txt_TextoBuscar_KeyPress(KeyAscii As Integer)
 On Error GoTo Err
 Dim StrMsgError As String
 
+    If KeyAscii <> 13 Then Exit Sub
+    KeyAscii = 0
     listaNivel StrMsgError
     If StrMsgError <> "" Then GoTo Err
-    
     Exit Sub
-    
+
 Err:
     If StrMsgError = "" Then StrMsgError = Err.Description
     MsgBox StrMsgError, vbInformation, App.Title
-
 End Sub
 
 Private Sub txt_TextoBuscar_KeyDown(KeyCode As Integer, Shift As Integer)
@@ -1720,78 +1726,27 @@ End Sub
 
 Private Sub listaNivel(ByRef StrMsgError As String)
 On Error GoTo Err
-Dim rst As New ADODB.Recordset
-Dim strCond As String
 Dim intNumNiveles As Integer
-Dim strTabla As String
-Dim strWhere As String
-Dim strCampos As String
-Dim strTablas As String
-Dim strTablaAnt As String
 Dim strTipoNivelSel As String
-Dim strPesoTipoNivelSel As String
 Dim i As Integer
-Dim rsdatos                     As New ADODB.Recordset
- 
+Dim rsdatos As New ADODB.Recordset
+
     strTipoNivelSel = right(cbx_TipoNivel.Text, 8)
-    strPesoTipoNivelSel = traerCampo("tiposniveles", "peso", "idTipoNivel", strTipoNivelSel, True)
+    csql = "EXEC dbo.spu_MantNiveles_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strTipoNivelSel, "'", "''") & "','" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
 
-    rst.Open "SELECT idTipoNivel,GlsTipoNivel,peso FROM tiposniveles WHERE idEmpresa = '" & glsEmpresa & "' AND peso <= " & strPesoTipoNivelSel & " ORDER BY peso DESC", Cn, adOpenKeyset, adLockOptimistic
-    intNumNiveles = rst.RecordCount - 1
-    rst.MoveNext
-    
-    Do While Not rst.EOF
-        i = i + 1
-        strTabla = "niveles" & Format(i, "00")
-        If i = 1 Then
-            strWhere = "n.idNivelPred = " & strTabla & ".idNivel AND " & strTabla & ".idEmpresa = '" & glsEmpresa & "' AND "
-        Else
-            strWhere = strWhere & strTablaAnt & ".idNivelPred = " & strTabla & ".idNivel AND " & strTabla & ".idEmpresa = '" & glsEmpresa & "' AND "
-        End If
-        strCampos = strCampos & strTabla & ".idNivel as idNivel" & Format(i, "00") & "," & strTabla & ".GlsNivel as GlsNivel" & Format(i, "00") & ","
-        
-        strTablas = strTablas & ",niveles " & strTabla
-        strTablaAnt = strTabla
-        
-        rst.MoveNext
-    Loop
+    If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
+    rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
+    intNumNiveles = (rsdatos.Fields.Count - 2) \ 2
 
-    strCond = ""
-    If Trim(txt_TextoBuscar.Text) <> "" Then
-        strCond = Trim(txt_TextoBuscar.Text)
-        strCond = " AND n.GlsNivel LIKE '%" & strCond & "%'"
-    End If
-    
-    csql = "SELECT " & strCampos & " n.idNivel ,n.GlsNivel " & _
-           "FROM niveles n " & strTablas & " WHERE " & strWhere & " n.idEmpresa = '" & glsEmpresa & "' AND n.idTipoNivel = '" & strTipoNivelSel & "'"
-    If strCond <> "" Then csql = csql + strCond
-    csql = csql & " ORDER BY n.idNivel"
-    
-    
-If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
-rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
-    
-Set gLista.DataSource = rsdatos
-
-'    With gLista
-'        .DefaultFields = False
-'        .Dataset.ADODataset.ConnectionString = strcn
-'        .Dataset.ADODataset.CursorLocation = clUseClient
-'        .Dataset.Active = False
-'        .Dataset.ADODataset.CommandText = csql
-'        .Dataset.DisableControls
-'        .Dataset.Active = True
-'        .KeyField = "idNivel"
-'    End With
-
+    Set gLista.DataSource = rsdatos
 
     '--- Realizando las agrupaciones dinamicamente
     gLista.m.ClearGroupColumns
-    
+
     For i = 1 To 4
-         gLista.Columns.ColumnByName("GlsNivel" & Format(i, "00")).Visible = False
+        gLista.Columns.ColumnByName("GlsNivel" & Format(i, "00")).Visible = False
     Next
-    
+
     If gLista.Ex.GroupColumnCount = 0 Then
         For i = 1 To intNumNiveles
             gLista.Columns.ColumnByName("GlsNivel" & Format(i, "00")).Caption = "Nivel:"
@@ -1799,12 +1754,11 @@ Set gLista.DataSource = rsdatos
             gLista.Columns.ColumnByName("GlsNivel" & Format(i, "00")).GroupIndex = intNumNiveles - i
         Next
     End If
-    If rst.State = 1 Then rst.Close: Set rst = Nothing
-    
+
     Exit Sub
-    
+
 Err:
-    If rst.State = 1 Then rst.Close: Set rst = Nothing
+    If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
     If StrMsgError = "" Then StrMsgError = Err.Description
 End Sub
 
@@ -1814,10 +1768,7 @@ Dim rst                     As New ADODB.Recordset
 Dim peso                    As Integer
 Dim i                       As Long
     
-    csql = "Select N.IdNivel,N.GlsNivel,N.IdTipoNivel,N.IdNivelPred,isnull(N.Orden,0) Orden,N.Tipo,N.PorcComision,N.MaxDcto,N.GlsAbreviatura,N.IdCtaContableC," & _
-           "N.IdCtaContableV,N.IdCtaContableVR " & _
-           "From Niveles N " & _
-           "Where N.IdEmpresa = '" & glsEmpresa & "' And N.IdNivel = '" & strCodNivel & "'"
+    csql = "EXEC dbo.spu_MantNiveles_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodNivel, "'", "''") & "'"
     
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     If Not rst.EOF Then
@@ -1873,7 +1824,7 @@ Dim strCodTipoNivel                     As String
         Txt_PorcComision.Visible = False
     End If
     
-    If leeParametro("NIVEL_CUENTA_CONTABLE") = txtCod_TipoNivel.Text Then
+    If STR_NIVEL_CUENTA_CONTABLE = txtCod_TipoNivel.Text Then
     
         FraCtaContable.Visible = True
     

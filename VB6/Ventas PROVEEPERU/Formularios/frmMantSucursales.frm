@@ -354,6 +354,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma Codex 15/10/2026: listado y carga de sucursales obtenidos mediante procedimientos almacenados.
 Dim indBoton As Integer
 
 Private Sub cmbAyudaCliente_Click()
@@ -506,17 +507,9 @@ Dim indHabilitar As Boolean
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
-On Error GoTo Err
-Dim StrMsgError As String
 
-    listaSucursal StrMsgError
-    If StrMsgError <> "" Then GoTo Err
-    
-    Exit Sub
+    'La consulta se ejecuta al presionar Enter para evitar una llamada por cada tecla.
 
-Err:
-    If StrMsgError = "" Then StrMsgError = Err.Description
-    MsgBox StrMsgError, vbInformation, App.Title
 End Sub
 
 Private Sub txt_TextoBuscar_KeyDown(KeyCode As Integer, Shift As Integer)
@@ -530,18 +523,7 @@ On Error GoTo Err
 Dim strCond As String
 Dim rsdatos                     As New ADODB.Recordset
 
-    strCond = ""
-    If Trim(txt_TextoBuscar.Text) <> "" Then
-        strCond = Trim(txt_TextoBuscar.Text)
-        strCond = " AND p.GlsPersona LIKE '%" & strCond & "%'"
-    End If
-    
-    csql = "SELECT s.idSucursal ,p.GlsPersona " & _
-           "FROM sucursales s,personas p " & _
-           "WHERE s.idSucursal = p.IdPersona AND idEmpresa = '" & glsEmpresa & "'"
-           
-    If strCond <> "" Then csql = csql & strCond
-    csql = csql & " ORDER BY s.idSucursal"
+    csql = "EXEC dbo.spu_MantSucursales_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
     
 If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
 rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
@@ -571,9 +553,7 @@ Private Sub mostrarSucursal(strCodSucursal As String, ByRef StrMsgError As Strin
 On Error GoTo Err
 Dim rst As New ADODB.Recordset
 
-    csql = "SELECT s.idSucursal ,s.GlsAbrev " & _
-           "FROM sucursales s " & _
-           "WHERE s.idSucursal = '" & strCodSucursal & "'"
+    csql = "EXEC dbo.spu_MantSucursales_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodSucursal, "'", "''") & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     
     mostrarDatosFormSQL Me, rst, StrMsgError

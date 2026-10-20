@@ -2400,6 +2400,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
+' Firma Codex 15/10/2026: listado y carga de documentos obtenidos mediante procedimientos almacenados.
 Dim indBoton                                As Integer
 Dim CIdDocumentoAux                         As String
 
@@ -2763,16 +2764,7 @@ Dim strCond                                 As String
 Dim CSqlC                                   As String
 Dim rsdatos                                 As New ADODB.Recordset
 
-    strCond = ""
-    If Trim(txt_TextoBuscar.Text) <> "" Then
-        strCond = Trim(txt_TextoBuscar.Text)
-        strCond = "Where IdDocumento Like'%" & strCond & "%' Or GlsDocumento Like'%" & strCond & "%' Or AbreDocumento Like'%" & strCond & "%' "
-    End If
-    
-    CSqlC = "Select IdDocumento,GlsDocumento,AbreDocumento " & _
-            "From Documentos " & _
-            strCond & _
-            "Order By IdDocumento"
+    CSqlC = "EXEC dbo.spu_MantDocumentos_Listar '" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
             
     If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
     rsdatos.Open CSqlC, Cn, adOpenStatic, adLockOptimistic
@@ -2824,14 +2816,7 @@ On Error GoTo Err
 Dim RsC                                             As New ADODB.Recordset
 Dim CSqlC                                           As String
 
-    CSqlC = "Select A.IdDocumento,A.GlsDocumento,A.AbreDocumento,A.EstDocumentos,B.IdCtaVtaSoles,B.IdCtaVtaDolares,B.IdCtaVtaTerSoles,B.IdCtaVtaTerDolares," & _
-            "B.IdCtaCompSoles,B.IdCtaCompDolares,B.IdCtaCompTerSoles,B.IdCtaCompTerDolares,B.IdCtaCompTerMatrizS,B.IdCtaCompTerMatrizD,B.IdCtaCompTerSubSiS," & _
-            "B.IdCtaCompTerSubSiD,B.IdCtaVtaTerMatrizS,B.IdCtaVtaTerMatrizD,B.IdCtaVtaTerSubSiS,B.IdCtaVtaTerSubSiD,B.IdCtaVtaPerS,B.IdCtaVtaPerD," & _
-            "B.IdCtaCompPerS,B.IdCtaCompPerD,B.IdCtaVtaSocS,B.IdCtaVtaSocD,B.IdCtaCompSocS,B.IdCtaCompSocD " & _
-            "From Documentos A " & _
-            "Left Join DocumentosCuentas B " & _
-                "On '" & glsEmpresa & "' = B.IdEmpresa And A.IdDocumento = B.IdDocumento " & _
-            "Where A.IdDocumento = '" & PIdDocumento & "'"
+    CSqlC = "EXEC dbo.spu_MantDocumentos_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(PIdDocumento, "'", "''") & "'"
     RsC.Open CSqlC, Cn, adOpenStatic, adLockReadOnly
     If Not RsC.EOF Then
         
@@ -3192,12 +3177,20 @@ Err:
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
-On Error GoTo Err
-Dim StrMsgError                             As String
 
-    ListaDocumentos StrMsgError
-    If StrMsgError <> "" Then GoTo Err
-    
+    'La consulta se ejecuta al presionar Enter para evitar una llamada por cada tecla.
+
+End Sub
+
+Private Sub txt_TextoBuscar_KeyPress(KeyAscii As Integer)
+On Error GoTo Err
+Dim StrMsgError As String
+
+    If KeyAscii = 13 Then
+        ListaDocumentos StrMsgError
+        If StrMsgError <> "" Then GoTo Err
+    End If
+
     Exit Sub
 Err:
     If StrMsgError = "" Then StrMsgError = Err.Description

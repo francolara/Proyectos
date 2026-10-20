@@ -513,6 +513,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
+' Firma Codex 15/10/2026: listado y carga de centros de costo obtenidos mediante procedimientos almacenados.
 Dim indBoton                    As String
 
 Private Sub CmbEstado_Click()
@@ -676,12 +677,17 @@ Dim indHabilitar As Boolean
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
+    ' La consulta se ejecuta al presionar Enter.
+End Sub
+
+Private Sub txt_TextoBuscar_KeyPress(KeyAscii As Integer)
 On Error GoTo Err
 Dim StrMsgError As String
 
+    If KeyAscii <> 13 Then Exit Sub
+    KeyAscii = 0
     listaCC StrMsgError
     If StrMsgError <> "" Then GoTo Err
-    
     Exit Sub
 
 Err:
@@ -697,21 +703,9 @@ End Sub
 
 Private Sub listaCC(ByRef StrMsgError As String)
 On Error GoTo Err
-Dim strCond As String
 Dim rsdatos                     As New ADODB.Recordset
 
-    strCond = ""
-    If Trim(txt_TextoBuscar.Text) <> "" Then
-        strCond = Trim(txt_TextoBuscar.Text)
-        strCond = " AND (M.IdCentroCosto Like'%" & strCond & "%' Or M.GlsCentroCosto LIKE '%" & strCond & "%')"
-    End If
-    
-    csql = "SELECT m.idCentroCosto ,m.GlsCentroCosto " & _
-           "FROM centroscosto m WHERE m.idEmpresa = '" & glsEmpresa & "'"
-           
-    If strCond <> "" Then csql = csql & strCond
-
-    csql = csql & " ORDER BY m.idCentroCosto"
+    csql = "EXEC dbo.spu_MantCentroCosto_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
     
 If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
 rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
@@ -741,9 +735,7 @@ On Error GoTo Err
 Dim rst             As New ADODB.Recordset
 Dim i               As Integer
 
-    csql = "Select M.IdCentroCosto,M.GlsCentroCosto,M.IndEstado,M.IndGenerado,M.AbrevCcosto,M.IdInterface " & _
-           "From CentrosCosto M " & _
-           "Where M.IdCentroCosto = '" & strCodMarca & "' And M.IdEmpresa = '" & glsEmpresa & "'"
+    csql = "EXEC dbo.spu_MantCentroCosto_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodMarca, "'", "''") & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     
     If Not rst.EOF Then

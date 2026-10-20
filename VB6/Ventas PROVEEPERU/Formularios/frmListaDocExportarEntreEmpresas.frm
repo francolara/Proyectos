@@ -604,6 +604,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma FRANCO LARA 19/10/2026 - Conserva el item del documento origen en importaciones entre empresas.
 Private rsg As New ADODB.Recordset
 Private rsd As New ADODB.Recordset
 Private rse As New ADODB.Recordset
@@ -802,6 +803,7 @@ Dim strFiltroAprob    As String
     rsd.Fields.Append "IdEmpresa", adVarChar, 2, adFldIsNullable
     rsd.Fields.Append "IdSucursal", adVarChar, 8, adFldIsNullabl
     rsd.Fields.Append "ItemPro", adInteger, , adFldRowID
+    rsd.Fields.Append "ItemOrigen", adInteger, , adFldIsNullable
     rsd.Open , , adOpenKeyset, adLockOptimistic
     
     strCond = ""
@@ -979,6 +981,7 @@ Dim NValoresPedido()                        As Double
             rsd.Fields("IdEmpresa") = "" & rst.Fields("IdEmpresa")
             rsd.Fields("IdSucursal") = "" & rst.Fields("IdSucursal")
             rsd.Fields("ItemPro") = Val("" & rst.Fields("ItemPro"))
+            rsd.Fields("ItemOrigen") = Val("" & rst.Fields("Item"))
             rst.MoveNext
         Loop
     End If
