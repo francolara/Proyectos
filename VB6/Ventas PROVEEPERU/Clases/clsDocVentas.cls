@@ -12,6 +12,30 @@ Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
+' Firma FRANCO LARA 19/10/2026 - Delega al procedimiento general el recalculo de importaciones por item origen.
+
+' Firma Codex 14/10/2026: referencias posdetalle en SP; formulas y liquidaciones deshabilitadas.
+' Firma Codex 15/10/2026: generacion normal de vales en SP; lotes, formulas y liquidaciones permanecen deshabilitados.
+
+Private Function EscapaXml(ByVal Valor As String) As String
+    EscapaXml = Replace(Valor, "&", "&amp;")
+    EscapaXml = Replace(EscapaXml, "<", "&lt;")
+    EscapaXml = Replace(EscapaXml, ">", "&gt;")
+    EscapaXml = Replace(EscapaXml, """", "&quot;")
+End Function
+
+Private Function ConstruyeXmlDocReferencia(ByVal D As dxDBGrid) As String
+    Dim Xml As String
+    Xml = "<Referencias>"
+    D.Dataset.First
+    Do While Not D.Dataset.EOF
+        If Len(Trim("" & D.Columns.ColumnByFieldName("idDocumento").Value)) > 0 And Len(Trim("" & D.Columns.ColumnByFieldName("idSerie").Value)) > 0 And Len(Trim("" & D.Columns.ColumnByFieldName("idNumDoc").Value)) > 0 Then
+            Xml = Xml & "<Referencia Item=""" & Val("" & D.Columns.ColumnByFieldName("Item").Value) & """ TipoDocumento=""" & EscapaXml(Trim("" & D.Columns.ColumnByFieldName("idDocumento").Value)) & """ Serie=""" & EscapaXml(Trim("" & D.Columns.ColumnByFieldName("idSerie").Value)) & """ Numero=""" & EscapaXml(Trim("" & D.Columns.ColumnByFieldName("idNumDoc").Value)) & """ IndImportado=""" & EscapaXml(Trim("" & D.Columns.ColumnByFieldName("IndImportado").Value)) & """/>"
+        End If
+        D.Dataset.Next
+    Loop
+    ConstruyeXmlDocReferencia = Xml & "</Referencias>"
+End Function
 
 Public Function generaCorrelativoDocVentas(strTD As String, strSerie As String) As String
 Dim rst As New ADODB.Recordset
@@ -535,7 +559,6 @@ Dim rstcab                      As New ADODB.Recordset
 Dim i                           As Integer
 Dim cadUpd                      As String
 Dim rstUpd                      As New ADODB.Recordset
-Dim strParamItemPro             As String
 Dim cantidadtot                 As Double
 Dim RstDet                      As New ADODB.Recordset
 Dim item                        As Integer
@@ -555,10 +578,9 @@ Dim idValeDocventas  As String
 Dim strTipoVale      As String
 Dim strSigno         As String
 Dim strCodAlmacen    As String
+Dim strReferenciasXml          As String
+Dim indFacturaGuia            As Integer
 
-    '--- Parametro que evaluará la liberación del detalle de un documento de  referencia por el item del producto
-    strParamItemPro = Trim("" & traerCampo("Parametros", "ValParametro", "GlsParametro", "EVALUA_ITEM_DETALLE_PRODUCTO", True))
-    
     csql = ""
     For Each C In F.Controls
         If TypeOf C Is CATTextBox Or TypeOf C Is DTPicker Or TypeOf C Is CheckBox Then
@@ -678,128 +700,85 @@ Dim strCodAlmacen    As String
         Loop
     End If
     
-    '--- Grabando Grilla DocRef
-    If TypeName(D) <> "Nothing" Then
-        Cn.Execute "DELETE FROM docreferencia WHERE idEmpresa = '" & glsEmpresa & "' AND idSucursal = '" & glsSucursal & "' AND tipoDocOrigen = '" & strTD & "' AND numDocOrigen = '" & strValCod & "' AND serieDocOrigen = '" & strSerie & "'"
-        
-        If sw_graba_factura = True And strTD = "86" Then
-            Cn.Execute "DELETE FROM docreferencia WHERE idEmpresa = '" & glsEmpresa & "' AND idSucursal = '" & glsSucursal & "' AND tipoDocOrigen = '01' AND tipoDocReferencia = '" & strTD & "' AND numDocReferencia = '" & strValCod & "' AND serieDocReferencia = '" & strSerie & "'"
-        End If
-        
-        D.Dataset.First
-        Do While Not D.Dataset.EOF
-            If Trim(D.Columns.ColumnByFieldName("idDocumento").Value) <> "" And Trim(D.Columns.ColumnByFieldName("idSerie").Value) <> "" And Trim(D.Columns.ColumnByFieldName("idNumDoc").Value) <> "" Then
-                strCampos = ""
-                strValores = ""
-                strCodFacRef = ""
-                For i = 0 To D.Columns.Count - 1
-                    If UCase(left(D.Columns(i).ObjectName, 1)) = "W" Then
-                        strTipoDato = Mid(D.Columns(i).ObjectName, 2, 1)
-                        StrCampo = Mid(D.Columns(i).ObjectName, 3)
-                        
-                        strCampos = strCampos & StrCampo & ","
-                        If StrCampo = "tipoDocReferencia" Then strCodFacRef = D.Columns(i).Value
-                        Select Case strTipoDato
-                            Case "N"
-                                strValores = strValores & D.Columns(i).Value & ","
-                            Case "T"
-                                strValores = strValores & "'" & Trim(D.Columns(i).Value) & "',"
-                            Case "F"
-                                strValores = strValores & "'" & Format(D.Columns(i).Value, "yyyy-mm-dd") & "',"
-                        End Select
-                    End If
-                Next
-                
-                If Len(strCampos) > 1 Then strCampos = left(strCampos, Len(strCampos) - 1)
-                If Len(strValores) > 1 Then strValores = left(strValores, Len(strValores) - 1)
-                
-                If sw_graba_factura = True And strTD = "86" And strCodFacRef = "01" Then
-                    csql = "INSERT INTO docreferencia(Item,tipoDocOrigen,serieDocOrigen,IndImportado,numDocOrigen,tipoDocReferencia,numDocReferencia,serieDocReferencia,idEmpresa,idSucursal) VALUES(" & strValores & ",'" & strTD & "','" & strValCod & "','" & strSerie & "','" & glsEmpresa & "','" & glsSucursal & "')"
-                    Cn.Execute csql
-                End If
-                
-                csql = "INSERT INTO docreferencia(" & strCampos & ",tipoDocOrigen,numDocOrigen,serieDocOrigen,idEmpresa,idSucursal) VALUES(" & strValores & ",'" & strTD & "','" & strValCod & "','" & strSerie & "','" & glsEmpresa & "','" & glsSucursal & "')"
-                Cn.Execute csql
-            End If
-            D.Dataset.Next
-        Loop
-    End If
-    
-    '--- Actualizamos el codigo del vendedor de campo al cliente
-    If strCodVendedorCampo <> "" Then
-        csql = "UPDATE clientes SET idVendedorCampo = '" & strCodVendedorCampo & "' WHERE idCliente = '" & strCodCliente & "' AND idEmpresa = '" & glsEmpresa & "'"
-        Cn.Execute csql
-    End If
-    
-    If Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "GENERA_VALE_FORMULA", True) & "") = "S" Then
-        csql = "Delete from DocventasDetFormula where iddocventas = '" & strValCod & "' and iddocumento = '" & strTD & "' and idserie = '" & strSerie & "' and idempresa = '" & glsEmpresa & "' and idsucursal = '" & glsSucursal & "'"
-        Cn.Execute (csql)
-        
-        With RsDetProductos
-            If Not .EOF Then
-                .MoveFirst
-                Do While Not .EOF
-                    csql = "Insert Into DocventasDetFormula(IdDocumento,IdSerie,IdDocVentas,ItemDocventas,IdProducto,GlsProducto,CantidadStock," & _
-                            "Cantidad,Item,IdComboCab,IdEmpresa,IdSucursal,VVUnit,PorcDcto,TotalVVenta)Values(" & _
-                            "'" & strTD & "','" & strSerie & "','" & strValCod & "'," & .Fields("ItemDocVentas") & ",'" & .Fields("IdProducto") & "'," & _
-                            "'" & .Fields("GlsProducto") & "',0," & .Fields("Cantidad") & "," & .Fields("Item") & ",'" & .Fields("IdComboCab") & "'," & _
-                            "'" & glsEmpresa & "','" & glsSucursal & "'," & .Fields("VVUnit") & "," & .Fields("PorcDcto") & "," & .Fields("TotalVVenta") & ")"
-                    Cn.Execute (csql)
-                    
-                    .MoveNext
-                Loop
-            End If
-        End With
-    
-    End If
-    
-    If Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "LIQUIDACIONES", True) & "") = "S" Then
-        If strTD = "86" Or strTD = "03" Then
-            CadMysqlLiq = "Select * from docventasdetliquidacion " & _
-                          "where iddocventas = '" & strValCod & "' and iddocumento = '" & strTD & "' and idserie = '" & strSerie & "' " & _
-                          "and idempresa = '" & glsEmpresa & "' and idsucursal = '" & glsSucursal & "' "
-            If rsliquidacion.State = 1 Then rsliquidacion.Close
-            rsliquidacion.Open CadMysqlLiq, strcn, adOpenStatic, adLockOptimistic
-            If Not rsliquidacion.EOF Then
-                rsliquidacion.MoveFirst
-                Do While Not rsliquidacion.EOF
-                
-                    CadMysqlLiqAct = "Update docventasliqcab set CantidadImp = (CantidadImp - " & rsliquidacion.Fields("Unidad") & ") ,PesoImp = (PesoImp - " & (rsliquidacion.Fields("Kg") + rsliquidacion.Fields("ReKg")) & ") " & _
-                                     "where IdEmpresa = '" & glsEmpresa & "' and  IdSucursal = '" & glsSucursal & "' and  IdLiquidacion = '" & Trim("" & rsliquidacion.Fields("IdLiquidacion")) & "' "
-                    Cn.Execute (CadMysqlLiqAct)
-                    
-                    rsliquidacion.MoveNext
-                Loop
-            End If
-            
-            csql = "Delete from docventasdetliquidacion where iddocventas = '" & strValCod & "' and iddocumento = '" & strTD & "' and idserie = '" & strSerie & "' and idempresa = '" & glsEmpresa & "' and idsucursal = '" & glsSucursal & "' "
-            Cn.Execute (csql)
-            
-            If rsTempLiquidacion.State = 1 Then
-                With rsTempLiquidacion
-                    If Not .EOF Then
-                        .MoveFirst
-                        Do While Not .EOF
-                            csql = "Insert Into docventasdetliquidacion(IdDocumento, IdSerie, IdDocventas, IdProducto, Item, IdLiquidacion, IdUPP," & _
-                                   "idCamal , FechaLiq, UnidadSaldo, Unidad, KgSaldo, ReKg,Kg, KgVivo, IdEmpresa, Idsucursal,KgEnv)Values(" & _
-                                   "'" & strTD & "','" & strSerie & "','" & strValCod & "','" & .Fields("IdProducto") & "'," & .Fields("ItemDocVentas") & "," & _
-                                   "'" & .Fields("IdLiquidacion") & "','" & .Fields("IdUPP") & "','" & .Fields("idCamal") & "','" & Format(.Fields("FechaLiq"), "yyyy-mm-dd") & "'," & .Fields("UnidadSaldo") & "," & .Fields("Unidad") & "," & .Fields("KgSaldo") & "," & .Fields("ReKg") & "," & .Fields("Kg") & "," & .Fields("KgVivo") & ", " & _
-                                   "'" & glsEmpresa & "','" & glsSucursal & "'," & .Fields("KgEnv") & ")"
-                            Cn.Execute (csql)
-                            
-                            CadMysqlLiqAct = "Update docventasliqcab set CantidadImp = (CantidadImp + " & .Fields("Unidad") & ") ,PesoImp = (PesoImp + " & (.Fields("Kg") + .Fields("ReKg")) & ") " & _
-                                             "where IdEmpresa = '" & glsEmpresa & "' and  IdSucursal = '" & glsSucursal & "' and  IdLiquidacion = '" & Trim("" & .Fields("IdLiquidacion")) & "' "
-                            Cn.Execute (CadMysqlLiqAct)
-                            
-                            .MoveNext
-                        Loop
-                        
-                    End If
-                End With
-            End If
-        End If
-    End If
-        
+    '--- Referencias y vendedor en una sola llamada.
+    strReferenciasXml = "<Referencias/>"
+    If TypeName(D) <> "Nothing" Then strReferenciasXml = ConstruyeXmlDocReferencia(D)
+    indFacturaGuia = 0
+    If sw_graba_factura = True And strTD = "86" Then indFacturaGuia = 1
+    csql = "EXEC dbo.spu_Docventas_GrabaPostDetalle '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(glsSucursal, "'", "''") & "','" & Replace(strTD, "'", "''") & "','" & Replace(strSerie, "'", "''") & "','" & Replace(strValCod, "'", "''") & "','" & Replace(strCodCliente, "'", "''") & "','" & Replace(strCodVendedorCampo, "'", "''") & "'," & CStr(indFacturaGuia) & ",'" & Replace(strReferenciasXml, "'", "''") & "'"
+    Cn.Execute csql
+
+    ' Formulas deshabilitadas: no se usan (14/10/2026).
+'    If Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "GENERA_VALE_FORMULA", True) & "") = "S" Then
+'        csql = "Delete from DocventasDetFormula where iddocventas = '" & strValCod & "' and iddocumento = '" & strTD & "' and idserie = '" & strSerie & "' and idempresa = '" & glsEmpresa & "' and idsucursal = '" & glsSucursal & "'"
+'        Cn.Execute (csql)
+'
+'        With RsDetProductos
+'            If Not .EOF Then
+'                .MoveFirst
+'                Do While Not .EOF
+'                    csql = "Insert Into DocventasDetFormula(IdDocumento,IdSerie,IdDocVentas,ItemDocventas,IdProducto,GlsProducto,CantidadStock," & _
+'                            "Cantidad,Item,IdComboCab,IdEmpresa,IdSucursal,VVUnit,PorcDcto,TotalVVenta)Values(" & _
+'                            "'" & strTD & "','" & strSerie & "','" & strValCod & "'," & .Fields("ItemDocVentas") & ",'" & .Fields("IdProducto") & "'," & _
+'                            "'" & .Fields("GlsProducto") & "',0," & .Fields("Cantidad") & "," & .Fields("Item") & ",'" & .Fields("IdComboCab") & "'," & _
+'                            "'" & glsEmpresa & "','" & glsSucursal & "'," & .Fields("VVUnit") & "," & .Fields("PorcDcto") & "," & .Fields("TotalVVenta") & ")"
+'                    Cn.Execute (csql)
+'
+'                    .MoveNext
+'                Loop
+'            End If
+'        End With
+'
+'    End If
+'
+    ' Liquidaciones deshabilitadas: no se usan (14/10/2026).
+'    If Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "LIQUIDACIONES", True) & "") = "S" Then
+'        If strTD = "86" Or strTD = "03" Then
+'            CadMysqlLiq = "Select * from docventasdetliquidacion " & _
+'                          "where iddocventas = '" & strValCod & "' and iddocumento = '" & strTD & "' and idserie = '" & strSerie & "' " & _
+'                          "and idempresa = '" & glsEmpresa & "' and idsucursal = '" & glsSucursal & "' "
+'            If rsliquidacion.State = 1 Then rsliquidacion.Close
+'            rsliquidacion.Open CadMysqlLiq, strcn, adOpenStatic, adLockOptimistic
+'            If Not rsliquidacion.EOF Then
+'                rsliquidacion.MoveFirst
+'                Do While Not rsliquidacion.EOF
+'
+'                    CadMysqlLiqAct = "Update docventasliqcab set CantidadImp = (CantidadImp - " & rsliquidacion.Fields("Unidad") & ") ,PesoImp = (PesoImp - " & (rsliquidacion.Fields("Kg") + rsliquidacion.Fields("ReKg")) & ") " & _
+'                                     "where IdEmpresa = '" & glsEmpresa & "' and  IdSucursal = '" & glsSucursal & "' and  IdLiquidacion = '" & Trim("" & rsliquidacion.Fields("IdLiquidacion")) & "' "
+'                    Cn.Execute (CadMysqlLiqAct)
+'
+'                    rsliquidacion.MoveNext
+'                Loop
+'            End If
+'
+'            csql = "Delete from docventasdetliquidacion where iddocventas = '" & strValCod & "' and iddocumento = '" & strTD & "' and idserie = '" & strSerie & "' and idempresa = '" & glsEmpresa & "' and idsucursal = '" & glsSucursal & "' "
+'            Cn.Execute (csql)
+'
+'            If rsTempLiquidacion.State = 1 Then
+'                With rsTempLiquidacion
+'                    If Not .EOF Then
+'                        .MoveFirst
+'                        Do While Not .EOF
+'                            csql = "Insert Into docventasdetliquidacion(IdDocumento, IdSerie, IdDocventas, IdProducto, Item, IdLiquidacion, IdUPP," & _
+'                                   "idCamal , FechaLiq, UnidadSaldo, Unidad, KgSaldo, ReKg,Kg, KgVivo, IdEmpresa, Idsucursal,KgEnv)Values(" & _
+'                                   "'" & strTD & "','" & strSerie & "','" & strValCod & "','" & .Fields("IdProducto") & "'," & .Fields("ItemDocVentas") & "," & _
+'                                   "'" & .Fields("IdLiquidacion") & "','" & .Fields("IdUPP") & "','" & .Fields("idCamal") & "','" & Format(.Fields("FechaLiq"), "yyyy-mm-dd") & "'," & .Fields("UnidadSaldo") & "," & .Fields("Unidad") & "," & .Fields("KgSaldo") & "," & .Fields("ReKg") & "," & .Fields("Kg") & "," & .Fields("KgVivo") & ", " & _
+'                                   "'" & glsEmpresa & "','" & glsSucursal & "'," & .Fields("KgEnv") & ")"
+'                            Cn.Execute (csql)
+'
+'                            CadMysqlLiqAct = "Update docventasliqcab set CantidadImp = (CantidadImp + " & .Fields("Unidad") & ") ,PesoImp = (PesoImp + " & (.Fields("Kg") + .Fields("ReKg")) & ") " & _
+'                                             "where IdEmpresa = '" & glsEmpresa & "' and  IdSucursal = '" & glsSucursal & "' and  IdLiquidacion = '" & Trim("" & .Fields("IdLiquidacion")) & "' "
+'                            Cn.Execute (CadMysqlLiqAct)
+'
+'                            .MoveNext
+'                        Loop
+'
+'                    End If
+'                End With
+'            End If
+'        End If
+'    End If
+'
     '--- Actualizando Vales
     If indGeneraVale Then
         idValeDocventas = Trim("" & traerCampo("docventas", "idValesCab", "iddocventas", strValCod, True, " idserie = '" & strSerie & "' and iddocumento = '" & strTD & "' and idsucursal = '" & glsSucursal & "' "))
@@ -830,73 +809,58 @@ Dim strCodAlmacen    As String
                               "AND idUMCompra = '" & RsTempVale.Fields("idUM") & "' "
                     Cn.Execute csql
                     
-                    csql = "UPDATE productosalmacenporlote " & _
-                            "SET CantidadStock = CantidadStock " & strSigno & " " & RsTempVale.Fields("Cantidad") & " " & _
-                            "WHERE idEmpresa = '" & RsTempVale.Fields("idEmpresa") & "' " & _
-                              "AND idSucursal = '" & RsTempVale.Fields("idSucursal") & "' " & _
-                              "AND idAlmacen = '" & strCodAlmacen & "' " & _
-                              "AND idProducto = '" & RsTempVale.Fields("idProducto") & "' " & _
-                              "AND idUMCompra = '" & RsTempVale.Fields("idUM") & "' " & _
-                              "AND idLote = '" & RsTempVale.Fields("idLote") & "' "
-                    Cn.Execute csql
+                    ' Stock por lote deshabilitado: no se usa (14/10/2026).
+'                    csql = "UPDATE productosalmacenporlote " & _
+'                            "SET CantidadStock = CantidadStock " & strSigno & " " & RsTempVale.Fields("Cantidad") & " " & _
+'                            "WHERE idEmpresa = '" & RsTempVale.Fields("idEmpresa") & "' " & _
+'                              "AND idSucursal = '" & RsTempVale.Fields("idSucursal") & "' " & _
+'                              "AND idAlmacen = '" & strCodAlmacen & "' " & _
+'                              "AND idProducto = '" & RsTempVale.Fields("idProducto") & "' " & _
+'                              "AND idUMCompra = '" & RsTempVale.Fields("idUM") & "' " & _
+'                              "AND idLote = '" & RsTempVale.Fields("idLote") & "' "
+'                    Cn.Execute csql ' Stock por lote deshabilitado.
                                                 
                     RsTempVale.MoveNext
                 Loop
             End If
         End If
         
-        csql = "Delete from docventasdetlote where iddocventas = '" & strValCod & "' and iddocumento = '" & strTD & "' and idserie = '" & strSerie & "' and idempresa = '" & glsEmpresa & "' and idsucursal = '" & glsSucursal & "'"
-        Cn.Execute (csql)
-        
-        If rsTempDocVlote.State = 1 Then
-            If rsTempDocVlote.RecordCount > 0 Then
-                rsTempDocVlote.MoveFirst
-                If Not rsTempDocVlote.EOF Then
-                    Do While Not rsTempDocVlote.EOF
-                    
-                        csql = "Insert Into docventasdetlote(idDocventas, Item, idLote, GlsLote, CantidadStock, Cantidad, idProducto, ItemDocVentas, idSerie, idDocumento,idempresa,idsucursal) " & _
-                                " vALUES('" & strValCod & "'," & rsTempDocVlote.Fields("Item") & ",'" & rsTempDocVlote.Fields("idLote") & "','" & rsTempDocVlote.Fields("GlsLote") & "', " & _
-                                "" & rsTempDocVlote.Fields("CantidadStock") & "," & rsTempDocVlote.Fields("Cantidad") & ",'" & rsTempDocVlote.Fields("idProducto") & "', " & _
-                                "'" & rsTempDocVlote.Fields("ItemDocVentas") & "','" & strSerie & "','" & strTD & "','" & glsEmpresa & "','" & glsSucursal & "') "
-                        Cn.Execute (csql)
-                    
-                        rsTempDocVlote.MoveNext
-                    Loop
-                End If
-            End If
-        End If
-        
-        If Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "STOCK_POR_LOTE", True) & "") = "S" Then
-            generaValeDocVentasLote strTD, strSerie, Trim("" & strTipoVale), strValCod, strCodMotivoTranslado, F.dtp_Emision, StrMsgError
+        ' Detalle por lote deshabilitado: no se usa (14/10/2026).
+'        csql = "Delete from docventasdetlote where iddocventas = '" & strValCod & "' and iddocumento = '" & strTD & "' and idserie = '" & strSerie & "' and idempresa = '" & glsEmpresa & "' and idsucursal = '" & glsSucursal & "'"
+'        Cn.Execute (csql)
+'
+'        If rsTempDocVlote.State = 1 Then
+'            If rsTempDocVlote.RecordCount > 0 Then
+'                rsTempDocVlote.MoveFirst
+'                If Not rsTempDocVlote.EOF Then
+'                    Do While Not rsTempDocVlote.EOF
+'
+'                        csql = "Insert Into docventasdetlote(idDocventas, Item, idLote, GlsLote, CantidadStock, Cantidad, idProducto, ItemDocVentas, idSerie, idDocumento,idempresa,idsucursal) " & _
+'                                " vALUES('" & strValCod & "'," & rsTempDocVlote.Fields("Item") & ",'" & rsTempDocVlote.Fields("idLote") & "','" & rsTempDocVlote.Fields("GlsLote") & "', " & _
+'                                "" & rsTempDocVlote.Fields("CantidadStock") & "," & rsTempDocVlote.Fields("Cantidad") & ",'" & rsTempDocVlote.Fields("idProducto") & "', " & _
+'                                "'" & rsTempDocVlote.Fields("ItemDocVentas") & "','" & strSerie & "','" & strTD & "','" & glsEmpresa & "','" & glsSucursal & "') "
+'                        Cn.Execute (csql)
+'
+'                        rsTempDocVlote.MoveNext
+'                    Loop
+'                End If
+'            End If
+'        End If
+        ' Lotes y formulas deshabilitados: se conserva la generacion normal de vales.
+        If traerCampo("seriesdocumento", "IndTransferencia", "idDocumento", strTD, True, " idserie = '" & strSerie & "' ") = "S" Then
+            generaValeDocVentas strTD, strSerie, Trim("" & strTipoVale), strValCod, strCodMotivoTranslado, F.dtp_Emision, F.txtCod_CentroCosto.Text, StrMsgError
             If StrMsgError <> "" Then GoTo Err
-        
-        ElseIf Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "GENERA_VALE_FORMULA", True) & "") = "S" Then
-            If traerCampo("CentrosCosto", "IndGenerado", "IdCentroCosto", traerCampo("DocVentas", "IdCentroCosto", "IdDocumento", strTD, True, "IdSucursal = '" & glsSucursal & "' And IdSerie = '" & strSerie & "' And IdDocVentas = '" & strValCod & "'"), True) = "A" Then
-                generaValeDocVentas strTD, strSerie, Trim("" & strTipoVale), strValCod, strCodMotivoTranslado, F.dtp_Emision, F.txtCod_CentroCosto.Text, StrMsgError
-                If StrMsgError <> "" Then GoTo Err
-            
-            Else
-                generaValeDocVentasFormula strTD, strSerie, Trim("" & strTipoVale), strValCod, strCodMotivoTranslado, F.dtp_Emision, StrMsgError
-                If StrMsgError <> "" Then GoTo Err
-            End If
-            
+            '--- GRABA EL VALE DE INGRESO, PARA LAS TRANSFERENCIAS ENTRE SUCURSALES
+            generaValeDocVentasTransfIngreso strTD, strSerie, "I", strValCod, strCodMotivoTranslado, F.dtp_Emision, StrMsgError
+            If StrMsgError <> "" Then GoTo Err
+            csql = ("Call Spu_InsertValesTrans('" & glsEmpresa & "','" & strTD & "','" & F.txt_Serie.Text & "','" & F.txt_NumDoc.Text & "','" & glsSucursal & "','" & GeneraCorrelativoAnoMes("valestrans", "idValesTrans") & "') ")
+            Cn.Execute csql
         Else
-            If traerCampo("seriesdocumento", "IndTransferencia", "idDocumento", strTD, True, " idserie = '" & strSerie & "' ") = "S" Then
-                generaValeDocVentas strTD, strSerie, Trim("" & strTipoVale), strValCod, strCodMotivoTranslado, F.dtp_Emision, F.txtCod_CentroCosto.Text, StrMsgError
-                If StrMsgError <> "" Then GoTo Err
-                '--- GRABA EL VALE DE INGRESO, PARA LAS TRANSFERENCIAS ENTRE SUCURSALES
-                generaValeDocVentasTransfIngreso strTD, strSerie, "I", strValCod, strCodMotivoTranslado, F.dtp_Emision, StrMsgError
-                If StrMsgError <> "" Then GoTo Err
-                csql = ("Call Spu_InsertValesTrans('" & glsEmpresa & "','" & strTD & "','" & F.txt_Serie.Text & "','" & F.txt_NumDoc.Text & "','" & glsSucursal & "','" & GeneraCorrelativoAnoMes("valestrans", "idValesTrans") & "') ")
-                Cn.Execute ("Call Spu_InsertValesTrans('" & glsEmpresa & "','" & strTD & "','" & F.txt_Serie.Text & "','" & F.txt_NumDoc.Text & "','" & glsSucursal & "','" & GeneraCorrelativoAnoMes("valestrans", "idValesTrans") & "') ")
-            Else
-                If strTD = "07" Then
-                    strCodMotivoTranslado = traerCampo("DocVentas", "IdMotivoNCD", "IdDocumento", strTD, True, "IdSerie = '" & strSerie & "' And IdDocVentas = '" & strValCod & "'")
-                End If
-                
-                generaValeDocVentas strTD, strSerie, Trim("" & strTipoVale), strValCod, strCodMotivoTranslado, F.dtp_Emision, F.txtCod_CentroCosto.Text, StrMsgError
-                If StrMsgError <> "" Then GoTo Err
+            If strTD = "07" Then
+                strCodMotivoTranslado = traerCampo("DocVentas", "IdMotivoNCD", "IdDocumento", strTD, True, "IdSerie = '" & strSerie & "' And IdDocVentas = '" & strValCod & "'")
             End If
+            generaValeDocVentas strTD, strSerie, Trim("" & strTipoVale), strValCod, strCodMotivoTranslado, F.dtp_Emision, F.txtCod_CentroCosto.Text, StrMsgError
+            If StrMsgError <> "" Then GoTo Err
         End If
         
     End If
@@ -909,75 +873,12 @@ Dim strCodAlmacen    As String
         End If
     End If
     
-    If traerCampo("Parametros", "ValParametro", "GlsParametro", "AGRUPAPRODUCTOS", True) = "N" Then
-        '--- Cambiamos el estado a Importado
-        csql = "SELECT d.idDocumentoImp,d.idDocVentasImp,d.idSerieImp,d.idProducto,d.idUM,d.Cantidad,d.iTemPro " & _
-                "FROM docventasdet d " & _
-                "WHERE d.idEmpresa = '" & glsEmpresa & "'" & _
-                "AND d.idSucursal = '" & glsSucursal & "'" & _
-                "AND d.idDocumento = '" & strTD & "'" & _
-                "AND d.idDocVentas = '" & strValCod & "'" & _
-                "AND d.idSerie = '" & strSerie & "'" & _
-                "AND d.idDocVentasImp <> ''"
-                
-        If rst.State = 1 Then rst.Close
-        rst.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
-        If Not rst.EOF Then
-            rst.MoveFirst
-            rst.Sort = "idProducto"
-                Do While Not rst.EOF
-                    '--- ACTUALIZAMOS CANTIDAD IMPORTADA
-                    If strParamItemPro = "S" Then
-                    
-                        csql = "UPDATE  dd  SET dd.CantidadImp = dd.CantidadImp + " & CStr(rst.Fields("Cantidad")) & " FROM docventasdet dd " & _
-                               "WHERE dd.idEmpresa = '" & glsEmpresa & "' AND dd.idSucursal = '" & glsSucursal & "' AND dd.idDocumento = '" & rst.Fields("idDocumentoImp") & "' AND dd.idDocVentas = '" & rst.Fields("idDocVentasImp") & "' AND dd.idSerie = '" & rst.Fields("idSerieImp") & "' " & _
-                                 "AND dd.idProducto = '" & rst.Fields("idProducto") & "' AND dd.idUM = '" & rst.Fields("idUM") & "' AND dd.ItemPro ='" & rst.Fields("ItemPro") & "' "
-                        Cn.Execute csql
-                        
-                        csql = "UPDATE  dd  SET dd.estDocImportado = 'S' FROM docventasdet dd " & _
-                               "WHERE dd.idEmpresa = '" & glsEmpresa & "' AND dd.idSucursal = '" & glsSucursal & "' AND dd.idDocumento = '" & rst.Fields("idDocumentoImp") & "' AND dd.idDocVentas = '" & rst.Fields("idDocVentasImp") & "' AND dd.idSerie = '" & rst.Fields("idSerieImp") & "' " & _
-                                 "AND dd.idProducto = '" & rst.Fields("idProducto") & "' AND dd.idUM = '" & rst.Fields("idUM") & "' AND dd.CantidadImp >= dd.Cantidad   AND dd.ItemPro ='" & rst.Fields("ItemPro") & "' "
-                        Cn.Execute csql
-                        
-                    Else
-                        csql = "UPDATE dd SET dd.CantidadImp = dd.CantidadImp + " & CStr(rst.Fields("Cantidad")) & " FROM docventasdet dd  " & _
-                               "WHERE dd.idEmpresa = '" & glsEmpresa & "' AND dd.idSucursal = '" & glsSucursal & "' AND dd.idDocumento = '" & rst.Fields("idDocumentoImp") & "' AND dd.idDocVentas = '" & rst.Fields("idDocVentasImp") & "' AND dd.idSerie = '" & rst.Fields("idSerieImp") & "' " & _
-                                 "AND dd.idProducto = '" & rst.Fields("idProducto") & "' AND dd.idUM = '" & rst.Fields("idUM") & "' "
-                        Cn.Execute csql
-                        
-                        csql = "UPDATE dd  SET dd.estDocImportado = 'S' FROM docventasdet dd " & _
-                               "WHERE dd.idEmpresa = '" & glsEmpresa & "' AND dd.idSucursal = '" & glsSucursal & "' AND dd.idDocumento = '" & rst.Fields("idDocumentoImp") & "' AND dd.idDocVentas = '" & rst.Fields("idDocVentasImp") & "' AND dd.idSerie = '" & rst.Fields("idSerieImp") & "' " & _
-                                 "AND dd.idProducto = '" & rst.Fields("idProducto") & "' AND dd.idUM = '" & rst.Fields("idUM") & "' AND dd.CantidadImp >= dd.Cantidad "
-                        Cn.Execute csql
-                        
-                    End If
-                    
-                    rst.MoveNext
-                Loop
-            End If
-        
-            '--- Marcamos la Cabecera
-            csql = "SELECT DISTINCT idDocumentoImp,idDocVentasImp,idSerieImp  FROM docventasdet " & _
-                   "WHERE idEmpresa = '" & glsEmpresa & "' AND idSucursal = '" & glsSucursal & "' AND idDocumento = '" & strTD & "' AND idDocVentas = '" & strValCod & "' AND idSerie = '" & strSerie & "' AND idDocVentasImp <> '' AND idDocVentasImp is not null"
-            
-            If rstcab.State = 1 Then rstcab.Close
-            rstcab.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
-            If Not rstcab.EOF Then
-                rstcab.MoveFirst
-                Do While Not rstcab.EOF
-                    csql = "UPDATE C  SET c.estDocImportado = 'S' FROM docVentas c,docVentasDet d " & _
-                           "WHERE c.idEmpresa = d.idEmpresa AND c.idSucursal = d.idSucursal AND c.idDocumento = d.idDocumento AND c.idDocVentas = d.idDocVentas AND c.idSerie = d.idSerie " & _
-                           "AND d.idEmpresa = '" & glsEmpresa & "' AND d.idSucursal = '" & glsSucursal & "' AND d.idDocumento = '" & rstcab.Fields("idDocumentoImp") & "' AND d.idDocVentas = '" & rstcab.Fields("idDocVentasImp") & "' AND d.idSerie = '" & rstcab.Fields("idSerieImp") & "'" & _
-                           "AND (SELECT count(x.idDocVentas) FROM docVentasDet x WHERE x.idEmpresa = d.idEmpresa AND x.idSucursal = d.idSucursal AND x.idDocumento = d.idDocumento AND x.idDocVentas = d.idDocVentas AND x.idSerie = d.idSerie AND ISNULL(x.estDocImportado,'') <> 'S') = 0"
-                    Cn.Execute csql
-                    
-                    rstcab.MoveNext
-                Loop
-            End If
-        
-        Else
-            '--- Graba el documento(origen) y el detalle de los documentos de referencia
-            If strTD <> "07" Then
+    If STR_AGRUPAPRODUCTOS = "N" Then
+        ' El formulario recalcula las cantidades importadas despues de grabar todo el detalle.
+        ' Se evita acumular por producto/UM porque un mismo producto puede repetirse en items distintos.
+    Else
+        '--- Graba el documento(origen) y el detalle de los documentos de referencia
+        If strTD <> "07" Then
                 cantidadtot = 0
                 csql = "select idempresa,idsucursal,iddocumento,idserie,iddocventas,idproducto,cantidad from docventasdet " & _
                         " where idempresa = '" & glsEmpresa & "' and iddocumento = '" & strTD & "' and idserie = '" & strSerie & "'  and iddocventas = '" & strValCod & "' And idSucursal = '" & glsSucursal & "' "
@@ -1145,31 +1046,8 @@ Dim strCodAlmacen    As String
     End If
       
     obsdocventas = "" & glsobservacionventas
-    csql = "update docventas set obsdocventas = '" & obsdocventas & "',obsdocventas2 = '" & ("" & glsobservacionventas2) & "' " & _
-            "WHERE idEmpresa = '" & glsEmpresa & "'" & _
-            "AND idSucursal = '" & glsSucursal & "'" & _
-            "AND idDocumento = '" & strTD & "'" & _
-            "AND idDocVentas = '" & strValCod & "'" & _
-            "AND idSerie = '" & strSerie & "' "
+    csql = "EXEC dbo.spu_Docventas_PostGraba '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(glsSucursal, "'", "''") & "','" & Replace(strTD, "'", "''") & "','" & Replace(strSerie, "'", "''") & "','" & Replace(strValCod, "'", "''") & "','" & Replace(obsdocventas, "'", "''") & "','" & Replace("" & glsobservacionventas2, "'", "''") & "'"
     Cn.Execute csql
-    
-    '--- Acumulamos el peso del detalle del documento
-    csql = "SELECT SUM(idTallaPeso) as totalTallaPeso From DocventasDet WHERE idEmpresa = '" & glsEmpresa & "'" & _
-           "AND idSucursal = '" & glsSucursal & "'" & _
-           "AND idDocumento = '" & strTD & "'" & _
-           "AND idDocVentas = '" & strValCod & "'" & _
-           "AND idSerie = '" & strSerie & "' "
-    If rstUpd.State = 1 Then rstUpd.Close
-    rstUpd.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
-    
-    If Not rstUpd.EOF Then
-        cadUpd = "Update docventas Set totalTallaPeso = '" & rstUpd.Fields("totalTallaPeso").Value & "' WHERE idEmpresa = '" & glsEmpresa & "'" & _
-                "AND idSucursal = '" & glsSucursal & "'" & _
-                "AND idDocumento = '" & strTD & "'" & _
-                "AND idDocVentas = '" & strValCod & "'" & _
-                "AND idSerie = '" & strSerie & "' "
-    End If
-    Cn.Execute (cadUpd)
     
     If traerCampo("Parametros", "ValParametro", "GlsParametro", "EXTRAE_PRECIO_ULTIMA_VENTA", True) = "S" Then
         csql = "Call Spu_InsertProductosxCliente('" & glsEmpresa & "','" & glsSucursal & "','" & strTD & "','" & strSerie & "','" & strValCod & "','','','',0,'','','I')"
@@ -1447,237 +1325,51 @@ End Sub
 Public Sub generaValeDocVentas(strIdDocumento As String, strIdSerie As String, StrTipVale As String, strIdDocventas As String, ByVal strCodMotivoTraslado As String, ByVal StrFecEmision As String, ByVal strCod_CentroCosto As String, ByRef StrMsgError As String)
 On Error GoTo Err
 Dim rs As New ADODB.Recordset
-Dim strCod              As String
-Dim strTipoVale         As String
-Dim strConcepto         As String
-Dim strAbreviaturaDoc   As String
-Dim indMod              As Boolean
-Dim Cadmysql            As String
-Dim CInsertCab          As String
-Dim CInsertDet          As String
-Dim CIdComprobanteAux   As String
-Dim Sw_Entro            As Boolean
-Dim rst                 As New ADODB.Recordset
-Dim strVVUnit, strIGVUnit, strPVUnit, strTotalVVNeto, strTotalIGVNeto, strTotalPVNeto As Double
-Dim strValorTotal       As Double
-Dim strIgvTotal         As Double
-Dim strPrecioTotal      As Double
-Dim strNewPeriodoinv    As String
+Dim strCod As String
+Dim strTipoVale As String
+Dim strTipoValeAnterior As String
 
-    strValorTotal = 0: strIgvTotal = 0: strPrecioTotal = 0
-    strVVUnit = 0: strIGVUnit = 0: strPVUnit = 0: strTotalVVNeto = 0: strTotalIGVNeto = 0: strTotalPVNeto = 0
-    csql = ""
-    indMod = False
-    
-    If Len(Trim("" & traerCampo("periodosinv", "idPeriodoInv", "idSucursal", glsSucursal, True, " year(FecInicio) = " & Format(StrFecEmision, "yyyy") & " "))) = 0 Then
-        strNewPeriodoinv = glsCodPeriodoINV
-    Else
-        strNewPeriodoinv = Trim("" & traerCampo("periodosinv", "idPeriodoInv", "idSucursal", glsSucursal, True, " year(FecInicio) = " & Format(StrFecEmision, "yyyy") & " "))
-    End If
-    
-    '--- VERIFICAMOS EL ESTADO DEL DOCUMENTO
-    csql = "SELECT indVale,idValesCab FROM docventas " & _
-           "WHERE idDocumento = '" & strIdDocumento & "'" & _
-            " AND idSerie     = '" & strIdSerie & "'" & _
-            " AND idDocVentas = '" & strIdDocventas & "'" & _
-            " AND idEmpresa = '" & glsEmpresa & "'" & _
-            " AND idSucursal = '" & glsSucursal & "' "
-    If rs.State = 1 Then rs.Close
+    ' La reversa y aplicacion de stock/costo se mantienen en VB6.
+    ' El procedimiento solo persiste cabecera, detalle, referencia y estado del vale.
+    csql = "SELECT IndVale, IdValesCab, TipoVale FROM DocVentas " & _
+           "WHERE IdDocumento = '" & strIdDocumento & "' " & _
+             "AND IdSerie = '" & strIdSerie & "' " & _
+             "AND IdDocVentas = '" & strIdDocventas & "' " & _
+             "AND IdEmpresa = '" & glsEmpresa & "' " & _
+             "AND IdSucursal = '" & glsSucursal & "'"
     rs.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
-    
-    If rs.Fields("indVale") = "S" Then
-        indMod = True
-        
-        '--- SELECCIONAMOS EL NUMERO DEL VALE DEL DOCUMENTO
-        strCod = Trim("" & rs.Fields("idValesCab"))
-        
-        '--- ACTUALIZAMOS STOCK EN LINEA
-        actualizaStock strCod, 1, StrMsgError, StrTipVale, False
-        If StrMsgError <> "" Then GoTo Err
-        
-        '--- ELIMINAMOS EL VALE YA INGRESADO
-        csql = "DELETE FROM valesDet WHERE idValesCab = '" & strCod & "' AND idEmpresa = '" & glsEmpresa & "' AND idSucursal = '" & glsSucursal & "' AND tipoVale = '" & StrTipVale & "' "
-        Cn.Execute csql
-        
-        csql = "DELETE FROM docreferencia WHERE idEmpresa = '" & glsEmpresa & "' AND idSucursal = '" & glsSucursal & "' AND tipoDocOrigen = '" & IIf(StrTipVale = "I", "88", "99") & "' AND numDocOrigen = '" & strCod & "' AND serieDocOrigen = '000' "
-        Cn.Execute csql
-        
-        csql = "DELETE FROM valesCab WHERE idValesCab = '" & strCod & "' AND idEmpresa = '" & glsEmpresa & "' AND idSucursal = '" & glsSucursal & "' AND tipoVale = '" & StrTipVale & "'"
-        Cn.Execute csql
-        
-    Else
-        indMod = False
-    End If
-    
-'Luis 2406/2017
-'    Select Case strIdDocumento
-'        Case "01", "03", "12", "90", "91", "08"
-'            strTipoVale = "S"
-'            'strConcepto = "22"
-'            strConcepto = Trim("" & traerCampo("motivostraslados", "idconcepto", "idMotivoTraslado", strCodMotivoTraslado, False, " idDocumento = '" & strIdDocumento & "' "))
-'            If strConcepto = "" Then
-'                strConcepto = "22"
-'            End If
-'
-'        Case "86"
-'            strTipoVale = "S"
-'            If strTipoVale = "" Then strTipoVale = "S"
-'            strConcepto = Trim("" & traerCampo("motivostraslados", "idconcepto", "idMotivoTraslado", strCodMotivoTraslado, False, " idDocumento = '" & strIdDocumento & "' "))
-'        Case "07", "89"
-'            strTipoVale = "I"
-'            'strConcepto = Trim("" & traerCampo("motivostraslados", "idconcepto", "idMotivoTraslado", strCodMotivoTraslado, False, " idDocumento = '" & strIdDocumento & "' "))
-'            strConcepto = Trim("" & traerCampo("MotivosNCD", "IdConcepto", "IdMotivoNCD", strCodMotivoTraslado, False))
-'    End Select
-    
-    Select Case strIdDocumento
-        Case "01", "03", "12", "90", "91", "08"
 
-            strTipoVale = ""
-            strTipoVale = Trim("" & traerCampo("motivostraslados", "indtipovale", "idMotivoTraslado", strCodMotivoTraslado, False, " idDocumento = '" & strIdDocumento & "' "))
-            If strTipoVale = "" Then strTipoVale = "S"
-            
-            strConcepto = Trim("" & traerCampo("motivostraslados", "idconcepto", "idMotivoTraslado", strCodMotivoTraslado, False, " idDocumento = '" & strIdDocumento & "' "))
-            If strConcepto = "" Then
-                strConcepto = "22"
-            End If
-            
-        Case "86"
-            
-            strTipoVale = ""
-            strTipoVale = Trim("" & traerCampo("motivostraslados", "indtipovale", "idMotivoTraslado", strCodMotivoTraslado, False, " idDocumento = '" & strIdDocumento & "' "))
-            If strTipoVale = "" Then strTipoVale = "S"
-            
-            strConcepto = Trim("" & traerCampo("motivostraslados", "idconcepto", "idMotivoTraslado", strCodMotivoTraslado, False, " idDocumento = '" & strIdDocumento & "' "))
-        Case "07", "89"
-            strTipoVale = "I"
-            'strConcepto = Trim("" & traerCampo("motivostraslados", "idconcepto", "idMotivoTraslado", strCodMotivoTraslado, False, " idDocumento = '" & strIdDocumento & "' "))
-            strConcepto = Trim("" & traerCampo("MotivosNCD", "IdConcepto", "IdMotivoNCD", strCodMotivoTraslado, False))
-    End Select
-    
-    If indMod = False Then
-        strCod = generaCorrelativoAnoMes_Vale("ValesCab", "idValesCab", strTipoVale)
-    End If
-    strAbreviaturaDoc = "" & traerCampo("documentos", "AbreDocumento", "idDocumento", strIdDocumento, False)
-    
-    '---------------------------------------------------------------------------------------------------------------------
-    Cadmysql = "Select  d.idDocumento,d.idSerie,d.idDocventas,d.idEmpresa,d.idSucursal,Concat(dc.AbreDocumento,' ',d.idSerie,'-',d.idDocventas) as GlsDocreferencia,d.FecEmision, " & _
-           "idPercliente , idMotivoTraslado, idAlmacen, obsdocventas, D.idMoneda, D.TipoCambio, dd.idProducto, dd.GlsProducto, dd.idUM, dd.Factor, dd.Afecto, dd.cantidad, " & _
-           "dd.item,dd.NumLote, dd.FecVencProd,d.idCentroCosto,dd.vvunit " & _
-           "From Docventas d " & _
-           "Inner Join Documentos dc   On d.idDocumento =  dc.idDocumento " & _
-           "Inner Join DocventasDet dd   On d.idDocumento = dd.idDocumento   And d.idDocventas = dd.idDocventas   And d.idSerie = dd.idSerie   And d.idEmpresa = dd.idEmpresa  And d.idSucursal = dd.idSucursal " & _
-           "Inner Join Productos p On dd.idProducto = p.idProducto And dd.idEmpresa = p.idEmpresa " & _
-           "Where d.idEmpresa = '" & glsEmpresa & "' And d.idSucursal = '" & glsSucursal & "' And d.idDocumento = '" & strIdDocumento & "' And d.idDocventas = '" & strIdDocventas & "' And d.idSerie = '" & strIdSerie & "' And p.idTipoProducto <> '06002'   Order By d.idDocumento,d.idDocventas,d.idSerie "
-    
-    rst.Open Cadmysql, Cn, adOpenStatic, adLockReadOnly
-    If Not rst.EOF Then
-        CInsertDet = "Insert Into Valesdet (tipoVale,idValesCab,item,idProducto,GlsProducto,idUM,Factor,Afecto,Cantidad,VVUnit,IGVUnit,PVUnit,TotalVVNeto," & _
-                        "TotalIGVNeto,TotalPVNeto,idMoneda,idEmpresa,idSucursal,NumLote,FecVencProd) Values "
-                
-        CInsertCab = "Insert Into ValesCab (idValesCab,tipoVale,fechaEmision, valorTotal, igvTotal,precioTotal, idProvCliente,idConcepto, idAlmacen, idMoneda," & _
-        "GlsDocReferencia,TipoCambio,idEmpresa,idSucursal,idPeriodoInv,idCentroCosto,FechaRegistro,IdUsuarioRegistro) Values "
+    If Not rs.EOF Then
+        If Trim("" & rs.Fields("IndVale")) = "S" Then
+            strCod = Trim("" & rs.Fields("IdValesCab"))
+            strTipoValeAnterior = Trim("" & rs.Fields("TipoVale"))
 
-        Do While Not rst.EOF
-            If CIdComprobanteAux <> rst.Fields("idDocventas") Then
-                 CIdComprobanteAux = rst.Fields("idDocventas")
-            End If
-            
-'            strVVUnit = Format(traerCostoUnit(rst.Fields("idProducto").Value, rst.Fields("idAlmacen").Value, rst.Fields("idMoneda").Value, StrMsgError), "0.00000")
-'            strIGVUnit = Format((Val(strVVUnit) * glsIGV), "0.00000")
-'            strPVUnit = Format(Val(strVVUnit) + Val(strIGVUnit), "0.00000")
-            
-            If strTipoVale = "I" Then
-            
-                strVVUnit = Format(rst.Fields("VVUNIT").Value, "0.00000")
-                strIGVUnit = Format((Val(strVVUnit) * glsIGV), "0.00000")
-                strPVUnit = Format(Val(strVVUnit) + Val(strIGVUnit), "0.00000")
-            
-            Else
-
-                strVVUnit = 0 'Format(traerCostoUnit(rst.Fields("idProducto").Value, rst.Fields("idAlmacen").Value, rst.Fields("idMoneda").Value, StrMsgError), "0.00000")
-                strIGVUnit = 0 'Format((Val(strVVUnit) * glsIGV), "0.00000")
-                strPVUnit = 0 'Format(Val(strVVUnit) + Val(strIGVUnit), "0.00000")
-            
-            End If
-            
-            
-            strTotalVVNeto = Format((Val(strVVUnit) * rst.Fields("Cantidad").Value), "0.00")
-            strTotalIGVNeto = Format((Val(strTotalVVNeto) * glsIGV), "0.00")
-            strTotalPVNeto = Format(Val(strTotalVVNeto) + Val(strTotalIGVNeto), "0.00")
-            strValorTotal = Format(Val(strValorTotal) + Val(strTotalVVNeto), "0.00")
-            strIgvTotal = Format(Val(strIgvTotal) + (Val(strValorTotal) * glsIGV), "0.00")
-            strPrecioTotal = Format((Val(strPrecioTotal) + (Val(strValorTotal) + Val(strIgvTotal))), "0.00")
-            
-            CInsertDet = CInsertDet & " ('" & strTipoVale & "','" & strCod & "','" & rst.Fields("item").Value & "','" & rst.Fields("idProducto").Value & "','" & rst.Fields("GlsProducto").Value & "','" & rst.Fields("idUM").Value & "', " & _
-                        " '" & rst.Fields("Factor").Value & "','" & rst.Fields("Afecto").Value & "','" & rst.Fields("Cantidad").Value & "','" & strVVUnit & "','" & strIGVUnit & "','" & strPVUnit & "','" & strTotalVVNeto & "', " & _
-                        " '" & strTotalIGVNeto & "','" & strTotalPVNeto & "','" & rst.Fields("idMoneda").Value & "','" & rst.Fields("idEmpresa").Value & "','" & rst.Fields("idSucursal").Value & "','" & rst.Fields("NumLote").Value & "','" & rst.Fields("FecVencProd").Value & "' ),"
-            rst.MoveNext
-
-            If rst.EOF Then
-                rst.MovePrevious
-                Sw_Entro = True
-            Else
-                If CIdComprobanteAux <> rst.Fields("idDocventas") Then
-                    rst.MovePrevious
-                    Sw_Entro = True
-                End If
-            End If
-              
-            If Sw_Entro Then
-                CInsertCab = CInsertCab & "('" & strCod & "','" & strTipoVale & "','" & Format(rst.Fields("FecEmision").Value, "YYYY-MM-DD") & "','" & strValorTotal & "','" & strIgvTotal & "','" & strPrecioTotal & "','" & rst.Fields("idPerCliente").Value & "', " & _
-                       " '" & strConcepto & "','" & rst.Fields("idAlmacen").Value & "','" & rst.Fields("idMoneda").Value & "','" & rst.Fields("GlsDocreferencia").Value & "', " & _
-                       " '" & rst.Fields("TipoCambio").Value & "','" & rst.Fields("idEmpresa").Value & "','" & rst.Fields("idSucursal").Value & "'," & _
-                       "'" & strNewPeriodoinv & "','" & rst.Fields("idCentroCosto").Value & "',getdate(),'" & glsUser & "') "
-                
-                rst.MoveNext
-                Sw_Entro = False
-                strValorTotal = 0: strIgvTotal = 0: strPrecioTotal = 0
-            End If
-            strVVUnit = 0: strIGVUnit = 0: strPVUnit = 0: strTotalVVNeto = 0: strTotalIGVNeto = 0: strTotalPVNeto = 0
-        Loop
-        Cn.Execute (CInsertCab)
-        Cn.Execute (left(CInsertDet, Len(CInsertDet) - 1))
-    End If
-    '---------------------------------------------------------------------------------------------------------------------
-    If Len(Trim("" & traerCampo("ValesDet", "IdValesCab", "IdSucursal", glsSucursal, True, "TipoVale = '" & strTipoVale & "' And IdValesCab = '" & strCod & "'"))) = 0 Then
-        csql = "Delete From ValesCab " & _
-               "Where IdEmpresa = '" & glsEmpresa & "' And IdSucursal = '" & glsSucursal & "' And TipoVale = '" & strTipoVale & "' " & _
-               "And IdValesCab = '" & strCod & "'"
-        Cn.Execute csql
-        
-        csql = "Update Docventas Set TipoVale = '',IdValesCab = '',IndVale = 'N' " & _
-               "Where IdDocumento = '" & strIdDocumento & "' And IdSerie = '" & strIdSerie & "' And IdDocVentas = '" & strIdDocventas & "' " & _
-               "And IdEmpresa = '" & glsEmpresa & "' And IdSucursal = '" & glsSucursal & "'"
-        Cn.Execute csql
-        
-    Else
-        '--- INSERTAMOS DOCUMENTO DE REFERENCIA
-        If strTipoVale = "I" Then
-            csql = "INSERT INTO docreferencia (tipoDocOrigen,numDocOrigen,serieDocOrigen,tipoDocReferencia,numDocReferencia,serieDocReferencia,item,idEmpresa,idSucursal) " & _
-                   "VALUES ('88','" & strCod & "','000','" & strIdDocumento & "','" & strIdDocventas & "','" & strIdSerie & "',1,'" & glsEmpresa & "','" & glsSucursal & "')"
-        Else
-            csql = "INSERT INTO docreferencia (tipoDocOrigen,numDocOrigen,serieDocOrigen,tipoDocReferencia,numDocReferencia,serieDocReferencia,item,idEmpresa,idSucursal) " & _
-                   "VALUES ('99','" & strCod & "','000','" & strIdDocumento & "','" & strIdDocventas & "','" & strIdSerie & "',1,'" & glsEmpresa & "','" & glsSucursal & "')"
+            actualizaStock strCod, 1, StrMsgError, strTipoValeAnterior, False
+            If StrMsgError <> "" Then GoTo Err
         End If
-        Cn.Execute csql
-            
-        '--- ACTUALIZAMOS EL ESTADO DEL DOCUMENTO
-        csql = "UPDATE docventas SET tipoVale = '" & strTipoVale & "',idValesCab = '" & strCod & "',indVale = 'S' " & _
-               "WHERE idDocumento = '" & strIdDocumento & "'" & _
-                " AND idSerie     = '" & strIdSerie & "'" & _
-                " AND idDocVentas = '" & strIdDocventas & "'" & _
-                " AND idEmpresa = '" & glsEmpresa & "'" & _
-                " AND idSucursal = '" & glsSucursal & "'"
-        Cn.Execute csql
-        
-        '--- ACTUALIZAMOS STOCK EN LINEA
-        actualizaStock strCod, 0, StrMsgError, strTipoVale, False
-        If StrMsgError <> "" Then GoTo Err
     End If
+    rs.Close
+
+    csql = "EXEC dbo.spu_Docventas_GeneraVale " & _
+           "'" & glsEmpresa & "','" & glsSucursal & "','" & strIdDocumento & "','" & strIdSerie & "','" & strIdDocventas & "','" & strCodMotivoTraslado & "','" & glsCodPeriodoINV & "','" & glsUser & "'," & Replace(CStr(glsIGV), ",", ".")
+    rs.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
+
+    If Not rs.EOF Then
+        If CBool(rs.Fields("IndValeGenerado").Value) Then
+            strCod = Trim("" & rs.Fields("IdValesCab"))
+            strTipoVale = Trim("" & rs.Fields("TipoVale"))
+
+            actualizaStock strCod, 0, StrMsgError, strTipoVale, False
+            If StrMsgError <> "" Then GoTo Err
+        End If
+    End If
+
+    If rs.State = 1 Then rs.Close
     Set rs = Nothing
-    
-Exit Sub
+    Exit Sub
+
 Err:
+    If rs.State = 1 Then rs.Close
     Set rs = Nothing
     If StrMsgError = "" Then StrMsgError = Err.Description
 End Sub

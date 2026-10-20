@@ -359,6 +359,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
+' Firma Codex 15/10/2026: precarga la configuracion de busqueda por vendedor al autenticar.
 
 Public LoginSucceeded As Boolean
 
@@ -417,6 +418,7 @@ Dim rst         As New ADODB.Recordset
 Dim clave       As String
 Dim cgraba      As String
 Dim NMontoTC    As Integer
+Dim StrMsgError As String
 
 '    If CVDate(getFechaSistema) > CVDate("04/02/2011") Then
 '        MsgBox "SISTEMA DE DEMOSTRACION. "
@@ -495,6 +497,11 @@ Dim NMontoTC    As Integer
         
         'comprobar si la contraseña es correcta
         If txtpassword.Text = clave Then
+            cargarConfiguracionBusquedaUsuario StrMsgError
+            If StrMsgError <> "" Then
+                MsgBox StrMsgError, vbInformation, App.Title
+                Exit Sub
+            End If
             ' =============================================
             ' Author:        FRANCO LARA
             ' Create date:   28/09/2026

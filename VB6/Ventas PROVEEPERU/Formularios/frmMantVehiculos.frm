@@ -749,6 +749,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma Codex 15/10/2026: listado y carga de vehículos mediante procedimientos almacenados.
 
 Private Sub cmbAyudaEmpTrans_Click()
 
@@ -950,14 +951,17 @@ Err:
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
+    ' La consulta se ejecuta al presionar Enter.
+End Sub
+
+Private Sub txt_TextoBuscar_KeyPress(KeyAscii As Integer)
 On Error GoTo Err
 Dim StrMsgError As String
-
+    If KeyAscii <> 13 Then Exit Sub
+    KeyAscii = 0
     listaVehiculo StrMsgError
     If StrMsgError <> "" Then GoTo Err
-    
     Exit Sub
-
 Err:
     If StrMsgError = "" Then StrMsgError = Err.Description
     MsgBox StrMsgError, vbInformation, App.Title
@@ -980,10 +984,7 @@ Dim rsdatos                     As New ADODB.Recordset
         strCond = " AND v.GlsVehiculo LIKE '%" & strCond & "%'"
     End If
     
-    csql = "SELECT v.idVehiculo ,v.GlsVehiculo " & _
-           "FROM Vehiculos v WHERE v.idEmpresa = '" & glsEmpresa & "'"
-    If strCond <> "" Then csql = csql & strCond
-    csql = csql & " ORDER BY v.idVehiculo"
+    csql = "EXEC dbo.spu_MantVehiculos_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
     
 If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
 rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
@@ -1013,9 +1014,7 @@ Private Sub mostrarVehiculo(strCodVehi As String, ByRef StrMsgError As String)
 On Error GoTo Err
 Dim rst As New ADODB.Recordset
 
-    csql = "Select V.IdVehiculo,V.GlsVehiculo,V.GlsPlaca,V.IdMarcaVehi,V.GlsModelo,V.GlsColor,V.GlsCodInscripcion,V.IdEmpTrans,V.IdChofer " & _
-           "From Vehiculos V " & _
-           "Where V.IdVehiculo = '" & strCodVehi & "' And V.IdEmpresa = '" & glsEmpresa & "'"
+    csql = "EXEC dbo.spu_MantVehiculos_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodVehi, "'", "''") & "'"
            
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     

@@ -1,6 +1,6 @@
 VERSION 5.00
 Object = "{6A24B331-7634-11D3-A5B0-0050044A7E1A}#1.5#0"; "DXDBGrid.dll"
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "mscomctl.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "MSCOMCTL.OCX"
 Object = "{F41D1D30-7878-4923-8CB3-6CCACDC9C9DE}#1.0#0"; "CATControls.ocx"
 Begin VB.Form frmMantMotivosGuia 
    Appearance      =   0  'Flat
@@ -577,6 +577,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
+' Firma Codex 16/10/2026: documentos, listado y carga de motivos de traslado mediante procedimientos almacenados.
 
 Private Sub CboDocumentos_Click()
 On Error GoTo Err
@@ -606,12 +607,32 @@ Err:
     MsgBox StrMsgError, vbInformation, App.Title
 End Sub
 
+Private Sub cargarDocumentos(ByRef StrMsgError As String)
+On Error GoTo Err
+Dim rst As New ADODB.Recordset
+
+    CboDocumentos.Clear
+    rst.Open "EXEC dbo.spu_MantMotivosTraslado_Documentos_Listar", Cn, adOpenForwardOnly, adLockReadOnly
+    Do While Not rst.EOF
+        CboDocumentos.AddItem Trim("" & rst.Fields("GlsDocumento")) & Space(100) & Trim("" & rst.Fields("IdDocumento"))
+        rst.MoveNext
+    Loop
+    If CboDocumentos.ListCount > 0 Then CboDocumentos.ListIndex = 0
+    If rst.State = 1 Then rst.Close: Set rst = Nothing
+    Exit Sub
+
+Err:
+    If rst.State = 1 Then rst.Close: Set rst = Nothing
+    If StrMsgError = "" Then StrMsgError = Err.Description
+End Sub
+
 Private Sub Form_Load()
 On Error GoTo Err
 Dim StrMsgError As String
 
     ConfGrid gLista, False, False, False, False
-    llenaCombo CboDocumentos, "Documentos", "GlsDocumento", True, "idDocumento", "idDocumento IN(SELECT DISTINCT idDocumento FROM  motivostraslados)"
+    cargarDocumentos StrMsgError
+    If StrMsgError <> "" Then GoTo Err
     fraListado.Visible = True
     fraGeneral.Visible = False
     habilitaBotones 7
@@ -650,9 +671,7 @@ Dim strMsg      As String
     MsgBox "Se " & strMsg & " Satisfactoriamente", vbInformation, App.Title
     fraGeneral.Enabled = False
     
-    llenaCombo CboDocumentos, "Documentos", "GlsDocumento", True, "idDocumento", "idDocumento IN(SELECT DISTINCT idDocumento FROM  motivostraslados)"
-    
-    listaMotivo StrMsgError
+    cargarDocumentos StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
     Exit Sub
@@ -778,12 +797,17 @@ Dim indHabilitar As Boolean
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
+    ' La consulta se ejecuta al presionar Enter.
+End Sub
+
+Private Sub txt_TextoBuscar_KeyPress(KeyAscii As Integer)
 On Error GoTo Err
 Dim StrMsgError As String
 
+    If KeyAscii <> 13 Then Exit Sub
+    KeyAscii = 0
     listaMotivo StrMsgError
     If StrMsgError <> "" Then GoTo Err
-    
     Exit Sub
 
 Err:
@@ -791,24 +815,17 @@ Err:
     MsgBox StrMsgError, vbInformation, App.Title
 End Sub
 
-Private Sub txt_TextoBuscar_KeyDown(KeyCode As Integer, Shift As Integer)
-    
-    If KeyCode = vbKeyDown Then gLista.SetFocus
-
-End Sub
+'Private Sub txt_TextoBuscar_KeyDown(KeyCode As Integer, Shift As Integer)
+'
+'    If KeyCode = vbKeyDown Then gLista.SetFocus
+'
+'End Sub
 
 Private Sub listaMotivo(ByRef StrMsgError As String)
 On Error GoTo Err
-Dim strCond As String
 Dim rsdatos                     As New ADODB.Recordset
 
-    csql = "SELECT m.idMotivoTraslado ,m.GlsMotivoTraslado," & _
-            "(CASE WHEN m.indGeneraVale = 'S' THEN (CASE WHEN m.indTipoVale = 'I' THEN 'INGRESO' ELSE 'SALIDA' END) ELSE '---' END) AS indTipoVale," & _
-            "(CASE WHEN m.indGeneraVale = 'S' THEN 'SI' ELSE 'NO' END) AS indGeneraVale " & _
-            "FROM motivostraslados m " & _
-            "WHERE m.idDocumento = '" & right(CboDocumentos.Text, 2) & "'"
-    If strCond <> "" Then csql = csql & strCond
-    csql = csql & " ORDER BY m.idMotivoTraslado"
+    csql = "EXEC dbo.spu_MantMotivosTraslado_Listar '" & Replace(right(CboDocumentos.Text, 2), "'", "''") & "',''"
     
     If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
     rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
@@ -837,9 +854,7 @@ Private Sub mostrarMotivo(ByVal strCod As String, ByRef StrMsgError As String)
 On Error GoTo Err
 Dim rst As New ADODB.Recordset
 
-    csql = "SELECT m.idMotivoTraslado ,m.GlsMotivoTraslado, m.indTipoVale, m.indGeneraVale,m.idDocumento,M.IndEvaluaLC " & _
-           "FROM motivostraslados m " & _
-           "WHERE m.idMotivoTraslado = '" & strCod & "'"
+    csql = "EXEC dbo.spu_MantMotivosTraslado_Obtener '" & Replace(strCod, "'", "''") & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     
     mostrarDatosFormSQL Me, rst, StrMsgError

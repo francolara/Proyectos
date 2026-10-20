@@ -4786,7 +4786,13 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' =============================================
+' Author:        FRANCO LARA
+' Create date:   16/10/2026
+' Description:   Consulta y exportación sin grabación; parámetros reutilizados desde la caché del login.
+' =============================================
 Option Explicit
+Private Const MODO_SOLO_CONSULTA As Boolean = True
 Dim RsD                                 As New ADODB.Recordset
 Public strTipoDoc                       As String
 Public strSerieDocventas                As String
@@ -4954,7 +4960,7 @@ Err:
 End Sub
 
 Private Sub chkVentaGratuita_Click()
-If traerCampo("Parametros", "ValParametro", "GlsParametro", "CONCEPTO_VENTA_GRATUITA", True) = "S" Then
+If STR_CONCEPTO_VENTA_GRATUITA = "S" Then
     
     If indValorAnt = False Then
      strValor = txtCod_MotivoTraslado.Text
@@ -5041,7 +5047,7 @@ End Sub
 
 Private Sub cmbAyudaFormaPago_Click()
 
-    If Trim("" & traerCampo("parametros", "valparametro", "GLSPARAMETRO", "FORMA_PAGOS_X_CLIENTE", True)) = "S" Then
+    If Trim("" & STR_FORMA_PAGOS_X_CLIENTE) = "S" Then
         mostrarAyuda "FORMASPAGOxCLIENTE", txtCod_FormaPago, txtGls_FormaPago, " and A.idcliente = '" & Trim("" & txtCod_Cliente.Text) & "' and a.idempresa = '" & glsEmpresa & "' "
     Else
         mostrarAyuda "FORMASPAGO", txtCod_FormaPago, txtGls_FormaPago
@@ -5140,7 +5146,7 @@ Dim strTipoProd             As String
     
     mostrarAyuda "MONEDA", txtCod_Moneda, txtGls_Moneda
     If Len(Trim(txtCod_Moneda.Text)) > 0 Then
-        If traerCampo("parametros", "valparametro", "GLSPARAMETRO", "VIZUALIZA_SON", True) = "S" Then
+        If STR_VIZUALIZA_SON = "S" Then
             lbl_TotalLetras.Caption = "SON:" & Cadenanum(Format(txt_TotalNeto.Value, "0.00"), txtGls_Moneda.Text)
         Else
             lbl_TotalLetras.Caption = Cadenanum(Format(txt_TotalNeto.Value, "0.00"), txtGls_Moneda.Text)
@@ -5177,10 +5183,10 @@ Dim strTipoProd             As String
                 If txtCod_Moneda.Text = strMoneda Then
                     If DatosProducto(Trim("" & gDetalle.Columns.ColumnByFieldName("idProducto").Value), strCodFabri, strCodMar, strDesMar, intAfecto, strTipoProd) = False Then
                     End If
-                    If leeParametro("EXTRAE_PRECIO_COMPRAS") = "1" Then
+                    If STR_EXTRAE_PRECIO_COMPRAS = "1" Then
                         If DatosPrecioCompras(Trim("" & gDetalle.Columns.ColumnByFieldName("idProducto").Value), strTipoProd, Trim("" & gDetalle.Columns.ColumnByFieldName("idUM").Value), strDesUM, dblVVUnit, dblFactor) = False Then
                         End If
-                    ElseIf leeParametro("EXTRAE_PRECIO_ULTIMA_VENTA") = "S" Then
+                    ElseIf STR_EXTRAE_PRECIO_ULTIMA_VENTA = "S" Then
                         If DatosPrecioUltimaVenta(StrMsgError, Trim("" & gDetalle.Columns.ColumnByFieldName("idProducto").Value), strTipoProd, Trim("" & gDetalle.Columns.ColumnByFieldName("idUM").Value), strDesUM, dblVVUnit, dblFactor) = False Then
                         If StrMsgError <> "" Then GoTo Err
                         End If
@@ -5315,6 +5321,8 @@ On Error GoTo Err
 Dim StrMsgError                             As String
 Dim CSqlC                                   As String
 
+    ' Operación de actualización deshabilitada: formulario de solo consulta.
+    If MODO_SOLO_CONSULTA Then Exit Sub
     If Trim("" & TxtCodCentroCostoAnt.Text) = Trim("" & TxtCodCentroCostoNuevo.Text) Then
         
         StrMsgError = "El Centro de Costo no puede ser el mismo.": GoTo Err
@@ -5359,6 +5367,8 @@ Private Sub CmdAceptarAtn_Click()
 Dim StrMsgError     As String
 On Error GoTo Err
 
+    ' Operación de actualización deshabilitada: formulario de solo consulta.
+    If MODO_SOLO_CONSULTA Then Exit Sub
 If Val(Format(TxtcantProducto.Text, "0.00")) < Val(Format(TxtcantProducto_Atn.Text, "0.00")) Then
     TxtcantProducto_Atn.SetFocus
     MsgBox "La cantidad atendida no puede ser mayor a la cantidad del pedido, Verifique.", vbInformation, Me.Caption
@@ -5692,7 +5702,7 @@ On Error GoTo Err
         gDetalle.Columns.ColumnByFieldName("PVUnit").DisableEditor = False
     End If
     
-    If traerCampo("Parametros", "ValParametro", "GlsParametro", "BLOQUEA_CHK_AFECTO", True) = "S" Then
+    If STR_BLOQUEA_CHK_AFECTO = "S" Then
         gDetalle.Columns.ColumnByFieldName("Afecto").DisableEditor = True
     Else
         gDetalle.Columns.ColumnByFieldName("Afecto").DisableEditor = False
@@ -5821,7 +5831,12 @@ Dim CSqlC               As String
 Dim RsC                 As New ADODB.Recordset
 Dim rsValida            As New ADODB.Recordset
 
-    If leeParametro("VENTA_ELECTRONICA") = "S" Then
+    ' Proceso de grabación conservado como referencia; este formulario es únicamente de consulta.
+    If MODO_SOLO_CONSULTA Then
+        StrMsgError = ""
+        Exit Sub
+    End If
+    If STR_VENTA_ELECTRONICA = "S" Then
     
         If Not IsNumeric(left(txt_Serie.Text, 1)) Then
             
@@ -5916,7 +5931,7 @@ Dim rsValida            As New ADODB.Recordset
     
     '-------------------------------------------------------------------------------------------------------------------------------------
     '------- Validando Stock
-    visCodRapido = Trim("" & traerCampo("parametros", "ValParametro", "GlsParametro", "VIZUALIZA_CODIGO_RAPIDO", True))
+    visCodRapido = Trim("" & STR_VIZUALIZA_CODIGO_RAPIDO)
         
 '    If glsValidaStock = True Then
 '
@@ -6069,7 +6084,7 @@ Dim rsValida            As New ADODB.Recordset
     'PQS 03/11/2014
     If glsValidaStock Then
         
-        If leeParametro("SOLOGUIAMUEVESTOCK") = "S" Then
+        If glsSoloGuiaMueveStock Then
         
             If strTipoDoc = "86" Then
             
@@ -6266,7 +6281,7 @@ Dim rsValida            As New ADODB.Recordset
             
         glsobservacionventas = ""
               
-        If strTipoDoc = "40" And traerCampo("Parametros", "ValParametro", "GlsParametro", "APRUEBA_PEDIDO_AUTOMATICO", True) = "1" Then
+        If strTipoDoc = "40" And STR_APRUEBA_PEDIDO_AUTOMATICO = "1" Then
             AprobacionAutomatica StrMsgError
             If StrMsgError <> "" Then GoTo Err
         End If
@@ -6509,7 +6524,7 @@ Dim CSqlC                           As String
 Dim RsC                             As New ADODB.Recordset
 Dim RsC2                            As New ADODB.Recordset
 
-    If leeParametro("FACTURACION_ENTRE_EMPRESAS") <> "S" Then Exit Sub
+    If STR_FACTURACION_ENTRE_EMPRESAS <> "S" Then Exit Sub
         
     CSqlC = "Select A.IdEmpresaCli,A.Annio_Mov,A.IdMesMov,A.IdNumMov,B.IdCorrelaDetrac1,B.IdCorrelaDetrac2,B.IdCorrela,B.IdProveedor,B.TipoDcto,B.IdSerieDcto," & _
             "B.NumDcto " & _
@@ -6655,7 +6670,7 @@ Dim CIdSerieAnt                     As String
 Dim CNumDctoAnt                     As String
 Dim NLongitud                       As Integer
 
-    If leeParametro("FACTURACION_ENTRE_EMPRESAS") <> "S" Then Exit Sub
+    If STR_FACTURACION_ENTRE_EMPRESAS <> "S" Then Exit Sub
     
     CIdEmpresaCli = ""
     NItem = 0
@@ -6679,7 +6694,7 @@ Dim NLongitud                       As Integer
         CRucProveedor = Trim("" & RsC.Fields("Ruc"))
         CDirProveedor = Trim("" & RsC.Fields("Direccion"))
         
-        CIndRedondeaDet = traerCampo("Parametros", "ValParametro", "GlsParametro", "REDONDEA_DETRACCION_COMPRAS", False, "IdEmpresa = '" & CIdEmpresaCli & "'")
+        CIndRedondeaDet = "" 'Parámetro no utilizado en formularios de consulta.
         
     End If
     RsC.Close: Set RsC = Nothing
@@ -6756,7 +6771,7 @@ Dim NLongitud                       As Integer
                 "On C.IdEmpresa = D.IdEmpresa And A.IdPerCliente = D.IdCliente And C.IdProducto = D.IdProducto " & _
             "Inner Join Productos E " & _
                 "On '" & CIdEmpresaCli & "' = E.IdEmpresa And D.Codigo = E.IdProducto " & _
-            "Inner Join " & leeParametro("DNSCONTABILIDAD") & ".PlanCuentas F " & _
+            "Inner Join " & STR_DNSCONTABILIDAD & ".PlanCuentas F " & _
                 "On E.IdEmpresa = F.IdEmpresa And '2011' = F.IdAnno And E.CtaContable2 = F.IdCtaContable " & _
             "Left Join Tb_Concep_Detrac G " & _
                 "On E.IdConceptoDetraccion = G.CodConcepto " & _
@@ -6800,7 +6815,7 @@ Dim NLongitud                       As Integer
             
             CIdGI = traerCampo("GastosIngresos", "IdGastosIngresos", "IndTipo", "G", False, "IdEmpresa = '" & CIdEmpresaCli & "' And IdCtaContable = '" & CIdCtaContable & "'")
             CIdSucursalCli = traerCampo("Sucursales", "IdSucursal", "IdEmpresa", CIdEmpresaCli, False, "IndPrincipal = 1")
-            CIdTipoIGV = leeParametro("TIPO_IGV")
+            CIdTipoIGV = STR_TIPO_IGV
             
             If PIndNuevo = 1 Then
                 
@@ -7270,9 +7285,9 @@ On Error GoTo Err
 Dim CSqlC                           As String
 Dim RsC                             As New ADODB.Recordset
 
-    If leeParametro("FACTURACION_ENTRE_EMPRESAS") <> "S" Then Exit Sub
+    If STR_FACTURACION_ENTRE_EMPRESAS <> "S" Then Exit Sub
     
-    If Trim("" & traerCampo("Parametros", "Valparametro", "Glsparametro", "CONTABILIDAD_ONLINE", True)) <> "1" Then Exit Sub
+    If Trim("" & STR_CONTABILIDAD_ONLINE) <> "1" Then Exit Sub
     
     CSqlC = "Select B.IdEmpresaCli,B.Annio_Mov,B.IdMesMov,B.IdNumMov " & _
             "From DocVentas A " & _
@@ -7955,7 +7970,7 @@ Dim strGlsProOrigen As String
 
     If gDetalle.Columns.ColumnByFieldName("idProducto").DisableEditor = False Then
         
-        If Trim("" & traerCampo("Parametros", "ValParametro", "GlsParametro", "MODIFICA_REGDOC_DESPROD", True)) = "N" Then
+        If Trim("" & STR_MODIFICA_REGDOC_DESPROD) = "N" Then
             Exit Sub
         End If
         
@@ -8088,10 +8103,10 @@ Dim CArrays(6)           As String
             gDetalle.SetFocus
             gDetalle.Dataset.RecNo = intFila
             
-            If leeParametro("EXTRAE_PRECIO_COMPRAS") = "1" Then
+            If STR_EXTRAE_PRECIO_COMPRAS = "1" Then
                 If DatosPrecioCompras(gDetalle.Columns.ColumnByFieldName("idProducto").Value, gDetalle.Columns.ColumnByFieldName("idTipoProducto").Value, strCod, strDes, dblVVUnit, dblFactor) = False Then
                 End If
-            ElseIf leeParametro("EXTRAE_PRECIO_ULTIMA_VENTA") = "S" Then
+            ElseIf STR_EXTRAE_PRECIO_ULTIMA_VENTA = "S" Then
                 If DatosPrecioUltimaVenta(StrMsgError, gDetalle.Columns.ColumnByFieldName("idProducto").Value, gDetalle.Columns.ColumnByFieldName("idTipoProducto").Value, strCod, strDes, dblVVUnit, dblFactor) = False Then
                 End If
             Else
@@ -8362,7 +8377,7 @@ Dim CArrays(6)           As String
                 
         Case gDetalle.Columns.ColumnByFieldName("IdCentroCosto").Index
             
-            If leeParametro("AYUDA_CENTRO_COSTO_DETALLE") = "S" Then
+            If STR_AYUDA_CENTRO_COSTO_DETALLE = "S" Then
                 
                 mostrarAyudaTexto "CENTROCOSTO", strCod, strDes
                 If txtCod_CentroCosto.Text <> "" Then SendKeys "{tab}"
@@ -9024,10 +9039,10 @@ Dim NIvapUnit               As Double
             gDetalle.Columns.ColumnByFieldName("idMoneda").Value = strMoneda 'falta esta columna en el detalle de la grilla
             
             '---- Trae datos um - precio
-            If leeParametro("EXTRAE_PRECIO_COMPRAS") = "1" Then
+            If STR_EXTRAE_PRECIO_COMPRAS = "1" Then
                 If DatosPrecioCompras(strCod, strTipoProd, strCodUM, strDesUM, dblVVUnit, dblFactor) = False Then
                 End If
-            ElseIf leeParametro("EXTRAE_PRECIO_ULTIMA_VENTA") = "S" Then
+            ElseIf STR_EXTRAE_PRECIO_ULTIMA_VENTA = "S" Then
                 If DatosPrecioUltimaVenta(StrMsgError, strCod, strTipoProd, strCodUM, strDesUM, dblVVUnit, dblFactor) = False Then
                 If StrMsgError <> "" Then GoTo Err
                 End If
@@ -9086,7 +9101,7 @@ Dim NIvapUnit               As Double
             
         Case gDetalle.Columns.ColumnByFieldName("VVUnit").Index
             
-            If leeParametro("VALIDA_FACTURADO_HCOSTO") = "1" Then
+            If STR_VALIDA_FACTURADO_HCOSTO = "1" Then
                 
                 procesaMoneda txtCod_Moneda.Text, txtCod_Moneda.Text, 0, Val("" & gDetalle.Columns.ColumnByFieldName("VVUnit").Value), gDetalle.Columns.ColumnByFieldName("Afecto").Value, dblVVUnit, dblIGVUnit, dblPVUnit, 0, StrMsgError, Trim("" & gDetalle.Columns.ColumnByFieldName("IdProducto").Value)
                 If StrMsgError <> "" Then GoTo Err
@@ -9243,7 +9258,7 @@ Dim NIvapUnit               As Double
 '            End If
             
         Case gDetalle.Columns.ColumnByFieldName("Cantidad").Index
-            If Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "BLOQUEA_DETALLE", True) & "") = "S" Then
+            If Trim(STR_BLOQUEA_DETALLE & "") = "S" Then
                 If Not gDocReferencia.Dataset.EOF Then
                     If Len(Trim("" & gDocReferencia.Columns.ColumnByFieldName("idDocumento").Value)) > 0 Then
                         If Val("" & gDetalle.Columns.ColumnByFieldName("Cantidad").Value) > Val("" & gDetalle.Columns.ColumnByFieldName("CantidadAnt").Value) Then
@@ -9289,7 +9304,7 @@ Dim NIvapUnit               As Double
         Case gDetalle.Columns.ColumnByFieldName("PorDcto").Index
             IndEvaluacion = 0
             If ("" & gDetalle.Columns.ColumnByFieldName("PorDcto").Value) <> "0" Then
-                If "" & traerCampo("Parametros", "ValParametro", "GlsParametro", "SOLOVALIDADCTOMAX", True) = "1" Then
+                If "" & STR_SOLOVALIDADCTOMAX = "1" Then
                     idUMCompra = Trim("" & traerCampo("productos", "idUMVenta", "idProducto", Trim("" & gDetalle.Columns.ColumnByFieldName("idProducto").Value), True))
                     If Val(Format(gDetalle.Columns.ColumnByFieldName("PorDcto").Value, "0.00")) > Val(Format(traerCampo("preciosventa", "MaxDcto", "idLista", Trim("" & txtCod_Lista.Text), True, "idProducto = '" & Trim("" & gDetalle.Columns.ColumnByFieldName("idProducto").Value) & "' and idUM = '" & Trim("" & idUMCompra) & "' "), "0.00")) Then
                         frmAprobacion.MostrarForm "02", IndEvaluacion, strCodUsuarioAutorizacion, StrMsgError
@@ -9335,7 +9350,7 @@ Dim NIvapUnit               As Double
                 gDetalle.Dataset.Post
                 
             Else
-                If "" & traerCampo("Parametros", "ValParametro", "GlsParametro", "SOLOVALIDADCTOMAX", True) <> "1" Then
+                If "" & STR_SOLOVALIDADCTOMAX <> "1" Then
                     gDetalle.Dataset.Edit
                     gDetalle.Columns.ColumnByFieldName("PorDcto").Value = 0
                     gDetalle.Columns.ColumnByFieldName("DctoVV").Value = 0
@@ -9523,7 +9538,7 @@ Dim NIvapUnit               As Double
         
         Case gDetalle.Columns.ColumnByFieldName("IdCentroCosto").Index
             
-            If leeParametro("VALIDA_FACTURADO_HCOSTO") = "1" Then
+            If STR_VALIDA_FACTURADO_HCOSTO = "1" Then
                 
                 If Len(Trim("" & gDetalle.Columns.ColumnByFieldName("IdCentroCosto").Value)) > 0 Then
                     
@@ -10077,10 +10092,10 @@ Dim intFila As Integer
                 
                 '----- Trae datos um - precio
                 
-                If leeParametro("EXTRAE_PRECIO_COMPRAS") = "1" Then
+                If STR_EXTRAE_PRECIO_COMPRAS = "1" Then
                     If DatosPrecioCompras(gDetalle.Columns.ColumnByFieldName("idProducto").Value, gDetalle.Columns.ColumnByFieldName("idTipoProducto").Value, strCod, strDes, dblVVUnit, dblFactor) = False Then
                     End If
-                ElseIf leeParametro("EXTRAE_PRECIO_ULTIMA_VENTA") = "S" Then
+                ElseIf STR_EXTRAE_PRECIO_ULTIMA_VENTA = "S" Then
                     If DatosPrecioUltimaVenta(StrMsgError, gDetalle.Columns.ColumnByFieldName("idProducto").Value, gDetalle.Columns.ColumnByFieldName("idTipoProducto").Value, strCod, strDes, dblVVUnit, dblFactor) = False Then
                     If StrMsgError <> "" Then GoTo Err
                     End If
@@ -10474,7 +10489,7 @@ Dim StrMsgError     As String
 Dim rscd            As New ADODB.Recordset
 Dim csql            As String
 
-    If Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "LIQUIDACIONES", True) & "") = "S" Then
+    If Trim(STR_LIQUIDACIONES & "") = "S" Then
         If strTipoDoc = "86" Then
             If rsTempLiquidacion.State = 1 Then rsTempLiquidacion.Close
             Set rsTempLiquidacion = Nothing
@@ -10675,6 +10690,14 @@ Dim StrFechaDoc As String
 Dim rsValida    As New ADODB.Recordset
 Dim StrCadSql   As String
 
+    ' En estos formularios solo se permite volver al listado, exportar y salir.
+    If MODO_SOLO_CONSULTA Then
+        Select Case Button.Index
+            Case 9, 10, 24
+            Case Else
+                Exit Sub
+        End Select
+    End If
     StrFechaDoc = ""
     
     Select Case Button.Index
@@ -10724,7 +10747,7 @@ Dim StrCadSql   As String
                 dblIgvNEw = Format(Val(Format(STR_IGV, "0.00")) / 100, "0.00")
             End If
             
-            If Trim("" & traerCampo("Parametros", "ValParametro", "GlsParametro", "BLOQUEA_DETALLE", True) & "") = "S" Then
+            If Trim("" & STR_BLOQUEA_DETALLE & "") = "S" Then
                 gDetalle.Columns.ColumnByFieldName("idProducto").DisableEditor = False
                 gDetalle.Columns.ColumnByFieldName("Afecto").DisableEditor = False
                 gDetalle.Columns.ColumnByFieldName("Cantidad").DisableEditor = False
@@ -10803,11 +10826,11 @@ Dim StrCadSql   As String
              
              
             '******** LUIS 17/10/2018 VALIDA FORMA DE PAGO EN EL DOC DE REFERENCIA *********
-            If traerCampo("PARAMETROS", "VALPARAMETRO", "GLSPARAMETRO", "FORMA_PAGOS_X_CLIENTE", True) = "S" Then
+            If STR_FORMA_PAGOS_X_CLIENTE = "S" Then
                 Dim StrFPagoval     As String
                 If gDocReferencia.Count > 0 Then
                 
-                    If traerCampo("PARAMETROS", "VALPARAMETRO", "GLSPARAMETRO", "FORMA_PAGOS_ACTIVO_FACTURA", True) <> "S" Then
+                    If STR_FORMA_PAGOS_ACTIVO_FACTURA <> "S" Then
                     
                         gDocReferencia.Dataset.First
                         Do While Not gDocReferencia.Dataset.EOF
@@ -10889,7 +10912,7 @@ Dim StrCadSql   As String
 '            End If
 '            '************************************************
                         
-            If Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "VALIDA_REFERENCIA", True) & "") = "S" Then
+            If Trim(STR_VALIDA_REFERENCIA & "") = "S" Then
                 If Trim(traerCampo("sucursales", "indReferencia", "idSucursal", glsSucursal, True) & "") = "S" Then
                     If strTipoDoc = "01" Or strTipoDoc = "03" Or strTipoDoc = "86" Then
                       If Trim(traerCampo("MotivosTraslados", "GlsMotivoTraslado", "GlsMotivoTraslado", txtGls_MotivoTraslado.Text, False)) = "COMPRA" Or Trim(traerCampo("MotivosTraslados", "GlsMotivoTraslado", "GlsMotivoTraslado", txtGls_MotivoTraslado.Text, False)) = "DEVOLUCION" Then
@@ -10934,7 +10957,7 @@ Dim StrCadSql   As String
                 Toolbar1.Buttons(15).Visible = False
             End If
             
-            If Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "VALIDA_SEPARACION", True) & "") = "S" Then
+            If Trim(STR_VALIDA_SEPARACION & "") = "S" Then
                 If strTipoDoc = "40" Then
                     Valida_Aprobacion RstaValidacion
                     If RstaValidacion = "1" Then
@@ -11052,7 +11075,7 @@ Dim StrCadSql   As String
             End If
                         
         Case 6: 'Anular
-            If Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "VALIDA_SEPARACION", True) & "") = "S" Then
+            If Trim(STR_VALIDA_SEPARACION & "") = "S" Then
                 If strTipoDoc = "40" Then
                     QuitarAprobacion StrMsgError
                     If StrMsgError <> "" Then GoTo Err
@@ -11241,7 +11264,7 @@ Dim StrCadSql   As String
             frmListaDocExportar.MostrarForm strTipoDoc, txtCod_Cliente.Text, rscd, rsdd, strTipoDocImportado, StrMsgError
             If StrMsgError <> "" Then GoTo Err
             If strTipoDocImportado <> "" Then
-                If traerCampo("parametros", "valparametro", "GLSPARAMETRO", "AGRUPAPRODUCTOS", True) = "S" Then
+                If STR_AGRUPAPRODUCTOS = "S" Then
                     mostrarDocImportado rscd, rsdd, strTipoDocImportado, StrMsgError
                 Else
                     mostrarDocImportado_SinAgrupar rscd, rsdd, strTipoDocImportado, StrMsgError
@@ -11272,7 +11295,7 @@ Dim StrCadSql   As String
                     End If
                 End If
                 
-                If Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "BLOQUEA_DETALLE", True) & "") = "S" Then
+                If Trim(STR_BLOQUEA_DETALLE & "") = "S" Then
                     gDetalle.Columns.ColumnByFieldName("idProducto").DisableEditor = True
                     gDetalle.Columns.ColumnByFieldName("Afecto").DisableEditor = True
                     gDetalle.Columns.ColumnByFieldName("Cantidad").DisableEditor = False
@@ -11344,7 +11367,7 @@ Dim StrCadSql   As String
             Aprobacion StrMsgError
             If StrMsgError <> "" Then GoTo Err
             
-            If Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "VALIDA_SEPARACION", True) & "") = "S" Then
+            If Trim(STR_VALIDA_SEPARACION & "") = "S" Then
                 If strTipoDoc = "40" Then
                     RstaValidacion = ""
                     Valida_Aprobacion RstaValidacion
@@ -11381,7 +11404,7 @@ Dim StrCadSql   As String
             frmListaDocExportarEntreEmpresas.MostrarForm strTipoDoc, txtCod_Cliente.Text, rscd, rsdd, strTipoDocImportado, StrMsgError
             If StrMsgError <> "" Then GoTo Err
             If strTipoDocImportado <> "" Then
-                If traerCampo("parametros", "valparametro", "GLSPARAMETRO", "AGRUPAPRODUCTOS", True) = "S" Then
+                If STR_AGRUPAPRODUCTOS = "S" Then
                     mostrarDocImportado_Empresas rscd, rsdd, strTipoDocImportado, StrMsgError
                 Else
                     mostrarDocImportado_SinAgrupar rscd, rsdd, strTipoDocImportado, StrMsgError
@@ -11412,7 +11435,7 @@ Dim StrCadSql   As String
                     End If
                 End If
                 
-                If Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "BLOQUEA_DETALLE", True) & "") = "S" Then
+                If Trim(STR_BLOQUEA_DETALLE & "") = "S" Then
                     gDetalle.Columns.ColumnByFieldName("idProducto").DisableEditor = True
                     gDetalle.Columns.ColumnByFieldName("Afecto").DisableEditor = True
                     gDetalle.Columns.ColumnByFieldName("Cantidad").DisableEditor = False
@@ -11479,7 +11502,7 @@ Dim StrCadSql   As String
             If Mid(txt_Serie.Text, 1, 1) = "F" Or Mid(txt_Serie.Text, 1, 1) = "B" Then
                 'Si es Usuario Jefe
                 If traerCampo("usuarios", "indJefe", "idUsuario", glsUser, True) = "1" Then
-                    ShellEx leeParametro("CARPETA_XML_VE") & "_LOG\" & strTipoDoc & "-" & txt_Serie.Text & "-" & txt_NumDoc.Text & ".pdf", essSW_MAXIMIZE, , , "open", Me.hwnd
+                    ShellEx STR_CARPETA_XML_VE & "_LOG\" & strTipoDoc & "-" & txt_Serie.Text & "-" & txt_NumDoc.Text & ".pdf", essSW_MAXIMIZE, , , "open", Me.hwnd
                 End If
             Else
                 If (strTipoDoc = "01" Or strTipoDoc = "03" Or strTipoDoc = "07" Or strTipoDoc = "08") Then
@@ -12570,7 +12593,7 @@ Dim IndRegistra                     As Boolean
     
     IndRegistra = False
     
-    If leeParametro("VALIDA_PERMISOS") = "S" And strTipoDoc = "07" Then 'Por mientras sólo para Nota de Crédito
+    If STR_VALIDA_PERMISOS = "S" And strTipoDoc = "07" Then 'Por mientras sólo para Nota de Crédito
         
         If PIndexBoton = 1 Or PIndexBoton = 2 Or PIndexBoton = 3 Or PIndexBoton = 4 Or PIndexBoton = 5 Or PIndexBoton = 6 Or PIndexBoton = 9 Then
             
@@ -13640,7 +13663,7 @@ Dim DblvvunitCostoD                 As Double
     dblIGV = dblIgvNEw
     dblTC = txt_TipoCambio.Value
     If intAfecto = 0 Then dblIGV = 0
-    NPorcIvap = Val("" & leeParametro("PORCENTAJE_IVAP"))
+    NPorcIvap = Val("" & STR_PORCENTAJE_IVAP)
     
     
     'Luis Costo soles y Dolares Para Cotizaciones
@@ -13815,7 +13838,7 @@ Dim NTotalIvapNeto                  As Double
     If intAfecto = 1 Then
         dblTotalIGVNeto = Val((dblTotalVVNeto * dblIgvNEw))
     Else
-        NPorcIvap = Val("" & leeParametro("PORCENTAJE_IVAP"))
+        NPorcIvap = Val("" & STR_PORCENTAJE_IVAP)
         dblTotalIGVNeto = 0
         
         If NPorcIvap > 0 Then
@@ -14043,7 +14066,7 @@ Dim rsValida                As New ADODB.Recordset
             
             If Trim(STR_CLIENTE_ANULA & "") = "S" Then
                 If traerCampo("Clientes", "IndAnula", "idCliente", txtCod_Cliente.Text, True) = 1 Then
-                    strCod = Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "PRODUCTO_ANULA", True) & "")
+                    strCod = Trim(STR_PRODUCTO_ANULA & "")
                     strDes = "ANULADO"
         
                     csql = "SELECT idProducto,GlsProducto,idUMVenta,CodigoRapido FROM Productos " & _
@@ -14558,7 +14581,7 @@ Dim rst As New ADODB.Recordset
         txtCod_Vendedor.Text = glsUser
     End If
     
-    If strTipoDoc = "40" Then txtCod_FormaPago.Text = leeParametro("FORMAPAGO_PEDIDO")
+    If strTipoDoc = "40" Then txtCod_FormaPago.Text = STR_FORMAPAGO_PEDIDO
     
     If rst.State = 1 Then rst.Close: Set rst = Nothing
     
@@ -14605,7 +14628,7 @@ Dim RsC                 As New ADODB.Recordset
     If StrMsgError <> "" Then GoTo Err
     
     '--- Parametro que evaluará la liberación del detalle de un documento de  referencia por el item del producto
-    strParamItemPro = Trim("" & traerCampo("Parametros", "ValParametro", "GlsParametro", "EVALUA_ITEM_DETALLE_PRODUCTO", True))
+    strParamItemPro = Trim("" & STR_EVALUA_ITEM_DETALLE_PRODUCTO)
     
     idValeDocventas = Trim("" & traerCampo("docventas", "idValesCab", "iddocventas", txt_NumDoc.Text, True, " idserie = '" & txt_Serie.Text & "' and iddocumento = '" & strTipoDoc & "' and idsucursal = '" & glsSucursal & "' "))
     strTipoVale = Trim("" & traerCampo("docventas", "tipoVale", "iddocventas", txt_NumDoc.Text, True, " idserie = '" & txt_Serie.Text & "' and iddocumento = '" & strTipoDoc & "' and idsucursal = '" & glsSucursal & "' "))
@@ -14663,7 +14686,7 @@ Dim RsC                 As New ADODB.Recordset
         
         If IndEvaluacion = 0 Then Exit Sub
         
-        If leeParametro("VENTA_ELECTRONICA") = "S" And Not IsNumeric(left(txt_Serie.Text, 1)) Then
+        If STR_VENTA_ELECTRONICA = "S" And Not IsNumeric(left(txt_Serie.Text, 1)) Then
     
             CSqlC = "Select A.IndAceptadoSunat,A.IndRechazadoSunat,IIf(A.IndAceptadoSunat = 1,DATEDIFF(day,A.FechaAceptacionSunat,GETDATE()),0) Dias  " & _
                     "From DocVentas A " & _
@@ -14944,7 +14967,7 @@ Dim RsC                 As New ADODB.Recordset
             End If
         End If
     
-        If traerCampo("Parametros", "ValParametro", "GlsParametro", "AGRUPAPRODUCTOS", True) = "N" Then
+        If STR_AGRUPAPRODUCTOS = "N" Then
             '---- Cambiamos el estado a Importado
             csql = "SELECT d.idDocumentoImp,d.idDocVentasImp,d.idSerieImp,d.idProducto,d.idUM,d.Cantidad,d.Cantidad2,d.ItemPro " & _
                     "FROM docventasdet d " & _
@@ -15142,7 +15165,7 @@ Dim RsC                 As New ADODB.Recordset
             End If
         End If
         
-        If Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "LIQUIDACIONES", True) & "") = "S" Then
+        If Trim(STR_LIQUIDACIONES & "") = "S" Then
             If strTipoDoc = "86" Then
                 CadMysqlLiq = "Select * from docventasdetliquidacion " & _
                               "where iddocventas = '" & Trim("" & txt_NumDoc.Text) & "' and iddocumento = '" & strTipoDoc & "' and idserie = '" & Trim("" & txt_Serie.Text) & "' " & _
@@ -15238,7 +15261,7 @@ Dim DblTotDescIVAP                      As Double
     
     If gDetalle.Dataset.RecordCount = 0 Then Exit Sub
     
-    NPorcIvap = Val("" & leeParametro("PORCENTAJE_IVAP"))
+    NPorcIvap = Val("" & STR_PORCENTAJE_IVAP)
     
     
     
@@ -15337,7 +15360,7 @@ Dim DblTotDescIVAP                      As Double
 '    txt_TotalBruto.Text = Val(Format(txt_TotalBaseImponible.Text, "0.00")) + Val(Format(DblExonerado, "0.00"))
     
     gDetalle.Dataset.EnableControls
-    If traerCampo("parametros", "valparametro", "GLSPARAMETRO", "VIZUALIZA_SON", True) = "S" Then
+    If STR_VIZUALIZA_SON = "S" Then
         lbl_TotalLetras.Caption = "SON:" & Cadenanum(Format(txt_TotalNeto.Value, "0.00"), txtGls_Moneda.Text)
     Else
         lbl_TotalLetras.Caption = Cadenanum(Format(txt_TotalNeto.Value, "0.00"), txtGls_Moneda.Text)
@@ -15517,7 +15540,7 @@ Dim DblTotIncIvap                       As Double
 Dim NPorcIvap                           As Double
 Dim DblBaseIVAP                         As Double
 
-    NPorcIvap = Val("" & leeParametro("PORCENTAJE_IVAP"))
+    NPorcIvap = Val("" & STR_PORCENTAJE_IVAP)
     
     txt_TotalBruto.Text = 0#
     txt_TotalIGV.Text = 0#
@@ -15600,7 +15623,7 @@ Dim DblBaseIVAP                         As Double
     txt_TotalBruto.Text = Val(Format(txt_TotalBaseImponible.Text, "0.00")) + Val(Format(DblExonerado, "0.00"))
     
     gDetalle.Dataset.EnableControls
-    If traerCampo("parametros", "valparametro", "GLSPARAMETRO", "VIZUALIZA_SON", True) = "S" Then
+    If STR_VIZUALIZA_SON = "S" Then
         lbl_TotalLetras.Caption = "SON:" & Cadenanum(Format(txt_TotalNeto.Value, "0.00"), txtGls_Moneda.Text)
     Else
         lbl_TotalLetras.Caption = Cadenanum(Format(txt_TotalNeto.Value, "0.00"), txtGls_Moneda.Text)
@@ -15657,7 +15680,7 @@ Dim DblTotIgv    As Double
     txt_TotalNeto.Text = Val(Format(txt_TotalBaseImponible.Text, "0.00")) + Val(Format(txt_TotalExonerado.Text, "0.00")) + Val(Format(txt_TotalIGV.Text, "0.00"))
     
     gDetalle.Dataset.EnableControls
-    If traerCampo("parametros", "valparametro", "GLSPARAMETRO", "VIZUALIZA_SON", True) = "S" Then
+    If STR_VIZUALIZA_SON = "S" Then
         lbl_TotalLetras.Caption = "SON:" & Cadenanum(Format(txt_TotalNeto.Value, "0.00"), txtGls_Moneda.Text)
     Else
         lbl_TotalLetras.Caption = Cadenanum(Format(txt_TotalNeto.Value, "0.00"), txtGls_Moneda.Text)
@@ -15877,7 +15900,7 @@ Dim StrCodfPagoAnt  As String
     StrCodfPago = ""
     StrCodfPagoAnt = ""
     
-    If traerCampo("PARAMETROS", "VALPARAMETRO", "GLSPARAMETRO", "FORMA_PAGOS_X_CLIENTE", True) = "S" Then
+    If STR_FORMA_PAGOS_X_CLIENTE = "S" Then
         If rscd.State = 1 Then
             rscd.MoveFirst
             If Not rscd.EOF Then
@@ -16014,7 +16037,7 @@ Dim StrCodfPagoAnt  As String
         txtCod_Cliente.Text = traerCampo("DocVentas", "IdPerCliente", "IdDocumento", strTipoDocImportado, True, "IdSerie = '" & rscd.Fields("IdSerie") & "' And IdDocVentas = '" & rscd.Fields("IdDocVentas") & "'")
                 
         'LUIS 17/10/2018 valida la forma de pago
-        If traerCampo("PARAMETROS", "VALPARAMETRO", "GLSPARAMETRO", "FORMA_PAGOS_X_CLIENTE", True) = "S" Then
+        If STR_FORMA_PAGOS_X_CLIENTE = "S" Then
             
             If Me.strTipoDoc = "40" Then
                         
@@ -16030,7 +16053,7 @@ Dim StrCodfPagoAnt  As String
         
                 txtCod_FormaPago.Text = Trim("" & rscd.Fields("idFormaPago"))
                                 
-                If traerCampo("PARAMETROS", "VALPARAMETRO", "GLSPARAMETRO", "FORMA_PAGOS_ACTIVO_FACTURA", True) = "S" Then
+                If STR_FORMA_PAGOS_ACTIVO_FACTURA = "S" Then
                     cmbAyudaFormaPago.Enabled = True
                 Else
                     cmbAyudaFormaPago.Enabled = False
@@ -16186,7 +16209,7 @@ Dim StrCodfPagoAnt  As String
                 RsD.Fields("idNumDOc") = "" & rsdd.Fields("idDocVentas")
                 RsD.Fields("IndImportado") = "1"
                 
-                If strTipoDocImportado = "40" And traerCampo("Parametros", "ValParametro", "GlsParametro", "APRUEBA_PEDIDO_AUTOMATICO", True) = "1" Then
+                If strTipoDocImportado = "40" And STR_APRUEBA_PEDIDO_AUTOMATICO = "1" Then
                     Jala_Materiales_Conversion txtCod_CentroCosto.Text, StrMsgError
                     If StrMsgError <> "" Then GoTo Err
                 
@@ -16229,7 +16252,7 @@ Dim StrCodfPagoAnt  As String
     calcularTotales StrMsgError
     If StrMsgError <> "" Then GoTo Err
 
-    If traerCampo("parametros", "valparametro", "GLSPARAMETRO", "VIZUALIZA_SON", True) = "S" Then
+    If STR_VIZUALIZA_SON = "S" Then
         lbl_TotalLetras.Caption = "SON:" & Cadenanum(Format(txt_TotalNeto.Value, "0.00"), txtGls_Moneda.Text)
     Else
         lbl_TotalLetras.Caption = Cadenanum(Format(txt_TotalNeto.Value, "0.00"), txtGls_Moneda.Text)
@@ -16268,7 +16291,7 @@ Dim StrCodfPagoAnt  As String
     StrCodfPago = ""
     StrCodfPagoAnt = ""
     
-    If traerCampo("PARAMETROS", "VALPARAMETRO", "GLSPARAMETRO", "FORMA_PAGOS_X_CLIENTE", True) = "S" Then
+    If STR_FORMA_PAGOS_X_CLIENTE = "S" Then
         If rscd.State = 1 Then
             rscd.MoveFirst
             If Not rscd.EOF Then
@@ -16375,7 +16398,7 @@ Dim StrCodfPagoAnt  As String
         dtp_IniTraslado.Value = "" & rscd.Fields("FecIniTraslado")
         
         'LUIS 17/10/2018 valida la forma de pago
-        If traerCampo("PARAMETROS", "VALPARAMETRO", "GLSPARAMETRO", "FORMA_PAGOS_X_CLIENTE", True) = "S" Then
+        If STR_FORMA_PAGOS_X_CLIENTE = "S" Then
             
             If Me.strTipoDoc = "40" Then
                         
@@ -16391,7 +16414,7 @@ Dim StrCodfPagoAnt  As String
         
                 txtCod_FormaPago.Text = Trim("" & rscd.Fields("idFormaPago"))
                                 
-                If traerCampo("PARAMETROS", "VALPARAMETRO", "GLSPARAMETRO", "FORMA_PAGOS_ACTIVO_FACTURA", True) = "S" Then
+                If STR_FORMA_PAGOS_ACTIVO_FACTURA = "S" Then
                     cmbAyudaFormaPago.Enabled = True
                 Else
                     cmbAyudaFormaPago.Enabled = False
@@ -16563,7 +16586,7 @@ Dim StrCodfPagoAnt  As String
                     RsD.Fields("IdNumDoc") = "" & rsdd.Fields("idDocVentas")
                     RsD.Fields("IndImportado") = "1"
                     
-                    If strTipoDoc = "40" And traerCampo("Parametros", "ValParametro", "GlsParametro", "APRUEBA_PEDIDO_AUTOMATICO", True) = "1" Then
+                    If strTipoDoc = "40" And STR_APRUEBA_PEDIDO_AUTOMATICO = "1" Then
                         Jala_Materiales_Conversion txtCod_CentroCosto.Text, StrMsgError
                         If StrMsgError <> "" Then GoTo Err
                         
@@ -16615,7 +16638,7 @@ Dim StrCodfPagoAnt  As String
     calcularTotales StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
-    If traerCampo("parametros", "valparametro", "GLSPARAMETRO", "VIZUALIZA_SON", True) = "S" Then
+    If STR_VIZUALIZA_SON = "S" Then
         lbl_TotalLetras.Caption = "SON:" & Cadenanum(Format(txt_TotalNeto.Value, "0.00"), txtGls_Moneda.Text)
     Else
         lbl_TotalLetras.Caption = Cadenanum(Format(txt_TotalNeto.Value, "0.00"), txtGls_Moneda.Text)
@@ -16673,7 +16696,7 @@ Dim strSucursalDes As String
     End If
     
     '--- Parametro que evaluará la liberación del detalle de un documento de  referencia por el item del producto
-    strParamItemPro = Trim("" & traerCampo("Parametros", "ValParametro", "GlsParametro", "EVALUA_ITEM_DETALLE_PRODUCTO", True))
+    strParamItemPro = Trim("" & STR_EVALUA_ITEM_DETALLE_PRODUCTO)
     
     If MsgBox("¿Seguro de eliminar el documento?" & vbCrLf & "Se eliminaran todas sus dependencias.", vbQuestion + vbYesNo, App.Title) = vbNo Then Exit Sub
         
@@ -16794,7 +16817,7 @@ Dim strSucursalDes As String
         Cn.Execute csql
     End If
     
-    If traerCampo("Parametros", "ValParametro", "GlsParametro", "AGRUPAPRODUCTOS", True) = "N" Then
+    If STR_AGRUPAPRODUCTOS = "N" Then
         '---- Cambiamos el estado a Importado
         csql = "SELECT d.idDocumentoImp,d.idDocVentasImp,d.idSerieImp,d.idProducto,d.idUM,d.Cantidad,d.Cantidad2,d.ItemPro " & _
                 "FROM docventasdet d " & _
@@ -17201,7 +17224,7 @@ Dim strSucursalDes As String
              "AND serieDocReferencia = '" & Trim(txt_Serie.Text) & "' "
     Cn.Execute csql
 
-    If Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "LIQUIDACIONES", True) & "") = "S" Then
+    If Trim(STR_LIQUIDACIONES & "") = "S" Then
         If strTipoDoc = "86" Then
             CadMysqlLiq = "Select * from docventasdetliquidacion " & _
                           "where iddocventas = '" & Trim("" & txt_NumDoc.Text) & "' and iddocumento = '" & strTipoDoc & "' and idserie = '" & Trim("" & txt_Serie.Text) & "' " & _
@@ -17261,9 +17284,9 @@ Dim CFormatoPedido                      As String
 
     Screen.MousePointer = 11
     gStrRutaRpts = App.Path + "\Reportes\"
-    COT = traerCampo("parametros", "VALPARAMETRO", "GLSPARAMETRO", "IMP_COT_ALSISAC", True)
+    COT = STR_IMP_COT_ALSISAC
     If strTipoDoc = "40" Then 'Pedido
-        CFormatoPedido = traerCampo("Parametros", "ValParametro", "GlsParametro", "IMP_FORMATO_PEDIDO", True)
+        CFormatoPedido = STR_IMP_FORMATO_PEDIDO
         Select Case CFormatoPedido
             Case "1" ' Por defecto
                 strTitulo = "Pedido"
@@ -17887,6 +17910,8 @@ Dim StrMsgError     As String
 Dim strcadena       As String
 On Error GoTo Err
 
+    ' Operación de actualización deshabilitada: formulario de solo consulta.
+    If MODO_SOLO_CONSULTA Then Exit Sub
     If Column.Index = gLista.Columns.ColumnByName("btnRC").Index Then
     
         strNum = gLista.Columns.ColumnByName("idDocVentas").Value
@@ -18061,7 +18086,7 @@ Dim CIdSucursalDestino                      As String
                         
                     If NItem1 = 1 Then
                         CIdValesCabS = generaCorrelativoAnoMes_Vale("ValesCab", "IdValesCab", "S", True)
-                        CIdConceptoS = traerCampo("Parametros", "ValParametro", "GlsParametro", "CONCEPTO_AUTOMATICO_SALIDA", True)
+                        CIdConceptoS = STR_CONCEPTO_AUTOMATICO_SALIDA
                         
                         CSqlC = "Insert Into ValesCab(IdValesCab,TipoVale,FechaEmision,ValorTotal,IgvTotal,PrecioTotal,IdProvCliente,IdConcepto," & _
                                 "IdAlmacen,IdMoneda,GlsDocReferencia,TipoCambio,IdEmpresa,IdSucursal,IdPeriodoInv,IdCentroCosto,FechaRegistro,IdUsuarioRegistro)" & _
@@ -18080,9 +18105,9 @@ Dim CIdSucursalDestino                      As String
                                 "'" & Trim("" & txt_Serie.Text) & "','1','" & glsEmpresa & "','" & glsSucursal & "',''"
                         Cn.Execute (CSqlC)
                         
-                        CIdAlmacenDestino = traerCampo("Parametros", "ValParametro", "GlsParametro", "ALMACEN_AUTOMATICO_DESTINO", True)
+                        CIdAlmacenDestino = STR_ALMACEN_AUTOMATICO_DESTINO
                         CIdSucursalDestino = traerCampo("Almacenes", "IdSucursal", "IdAlmacen", CIdAlmacenDestino, True)
-                        CIdConceptoI = traerCampo("Parametros", "ValParametro", "GlsParametro", "CONCEPTO_AUTOMATICO_INGRESO", True)
+                        CIdConceptoI = STR_CONCEPTO_AUTOMATICO_INGRESO
                         
                         CIdValesCabI = generaCorrelativoAnoMes_Vale("ValesCab", "IdValesCab", "I", True)
                         
@@ -18348,7 +18373,7 @@ Dim CIndVtaGratuita                     As String
 
     If strTipoDoc = "01" Or strTipoDoc = "03" Or strTipoDoc = "07" Or strTipoDoc = "08" Or strTipoDoc = "12" Or strTipoDoc = "25" Or strTipoDoc = "90" Then
         indTrans = False
-        If traerCampo("Parametros", "ValParametro", "GlsParametro", "CONTABILIDAD_ONLINE", True) = "1" Then
+        If STR_CONTABILIDAD_ONLINE = "1" Then
             
             CIndVtaGratuita = Trim(traerCampo("docventas", "IndTransGratuita", "idDocumento", strTipoDoc, True, " idDocVentas = '" & txt_NumDoc.Text & "' AND idSerie = '" & txt_Serie.Text & "' AND idSucursal = '" & glsSucursal & "'"))
             If CIndVtaGratuita = "0" Then
@@ -18439,10 +18464,10 @@ Private Sub ValidaModificacionAsientoContable(StrMsgError As String, PAccion As 
 On Error GoTo Err
     
     If strTipoDoc = "01" Or strTipoDoc = "03" Or strTipoDoc = "07" Or strTipoDoc = "08" Or strTipoDoc = "12" Or strTipoDoc = "90" Then
-        If traerCampo("Parametros", "ValParametro", "GlsParametro", "CONTABILIDAD_ONLINE", True) = "1" Then
+        If STR_CONTABILIDAD_ONLINE = "1" Then
             If Len(Trim(CIdPeriodoAux)) > 0 And Len(Trim(CIdComprobanteAux)) > 0 Then
-                If traerCampo("Parametros", "ValParametro", "GlsParametro", "CONTABILIDAD_ONLINE_VB", True) = "1" Then
-                    If traerCampoConta("AsientoContable", "VBContable", "IdPeriodo", CIdPeriodoAux, True, "IdComprobante = '" & CIdComprobanteAux & "' And IdOrigen = '" & traerCampo("Parametros", "ValParametro", "GlsParametro", "ORIGEN_CONTABLE", True) & "'") = "1" Then
+                If STR_CONTABILIDAD_ONLINE_VB = "1" Then
+                    If traerCampoConta("AsientoContable", "VBContable", "IdPeriodo", CIdPeriodoAux, True, "IdComprobante = '" & CIdComprobanteAux & "' And IdOrigen = '" & glsOrigen_Contable & "'") = "1" Then
                         StrMsgError = "El documento no se puede " & PAccion & ", porque el asiento contable se encuentra cerrado.": GoTo Err
                     End If
                 End If
@@ -18474,7 +18499,7 @@ Dim cmysql                      As String
 Dim strCliApi                   As String
 
     Set rsdEmpresas = rsdd.Clone(adLockReadOnly)
-    ccodproparam = traerCampo("Parametros", "ValParametro", "GlsParametro", "CODIGO_PRODUCTO_APIMAS", True)
+    ccodproparam = STR_CODIGO_PRODUCTO_APIMAS
     indCargando = True
     i = 0
     strEstDocVentas = "GEN"
@@ -18779,7 +18804,7 @@ Dim strCliApi                   As String
         calcularTotales StrMsgError
         If StrMsgError <> "" Then GoTo Err
                         
-        If traerCampo("parametros", "valparametro", "GLSPARAMETRO", "VIZUALIZA_SON", True) = "S" Then
+        If STR_VIZUALIZA_SON = "S" Then
             lbl_TotalLetras.Caption = "SON:" & Cadenanum(Format(txt_TotalNeto.Value, "0.00"), txtGls_Moneda.Text)
         Else
             lbl_TotalLetras.Caption = Cadenanum(Format(txt_TotalNeto.Value, "0.00"), txtGls_Moneda.Text)
@@ -18856,7 +18881,7 @@ Dim strCliApi                   As String
             rsg.Fields("idMoneda") = "" & rst.Fields("idMoneda")
             rsg.Fields("CodigoRapido") = "" & rst.Fields("CodigoRapido")
             rsg.Fields("idTallaPeso") = Val("" & rst.Fields("idTallaPeso"))
-            rsg.Fields("VVUnit") = (Val("" & rsv.Fields("TotalValorVenta")) * traerCampo("Parametros", "ValParametro", "GlsParametro", "PORCENTAJE_FACTURACION", True) / 100)
+            rsg.Fields("VVUnit") = (Val("" & rsv.Fields("TotalValorVenta")) * STR_PORCENTAJE_FACTURACION / 100)
             rsg.Fields("IGVUnit") = 0
             rsg.Fields("PVUnit") = 0
             rsg.Fields("VVUnitLista") = 0
@@ -18928,7 +18953,7 @@ Dim strCliApi                   As String
         calcularTotales StrMsgError
         If StrMsgError <> "" Then GoTo Err
                         
-        If traerCampo("parametros", "valparametro", "GLSPARAMETRO", "VIZUALIZA_SON", True) = "S" Then
+        If STR_VIZUALIZA_SON = "S" Then
             lbl_TotalLetras.Caption = "SON:" & Cadenanum(Format(txt_TotalNeto.Value, "0.00"), txtGls_Moneda.Text)
         Else
             lbl_TotalLetras.Caption = Cadenanum(Format(txt_TotalNeto.Value, "0.00"), txtGls_Moneda.Text)
@@ -19946,7 +19971,7 @@ On Error GoTo Err
 Dim CCodServicio                    As String
 Dim CArray(9)                       As String
 
-    CCodServicio = leeParametro("CODIGO_SERVICIO_ATENCIONES")
+    CCodServicio = STR_CODIGO_SERVICIO_ATENCIONES
     
     rsg.AddNew
     rsg.Fields("Item") = rsg.RecordCount
@@ -20097,7 +20122,7 @@ Dim NImporteDocumentoG              As Double
 Dim RsD                             As New ADODB.Recordset
 Dim IndEvaluacion                   As Integer
 
-    If Len(Trim("" & traerCampo("Parametros", "ValParametro", "GlsParametro", "MONEDA_LINEA_CREDITO", True))) > 0 Then 'Si tiene asignada la Moneda se entiende que debe controlar
+    If Len(Trim("" & STR_MONEDA_LINEA_CREDITO)) > 0 Then 'Si tiene asignada la Moneda se entiende que debe controlar
         
         If (strTipoDoc = "01" Or strTipoDoc = "86" Or strTipoDoc = "08") Then
             
@@ -20329,7 +20354,7 @@ On Error GoTo Err
 Dim CSqlC                       As String
 Dim CPC                         As String
         
-    If Len(Trim("" & traerCampo("Parametros", "ValParametro", "GlsParametro", "MONEDA_LINEA_CREDITO", True))) > 0 Then 'Si tiene asignada la Moneda se entiende que debe controlar
+    If Len(Trim("" & STR_MONEDA_LINEA_CREDITO)) > 0 Then 'Si tiene asignada la Moneda se entiende que debe controlar
         
         If Len(Trim(CTmpDocumentos)) = 0 Then
         

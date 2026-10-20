@@ -180,13 +180,11 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma Codex 16/10/2026: búsqueda de clientes y carga de tiendas migradas a procedimientos almacenados; configuración obtenida desde la caché del login.
 Dim rst As New ADODB.Recordset
 Dim cadRelacion As String
 Dim cadCondicion As String
-Dim cadBusqueda As String
 Private SqlAdic As String
-Private sqlBus As String
-Private sqlCond As String
 Private SRptBus(6) As String
 Private strAyuda As String
 Private EsNuevo As Boolean
@@ -201,7 +199,7 @@ On Error GoTo Err
     
     Exit Sub
 Err:
-    If StrMsgError = "" Then GoTo Err
+    If StrMsgError = "" Then StrMsgError = Err.Description
     MsgBox StrMsgError, vbInformation, App.Title
 End Sub
 
@@ -251,7 +249,7 @@ Private Sub Form_Load()
     ConfGrid gTiendas, False, False, False, False
     EsNuevo = True
     
-    If leeParametro("VISUALIZA_NOMBRE_COMERCIAL") = "S" Then
+    If UCase(Trim(STR_VISUALIZA_NOMBRE_COMERCIAL)) = "S" Then
         
         g.Columns.ColumnByFieldName("GlsNombreComercial").Visible = True
     
@@ -309,15 +307,13 @@ Select Case KeyCode
     
     If codCliente <> "" Then
         SRptBus(0) = codCliente
-        
-        csql = "SELECT p.ruc,concat(p.direccion,' ',u.glsUbigeo,' ',d.glsUbigeo) as direccion,p.GlsPersona,p.direccionEntrega " & _
-               "FROM personas p LEFT JOIN ubigeo u ON P.idDistrito = u.idDistrito LEFT JOIN ubigeo d ON left(u.idDistrito,2) = d.idDpto AND d.idProv = '00' AND d.idDist = '00' " & _
-               "Where p.idPersona = '" & codCliente & "'"
+        csql = "EXEC dbo.spu_AyudaClientes_Listar '" & Replace(glsEmpresa, "'", "''") & "','','',0,'" & _
+               Replace(codCliente, "'", "''") & "'"
                
         rst.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
         If Not rst.EOF Then
             
-            SRptBus(1) = "" & rst.Fields("GlsPersona")
+            SRptBus(1) = "" & rst.Fields("des")
             SRptBus(2) = "" & rst.Fields("ruc")
             SRptBus(3) = "" & rst.Fields("direccion")
         
@@ -374,56 +370,32 @@ Private Sub TxtBusq_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub fill(ByRef StrMsgError As String)
-Dim rsdatos                     As New ADODB.Recordset
+Dim rsdatos As New ADODB.Recordset
+Dim intFiltrarVendedor As Integer
 On Error GoTo Err
 
-'If traerCampo("PARAMETROS", "VALPARAMETRO", "GLSPARAMETRO", "VISUALIZA_CLIENTESXVENDEDOR", True) = "S" Then
-'    If Trim(traerCampo("Vendedores", "indVisualizaclientes", "idVendedor", glsUser, False)) = 0 Then
-'        cadBusqueda = "v.ruc"
-'    Else
-'        cadBusqueda = "ruc"
-'    End If
-'Else
-    cadBusqueda = "P.ruc"
-'End If
+    intFiltrarVendedor = 0
+    If UCase(Trim(STR_VISUALIZA_CLIENTESXVENDEDOR)) = "S" And Val(STR_IND_VISUALIZACLIENTES_VENDEDOR) = 0 Then
+        intFiltrarVendedor = 1
+    End If
 
-If Trim(TxtBusq.Text) <> "" Then
-    
-    sqlCond = sqlBus + " like '%" & Trim(TxtBusq.Text) & "%' OR idClienteInterno like '%" & Trim(TxtBusq.Text) & "%' " & _
-    "OR " & cadBusqueda & " like '%" & Trim(TxtBusq.Text) & "%' OR P.GlsNombreComercial like '%" & Trim(TxtBusq.Text) & "%' " & SqlAdic & " order by 1"
-    
-Else
-'    If "" & traerCampo("Parametros", "ValParametro", "GlsParametro", "LISTA_AYUDA_CLIENTES", True) = "1" Then
-'        sqlCond = sqlBus + " Like '%%'"
-'    Else
-        sqlCond = sqlBus + " = ''"
-'    End If
-End If
+    csql = "EXEC dbo.spu_AyudaClientes_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & _
+           Replace(Trim(TxtBusq.Text), "'", "''") & "','" & Replace(glsUser, "'", "''") & "'," & _
+           CStr(intFiltrarVendedor) & ",''"
 
-If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
-rsdatos.Open sqlCond, Cn, adOpenStatic, adLockOptimistic
-    
-Set g.DataSource = rsdatos
+    If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
+    rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
 
-'With G
-'    .DefaultFields = False
-'    .Dataset.ADODataset.ConnectionString = strcn '''Cn
-'    .Dataset.ADODataset.CursorLocation = clUseClient
-'    .Dataset.Active = False
-'    .Dataset.ADODataset.CommandText = sqlCond
-'    .Dataset.DisableControls
-'    .Dataset.Active = True
-'    .KeyField = "cod"
-'End With
+    Set g.DataSource = rsdatos
 
-listaTiendas StrMsgError
-If StrMsgError <> "" Then GoTo Err
+    listaTiendas StrMsgError
+    If StrMsgError <> "" Then GoTo Err
 
-LblReg.Caption = "(" + Format(g.Count, "0") + ")Registros"
+    LblReg.Caption = "(" + Format(g.Count, "0") + ")Registros"
 
-Exit Sub
+    Exit Sub
 Err:
-If StrMsgError = "" Then StrMsgError = Err.Description
+    If StrMsgError = "" Then StrMsgError = Err.Description
 End Sub
 
 Public Sub Execute(ByRef TextBox1 As Object, ByRef TextBox2 As Object, ByRef TextRUC As Object, ByRef TextDireccion As Object, ByRef TextCodtienda As Object, strParAdic As String, inddirll As Boolean)
@@ -435,8 +407,8 @@ Public Sub Execute(ByRef TextBox1 As Object, ByRef TextBox2 As Object, ByRef Tex
     
     SRptBus(0) = ""
     
-'    If traerCampo("PARAMETROS", "VALPARAMETRO", "GLSPARAMETRO", "VISUALIZA_CLIENTESXVENDEDOR", True) = "S" Then
-'       If Trim(traerCampo("Vendedores", "indVisualizaclientes", "idVendedor", glsUser, False)) = 0 Then
+'    If UCase(Trim(STR_VISUALIZA_CLIENTESXVENDEDOR)) = "S" Then
+'       If Val(STR_IND_VISUALIZACLIENTES_VENDEDOR) = 0 Then
 '          cadRelacion = "Inner Join personas v On c.idVendedorCampo = v.idPersona  "
 '          cadCondicion = "c.idVendedorCampo ='" & glsUser & "' And "
 '       Else
@@ -449,8 +421,6 @@ Public Sub Execute(ByRef TextBox1 As Object, ByRef TextBox2 As Object, ByRef Tex
 '    End If
     
     SqlAdic = strParAdic
-    
-    sqlBus = setSql()
     
     fill StrMsgError
     If StrMsgError <> "" Then GoTo Err
@@ -490,33 +460,6 @@ Err:
     MsgBox StrMsgError, vbInformation, App.Title
 End Sub
 
-Private Function setSql() As String
-    
-    setSql = ""
-'setSql = "SELECT personas.idPersona cod ,personas.GlsPersona, des, personas.ruc, personas.Telefonos FROM personas,clientes WHERE personas.idPersona = clientes.idCliente AND Clientes.idEmpresa = '" & glsEmpresa & "' AND GlsPersona "
-    
-'    If Trim("" & traerCampo("parametros", "ValParametro", "GlsParametro", "VISUALIZA_UBIGEO", True)) = "N" Then
-    
-'        setSql = "SELECT p.idPersona cod ,p.GlsPersona des, p.ruc, p.Telefonos,p.direccion as direccion,P.GlsNombreComercial " & _
-'                 "FROM personas p INNER JOIN clientes c ON c.idEmpresa = '" & glsEmpresa & "' And p.idPersona = c.idCliente " & _
-'                 "Left Join ubigeo u On P.idDistrito = u.idDistrito  AND p.idPais = u.idPais " & _
-'                 "Left Join ubigeo d On left(u.idDistrito,2) = d.idDpto And d.idProv = '00' And d.idDist = '00'   AND u.idPais = d.idPais " & _
-'                  cadRelacion & _
-'                 "WHERE " & strVacio & " " & cadCondicion & "  p.GlsPersona "
-'
-'    Else
-    
-        setSql = "SELECT p.idPersona cod,p.GlsPersona des,p.ruc,p.Telefonos," & _
-                 "(p.direccion+' '+isnull(u.glsUbigeo,'')+' '+ isnull(d.glsUbigeo,'')) direccion,P.GlsNombreComercial " & _
-                 "FROM personas p INNER JOIN clientes c ON c.idEmpresa = '" & glsEmpresa & "' And p.idPersona = c.idCliente " & _
-                 "Left Join ubigeo u On P.idDistrito = u.idDistrito AND p.idPais = u.idPais  " & _
-                 "Left Join ubigeo d On left(u.idDistrito,2) = d.idDpto And d.idProv = '00' And d.idDist = '00' AND u.idPais = d.idPais " & _
-                  cadRelacion & _
-                 "WHERE " & strVacio & " " & cadCondicion & "  p.GlsPersona "
-                 
-'    End If
-    
-End Function
 
 Public Sub ExecuteReturnText(ByRef strCod As String, ByRef strDes As String, strParAdic As String)
     Dim StrMsgError As String
@@ -529,8 +472,8 @@ Public Sub ExecuteReturnText(ByRef strCod As String, ByRef strDes As String, str
     
     SRptBus(0) = ""
     
-    If traerCampo("PARAMETROS", "VALPARAMETRO", "GLSPARAMETRO", "VISUALIZA_CLIENTESXVENDEDOR", True) = "S" Then
-        If Trim(traerCampo("Vendedores", "indVisualizaclientes", "idVendedor", glsUser, False)) = 0 Then
+    If UCase(Trim(STR_VISUALIZA_CLIENTESXVENDEDOR)) = "S" Then
+        If Val(STR_IND_VISUALIZACLIENTES_VENDEDOR) = 0 Then
            cadRelacion = "Inner Join personas v On c.idVendedorCampo = v.idPersona  "
            cadCondicion = "c.idVendedorCampo ='" & glsUser & "' And "
         Else
@@ -543,8 +486,6 @@ Public Sub ExecuteReturnText(ByRef strCod As String, ByRef strDes As String, str
      End If
     
     SqlAdic = strParAdic
-    
-    sqlBus = setSql()
     
     fill StrMsgError
     If StrMsgError <> "" Then GoTo Err
@@ -577,8 +518,8 @@ Public Sub ExecuteKeyascii(ByVal KeyAscii As Integer, ByRef TextBox1 As Object, 
     
     SRptBus(0) = ""
     
-    If traerCampo("PARAMETROS", "VALPARAMETRO", "GLSPARAMETRO", "VISUALIZA_CLIENTESXVENDEDOR", True) = "S" Then
-       If Trim(traerCampo("Vendedores", "indVisualizaclientes", "idVendedor", glsUser, False)) = 0 Then
+    If UCase(Trim(STR_VISUALIZA_CLIENTESXVENDEDOR)) = "S" Then
+       If Val(STR_IND_VISUALIZACLIENTES_VENDEDOR) = 0 Then
           cadRelacion = "Inner Join personas v On c.idVendedorCampo = v.idPersona  "
           cadCondicion = "c.idVendedorCampo ='" & glsUser & "' And "
        Else
@@ -591,8 +532,6 @@ Public Sub ExecuteKeyascii(ByVal KeyAscii As Integer, ByRef TextBox1 As Object, 
     End If
     
     SqlAdic = strParAdic
-    
-    sqlBus = setSql()
     
 ''    fill strMsgError
     If StrMsgError <> "" Then GoTo Err
@@ -629,8 +568,8 @@ Public Sub ExecuteKeyasciiReturnText(ByVal KeyAscii As Integer, ByRef strCod As 
     
     SRptBus(0) = ""
     
-    If traerCampo("PARAMETROS", "VALPARAMETRO", "GLSPARAMETRO", "VISUALIZA_CLIENTESXVENDEDOR", True) = "S" Then
-        If Trim(traerCampo("Vendedores", "indVisualizaclientes", "idVendedor", glsUser, False)) = 0 Then
+    If UCase(Trim(STR_VISUALIZA_CLIENTESXVENDEDOR)) = "S" Then
+        If Val(STR_IND_VISUALIZACLIENTES_VENDEDOR) = 0 Then
            cadRelacion = "Inner Join personas v On c.idVendedorCampo = v.idPersona  "
            cadCondicion = "c.idVendedorCampo ='" & glsUser & "' And "
         Else
@@ -643,8 +582,6 @@ Public Sub ExecuteKeyasciiReturnText(ByVal KeyAscii As Integer, ByRef strCod As 
      End If
     
     SqlAdic = strParAdic
-    
-    sqlBus = setSql()
     
     fill StrMsgError
     
@@ -666,34 +603,24 @@ End Sub
 
 
 Private Sub listaTiendas(ByRef StrMsgError As String)
-Dim rsdatos                     As New ADODB.Recordset
+Dim rsdatos As New ADODB.Recordset
+Dim strCodCliente As String
 On Error GoTo Err
 
-csql = "SELECT item,GlsNombre,GlsDireccion,GlsTelefonos,idtdacli,idDistrito " & _
-           "FROM tiendascliente " & _
-           "WHERE idEmpresa = '" & glsEmpresa & "' " & _
-             "AND idPersona = '" & g.Columns.ColumnByFieldName("cod").Value & "'"
+    strCodCliente = ""
+    If g.Count > 0 Then strCodCliente = "" & g.Columns.ColumnByFieldName("cod").Value
 
+    csql = "EXEC dbo.spu_MantClientes_Tiendas_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & _
+           Replace(strCodCliente, "'", "''") & "'"
 
-If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
-rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
+    If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
+    rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
 
-Set gTiendas.DataSource = rsdatos
+    Set gTiendas.DataSource = rsdatos
 
-'With gTiendas
-'    .DefaultFields = False
-'    .Dataset.ADODataset.ConnectionString = strcn '''Cn
-'    .Dataset.ADODataset.CursorLocation = clUseClient
-'    .Dataset.Active = False
-'    .Dataset.ADODataset.CommandText = csql
-'    .Dataset.DisableControls
-'    .Dataset.Active = True
-'    .KeyField = "item"
-'End With
-
-Exit Sub
+    Exit Sub
 Err:
-If StrMsgError = "" Then StrMsgError = Err.Description
+    If StrMsgError = "" Then StrMsgError = Err.Description
 End Sub
 
 Private Sub devolverResultado(ByVal indVarCabecera As Boolean)

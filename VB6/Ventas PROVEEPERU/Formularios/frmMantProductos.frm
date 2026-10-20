@@ -2215,6 +2215,8 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma Codex 16/10/2026: listado, carga y datos relacionados de productos mediante procedimientos almacenados.
+' Firma Codex 17/10/2026: parametros del mantenimiento obtenidos desde la cache cargada en el login.
 Dim numPesos As Integer
 Dim indCargando As Boolean
 Dim indIngresoImagen As Boolean
@@ -2495,7 +2497,7 @@ Dim StrMsgError As String
     chkInsertaPrecios.Value = 0
     ChkDatosDefecto.Value = 0
     
-    If leeParametro("VISUALIZA_STOCK_MINIMO") = "S" Then
+    If STR_VISUALIZA_STOCK_MINIMO = "S" Then
         
         LblStockMinimo.Visible = True
         TxtStockMinimo.Visible = True
@@ -2507,7 +2509,7 @@ Dim StrMsgError As String
         
     End If
     
-    If leeParametro("VISUALIZA_REPORTE_GL") = "S" Then
+    If STR_VISUALIZA_REPORTE_GL = "S" Then
         
         ChkIndRptGL.Visible = True
     
@@ -2524,7 +2526,7 @@ Dim StrMsgError As String
     ConfGrid gAlmacenes, True, False, False, False
     ConfGrid gPresentaciones, True, False, False, False
     
-    If leeParametro("VIZUALIZA_CODIGO_RAPIDO") = "S" Then
+    If STR_VIZUALIZA_CODIGO_RAPIDO = "S" Then
         gLista.Columns.ColumnByFieldName("IdProducto").Visible = False
         gLista.Columns.ColumnByFieldName("CodigoRapido").Visible = True
     Else
@@ -2566,7 +2568,7 @@ Dim xCodigoRapido   As String
         validaHomonimia "productos", "GlsProducto", "idProducto", txtGls_Producto.Text, txtCod_Producto.Text, True, StrMsgError, " idMarca = '" & txtCod_Marca.Text & "'"
         If StrMsgError <> "" Then GoTo Err
     End If
-    If traerCampo("Parametros", "Valparametro", "GlsParametro", "VALIDA_CODIGO_FABRICANTE", True) = "S" Then
+    If STR_VALIDA_CODIGO_FABRICANTE = "S" Then
         validaHomonimia "productos", "IdFabricante", "idProducto", txt_CodFabricante.Text, txtCod_Producto.Text, True, StrMsgError
         If StrMsgError <> "" Then GoTo Err
     End If
@@ -2588,7 +2590,7 @@ Dim xCodigoRapido   As String
         End If
             
         xCodigoRapido = ""
-        If Trim("" & traerCampo("Parametros", "ValParametro", "GlsParametro", "VIZUALIZA_CODIGO_RAPIDO", True)) = "S" Then
+        If Trim("" & STR_VIZUALIZA_CODIGO_RAPIDO) = "S" Then
         
             If rsj.State = 1 Then rsj.Close
             Set rsj = Nothing
@@ -2896,7 +2898,7 @@ Dim rst                     As New ADODB.Recordset
             strCodUltProd = traerCampo("productos", "MAX(idProducto)", "idEmpresa", glsEmpresa, False)
             
             'Luis 20180312
-            If Trim("" & traerCampo("Parametros", "Valparametro", "GlsParametro", "MUESTRA_ALM_DEFECTO", True)) = "S" Then
+            If Trim("" & STR_MUESTRA_ALM_DEFECTO) = "S" Then
 
                 'TRAE EL LISTADO DE ALMACENES Y LO ALMACENA EN UN RECORSET
                 csql = "SELECT @i:=@i+1 item,p.idSucursal,s.glsPersona as GlsSucursal,a.idAlmacen,a.glsAlmacen " & _
@@ -3065,7 +3067,7 @@ On Error GoTo Err
 Dim StrMsgError                 As String
 Dim CFiltro                     As String
     
-    If traerCampo("Parametros", "Valparametro", "GlsParametro", "VALIDA_CODIGO_FABRICANTE", True) = "S" Then
+    If STR_VALIDA_CODIGO_FABRICANTE = "S" Then
         If Len(Trim(txt_CodFabricante.Text)) > 0 Then
             CFiltro = IIf(Len(Trim(txtCod_Producto.Text)) = 0, "", "IdProducto <> '" & txtCod_Producto.Text & "'")
             If Len(Trim(traerCampo("Productos", "IdProducto", "IdFabricante", txt_CodFabricante.Text, True, CFiltro))) > 0 Then
@@ -3140,83 +3142,25 @@ End Sub
 
 Private Sub listaProducto(ByRef StrMsgError As String)
 On Error GoTo Err
-Dim rst                             As New ADODB.Recordset
-Dim strCond                         As String
 Dim intNumNiveles                   As Integer
-Dim strTabla                        As String
-Dim strWhere                        As String
-Dim strCampos                       As String
-Dim strTablas                       As String
-Dim strTablaAnt                     As String
 Dim i                               As Integer
 Dim CSqlC                           As String
 Dim rsdatos                         As New ADODB.Recordset
- 
-    rst.Open "SELECT idTipoNivel,GlsTipoNivel,peso " & _
-             "FROM tiposniveles WHERE idEmpresa = '" & glsEmpresa & _
-             "' ORDER BY peso DESC", Cn, adOpenKeyset, adLockOptimistic
-    intNumNiveles = rst.RecordCount
-    
-    Do While Not rst.EOF
-        i = i + 1
-        strTabla = "niveles" & Format(i, "00")
-        If i = 1 Then
-            strWhere = "p.idNivel = " & strTabla & ".idNivel AND " & strTabla & ".idEmpresa = '" & glsEmpresa & "' "
-        Else
-            strWhere = strTablaAnt & ".idNivelPred = " & strTabla & ".idNivel AND " & strTabla & ".idEmpresa = '" & glsEmpresa & "' "
-        End If
-        strCampos = strCampos & strTabla & ".idNivel as idNivel" & Format(i, "00") & "," & strTabla & ".GlsNivel as GlsNivel" & Format(i, "00") & ","
-        
-        '--- Agrupando tablas
-        strTablas = strTablas & "INNER JOIN niveles " & strTabla & " ON " & strWhere
-        strTablaAnt = strTabla
-        
-        rst.MoveNext
-    Loop
-    
-    strCond = ""
-    If Trim(txt_TextoBuscar.Text) <> "" Then
-        strCond = Trim(txt_TextoBuscar.Text)
-        strCond = " AND (GlsProducto LIKE '%" & strCond & "%' or CodigoRapido LIKE '%" & strCond & "%' or p.IdFabricante LIKE '%" & strCond & "%' or p.IdProducto LIKE '%" & strCond & "%') "
-    End If
-    
-    CSqlC = "Select " & strCampos & "P.IdProducto,P.GlsProducto,M.GlsMarca,UMC.AbreUM GlsUMC,UMV.AbreUM GlsUMV," & _
-            "CASE WHEN P.EstProducto = 'A' THEN 'ACT' ELSE 'INA' END EstProducto,P.IdFabricante,P.CtaContable2,P.CtaContable,P.CtaContable_Relacionada,P.CodigoRapido " & _
-            "From Productos P " & _
-            "Left Join Marcas M " & _
-                "On P.IdEmpresa = M.IdEmpresa And P.IdMarca = M.IdMarca " & _
-            "Left Join UnidadMedida UMC " & _
-                "On P.IdUMCompra = UMC.IdUM " & _
-            "Left Join UnidadMedida UMV " & _
-                "On P.IdUMVenta = UMV.IdUM " & strTablas & _
-            "Where P.IdEmpresa = '" & glsEmpresa & "'"
-            
-    If strCond <> "" Then CSqlC = CSqlC + strCond
-    
-    If leeParametro("VIZUALIZA_CODIGO_RAPIDO") = "S" Then
-        CSqlC = CSqlC & " Order By P.CodigoRapido"
-    Else
-        CSqlC = CSqlC & " Order By P.IdProducto"
-    End If
-    
-If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
-rsdatos.Open CSqlC, Cn, adOpenStatic, adLockOptimistic
-Set gLista.DataSource = rsdatos
 
-'    With gLista
-'        .DefaultFields = False
-'        .Dataset.ADODataset.ConnectionString = strcn
-'        .Dataset.ADODataset.CursorLocation = clUseClient
-'        .Dataset.Active = False
-'        .Dataset.ADODataset.CommandText = CSqlC
-'        .Dataset.DisableControls
-'        .Dataset.Active = True
-'        .KeyField = "idProducto"
-'    End With
-    
+    CSqlC = "EXEC dbo.spu_MantProductos_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "','" & IIf(UCase(Trim(STR_VIZUALIZA_CODIGO_RAPIDO)) = "S", "1", "0") & "'"
+    rsdatos.Open CSqlC, Cn, adOpenStatic, adLockReadOnly
+
+    For i = 0 To rsdatos.Fields.Count - 1
+        If UCase(Left(rsdatos.Fields(i).Name, 8)) = "GLSNIVEL" Then
+            intNumNiveles = intNumNiveles + 1
+        End If
+    Next
+
+    Set gLista.DataSource = rsdatos
+
     '--- Realizando las agrupaciones dinamicamente
     gLista.m.ClearGroupColumns
-    
+
     If gLista.Ex.GroupColumnCount = 0 Then
         For i = 1 To intNumNiveles
             gLista.Columns.ColumnByName("GlsNivel" & Format(i, "00")).Caption = "Nivel:"
@@ -3224,14 +3168,12 @@ Set gLista.DataSource = rsdatos
             gLista.Columns.ColumnByName("GlsNivel" & Format(i, "00")).GroupIndex = 0
         Next
     End If
-    
+
     Me.Refresh
-    If rst.State = 1 Then rst.Close: Set rst = Nothing
-    
     Exit Sub
-    
+
 Err:
-    If rst.State = 1 Then rst.Close: Set rst = Nothing
+    If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
     If StrMsgError = "" Then StrMsgError = Err.Description
 End Sub
 
@@ -3245,12 +3187,7 @@ Dim i                           As Integer
 Dim CSqlC                       As String
 
     indCargando = True
-    CSqlC = "SELECT p.idProducto,p.GlsProducto,p.idNivel,p.idUMCompra,p.idUMVenta,p.idMarca,p.afectoIGV,p.idMoneda,p.idTipoProducto,p.idFabricante," & _
-            "p.CodigoRapido,p.idGrupo,p.idTallaPeso,p.indImagen,p.indInsertaPrecioLista,p.afectoDctoEspecial, p.CtaContable, p.estProducto,p.CtaContable2," & _
-            "p.CtaContable_Relacionada,tiemporepinv,p.IdConceptoDetraccion,IsNull(P.IndRptGL,'0') IndRptGL,P.StockMinimo," & _
-            "Cast(('0' + IsNull(P.IndAfectoIVAP,0)) As TINYINT) IndAfectoIVAP,P.IdConceptoCosteo " & _
-            "FROM productos p " & _
-            "WHERE p.idProducto = '" & strCodProd & "' AND p.idEmpresa = '" & glsEmpresa & "'"
+    CSqlC = "EXEC dbo.spu_MantProductos_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodProd, "'", "''") & "'"
     rst.Open CSqlC, Cn, adOpenStatic, adLockReadOnly
     
     strIndImagen = ("" & rst.Fields("indImagen"))
@@ -3264,11 +3201,7 @@ Dim CSqlC                       As String
     If strIndImagen = "S" Then lbl_Imagen.Caption = gbRutaProductos & glsEmpresa & "-" & txtCod_Producto.Text & ".jpg"
     
     '--- TRAE EL LISTADO DE ALMACENES Y LO ALMACENA EN UN RECORSET
-    CSqlC = "SELECT p.idUbicacion,p.item,p.idSucursal,s.glsPersona as GlsSucursal,p.idAlmacen,a.glsAlmacen " & _
-            "FROM productosalmacen p,almacenes a,personas s " & _
-            "WHERE p.idEmpresa = a.idEmpresa AND p.idAlmacen = a.idAlmacen " & _
-            "AND p.idSucursal = s.idPersona " & _
-            "AND p.idEmpresa = '" & glsEmpresa & "' AND p.idProducto = '" & strCodProd & "' ORDER BY item"
+    CSqlC = "EXEC dbo.spu_MantProductos_Almacenes_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodProd, "'", "''") & "'"
     rst.Open CSqlC, Cn, adOpenKeyset, adLockOptimistic
     
     rsg.Fields.Append "Item", adInteger, , adFldRowID
@@ -3307,11 +3240,7 @@ Dim CSqlC                       As String
     If StrMsgError <> "" Then GoTo Err
     
     '--- TRAE EL LISTADO DE PRESENTACIONES Y LO ALMACENA EN UN RECORSET
-    CSqlC = "SELECT p.item,p.idUM,u.glsUM,p.Factor " & _
-            "FROM presentaciones p,unidadmedida u " & _
-            "WHERE p.idUM = u.idUM " & _
-            "AND p.idProducto = '" & strCodProd & "' AND p.idEmpresa = '" & glsEmpresa & "' ORDER BY p.item ASC"
-    If rst.State = 1 Then rst.Close
+    CSqlC = "EXEC dbo.spu_MantProductos_Presentaciones_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodProd, "'", "''") & "'"
     rst.Open CSqlC, Cn, adOpenKeyset, adLockOptimistic
     rsu.Fields.Append "Item", adInteger, , adFldRowID
     rsu.Fields.Append "idUM", adVarChar, 8, adFldIsNullable
@@ -3345,12 +3274,7 @@ Dim CSqlC                       As String
     
     'Mostrando los precios de la lista de precios principal
     If glsListaVentas <> "" And chkInsertaPrecios.Value Then
-        CSqlC = "SELECT VVUnit,IGVUnit,PVUnit,MaxDcto " & _
-                "FROM preciosventa " & _
-                "WHERE idEmpresa = '" & glsEmpresa & "' " & _
-                "AND idLista = '" & glsListaVentas & "' " & _
-                "AND idProducto = '" & txtCod_Producto.Text & "' " & _
-                "AND idUM = '" & txtCod_UMVenta.Text & "'"
+        CSqlC = "EXEC dbo.spu_MantProductos_PrecioPrincipal_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(glsListaVentas, "'", "''") & "','" & Replace(txtCod_Producto.Text, "'", "''") & "','" & Replace(txtCod_UMVenta.Text, "'", "''") & "'"
         rst.Open CSqlC, Cn, adOpenForwardOnly, adLockReadOnly
         
         If Not rst.EOF Then
@@ -3461,7 +3385,7 @@ Dim RsC                                 As New ADODB.Recordset
     
     If txtCod_Producto.Text = "" Then
     
-        If strCodTipoNivel = leeParametro("NIVEL_CUENTA_CONTABLE") Then
+        If strCodTipoNivel = STR_NIVEL_CUENTA_CONTABLE Then
             
 '            CSqlC = "Select IdCtaContableC,IdCtaContableV,IdCtaContableVR " & _
 '                    "From Niveles " & _

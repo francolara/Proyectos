@@ -136,6 +136,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma Codex 15/10/2026: carga de almacenes para ventas obtenida mediante procedimiento almacenado.
 Dim indInserta As Boolean
 
 Private Sub Form_Load()
@@ -192,13 +193,7 @@ On Error GoTo Err
 Dim rst As New ADODB.Recordset
 Dim rsg As New ADODB.Recordset
     
-    csql = "SELECT v.item, v.idSucursal, s.GlsPersona AS GlsSucursal, v.idAlmacen, a.GlsAlmacen " & _
-            "FROM AlmacenesVtas v,personas s,almacenes a " & _
-            "WHERE v.idSucursal = s.idPersona " & _
-            "AND v.idAlmacen = a.idAlmacen " & _
-            "AND v.idEmpresa = '" & glsEmpresa & "' " & _
-            "AND a.idEmpresa = '" & glsEmpresa & "' " & _
-            "AND v.idEmpresa = '" & glsEmpresa & "'"
+    csql = "EXEC dbo.spu_MantAlmacenesVtas_Listar '" & Replace(glsEmpresa, "'", "''") & "'"
     rst.Open csql, Cn, adOpenKeyset, adLockOptimistic
         
     rsg.Fields.Append "Item", adInteger, , adFldRowID

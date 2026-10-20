@@ -1,6 +1,6 @@
 VERSION 5.00
 Object = "{6A24B331-7634-11D3-A5B0-0050044A7E1A}#1.5#0"; "DXDBGrid.dll"
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "mscomctl.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "MSCOMCTL.OCX"
 Object = "{F41D1D30-7878-4923-8CB3-6CCACDC9C9DE}#1.0#0"; "CATControls.ocx"
 Begin VB.Form FrmAyudaProdOCInv 
    Appearance      =   0  'Flat
@@ -830,9 +830,9 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma Codex 17/10/2026: ayuda de productos OC mediante procedimiento, parametros en cache y carga unica posterior a su inicializacion.
 
 Private rsg As New ADODB.Recordset
-Private SqlAdic As String
 Private sqlBus As String
 Private sqlCond As String
 Private SRptBus(3) As String
@@ -846,6 +846,7 @@ Private indUMVenta As Boolean
 Private indMostrarPresentaciones As Boolean
 Private strCodLista As String
 Private indMovNivel As Boolean
+Private indInicializando As Boolean
 Private intFoco As Integer '0 = Texto,1 = Grilla productos, 2 = Grilla presentaciones
 
 Private Sub BntOtrosProductos_Click()
@@ -857,6 +858,7 @@ Dim strDes As String
     SRptBus(0) = strCod
     SRptBus(1) = strDes
     SRptBus(2) = traerCampo("productos", "idUMCompra", "idProducto", strCod, True)
+    SRptBus(3) = traerCampo("productos", "CodigoRapido", "idProducto", strCod, True)
 
 End Sub
 
@@ -892,7 +894,6 @@ End Sub
 
 Private Sub Form_Deactivate()
     
-    SqlAdic = ""
     If EsNuevo = False Then
         TxtBusq.Text = ""
     End If
@@ -922,6 +923,7 @@ On Error GoTo Err
 Dim StrMsgError As String
 Dim COptDefecto                 As String
 
+    indInicializando = True
     Me.Caption = "Ayuda de productos"
     Me.top = 0
     Me.left = 0
@@ -932,7 +934,7 @@ Dim COptDefecto                 As String
     If StrMsgError <> "" Then GoTo Err
     
     EsNuevo = True
-    If Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "VIZUALIZA_CODIGO_RAPIDO", True) & "") = "S" Then
+    If STR_VIZUALIZA_CODIGO_RAPIDO = "S" Then
         g.Columns.ColumnByFieldName("CodigoRapido").Visible = True
         g.Columns.ColumnByFieldName("IdProducto").Visible = False
     Else
@@ -940,13 +942,13 @@ Dim COptDefecto                 As String
         g.Columns.ColumnByFieldName("IdProducto").Visible = True
     End If
     
-    If leeParametro("VALIDA_PRODUCTOPROVEEDOR_OC") = "S" Then
+    If STR_VALIDA_PRODUCTOPROVEEDOR_OC = "S" Then
         
         Toolbar1.Buttons(2).Visible = False
     
     End If
     
-    COptDefecto = leeParametro("OPCION_AYUDA_PRODUCTOS")
+    COptDefecto = STR_OPCION_AYUDA_PRODUCTOS
     
     Select Case COptDefecto
         
@@ -960,17 +962,19 @@ Dim COptDefecto                 As String
             opt_MateriaPrima.Value = True
     
     End Select
+
+    indInicializando = False
     
     Exit Sub
 
 Err:
+    indInicializando = False
     If StrMsgError = "" Then StrMsgError = Err.Description
     MsgBox StrMsgError, vbInformation, App.Title
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
 
-    SqlAdic = ""
     TxtBusq.Text = ""
 
 End Sub
@@ -1009,6 +1013,7 @@ Private Sub g_OnKeyDown(KeyCode As Integer, ByVal Shift As Long)
             SRptBus(0) = g.Columns.ColumnByFieldName("idProducto").Value
             SRptBus(1) = g.Columns.ColumnByFieldName("GlsProducto").Value '+ Space(150) + Trim(CStr(g.Columns.ColumnByFieldName("cod").Value))
             SRptBus(2) = g.Columns.ColumnByFieldName("idUMVenta").Value
+            SRptBus(3) = g.Columns.ColumnByFieldName("CodigoRapido").Value
             
             g.Dataset.Close
             g.Dataset.Active = False
@@ -1048,6 +1053,7 @@ Private Sub gPresentaciones_OnKeyDown(KeyCode As Integer, ByVal Shift As Long)
             SRptBus(0) = g.Columns.ColumnByFieldName("idProducto").Value
             SRptBus(1) = g.Columns.ColumnByFieldName("GlsProducto").Value '+ Space(150) + Trim(CStr(g.Columns.ColumnByFieldName("cod").Value))
             SRptBus(2) = gPresentaciones.Columns.ColumnByFieldName("idUM").Value
+            SRptBus(3) = g.Columns.ColumnByFieldName("CodigoRapido").Value
             
             g.Dataset.Close
             g.Dataset.Active = False
@@ -1071,7 +1077,8 @@ End Sub
 
 Private Sub opt_MateriaPrima_Click()
 Dim StrMsgError As String
-    
+
+    If indInicializando Then Exit Sub
     fill StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
@@ -1084,7 +1091,8 @@ End Sub
 
 Private Sub opt_Producto_Click()
 Dim StrMsgError As String
-    
+
+    If indInicializando Then Exit Sub
     fill StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
@@ -1097,7 +1105,8 @@ End Sub
 
 Private Sub opt_Servicios_Click()
 Dim StrMsgError As String
-    
+
+    If indInicializando Then Exit Sub
     fill StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
@@ -1115,7 +1124,7 @@ Dim strCod1 As String
 Dim strDes1 As String
 Dim CCodProducto            As String
 
-    CCodProducto = IIf(leeParametro("VIZUALIZA_CODIGO_RAPIDO") = "S", "CodigoRapido", "IdProducto")
+    CCodProducto = IIf(STR_VIZUALIZA_CODIGO_RAPIDO = "S", "CodigoRapido", "IdProducto")
     Select Case Button.Index
         Case 1  'Aceptar
             If g.Count > 0 Then
@@ -1129,6 +1138,12 @@ Dim CCodProducto            As String
             SRptBus(0) = strCod1
             SRptBus(1) = strDes1
             SRptBus(2) = traerCampo("productos", "idUMCompra", CCodProducto, strCod1, True)
+            If STR_VIZUALIZA_CODIGO_RAPIDO = "S" Then
+                SRptBus(3) = strCod1
+                SRptBus(0) = traerCampo("productos", "idProducto", "CodigoRapido", strCod1, True)
+            Else
+                SRptBus(3) = traerCampo("productos", "CodigoRapido", "idProducto", strCod1, True)
+            End If
         
         Case 3  'Salir
             'Unload Me
@@ -1192,22 +1207,24 @@ End Sub
 Private Sub fill(ByRef StrMsgError As String)
 On Error GoTo Err
 Dim rsdatos As New ADODB.Recordset
+Dim StrBusqueda As String
+Dim strNivel As String
+Dim strTipoProducto As String
 
-    sqlBus = setSqlAlm(strCodAlmacen)
-    sqlCond = sqlBus & " like '%" & Trim(TxtBusq.Text) & "%' OR CodigoRapido like '%" & Trim(TxtBusq.Text) & "%' OR IdFabricante like '%" & Trim(TxtBusq.Text) & "%') "
-    
-    If txtCod_Nivel(glsNumNiveles - 1).Text <> "" Then
-        sqlCond = sqlCond & " AND idNivel = '" & txtCod_Nivel(glsNumNiveles - 1).Text & "'"
-    End If
-    
+    StrBusqueda = Replace(Trim(TxtBusq.Text), "'", "''")
+    strNivel = ""
+    If glsNumNiveles > 0 Then strNivel = Trim(txtCod_Nivel(glsNumNiveles - 1).Text)
+
     If opt_Producto.Value Then
-        sqlCond = sqlCond & " AND idTipoProducto = '06001'"
+        strTipoProducto = "06001"
     ElseIf opt_MateriaPrima.Value Then
-        sqlCond = sqlCond & " AND idTipoProducto = '06003'"
+        strTipoProducto = "06003"
+    Else
+        strTipoProducto = "06002"
     End If
-    
-    sqlCond = sqlCond & SqlAdic & " order by 1"
-    
+
+    sqlCond = "EXEC dbo.spu_Docventas_OC_AyudaProductos '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(glsSucursal, "'", "''") & "','" & Replace(strCodAlmacen, "'", "''") & "','" & Replace(cod_Prov, "'", "''") & "','" & StrBusqueda & "','" & Replace(strNivel, "'", "''") & "','" & strTipoProducto & "'," & IIf(indPedido, 1, 0) & "," & IIf(indValidaStock, 1, 0) & "," & IIf(indUMVenta, 1, 0) & ",'" & Replace(STR_VALIDA_PRODUCTOPROVEEDOR_OC, "'", "''") & "'"
+
     If rsdatos.State = 1 Then rsdatos.Close
     rsdatos.Open sqlCond, Cn, adOpenStatic, adLockReadOnly
     If rsg.State = 1 Then rsg.Close
@@ -1248,15 +1265,18 @@ Dim rsdatos As New ADODB.Recordset
             item = (rsg.RecordCount) + 1
             rsg.AddNew
             rsg.Fields("CHK") = 0
-            rsg.Fields("idProducto") = "" & rsdatos.Fields("idProducto")
-            rsg.Fields("CodigoRapido") = "" & rsdatos.Fields("CodigoRapido")
-            rsg.Fields("GlsProducto") = "" & rsdatos.Fields("GlsProducto")
-            rsg.Fields("GlsMarca") = "" & rsdatos.Fields("GlsMarca")
-            rsg.Fields("GlsUM") = "" & rsdatos.Fields("GlsUM")
-            rsg.Fields("GlsMoneda") = "" & rsdatos.Fields("GlsMoneda")
-            rsg.Fields("GlsTallaPeso") = "" & rsdatos.Fields("GlsTallaPeso")
-            rsg.Fields("Afecto") = rsdatos.Fields("Afecto")
-            rsg.Fields("Stock") = rsdatos.Fields("Stock")
+            rsg.Fields("idProducto") = Trim("" & rsdatos.Fields("idProducto"))
+            rsg.Fields("CodigoRapido") = Trim("" & rsdatos.Fields("CodigoRapido"))
+            rsg.Fields("GlsProducto") = Trim("" & rsdatos.Fields("GlsProducto"))
+            rsg.Fields("GlsMarca") = Trim("" & rsdatos.Fields("GlsMarca"))
+            rsg.Fields("GlsUM") = Trim("" & rsdatos.Fields("GlsUM"))
+            rsg.Fields("GlsMoneda") = Trim("" & rsdatos.Fields("GlsMoneda"))
+            rsg.Fields("GlsTallaPeso") = Trim("" & rsdatos.Fields("GlsTallaPeso"))
+            rsg.Fields("Afecto") = Trim("" & rsdatos.Fields("Afecto"))
+            rsg.Fields("idUMVenta") = Trim("" & rsdatos.Fields("idUMVenta"))
+            rsg.Fields("Stock") = Val("" & rsdatos.Fields("Stock"))
+            rsg.Fields("idFabricante") = "" & rsdatos.Fields("idFabricante")
+            rsg.Fields("GLSDOCREFERENCIA") = "" & rsdatos.Fields("GLSDOCREFERENCIA")
             rsdatos.MoveNext
        Loop
     End If
@@ -1284,97 +1304,99 @@ Err:
     If StrMsgError = "" Then StrMsgError = Err.Description
 End Sub
 
-Private Function setSqlAlm(strAlm As String) As String
-Dim strCampoUM As String
-Dim strStockUM As String
-Dim strCantidad As String
-Dim strTablaPresentaciones As String
+' Consulta anterior conservada como referencia; reemplazada por dbo.spu_Docventas_OC_AyudaProductos.
+' Dim strCampoUM As String
+' Dim strStockUM As String
+' Dim strCantidad As String
+' Dim strTablaPresentaciones As String
+'
+'     If glsVisualizaCodFab = "N" Then
+'         g.Columns.ColumnByFieldName("IdFabricante").Visible = False
+'     End If
+'
+'     strCampoUM = "idUMVenta"
+'     strStockUM = "CantidadStockUV"
+'     strCantidad = "(a.CantidadStock / f.Factor )" 'Es la cantidad de venta
+'
+'     strTablaPresentaciones = " INNER JOIN presentaciones f ON p.idEmpresa = f.idEmpresa AND p.idProducto = f.idProducto AND p." & strCampoUM & " = f.idUM "
+'
+'     If indUMVenta = False Then
+'         strCampoUM = "idUMCompra"
+'         strStockUM = "CantidadStockUC"
+'         strCantidad = "a.CantidadStock" 'Es la cantidad de compra
+'         strTablaPresentaciones = ""
+'     End If
+'
+'     g.Columns.ColumnByFieldName("Stock").Visible = False
+'     If opt_Servicios.Value = False Then
+'         If indPedido = False Then
+'             setSqlAlm = "SELECT '0' AS CHK, p.idProducto,P.CodigoRapido,p.GlsProducto,m.GlsMarca,p." & strCampoUM & " AS idUMVenta,u.GlsUM,o.GlsMoneda,iif(p.afectoIGV = 1,'S','N') Afecto, CAST(" & strCantidad & " AS DECIMAL(12,2)) as Stock, t.GlsTallaPeso, p.idfabricante " & _
+'                         "FROM productos p " & _
+'                         "INNER JOIN marcas m ON p.idEmpresa = m.idEmpresa AND p.idMarca = m.idMarca " & _
+'                         "INNER JOIN unidadMedida u ON p." & strCampoUM & " = u.idUM " & _
+'                         "INNER JOIN monedas o ON p.idMoneda  = o.idMoneda " & _
+'                         "INNER JOIN productosalmacen a ON p.idEmpresa = a.idEmpresa AND a.idSucursal = '" & glsSucursal & "' " & _
+'                                                       "AND a.idAlmacen = '" & strAlm & "' AND p.idProducto = a.idProducto " & _
+'                                                       "AND p." & strCampoUM & " = a.idUMCompra " & strTablaPresentaciones & _
+'                         "LEFT JOIN tallapeso t ON p.idEmpresa = t.idEmpresa AND p.idTallaPeso = t.idTallaPeso " & _
+'                         "WHERE p.idEmpresa = '" & glsEmpresa & "' "
+'
+'             If indValidaStock Then
+'                 setSqlAlm = setSqlAlm & "AND " & strCantidad & "  > 0 "
+'             End If
+'             g.Columns.ColumnByFieldName("Stock").Visible = True
+'             setSqlAlm = setSqlAlm & "AND (p.GlsProducto "
+'
+'         Else
+'
+'             If STR_VALIDA_PRODUCTOPROVEEDOR_OC = "S" Then
+'
+'                 setSqlAlm = "SELECT '0' AS CHK, p.idProducto,P.CodigoRapido,p.GlsProducto,m.GlsMarca,p." & strCampoUM & " AS idUMVenta,u.GlsUM,o.GlsMoneda,iif(p.afectoIGV = 1,'S','N') Afecto, 0.00 as Stock, t.GlsTallaPeso " & _
+'                             "FROM productos p " & _
+'                             "INNER JOIN marcas m ON p.idEmpresa = m.idEmpresa AND p.idMarca = m.idMarca " & _
+'                             "INNER JOIN unidadMedida u ON p." & strCampoUM & " = u.idUM " & _
+'                             "INNER JOIN monedas o ON p.idMoneda  = o.idMoneda " & _
+'                             "LEFT JOIN tallapeso t ON p.idEmpresa = t.idEmpresa AND p.idTallaPeso = t.idTallaPeso " & _
+'                             "WHERE p.idEmpresa = '" & glsEmpresa & "' AND (p.GlsProducto "
+'
+'             Else
+'
+'                 setSqlAlm = "SELECT '0' AS CHK, p.idProducto,P.CodigoRapido,p.GlsProducto,m.GlsMarca,p." & strCampoUM & " AS idUMVenta,u.GlsUM,o.GlsMoneda,iif(p.afectoIGV = 1,'S','N') Afecto, 0.00 as Stock, t.GlsTallaPeso " & _
+'                             "FROM productos p " & _
+'                             "INNER JOIN marcas m ON p.idEmpresa = m.idEmpresa AND p.idMarca = m.idMarca " & _
+'                             "INNER JOIN unidadMedida u ON p." & strCampoUM & " = u.idUM " & _
+'                             "INNER JOIN monedas o ON p.idMoneda  = o.idMoneda " & _
+'                             "INNER JOIN (" & _
+'                                 "Select A.IdEmpresa,A.IdProducto " & _
+'                                 "From ProductosProveedor A " & _
+'                                 "Where A.IdEmpresa = '" & glsEmpresa & "' And A.IdProveedor = '" & cod_Prov & "' " & _
+'                                 "Group By A.IdEmpresa,A.IdProducto " & _
+'                             ") x " & _
+'                                 "ON p.idEmpresa = x.idEmpresa and x.idProducto = p.idProducto " & _
+'                             "LEFT JOIN tallapeso t ON p.idEmpresa = t.idEmpresa AND p.idTallaPeso = t.idTallaPeso " & _
+'                             "WHERE p.idEmpresa = '" & glsEmpresa & "' AND (p.GlsProducto "
+'
+'             End If
+'
+'         End If
+'
+'     Else
+'         setSqlAlm = "SELECT '0' AS CHK, p.idProducto,P.CodigoRapido,p.GlsProducto,'' as GlsMarca,'' as GlsUM,o.GlsMoneda,iif(p.afectoIGV = 1,'S','N') Afecto, 0.00 as Stock, '' AS GlsTallaPeso " & _
+'                     "FROM productos p,monedas o " & _
+'                     "WHERE p.idMoneda  = o.idMoneda AND p.idEmpresa = '" & glsEmpresa & "' AND p.idTipoProducto = '06002' AND (p.GlsProducto "
+'     End If
+'
+' End Function
 
-    If glsVisualizaCodFab = "N" Then
-        g.Columns.ColumnByFieldName("IdFabricante").Visible = False
-    End If
-
-    strCampoUM = "idUMVenta"
-    strStockUM = "CantidadStockUV"
-    strCantidad = "(a.CantidadStock / f.Factor )" 'Es la cantidad de venta
-    
-    strTablaPresentaciones = " INNER JOIN presentaciones f ON p.idEmpresa = f.idEmpresa AND p.idProducto = f.idProducto AND p." & strCampoUM & " = f.idUM "
-        
-    If indUMVenta = False Then
-        strCampoUM = "idUMCompra"
-        strStockUM = "CantidadStockUC"
-        strCantidad = "a.CantidadStock" 'Es la cantidad de compra
-        strTablaPresentaciones = ""
-    End If
-    
-    g.Columns.ColumnByFieldName("Stock").Visible = False
-    If opt_Servicios.Value = False Then
-        If indPedido = False Then
-            setSqlAlm = "SELECT '0' AS CHK, p.idProducto,P.CodigoRapido,p.GlsProducto,m.GlsMarca,p." & strCampoUM & " AS idUMVenta,u.GlsUM,o.GlsMoneda,iif(p.afectoIGV = 1,'S','N') Afecto, CAST(" & strCantidad & " AS DECIMAL(12,2)) as Stock, t.GlsTallaPeso, p.idfabricante " & _
-                        "FROM productos p " & _
-                        "INNER JOIN marcas m ON p.idEmpresa = m.idEmpresa AND p.idMarca = m.idMarca " & _
-                        "INNER JOIN unidadMedida u ON p." & strCampoUM & " = u.idUM " & _
-                        "INNER JOIN monedas o ON p.idMoneda  = o.idMoneda " & _
-                        "INNER JOIN productosalmacen a ON p.idEmpresa = a.idEmpresa AND a.idSucursal = '" & glsSucursal & "' " & _
-                                                      "AND a.idAlmacen = '" & strAlm & "' AND p.idProducto = a.idProducto " & _
-                                                      "AND p." & strCampoUM & " = a.idUMCompra " & strTablaPresentaciones & _
-                        "LEFT JOIN tallapeso t ON p.idEmpresa = t.idEmpresa AND p.idTallaPeso = t.idTallaPeso " & _
-                        "WHERE p.idEmpresa = '" & glsEmpresa & "' "
-                       
-            If indValidaStock Then
-                setSqlAlm = setSqlAlm & "AND " & strCantidad & "  > 0 "
-            End If
-            g.Columns.ColumnByFieldName("Stock").Visible = True
-            setSqlAlm = setSqlAlm & "AND (p.GlsProducto "
-                       
-        Else
-        
-            If leeParametro("VALIDA_PRODUCTOPROVEEDOR_OC") = "S" Then
-            
-                setSqlAlm = "SELECT '0' AS CHK, p.idProducto,P.CodigoRapido,p.GlsProducto,m.GlsMarca,p." & strCampoUM & " AS idUMVenta,u.GlsUM,o.GlsMoneda,iif(p.afectoIGV = 1,'S','N') Afecto, 0.00 as Stock, t.GlsTallaPeso " & _
-                            "FROM productos p " & _
-                            "INNER JOIN marcas m ON p.idEmpresa = m.idEmpresa AND p.idMarca = m.idMarca " & _
-                            "INNER JOIN unidadMedida u ON p." & strCampoUM & " = u.idUM " & _
-                            "INNER JOIN monedas o ON p.idMoneda  = o.idMoneda " & _
-                            "LEFT JOIN tallapeso t ON p.idEmpresa = t.idEmpresa AND p.idTallaPeso = t.idTallaPeso " & _
-                            "WHERE p.idEmpresa = '" & glsEmpresa & "' AND (p.GlsProducto "
-                            
-            Else
-            
-                setSqlAlm = "SELECT '0' AS CHK, p.idProducto,P.CodigoRapido,p.GlsProducto,m.GlsMarca,p." & strCampoUM & " AS idUMVenta,u.GlsUM,o.GlsMoneda,iif(p.afectoIGV = 1,'S','N') Afecto, 0.00 as Stock, t.GlsTallaPeso " & _
-                            "FROM productos p " & _
-                            "INNER JOIN marcas m ON p.idEmpresa = m.idEmpresa AND p.idMarca = m.idMarca " & _
-                            "INNER JOIN unidadMedida u ON p." & strCampoUM & " = u.idUM " & _
-                            "INNER JOIN monedas o ON p.idMoneda  = o.idMoneda " & _
-                            "INNER JOIN (" & _
-                                "Select A.IdEmpresa,A.IdProducto " & _
-                                "From ProductosProveedor A " & _
-                                "Where A.IdEmpresa = '" & glsEmpresa & "' And A.IdProveedor = '" & cod_Prov & "' " & _
-                                "Group By A.IdEmpresa,A.IdProducto " & _
-                            ") x " & _
-                                "ON p.idEmpresa = x.idEmpresa and x.idProducto = p.idProducto " & _
-                            "LEFT JOIN tallapeso t ON p.idEmpresa = t.idEmpresa AND p.idTallaPeso = t.idTallaPeso " & _
-                            "WHERE p.idEmpresa = '" & glsEmpresa & "' AND (p.GlsProducto "
-                            
-            End If
-            
-        End If
-        
-    Else
-        setSqlAlm = "SELECT '0' AS CHK, p.idProducto,P.CodigoRapido,p.GlsProducto,'' as GlsMarca,'' as GlsUM,o.GlsMoneda,iif(p.afectoIGV = 1,'S','N') Afecto, 0.00 as Stock, '' AS GlsTallaPeso " & _
-                    "FROM productos p,monedas o " & _
-                    "WHERE p.idMoneda  = o.idMoneda AND p.idEmpresa = '" & glsEmpresa & "' AND p.idTipoProducto = '06002' AND (p.GlsProducto "
-    End If
-    
-End Function
-
-Public Sub ExecuteReturnTextAlm(ByVal codProv As String, ByVal strAlm As String, ByRef rsp As ADODB.Recordset, ByRef strCod As String, ByRef strDes As String, ByRef strCodUM As String, ByVal ValidaStock As Boolean, ByVal strVarCodLista As String, ByVal indVarUMVenta As Boolean, ByVal indVarMostrarPresentaciones As Boolean, ByVal indVarPedido As Boolean, ByRef StrMsgError As String, Optional strParAdic As String, Optional indMostrarTP As Boolean = True, Optional TipoProd As Integer = 1)
+Public Sub ExecuteReturnTextAlm(ByVal codProv As String, ByVal strAlm As String, ByRef rsp As ADODB.Recordset, ByRef strCod As String, ByRef strDes As String, ByRef strCodUM As String, ByRef StrCodRapido As String, ByVal ValidaStock As Boolean, ByVal strVarCodLista As String, ByVal indVarUMVenta As Boolean, ByVal indVarMostrarPresentaciones As Boolean, ByVal indVarPedido As Boolean, ByRef StrMsgError As String, Optional indMostrarTP As Boolean = True, Optional TipoProd As Integer = 1)
 On Error GoTo Err
     
     MousePointer = 0
     'Iniciamos Variables
     indAlmacen = True
     SRptBus(0) = ""
+    SRptBus(3) = ""
+    StrCodRapido = ""
     indPedido = indVarPedido
     
     'Pasamos valores de parametros a las variables privadas a nivel de form
@@ -1382,7 +1404,6 @@ On Error GoTo Err
     strCodLista = strVarCodLista
     strCodAlmacen = strAlm
     cod_Prov = codProv
-    SqlAdic = strParAdic
     indUMVenta = indVarUMVenta
     indMostrarPresentaciones = indVarMostrarPresentaciones
 
@@ -1405,7 +1426,7 @@ On Error GoTo Err
     
     'Filtramos
     fill StrMsgError
-    If StrMsgError <> "" Then StrMsgError = Err.Description
+    If StrMsgError <> "" Then GoTo Err
     
     Me.Show vbModal
     
@@ -1413,6 +1434,7 @@ On Error GoTo Err
         strCod = SRptBus(0)
         strDes = SRptBus(1)
         strCodUM = SRptBus(2)
+        StrCodRapido = SRptBus(3)
         
         Set g.DataSource = Nothing
         Set gPresentaciones.DataSource = Nothing
@@ -1459,7 +1481,7 @@ Err:
     If StrMsgError = "" Then StrMsgError = Err.Description
 End Sub
 
-Public Sub ExecuteKeyasciiReturnTextAlm(ByVal KeyAscii As Integer, strAlm As String, ByRef strCod As String, ByRef strDes As String, ByRef strCodUM As String, ByVal ValidaStock As String, ByVal strVarCodLista As String, ByVal indVarUMVenta As Boolean, ByVal indVarMostrarPresentaciones As Boolean, ByVal indVarPedido As Boolean, ByRef StrMsgError As String, Optional strParAdic As String, Optional indMostrarTP As Boolean = True, Optional TipoProd As Integer = 1)
+Public Sub ExecuteKeyasciiReturnTextAlm(ByVal KeyAscii As Integer, strAlm As String, ByRef strCod As String, ByRef strDes As String, ByRef strCodUM As String, ByVal ValidaStock As String, ByVal strVarCodLista As String, ByVal indVarUMVenta As Boolean, ByVal indVarMostrarPresentaciones As Boolean, ByVal indVarPedido As Boolean, ByRef StrMsgError As String, Optional indMostrarTP As Boolean = True, Optional TipoProd As Integer = 1)
 On Error GoTo Err
 
     MousePointer = 0
@@ -1472,7 +1494,6 @@ On Error GoTo Err
     strCodAlmacen = strAlm
     indValidaStock = ValidaStock
     strCodLista = strVarCodLista
-    SqlAdic = strParAdic
     indUMVenta = indVarUMVenta
     indMostrarPresentaciones = indVarMostrarPresentaciones
     
@@ -1487,6 +1508,7 @@ On Error GoTo Err
         lblPresentaciones.Visible = False
     End If
     
+    indInicializando = True
     Select Case TipoProd
         Case 1 'productos
             opt_Producto.Value = True
@@ -1495,6 +1517,7 @@ On Error GoTo Err
         Case 3 'materia prima
             opt_MateriaPrima.Value = True
     End Select
+    indInicializando = False
     
     'Filtramos
     fill StrMsgError
@@ -1554,23 +1577,7 @@ On Error GoTo Err
 
     If indMostrarPresentaciones = False Then Exit Sub
     
-    csql = "SELECT p.idUM,u.abreUM as GlsUM,CAST(r.factor AS DECIMAL(4,2)) AS factor,pp.ValorVenta AS VVUnit,pp.IGVVenta AS IGVUnit,pp.PrecioVenta AS PVUnit " & _
-             "FROM preciosventa p " & _
-             "Inner Join unidadMedida u " & _
-                "On p.idUM = u.idUM " & _
-            "Inner Join presentaciones r " & _
-                "On p.idUM = r.idUM AND p.idProducto = r.idProducto AND p.idEmpresa = r.idEmpresa " & _
-            "INNER JOIN (" & _
-                "Select A.IdEmpresa,A.IdProducto,A.ValorVenta,A.IGVVenta,A.PrecioVenta " & _
-                "From ProductosProveedor A " & _
-                "Where A.IdEmpresa = '" & glsEmpresa & "' And A.IdProveedor = '" & cod_Prov & "' " & _
-                "Group By A.IdEmpresa,A.IdProducto,A.ValorVenta,A.IGVVenta,A.PrecioVenta " & _
-            ") pp " & _
-                "ON p.idEmpresa = pp.idEmpresa and p.idProducto = pp.idProducto " & _
-             "WHERE p.idProducto = '" & g.Columns.ColumnByFieldName("idProducto").Value & "' " & _
-               "AND p.idEmpresa = '" & glsEmpresa & "' " & _
-               "AND p.idEmpresa = '" & glsEmpresa & "' " & _
-               "AND p.idLista = '" & strCodLista & "' ORDER BY r.factor ASC"
+    csql = "EXEC dbo.spu_Docventas_OC_AyudaProductoPresentaciones '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(cod_Prov, "'", "''") & "','" & Replace(g.Columns.ColumnByFieldName("idProducto").Value, "'", "''") & "','" & Replace(strCodLista, "'", "''") & "'"
                
 '    With gPresentaciones
 '        .DefaultFields = False
@@ -1599,7 +1606,7 @@ On Error GoTo Err
 Dim rsj As New ADODB.Recordset
 Dim i As Integer
 
-    rsj.Open "SELECT GlsTipoNivel FROM tiposniveles WHERE idEmpresa = '" & glsEmpresa & "' Order BY Peso ASC", Cn, adOpenForwardOnly, adLockReadOnly
+    rsj.Open "EXEC dbo.spu_AyudaProductos_Niveles_Listar '" & Replace(glsEmpresa, "'", "''") & "'", Cn, adOpenForwardOnly, adLockReadOnly
     fraNivel.Height = 355 * glsNumNiveles
     i = 0
     

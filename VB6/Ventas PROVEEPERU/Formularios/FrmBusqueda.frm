@@ -757,6 +757,107 @@ Private strAyuda As String
 Private EsNuevo As Boolean
 
 
+' Firma Codex 15/10/2026: FrmBusqueda usa SP, cache de login y busqueda solo al presionar Enter.
+
+Private Function EscapaSqlLiteral(ByVal Valor As String) As String
+    EscapaSqlLiteral = Replace(Valor, "'", "''")
+End Function
+
+Private Function UsaAyudaPersonasComercialSP() As Boolean
+    If Len(Trim(SqlAdic)) > 0 Then Exit Function
+
+    Select Case UCase(Trim(strAyuda))
+        Case "CLIENTE", "PROVEEDOR", "VENDEDOR", "USUARIOS", "USUARIO", "CHOFER", "EMPTRANS", "PRODUCTOS", "ALMACEN", "ALMACENVTA", "CENTROCOSTO", "LISTAPRECIOS", "VEHICULO", "CAMAL", "COBRADOR", "AVAL", "VENDEDORJEFE", "SUCURSAL", "PERSONA", "PERSONACLIENTE", "PERSONASUCURSAL", "PERSONAPROVEEDOR", "PERSONAVENDEDOR", "PERSONAUSUARIO", "PERSONACHOFER", "PERSONAEMPTRANS", "PERSONACOBRADOR", "PERSONAAVAL"
+            UsaAyudaPersonasComercialSP = True
+    End Select
+End Function
+
+Private Sub ConfiguraFiltroClientesVendedor()
+
+    cadRelacion = ""
+    cadCondicion = ""
+
+    If UCase(Trim(STR_VISUALIZA_CLIENTESXVENDEDOR)) = "S" Then
+        If Val(STR_IND_VISUALIZACLIENTES_VENDEDOR) = 0 Then
+            cadRelacion = "Inner Join personas v On c.idVendedorCampo = v.idPersona  "
+            cadCondicion = "c.idVendedorCampo ='" & glsUser & "' And "
+        End If
+    End If
+
+End Sub
+
+Private Function UsaAyudaCatalogosSP() As Boolean
+    If Len(Trim(SqlAdic)) > 0 Then Exit Function
+
+    Select Case UCase(Trim(strAyuda))
+        Case "TIPOPERSONA", "PAIS", "TIPOPRODUCTO", "MARCAVEHI", "TIPOTICKET", "PERIODOLETRA", "TIPOINTERES", "TIPOCUOTALETRA", "TIPOCAPITALIZACION", "TIPOCOBRO", "TIPOEFECTIVO", "TIPOSNIVEL", "CONCEPTOSCOSTEO", "MONEDA", "UM", "UMGLOSA", "TIPOFORMASPAGO", "FORMASPAGO", "DOCUMENTOS", "DOCUMENTOSI", "UNIDADPRODUC", "DIRRECOJO", "MARCA", "CONCEPTOSALIDA", "CONCEPTOINGRESO", "PERFIL", "EMPRESA", "TIPONIVEL", "CAJAS", "PERMISOS", "CTACORRIENTE", "BANCO", "GRUPOSPRODUCTO", "ZONA", "ZONAS", "UBICACIONES", "TALLASPESOS", "CANALES", "TIPODOCUMENTOIDENTIDAD", "CAJASUSUARIO", "ESTDOCUMENTOS"
+            UsaAyudaCatalogosSP = True
+    End Select
+End Function
+
+Private Function ExtraeValorFiltroSql(ByVal NombreCampo As String) As String
+Dim posicion As Long
+Dim inicioValor As Long
+Dim condicion As String
+
+    condicion = UCase(SqlAdic)
+    posicion = InStr(1, condicion, UCase(NombreCampo) & " = '")
+    If posicion = 0 Then Exit Function
+
+    inicioValor = posicion + Len(NombreCampo) + 4
+    posicion = InStr(inicioValor, SqlAdic, "'")
+    If posicion > inicioValor Then
+        ExtraeValorFiltroSql = Mid(SqlAdic, inicioValor, posicion - inicioValor)
+    End If
+End Function
+
+Private Function TieneFiltroSqlComplejo() As Boolean
+Dim condicion As String
+
+    condicion = UCase(SqlAdic)
+    TieneFiltroSqlComplejo = InStr(condicion, "SELECT ") > 0 Or InStr(condicion, " IN(") > 0 Or InStr(condicion, " IN (") > 0 Or InStr(condicion, "<>") > 0 Or InStr(condicion, " OR ") > 0
+End Function
+
+Private Function UsaAyudaGeneralesSP() As Boolean
+Dim valorDepartamento As String
+Dim valorProvincia As String
+Dim valorTipoNivel As String
+Dim valorProducto As String
+
+    If TieneFiltroSqlComplejo Then Exit Function
+
+    Select Case UCase(Trim(strAyuda))
+        Case "DEPARTAMENTO"
+            UsaAyudaGeneralesSP = Len(Trim(SqlAdic)) = 0 Or Len(ExtraeValorFiltroSql("idPais")) > 0
+        Case "PROVINCIA"
+            UsaAyudaGeneralesSP = Len(Trim(SqlAdic)) = 0 Or Len(ExtraeValorFiltroSql("idDpto")) > 0
+        Case "DISTRITO"
+            valorDepartamento = ExtraeValorFiltroSql("idDpto")
+            valorProvincia = ExtraeValorFiltroSql("idProv")
+            UsaAyudaGeneralesSP = Len(Trim(SqlAdic)) = 0 Or (Len(valorDepartamento) > 0 And Len(valorProvincia) > 0)
+        Case "ALMACENVTA", "ALMACENDESTINO"
+            UsaAyudaGeneralesSP = Len(Trim(SqlAdic)) = 0 Or Len(ExtraeValorFiltroSql("idSucursal")) > 0
+        Case "SUCURSALDESTINO"
+            UsaAyudaGeneralesSP = Len(Trim(SqlAdic)) = 0
+        Case "MOTIVONCD", "MOTIVOTRASLADO"
+            UsaAyudaGeneralesSP = Len(Trim(SqlAdic)) = 0 Or Len(ExtraeValorFiltroSql("idDocumento")) > 0
+        Case "TIPOMOVCAJA"
+            UsaAyudaGeneralesSP = Len(Trim(SqlAdic)) = 0 Or Len(ExtraeValorFiltroSql("indIngresoSalida")) > 0
+        Case "NIVEL"
+            valorTipoNivel = ExtraeValorFiltroSql("idTipoNivel")
+            UsaAyudaGeneralesSP = Len(Trim(SqlAdic)) = 0 Or Len(valorTipoNivel) > 0
+        Case "PRESENTACIONES"
+            valorProducto = ExtraeValorFiltroSql("idProducto")
+            UsaAyudaGeneralesSP = Len(Trim(SqlAdic)) = 0 Or Len(valorProducto) > 0
+        Case "FORMASPAGOXCLIENTE", "CONTACTOSCLIENTES"
+            UsaAyudaGeneralesSP = Len(Trim(SqlAdic)) = 0 Or Len(ExtraeValorFiltroSql("idCliente")) > 0
+        Case "DOCUMENOSEXP"
+            UsaAyudaGeneralesSP = Len(Trim(SqlAdic)) = 0 Or Len(ExtraeValorFiltroSql("idDocumento")) > 0
+        Case "CONTACTOSPROVEEDORES"
+            UsaAyudaGeneralesSP = Len(Trim(SqlAdic)) = 0
+    End Select
+End Function
+
 Private Sub CmdBusq_Click()
     
     sqlBus = setSql(strAyuda)
@@ -944,10 +1045,8 @@ Private Sub Text1_GotFocus()
 End Sub
 
 Private Sub TxtBusq_Change()
-    
-    If EsNuevo = False Then
-        CmdBusq_Click
-    End If
+
+    ' La consulta se ejecuta solo al presionar Enter en TxtBusq_KeyPress.
 
 End Sub
 
@@ -966,6 +1065,7 @@ Private Sub TxtBusq_KeyPress(KeyAscii As Integer)
     If KeyAscii = 13 Then
         CmdBusq_Click
         If g.Count > 1 Then g.SetFocus
+        KeyAscii = 0
     End If
     EsNuevo = False
 
@@ -973,26 +1073,42 @@ End Sub
 
 Private Sub fill()
 Dim rsdatos                     As New ADODB.Recordset
+Dim idPaisFiltro                As String
+Dim idDepartamentoFiltro        As String
+Dim idProvinciaFiltro           As String
+Dim idSucursalFiltro            As String
+Dim idDocumentoFiltro           As String
+Dim indIngresoSalidaFiltro      As String
+Dim idTipoNivelFiltro           As String
+Dim idNivelPredFiltro           As String
+Dim idProductoFiltro            As String
+Dim idClienteFiltro             As String
 
-sqlCond = Replace(sqlBus, "%X%", "%" & Trim(TxtBusq.Text) & "%") & SqlAdic & " order by 1"
+    If UsaAyudaPersonasComercialSP Then
+        sqlCond = "EXEC dbo.spu_Ayuda_PersonasComercial '" & EscapaSqlLiteral(strAyuda) & "','" & EscapaSqlLiteral(Trim(TxtBusq.Text)) & "','" & EscapaSqlLiteral(glsEmpresa) & "','" & EscapaSqlLiteral(glsSucursal) & "','" & EscapaSqlLiteral(glsUser) & "'," & IIf(Len(Trim(cadCondicion)) > 0, "1", "0")
+    ElseIf UsaAyudaGeneralesSP Then
+        idPaisFiltro = ExtraeValorFiltroSql("idPais")
+        idDepartamentoFiltro = ExtraeValorFiltroSql("idDpto")
+        idProvinciaFiltro = ExtraeValorFiltroSql("idProv")
+        idSucursalFiltro = ExtraeValorFiltroSql("idSucursal")
+        idDocumentoFiltro = ExtraeValorFiltroSql("idDocumento")
+        indIngresoSalidaFiltro = ExtraeValorFiltroSql("indIngresoSalida")
+        idTipoNivelFiltro = ExtraeValorFiltroSql("idTipoNivel")
+        idNivelPredFiltro = ExtraeValorFiltroSql("idNivelPred")
+        idProductoFiltro = ExtraeValorFiltroSql("idProducto")
+        idClienteFiltro = ExtraeValorFiltroSql("idCliente")
+        sqlCond = "EXEC dbo.spu_Ayuda_Generales '" & EscapaSqlLiteral(strAyuda) & "','" & EscapaSqlLiteral(Trim(TxtBusq.Text)) & "','" & EscapaSqlLiteral(glsEmpresa) & "','" & EscapaSqlLiteral(glsSucursal) & "','" & EscapaSqlLiteral(idSucursalFiltro) & "','" & EscapaSqlLiteral(idPaisFiltro) & "','" & EscapaSqlLiteral(idDepartamentoFiltro) & "','" & EscapaSqlLiteral(idProvinciaFiltro) & "','" & EscapaSqlLiteral(idDocumentoFiltro) & "','" & EscapaSqlLiteral(indIngresoSalidaFiltro) & "','" & EscapaSqlLiteral(idTipoNivelFiltro) & "','" & EscapaSqlLiteral(idNivelPredFiltro) & "','" & EscapaSqlLiteral(idProductoFiltro) & "','" & EscapaSqlLiteral(idClienteFiltro) & "'"
+    ElseIf UsaAyudaCatalogosSP Then
+        sqlCond = "EXEC dbo.spu_Ayuda_Catalogos '" & EscapaSqlLiteral(strAyuda) & "','" & EscapaSqlLiteral(Trim(TxtBusq.Text)) & "','" & EscapaSqlLiteral(glsEmpresa) & "','" & EscapaSqlLiteral(glsUser) & "'"
+    Else
+        sqlCond = Replace(sqlBus, "%X%", "%" & Trim(TxtBusq.Text) & "%") & SqlAdic & " order by 1"
+    End If
 
-If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
-rsdatos.Open sqlCond, Cn, adOpenStatic, adLockOptimistic
-    
-Set g.DataSource = rsdatos
-    
-'    With G
-'        .DefaultFields = False
-'        .Dataset.ADODataset.ConnectionString = strcn
-'        .Dataset.ADODataset.CursorLocation = clUseClient
-'        .Dataset.Active = False
-'        .Dataset.ADODataset.CommandText = sqlCond
-'        .Dataset.DisableControls
-'        .Dataset.Active = True
-'        .KeyField = "cod"
-'    End With
+    If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
+    rsdatos.Open sqlCond, Cn, adOpenStatic, adLockReadOnly
+
+    Set g.DataSource = rsdatos
     LblReg.Caption = "(" + Format(g.Count, "0") + ")Registros"
-    
 End Sub
 
 Public Sub Execute(strParAyuda As String, ByRef TextBox1 As Object, ByRef TextBox2 As Object, strParAdic As String)
@@ -1003,19 +1119,8 @@ Dim intI As Integer
     MousePointer = 0
     SRptBus(0) = ""
     
-    If traerCampo("PARAMETROS", "VALPARAMETRO", "GLSPARAMETRO", "VISUALIZA_CLIENTESXVENDEDOR", True) = "S" Then
-        If Trim(traerCampo("Vendedores", "indVisualizaclientes", "idVendedor", glsUser, False)) = 0 Then
-            cadRelacion = "Inner Join personas v On c.idVendedorCampo = v.idPersona  "
-            cadCondicion = "c.idVendedorCampo ='" & glsUser & "' And "
-        Else
-           cadRelacion = ""
-           cadCondicion = ""
-        End If
-    Else
-        cadRelacion = ""
-        cadCondicion = ""
-    End If
-    
+    ConfiguraFiltroClientesVendedor
+
     SqlAdic = strParAdic
     strAyuda = ""
     strAyuda = strParAyuda
@@ -1148,19 +1253,8 @@ Dim intI As Integer
     MousePointer = 0
     SRptBus(0) = ""
     
-    If traerCampo("PARAMETROS", "VALPARAMETRO", "GLSPARAMETRO", "VISUALIZA_CLIENTESXVENDEDOR", True) = "S" Then
-    If Trim(traerCampo("Vendedores", "indVisualizaclientes", "idVendedor", glsUser, False)) = 0 Then
-            cadRelacion = "Inner Join personas v On c.idVendedorCampo = v.idPersona  "
-            cadCondicion = "c.idVendedorCampo ='" & glsUser & "' And "
-        Else
-           cadRelacion = ""
-           cadCondicion = ""
-        End If
-    Else
-        cadRelacion = ""
-        cadCondicion = ""
-    End If
-    
+    ConfiguraFiltroClientesVendedor
+
     SqlAdic = strParAdic
     strAyuda = ""
     strAyuda = strParAyuda
@@ -1185,19 +1279,8 @@ Dim StrMsgError As String
     TxtBusq.SelStart = Len(TxtBusq.Text) + 1
     
     SRptBus(0) = ""
-    If traerCampo("PARAMETROS", "VALPARAMETRO", "GLSPARAMETRO", "VISUALIZA_CLIENTESXVENDEDOR", True) = "S" Then
-        If Trim(traerCampo("Vendedores", "indVisualizaclientes", "idVendedor", glsUser, False)) = 0 Then
-            cadRelacion = "Inner Join personas v On c.idVendedorCampo = v.idPersona  "
-            cadCondicion = "c.idVendedorCampo ='" & glsUser & "' And "
-        Else
-           cadRelacion = ""
-           cadCondicion = ""
-        End If
-    Else
-        cadRelacion = ""
-        cadCondicion = ""
-    End If
-    
+    ConfiguraFiltroClientesVendedor
+
     SqlAdic = strParAdic
     strAyuda = ""
     strAyuda = strParAyuda
@@ -1225,19 +1308,8 @@ Dim intI As Integer
     TxtBusq.SelStart = Len(TxtBusq.Text) + 1
     SRptBus(0) = ""
     
-    If traerCampo("PARAMETROS", "VALPARAMETRO", "GLSPARAMETRO", "VISUALIZA_CLIENTESXVENDEDOR", True) = "S" Then
-        If Trim(traerCampo("Vendedores", "indVisualizaclientes", "idVendedor", glsUser, False)) = 0 Then
-            cadRelacion = "Inner Join personas v On c.idVendedorCampo = v.idPersona  "
-            cadCondicion = "c.idVendedorCampo ='" & glsUser & "' And "
-        Else
-           cadRelacion = ""
-           cadCondicion = ""
-        End If
-    Else
-        cadRelacion = ""
-        cadCondicion = ""
-    End If
-    
+    ConfiguraFiltroClientesVendedor
+
     SqlAdic = strParAdic
     strAyuda = ""
     strAyuda = strParAyuda

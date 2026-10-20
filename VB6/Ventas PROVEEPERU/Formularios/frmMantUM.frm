@@ -368,6 +368,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma Codex 15/10/2026: listado y carga de unidades de medida obtenidos mediante procedimientos almacenados.
 
 Private Sub Form_Load()
 On Error GoTo Err
@@ -515,9 +516,15 @@ Dim indHabilitar As Boolean
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
+    ' La consulta se ejecuta al presionar Enter.
+End Sub
+
+Private Sub txt_TextoBuscar_KeyPress(KeyAscii As Integer)
 On Error GoTo Err
 Dim StrMsgError As String
 
+    If KeyAscii <> 13 Then Exit Sub
+    KeyAscii = 0
     listaUM StrMsgError
     If StrMsgError <> "" Then GoTo Err
     Exit Sub
@@ -537,18 +544,8 @@ End Sub
 Private Sub listaUM(ByRef StrMsgError As String)
 Dim rsdatos                     As New ADODB.Recordset
 On Error GoTo Err
-Dim strCond As String
 
-    strCond = ""
-    If Trim(txt_TextoBuscar.Text) <> "" Then
-        strCond = Trim(txt_TextoBuscar.Text)
-        strCond = " WHERE U.GlsUM LIKE '%" & strCond & "%' or U.abreUM LIKE '%" & strCond & "%'"
-    End If
-    
-    csql = "SELECT U.idUM ,U.GlsUM,U.abreUM " & _
-           "FROM unidadmedida U "
-    If strCond <> "" Then csql = csql + strCond
-    csql = csql & " ORDER BY U.idUM"
+    csql = "EXEC dbo.spu_MantUM_Listar '" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
     
 If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
 rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
@@ -578,9 +575,7 @@ Private Sub mostrarUM(strCodUM As String, ByRef StrMsgError As String)
 On Error GoTo Err
 Dim rst As New ADODB.Recordset
 
-    csql = "SELECT U.idUM,U.GlsUM,U.abreUM " & _
-           "FROM unidadmedida U " & _
-           "WHERE U.idUM = '" & strCodUM & "'"
+    csql = "EXEC dbo.spu_MantUM_Obtener '" & Replace(strCodUM, "'", "''") & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     
     mostrarDatosFormSQL Me, rst, StrMsgError

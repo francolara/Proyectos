@@ -349,6 +349,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 
+' Firma Codex 16/10/2026: listado, carga y opciones de perfiles mediante procedimientos almacenados; búsqueda ejecutada con Enter.
 Private Sub Grabar(ByRef StrMsgError As String)
 On Error GoTo Err
 Dim strCodigo As String
@@ -545,12 +546,21 @@ Dim contMarca As Integer
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
+
+    ' La consulta se ejecuta al presionar Enter para evitar una llamada por cada tecla.
+
+End Sub
+
+Private Sub txt_TextoBuscar_KeyPress(KeyAscii As Integer)
 On Error GoTo Err
 Dim StrMsgError As String
 
+    If KeyAscii <> 13 Then Exit Sub
+    KeyAscii = 0
+
     listaPerfil StrMsgError
     If StrMsgError <> "" Then GoTo Err
-    
+
     Exit Sub
 
 Err:
@@ -566,38 +576,17 @@ End Sub
 
 Private Sub listaPerfil(ByRef StrMsgError As String)
 On Error GoTo Err
-Dim strCond As String
-Dim rsdatos                     As New ADODB.Recordset
+Dim rsdatos As New ADODB.Recordset
 
-    strCond = ""
-    If Trim(txt_TextoBuscar.Text) <> "" Then
-        strCond = Trim(txt_TextoBuscar.Text)
-        strCond = " AND GlsPerfil LIKE '%" & strCond & "%' "
-    End If
-    
-    csql = "SELECT idPerfil ,GlsPerfil " & _
-           "FROM perfil " & _
-           "WHERE idEmpresa = '" & glsEmpresa & "'  AND cODsISTEMA = '" & StrcodSistema & "' " & strCond & _
-           "ORDER BY idPerfil"
-           
+    csql = "EXEC dbo.spu_MantPerfiles_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & _
+           Replace(StrcodSistema, "'", "''") & "','" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
 
     If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
     rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
-        
-    Set gLista.DataSource = rsdatos
 
-'    With gLista
-'        .DefaultFields = False
-'        .Dataset.ADODataset.ConnectionString = strcn
-'        .Dataset.ADODataset.CursorLocation = clUseClient
-'        .Dataset.Active = False
-'        .Dataset.ADODataset.CommandText = csql
-'        .Dataset.DisableControls
-'        .Dataset.Active = True
-'        .KeyField = "idPerfil"
-'    End With
+    Set gLista.DataSource = rsdatos
     Me.Refresh
-    
+
     Exit Sub
 
 Err:
@@ -607,35 +596,23 @@ End Sub
 Private Sub mostrarPerfil(strCodPer As String, ByRef StrMsgError As String)
 On Error GoTo Err
 Dim rst As New ADODB.Recordset
-Dim no As Node
 
-    csql = "SELECT idPerfil,GlsPerfil " & _
-           "FROM perfil " & _
-           "WHERE idEmpresa = '" & glsEmpresa & "' AND idperfil = '" & strCodPer & "'"
+    csql = "EXEC dbo.spu_MantPerfiles_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & _
+           Replace(StrcodSistema, "'", "''") & "','" & Replace(strCodPer, "'", "''") & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
-    
+
     mostrarDatosFormSQL Me, rst, StrMsgError
     If StrMsgError <> "" Then GoTo Err
-    
-    MuestraOpciones StrMsgError
-    If StrMsgError <> "" Then GoTo Err
-    
+
     If rst.State = 1 Then rst.Close
-    rst.Open "select opmNum from opcionesperfil where idEmpresa = '" & glsEmpresa & "' AND idPerfil = '" & txtCod_Perfil.Text & "' AND CodSistema = '" & StrcodSistema & "' ", Cn, adOpenForwardOnly, adLockReadOnly
-    Do While Not rst.EOF
-        For Each no In TV.Nodes
-            If no.Key = rst.Fields("opmNum") Then
-                no.Checked = True
-                Exit For
-            End If
-        Next
-        rst.MoveNext
-    Loop
+    MuestraOpciones StrMsgError, txtCod_Perfil.Text
+    If StrMsgError <> "" Then GoTo Err
+
     Me.Refresh
-    
     Exit Sub
-    
+
 Err:
+    If rst.State = 1 Then rst.Close
     If StrMsgError = "" Then StrMsgError = Err.Description
 End Sub
 
@@ -657,34 +634,36 @@ Err:
     If StrMsgError = "" Then StrMsgError = Err.Description
 End Sub
 
-Private Sub MuestraOpciones(ByRef StrMsgError As String)
+Private Sub MuestraOpciones(ByRef StrMsgError As String, Optional ByVal strIdPerfil As String = "")
 On Error GoTo Err
-Dim rs      As New ADODB.Recordset
-Dim nodX    As Node
+Dim rs As New ADODB.Recordset
+Dim nodX As Node
 
-    csql = "SELECT opmNum,opmDes,opmCod " & _
-           "FROM opcionesmenu WHERE opmEstado = 'S' and CodSistema = '" & StrcodSistema & _
-           "' order by opmnum"
+    csql = "EXEC dbo.spu_MantPerfiles_Opciones_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & _
+           Replace(StrcodSistema, "'", "''") & "','" & Replace(strIdPerfil, "'", "''") & "'"
     rs.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
-    
+
     TV.Nodes.Clear
     Set nodX = TV.Nodes.Add(, , , "Marcar Todos")
-    
+
     Do While Not rs.EOF
-        If Len(rs.Fields(0)) = 5 Then
-            Set nodX = TV.Nodes.Add(1, , rs.Fields(0), rs.Fields(1))
+        If Len(rs.Fields("OpmNum")) = 5 Then
+            Set nodX = TV.Nodes.Add(1, , rs.Fields("OpmNum"), rs.Fields("OpmDes"))
         End If
-        If Len(rs.Fields(0)) > 5 Then
-            Set nodX = TV.Nodes.Add(left(rs.Fields(0), Len(rs.Fields(0)) - 2), tvwChild, rs.Fields(0), rs.Fields(1))
+        If Len(rs.Fields("OpmNum")) > 5 Then
+            Set nodX = TV.Nodes.Add(left(rs.Fields("OpmNum"), Len(rs.Fields("OpmNum")) - 2), tvwChild, rs.Fields("OpmNum"), rs.Fields("OpmDes"))
         End If
+        nodX.Checked = CBool(rs.Fields("Seleccionado").Value)
         nodX.Expanded = True
         rs.MoveNext
     Loop
     TV.Nodes.Remove (1)
     Me.Refresh
-    
+    If rs.State = 1 Then rs.Close
+
     Exit Sub
-    
+
 Err:
+    If rs.State = 1 Then rs.Close
     If StrMsgError = "" Then StrMsgError = Err.Description
 End Sub

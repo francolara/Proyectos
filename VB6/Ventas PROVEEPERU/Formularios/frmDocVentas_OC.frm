@@ -3503,6 +3503,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
+' Firma Codex 17/10/2026: cache de parametros y carga optimizada de ordenes de compra mediante procedimientos, conservando el codigo rapido del producto.
 
 Public strTipoDoc           As String
 Dim objDocVentas            As New clsDocVentas
@@ -3659,10 +3660,10 @@ Private Sub dtp_Emision_Change()
 Dim strPeriodo      As String
 
     strPeriodo = Format(dtp_Emision.Value, "yyyymm")
-    If Trim("" & traerCampo("parametros", "valparametro", "glsparametro", "PERIODO_CAMBIO_IGV", True)) > strPeriodo Then
-        dblIgvNEw = Format(Val(Format(traerCampo("parametros", "valparametro", "glsparametro", "IGV_ANT", True), "0.00")) / 100, "0.00")
+    If STR_PERIODO_CAMBIO_IGV > strPeriodo Then
+        dblIgvNEw = Format(Val(Format(STR_IGV_ANT, "0.00")) / 100, "0.00")
     Else
-        dblIgvNEw = Format(Val(Format(traerCampo("parametros", "valparametro", "glsparametro", "IGV", True), "0.00")) / 100, "0.00")
+        dblIgvNEw = Format(Val(Format(STR_IGV, "0.00")) / 100, "0.00")
     End If
             
 End Sub
@@ -3730,7 +3731,7 @@ Dim StrMsgError As String
     habilitaBotones 8
     indNuevoDoc = False
     
-    If leeParametro("NO_VALIDAR_CONTACTO_OC") = "1" Then
+    If STR_NO_VALIDAR_CONTACTO_OC = "1" Then
         txtCod_contacto.Vacio = True
         txtgls_contacto.Vacio = True
     End If
@@ -3744,7 +3745,7 @@ Dim StrMsgError As String
     End If
     
     If strTipoDoc = "94" Then
-        If leeParametro("VISUALIZA_CENTROCOSTO_OC") = "1" Then
+        If STR_VISUALIZA_CENTROCOSTO_OC = "1" Then
             gLista.Columns.ColumnByFieldName("IdCentroCosto").Visible = True
             gLista.Columns.ColumnByFieldName("GlsUser").Visible = True
         Else
@@ -3793,7 +3794,7 @@ Dim strMsg      As String
     generaSTRDocReferencia
     txt_NumDoc.Text = Format(txt_NumDoc.Text, "00000000")
     
-    If strTipoDoc = "OS" And leeParametro("VALIDAPRESUPUESTO") = "1" Then
+    If strTipoDoc = "OS" And STR_VALIDAPRESUPUESTO = "1" Then
         gDetalle.Dataset.First
         Do While Not gDetalle.Dataset.EOF
             If Len(Trim(gDetalle.Columns.ColumnByFieldName("IdCentroCosto").Value)) > 0 And Len(Trim(gDetalle.Columns.ColumnByFieldName("IdDocumentoPres").Value)) > 0 And Len(Trim(gDetalle.Columns.ColumnByFieldName("IdSucursalPres").Value)) = 0 Then
@@ -3803,7 +3804,7 @@ Dim strMsg      As String
         Loop
     End If
     
-    If strTipoDoc = "OS" And leeParametro("VALIDA_HC_OS") = "1" Then
+    If strTipoDoc = "OS" And STR_VALIDA_HC_OS = "1" Then
         gDetalle.Dataset.First
         Do While Not gDetalle.Dataset.EOF
             If Len(Trim(gDetalle.Columns.ColumnByFieldName("IdCentroCosto").Value)) = 0 Then
@@ -4122,6 +4123,7 @@ On Error GoTo Err
 Dim StrMsgError As String
 Dim strCod As String
 Dim strDes As String
+Dim strCodigoRapido As String
 Dim dblTC  As Double
 Dim strCodFabri As String
 Dim strCodMar As String
@@ -4156,7 +4158,7 @@ Dim CIdDocVentas                As String
                 strCodUM = ""
                 'FrmAyudaProdOC.ExecuteReturnTextAlm txtCod_Almacen.Text, rscd, strCod, strDes, strCodUM, glsValidaStock, "", False, True, indPedido, False, StrMsgError
                 
-                FrmAyudaProdOCInv.ExecuteReturnTextAlm txtCod_Cliente.Text, txtCod_Almacen.Text, rscd, strCod, strDes, strCodUM, glsValidaStock, txtCod_Lista.Text, True, True, indPedido, StrMsgError
+                FrmAyudaProdOCInv.ExecuteReturnTextAlm txtCod_Cliente.Text, txtCod_Almacen.Text, rscd, strCod, strDes, strCodUM, strCodigoRapido, glsValidaStock, txtCod_Lista.Text, True, True, indPedido, StrMsgError
                 If StrMsgError <> "" Then GoTo Err
                 
                 If strCod <> "" Then
@@ -4164,13 +4166,8 @@ Dim CIdDocVentas                As String
                     gDetalle.Dataset.RecNo = intFila
                     gDetalle.Dataset.Edit
                     
-                    If leeParametro("VIZUALIZA_CODIGO_RAPIDO") = "S" Then
-                        gDetalle.Columns.ColumnByFieldName("idProducto").Value = traerCampo("Productos", "IdProducto", "CodigoRapido", strCod, True)
-                        gDetalle.Columns.ColumnByFieldName("CodigoRapido").Value = strCod
-                    Else
-                        gDetalle.Columns.ColumnByFieldName("idProducto").Value = strCod
-                        gDetalle.Columns.ColumnByFieldName("CodigoRapido").Value = traerCampo("Productos", "CodigoRapido", "IdProducto", strCod, True)
-                    End If
+                    gDetalle.Columns.ColumnByFieldName("idProducto").Value = strCod
+                    gDetalle.Columns.ColumnByFieldName("CodigoRapido").Value = strCodigoRapido
                     
                     gDetalle.Columns.ColumnByFieldName("GlsProducto").Value = strDes
                         
@@ -4335,6 +4332,7 @@ Dim rsp As New ADODB.Recordset
 Dim StrMsgError As String
 Dim strCod As String
 Dim strDes As String
+Dim strCodigoRapido As String
 Dim dblTC  As Double
 Dim strCodFabri As String
 Dim strCodMar As String
@@ -4366,21 +4364,13 @@ Dim intFila                     As Integer
     If gDetalle.Dataset.Modified = False Then Exit Sub
     
     intFila = gDetalle.Dataset.RecNo
-    intFila = gDetalle.Dataset.RecNo
-    intFila = gDetalle.Dataset.RecNo
 
     Select Case gDetalle.Columns.FocusedColumn.Index
         Case gDetalle.Columns.ColumnByFieldName("idProducto").Index
             strCod = gDetalle.Columns.ColumnByFieldName("idProducto").Value
             strDes = gDetalle.Columns.ColumnByFieldName("GlsProducto").Value
             
-            csql = "Select P.IdProducto,P.GlsProducto,P.idUMVenta, B.abreUM " & _
-                    "FROM Productos p " & _
-                    "INNER JOIN unidadmedida B ON P.idUMVenta = B.idUM " & _
-                        "" & _
-                   "WHERE p.idempresa = '" & glsEmpresa & "' " & _
-                   "AND (p.idProducto = '" & strCod & "' OR p.idFabricante = '" & strCod & "' OR p.CodigoRapido = '" & strCod & "') " & _
-                   ""
+            csql = "EXEC dbo.spu_Docventas_OC_BuscarProducto '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCod, "'", "''") & "'"
             
             rsp.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
             If rsp.EOF Or rsp.BOF Then
@@ -4394,12 +4384,13 @@ Dim intFila                     As Integer
             Else
                 strCod = "" & rsp.Fields("idProducto")
                 strDes = "" & rsp.Fields("GlsProducto")
+                strCodigoRapido = "" & rsp.Fields("CodigoRapido")
                 strCodUM = "" & rsp.Fields("idUMVenta")
                 strDesUM = "" & rsp.Fields("abreUM")
             End If
             gDetalle.Dataset.Edit
             gDetalle.Columns.ColumnByFieldName("idProducto").Value = strCod
-            gDetalle.Columns.ColumnByFieldName("CodigoRapido").Value = traerCampo("Productos", "CodigoRapido", "IdProducto", strCod, True)
+            gDetalle.Columns.ColumnByFieldName("CodigoRapido").Value = strCodigoRapido
             gDetalle.Columns.ColumnByFieldName("GlsProducto").Value = strDes
             gDetalle.Columns.ColumnByFieldName("idUM").Value = strCodUM
             If DatosProducto(strCod, strCodFabri, strCodMar, strDesMar, intAfecto, strTipoProd) = False Then
@@ -4750,8 +4741,6 @@ Dim rscd As New ADODB.Recordset
 Dim indPedido As Boolean
 
     intFila = gDetalle.Dataset.RecNo
-    intFila = gDetalle.Dataset.RecNo
-    intFila = gDetalle.Dataset.RecNo
     
     If Key <> 9 And Key <> 13 And Key <> 27 Then
         Select Case gDetalle.Columns.FocusedColumn.Index
@@ -4776,8 +4765,7 @@ Dim indPedido As Boolean
 '                    gDetalle.Dataset.RecNo = intFila
 '                    gDetalle.Dataset.Edit
 '                    gDetalle.Columns.ColumnByFieldName("idProducto").Value = strCod
-'                    gDetalle.Columns.ColumnByFieldName("CodigoRapido").Value = traerCampo("Productos", "CodigoRapido", "IdProducto", strCod, True)
-'                    gDetalle.Columns.ColumnByFieldName("GlsProducto").Value = strDes
+'        '                    gDetalle.Columns.ColumnByFieldName("GlsProducto").Value = strDes
 '
 '                    If Trim(strCod) = "" Then Exit Sub
 '                    If DatosProducto(strCod, strCodFabri, strCodMar, strDesMar, intAfecto, strTipoProd) = False Then
@@ -5058,10 +5046,10 @@ Dim strParamImpOC       As String
             End If
             strPeriodo = Format(dtp_Emision.Value, "yyyymm")
             
-            If Trim("" & traerCampo("parametros", "valparametro", "glsparametro", "PERIODO_CAMBIO_IGV", True)) > strPeriodo Then
-                dblIgvNEw = Format(Val(Format(traerCampo("parametros", "valparametro", "glsparametro", "IGV_ANT", True), "0.00")) / 100, "0.00")
+            If STR_PERIODO_CAMBIO_IGV > strPeriodo Then
+                dblIgvNEw = Format(Val(Format(STR_IGV_ANT, "0.00")) / 100, "0.00")
             Else
-                dblIgvNEw = Format(Val(Format(traerCampo("parametros", "valparametro", "glsparametro", "IGV", True), "0.00")) / 100, "0.00")
+                dblIgvNEw = Format(Val(Format(STR_IGV, "0.00")) / 100, "0.00")
             End If
             
         Case 2 'Grabar
@@ -5083,10 +5071,10 @@ Dim strParamImpOC       As String
             fraDetalle.Enabled = True
             habilitaBotones Button.Index
             strPeriodo = Format(dtp_Emision.Value, "yyyymm")
-            If Trim("" & traerCampo("parametros", "valparametro", "glsparametro", "PERIODO_CAMBIO_IGV", True)) > strPeriodo Then
-                dblIgvNEw = Format(Val(Format(traerCampo("parametros", "valparametro", "glsparametro", "IGV_ANT", True), "0.00")) / 100, "0.00")
+            If STR_PERIODO_CAMBIO_IGV > strPeriodo Then
+                dblIgvNEw = Format(Val(Format(STR_IGV_ANT, "0.00")) / 100, "0.00")
             Else
-                dblIgvNEw = Format(Val(Format(traerCampo("parametros", "valparametro", "glsparametro", "IGV", True), "0.00")) / 100, "0.00")
+                dblIgvNEw = Format(Val(Format(STR_IGV, "0.00")) / 100, "0.00")
             End If
             
         Case 4 'Cancelar
@@ -5101,7 +5089,7 @@ Dim strParamImpOC       As String
             If StrMsgError <> "" Then GoTo Err
         Case 7 'Imprimir
             If strTipoDoc = "94" Or strTipoDoc = "87" Or strTipoDoc = "OS" Or strTipoDoc = "97" Then
-                strParamImpOC = Trim("" & traerCampo("parametros", "Valparametro", "glsparametro", "FORMATO_OC", True))
+                strParamImpOC = STR_FORMATO_OC
                 If strParamImpOC = "2" Then
                     imprimeDocVentas strTipoDoc, txt_NumDoc.Text, txt_Serie.Text, StrMsgError
                     If StrMsgError <> "" Then GoTo Err
@@ -5463,9 +5451,7 @@ Dim rsg As New ADODB.Recordset
 Dim RsD As New ADODB.Recordset
 
     indCargando = True
-    csql = "SELECT * " & _
-           "FROM docventas d " & _
-           "WHERE d.idEmpresa = '" & glsEmpresa & "' AND  d.idSucursal = '" & glsSucursal & "'  AND d.idDocumento = '" & strTipoDoc & "' AND d.idDocVentas = '" & strNum & "' AND d.idSerie = '" & strSerie & "'"
+    csql = "EXEC dbo.spu_Docventas_Mostrar_Docventas_cab '" & glsEmpresa & "','" & glsSucursal & "','" & strTipoDoc & "','" & strSerie & "','" & strNum & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     
     lblDoc.Caption = traerCampo("documentos", "GlsDocumento", "idDocumento", strTipoDoc, False)
@@ -5495,9 +5481,8 @@ Dim RsD As New ADODB.Recordset
     mostrarDatosFormSQL Me, rst, StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
-    csql = "SELECT idDocumento, idDocVentas, idSerie, idProducto, glsProducto, idMarca, idUM, Factor, Afecto, Cantidad, VVUnit, IGVUnit, PVUnit, TotalVVBruto, TotalPVBruto, PorDcto, DctoVV, DctoPV, TotalVVNeto, TotalIGVNeto, TotalPVNeto, item, GlsMarca, GlsUM, idTipoProducto, idMoneda, idCodFabricante, idEmpresa, idSucursal, estDocImportado, idDocumentoImp, idDocVentasImp, idSerieImp, NumLote, FecVencProd, idUsuarioDcto, VVUnitLista, PVUnitLista, CantidadImp, VVUnitNeto, PVUnitNeto, Cantidad2, CodigoRapido, idTallaPeso, CantidadAnt, Simbolo1, Simbolo2, Simbolo3, itemPro, PorcUtilidad, IdCentroCosto, IdSucursalPres, IdDocumentoPres, IdSeriePres, IdDocVentasPres, GlsPlaca, IdUPCliente, IsNull(FechaEmision,GETDATE()) FechaEmision " & _
-           "FROM docventasdet " & _
-           "WHERE idEmpresa = '" & glsEmpresa & "' AND  idSucursal = '" & glsSucursal & "' AND idDocumento = '" & strTipoDoc & "' AND idDocVentas = '" & strNum & "' AND idSerie = '" & strSerie & "' ORDER BY ITEM"
+    If rst.State = 1 Then rst.Close
+    csql = "EXEC dbo.spu_Docventas_Mostrar_Docventas_Det '" & glsEmpresa & "','" & glsSucursal & "','" & strTipoDoc & "','" & strSerie & "','" & strNum & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     
     rsg.Fields.Append "Item", adInteger, , adFldRowID
@@ -5587,7 +5572,7 @@ Dim RsD As New ADODB.Recordset
             rsg.AddNew
             rsg.Fields("Item") = "" & rst.Fields("Item")
             rsg.Fields("idProducto") = "" & rst.Fields("idProducto")
-            rsg.Fields("CodigoRapido") = traerCampo("Productos", "CodigoRapido", "IdProducto", "" & rst.Fields("IdProducto"), True)
+            rsg.Fields("CodigoRapido") = "" & rst.Fields("CodigoRapido")
             rsg.Fields("idCodFabricante") = "" & rst.Fields("idCodFabricante")
             rsg.Fields("GlsProducto") = "" & rst.Fields("GlsProducto")
             rsg.Fields("idMarca") = "" & rst.Fields("idMarca")
@@ -5635,15 +5620,13 @@ Dim RsD As New ADODB.Recordset
             rst.MoveNext
         Loop
     End If
-    rst.Close: Set rst = Nothing
+    If rst.State = 1 Then rst.Close
     
     mostrarDatosGridSQL gDetalle, rsg, StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
-    csql = "SELECT r.item, r.tipoDocReferencia idDocumento,d.GlsDocumento, r.numDocReferencia idNumDoc, r.serieDocReferencia idSerie " & _
-            "FROM docreferencia r , documentos d " & _
-            "WHERE r.idEmpresa = '" & glsEmpresa & "' AND r.idSucursal = '" & glsSucursal & "' AND r.tipoDocReferencia = d.idDocumento AND tipoDocOrigen = '" & strTipoDoc & "' AND numDocOrigen = '" & strNum & "' AND serieDocOrigen = '" & strSerie & "' ORDER BY ITEM"
     If rst.State = 1 Then rst.Close
+    csql = "EXEC dbo.spu_Docventas_Mostrar_Docventas_Ref '" & glsEmpresa & "','" & glsSucursal & "','" & strTipoDoc & "','" & strSerie & "','" & strNum & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     RsD.Fields.Append "Item", adInteger, , adFldRowID
     RsD.Fields.Append "idDocumento", adChar, 2, adFldIsNullable
@@ -5792,14 +5775,7 @@ End Sub
 Private Function DatosPrecio(ByVal strCodProd As String, ByVal strTipoProd As String, ByVal strCodUM As String, ByRef strglsum As String, ByRef dblVVUnit As Double, ByRef dblFactor As Double) As Boolean
 Dim rst As New ADODB.Recordset
             
-    csql = "Select TOP 1 U.AbreUM GlsUM,IIf(A.IdMoneda = 'PEN',A.ValorVenta,A.ValorVenta * " & txt_TipoCambio.Text & ") VVUnit,1  As Factor " & _
-               "From ProductosProveedor A " & _
-               "Inner Join Productos P " & _
-                    "On A.idEmpresa = P.idEmpresa And A.idProducto = P.idProducto " & _
-               "Inner Join UnidadMedida U " & _
-                    "On P.idUMCompra = U.IdUM " & _
-               "Where A.IdEmpresa = '" & glsEmpresa & "' And A.IdProveedor = '" & txtCod_Cliente.Text & "' And A.IdProducto = '" & strCodProd & "' " & _
-               "Order By A.Fecha Desc "
+    csql = "EXEC dbo.spu_Docventas_OC_DatosPrecio '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(txtCod_Cliente.Text, "'", "''") & "','" & Replace(strCodProd, "'", "''") & "'," & Replace(CStr(CDbl(txt_TipoCambio.Value)), ",", ".")
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     
     If Not rst.EOF Then
@@ -5820,10 +5796,7 @@ End Function
 Private Function DatosProducto(strCodProd As String, ByRef strCodFabri As String, ByRef strCodMar As String, ByRef strGlsMarca As String, ByRef intAfecto As Integer, ByRef strTipoProd As String) As Boolean
 Dim rst As New ADODB.Recordset
 
-    csql = "SELECT p.idFabricante,p.idMarca,m.GlsMarca,p.AfectoIGV,p.idTipoProducto " & _
-            "FROM productos p LEFT JOIN marcas m ON p.idEmpresa = m.idEmpresa AND p.idMarca = m.idMarca AND m.idEmpresa = '" & glsEmpresa & "' " & _
-            "WHERE p.idEmpresa = '" & glsEmpresa & "' " & _
-            "AND p.idProducto = '" & strCodProd & "'"
+    csql = "EXEC dbo.spu_Docventas_OC_DatosProducto '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodProd, "'", "''") & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     If Not rst.EOF Then
         DatosProducto = True
@@ -5945,11 +5918,7 @@ On Error GoTo Err
     
     If gLista.Count = 0 Then Exit Sub
     
-    csql = "SELECT item, idProducto, CAST(GlsProducto AS VARCHAR (500)) AS GlsProducto, GlsMarca, GlsUM, CAST(Cantidad AS DECIMAL(10,2)) AS Cantidad, CAST(VVUnit AS DECIMAL(10,2)) AS PVUnit, CAST(PorDcto AS DECIMAL(10,2)) AS PorDcto, CAST(TotalVVNeto AS DECIMAL(10,2)) AS TotalPVNeto " & _
-           "FROM docventasdet " & _
-           "WHERE idEmpresa = '" & glsEmpresa & "' AND idSucursal = '" & glsSucursal & "'  AND idDocumento = '" & strTipoDoc & _
-           "' AND idDocVentas = '" & gLista.Columns.ColumnByFieldName("idDocVentas").Value & _
-           "' AND idSerie = '" & gLista.Columns.ColumnByFieldName("idSerie").Value & "'"
+    csql = "EXEC dbo.spu_Docventas_OC_ListaDetalle '" & glsEmpresa & "','" & glsSucursal & "','" & strTipoDoc & "','" & gLista.Columns.ColumnByFieldName("idSerie").Value & "','" & gLista.Columns.ColumnByFieldName("idDocVentas").Value & "'"
            
     If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
     rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
@@ -6170,7 +6139,7 @@ Private Sub txtCod_Moneda_Change()
     txt_SimboloMonNeto.Text = lbl_SimbMonBruto.Caption
     
     If Len(Trim(txtCod_Moneda.Text)) > 0 Then
-        If traerCampo("parametros", "valparametro", "GLSPARAMETRO", "VIZUALIZA_SON", True) = "S" Then
+        If STR_VIZUALIZA_SON = "S" Then
             lbl_TotalLetras.Caption = "SON:" & Cadenanum(Format(txt_TotalNeto.Value, "0.00"), txtGls_Moneda.Text)
         Else
             lbl_TotalLetras.Caption = Cadenanum(Format(txt_TotalNeto.Value, "0.00"), txtGls_Moneda.Text)
@@ -6305,7 +6274,7 @@ Dim strAlmxDef      As String
     'PROVEEDOR_POR_DEFECTO
     'Si el TD es Requeriento Asignamos el proveedor por defecto
      If strTipoDoc = "87" Then
-        txtCod_Cliente.Text = Trim("" & traerCampo("Parametros", "ValParametro", "GlsParametro", "PROVEEDOR_POR_DEFECTO", True))
+        txtCod_Cliente.Text = STR_PROVEEDOR_POR_DEFECTO
      End If
     
     'Si el campo idAlmacen de la Tabla Usuarios esta lleno asignamos el almacen y el punto de partida si NO se asigna el valor del parametro
@@ -6313,7 +6282,7 @@ Dim strAlmxDef      As String
         txtCod_Almacen.Text = strAlmxDef
         txt_Llegada.Text = traerCampo("Almacenes", "GlsDireccion", "idAlmacen", strAlmxDef, True)
      Else
-        txtCod_Almacen.Text = Trim("" & traerCampo("Parametros", "ValParametro", "GlsParametro", "ALMACEN_COMPRAS", True))
+        txtCod_Almacen.Text = STR_ALMACEN_COMPRAS
      End If
      
      'Si el campo idCentroCosto de la Tabla Usuarios esta lleno asignamos el dato
@@ -7341,7 +7310,7 @@ On Error GoTo Err
     Screen.MousePointer = 11
     gStrRutaRpts = App.Path + "\Reportes\"
     
-    strParamImpOC = Trim("" & traerCampo("parametros", "Valparametro", "glsparametro", "FORMATO_OC", True))
+    strParamImpOC = STR_FORMATO_OC
     
     strSP = "spu_ImpOC"
     
@@ -7823,7 +7792,7 @@ On Error GoTo Err
 Dim strDocApro  As String
 
     'Si no esta aprobado no puede imprimir tampoco enviar correo
-    If traerCampo("Parametros", "ValParametro", "GlsParametro", "VALIDA_APROBACION_BANDEJA", True) = "S" Then
+    If STR_VALIDA_APROBACION_BANDEJA = "S" Then
         If strTipoDoc = "94" Or strTipoDoc = "87" Or strTipoDoc = "OS" Then
             strDocApro = traerCampo("Docventas", "indAprobado", "idDocumento", strTipoDoc, True, "iddocventas = '" & txt_NumDoc.Text & "' And idSerie = '" & txt_Serie.Text & "' And  idSucursal ='" & glsSucursal & "'")
             If strDocApro <> "1" Then

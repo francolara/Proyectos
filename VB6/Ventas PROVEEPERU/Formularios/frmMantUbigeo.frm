@@ -759,6 +759,8 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma Codex 15/10/2026: listado y carga de país, departamento, provincia y distrito mediante procedimientos almacenados.
+' Firma Codex 16/10/2026: validación final del enrutamiento por tipo y formato del formulario.
 
 Private Sub cbx_TipoUbigeo_Click()
 On Error GoTo Err
@@ -1085,12 +1087,17 @@ Dim indHabilitar As Boolean
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
+    ' La consulta se ejecuta al presionar Enter.
+End Sub
+
+Private Sub txt_TextoBuscar_KeyPress(KeyAscii As Integer)
 On Error GoTo Err
 Dim StrMsgError As String
 
+    If KeyAscii <> 13 Then Exit Sub
+    KeyAscii = 0
     listaUbigeo StrMsgError
     If StrMsgError <> "" Then GoTo Err
-    
     Exit Sub
 
 Err:
@@ -1106,32 +1113,25 @@ End Sub
 
 Private Sub listaUbigeo(ByRef StrMsgError As String)
 On Error GoTo Err
-Dim strCampoMostrar As String
-Dim rsdatos                     As New ADODB.Recordset
+Dim rsdatos As New ADODB.Recordset
+Dim i As Integer
 
     gLista.Columns.ColumnByName("C0").FieldName = "Codigo"
     gLista.Columns.ColumnByName("D1").GroupIndex = -1
     gLista.Columns.ColumnByName("D2").GroupIndex = -1
     gLista.Columns.ColumnByName("D3").GroupIndex = -1
-    
+
     For i = 0 To gLista.Columns.Count - 1
         gLista.Columns(i).Visible = False
     Next
-    
+
     Select Case cbx_TipoUbigeo.ListIndex
-        Case 0 '--- Pais
-            strCampoMostrar = "p.GlsDato"
+        Case 0 ' Pais
             gLista.Columns.ColumnByName("C1").FieldName = "idPais"
             gLista.Columns.ColumnByName("D1").FieldName = "GlsPais"
             gLista.Columns.ColumnByName("C1").Visible = True
             gLista.Columns.ColumnByName("D1").Visible = True
-            
-            csql = "SELECT p.idDato as Codigo,p.idDato AS idPais,p.GlsDato AS GlsPais " & _
-                   "FROM datos p " & _
-                   "WHERE p.idtipoDatos = '02'"
-
-        Case 1 '--- Departamento
-            strCampoMostrar = "d.GlsUbigeo"
+        Case 1 ' Departamento
             gLista.Columns.ColumnByName("C1").FieldName = "idPais"
             gLista.Columns.ColumnByName("D1").FieldName = "GlsPais"
             gLista.Columns.ColumnByName("C2").FieldName = "idDpto"
@@ -1139,102 +1139,50 @@ Dim rsdatos                     As New ADODB.Recordset
             gLista.Columns.ColumnByName("D1").Visible = True
             gLista.Columns.ColumnByName("C2").Visible = True
             gLista.Columns.ColumnByName("D2").Visible = True
-            
-            csql = "SELECT d.idDistrito as Codigo,p.idDato AS idPais, p.GlsDato AS GlsPais,d.idDpto, d.GlsUbigeo AS GlsDpto " & _
-                    "FROM datos p,ubigeo d " & _
-                    "WHERE P.idDato = D.idPais " & _
-                    "AND p.idtipoDatos = '02' " & _
-                    "AND d.idProv = '00' AND d.idDist = '00'"
-  
-      Case 2 '--- Provincia
-          strCampoMostrar = "r.GlsUbigeo"
-          gLista.Columns.ColumnByName("C1").FieldName = "idPais"
-          gLista.Columns.ColumnByName("D1").FieldName = "GlsPais"
-          gLista.Columns.ColumnByName("C2").FieldName = "idDpto"
-          gLista.Columns.ColumnByName("D2").FieldName = "GlsDpto"
-          gLista.Columns.ColumnByName("C3").FieldName = "idProv"
-          gLista.Columns.ColumnByName("D3").FieldName = "GlsProv"
-          
-          gLista.Columns.ColumnByName("D1").Visible = True
-          gLista.Columns.ColumnByName("D2").Visible = True
-          gLista.Columns.ColumnByName("C3").Visible = True
-          gLista.Columns.ColumnByName("D3").Visible = True
-          
-          csql = "SELECT r.idDistrito as Codigo,p.idDato AS idPais, p.GlsDato AS GlsPais,d.idDpto, d.GlsUbigeo AS GlsDpto, r.idProv, r.GlsUbigeo AS GlsProv " & _
-                    "FROM datos p,ubigeo d,ubigeo r " & _
-                    "WHERE P.idDato = D.idPais " & _
-                    "AND d.idPais = r.idPais " & _
-                    "AND d.idDpto = r.idDpto " & _
-                    "AND p.idtipoDatos = '02' " & _
-                    "AND d.idProv = '00' AND d.idDist = '00' " & _
-                    "AND r.idProv <> '00' AND r.idDist = '00'"
-    
-      Case 3 '--- Distrito
-          strCampoMostrar = "i.GlsUbigeo"
-          gLista.Columns.ColumnByName("C1").FieldName = "idPais"
-          gLista.Columns.ColumnByName("D1").FieldName = "GlsPais"
-          gLista.Columns.ColumnByName("C2").FieldName = "idDpto"
-          gLista.Columns.ColumnByName("D2").FieldName = "GlsDpto"
-          gLista.Columns.ColumnByName("C3").FieldName = "idProv"
-          gLista.Columns.ColumnByName("D3").FieldName = "GlsProv"
-          gLista.Columns.ColumnByName("C4").FieldName = "idDist"
-          gLista.Columns.ColumnByName("D4").FieldName = "GlsDist"
-          
-          gLista.Columns.ColumnByName("D1").Visible = True
-          gLista.Columns.ColumnByName("D2").Visible = True
-          gLista.Columns.ColumnByName("D3").Visible = True
-          gLista.Columns.ColumnByName("C4").Visible = True
-          gLista.Columns.ColumnByName("D4").Visible = True
-      
-          csql = "SELECT i.idDistrito as Codigo,p.idDato AS idPais,p.GlsDato AS GlsPais,d.idDpto, d.GlsUbigeo AS GlsDpto, r.idProv, r.GlsUbigeo AS GlsProv, i.idDist, i.GlsUbigeo AS GlsDist " & _
-                    "FROM datos p,ubigeo d,ubigeo r,ubigeo i " & _
-                    "WHERE P.idDato = D.idPais " & _
-                    "AND d.idPais = r.idPais " & _
-                    "AND d.idDpto = r.idDpto " & _
-                    "AND r.idPais = i.idPais " & _
-                    "AND r.idDpto = i.idDpto " & _
-                    "AND r.idProv = i.idProv " & _
-                    "AND p.idtipoDatos = '02' " & _
-                    "AND d.idProv = '00' AND d.idDist = '00' " & _
-                    "AND r.idProv <> '00' AND r.idDist = '00' " & _
-                    "AND i.idDist <> '00'"
+        Case 2 ' Provincia
+            gLista.Columns.ColumnByName("C1").FieldName = "idPais"
+            gLista.Columns.ColumnByName("D1").FieldName = "GlsPais"
+            gLista.Columns.ColumnByName("C2").FieldName = "idDpto"
+            gLista.Columns.ColumnByName("D2").FieldName = "GlsDpto"
+            gLista.Columns.ColumnByName("C3").FieldName = "idProv"
+            gLista.Columns.ColumnByName("D3").FieldName = "GlsProv"
+            gLista.Columns.ColumnByName("D1").Visible = True
+            gLista.Columns.ColumnByName("D2").Visible = True
+            gLista.Columns.ColumnByName("C3").Visible = True
+            gLista.Columns.ColumnByName("D3").Visible = True
+        Case 3 ' Distrito
+            gLista.Columns.ColumnByName("C1").FieldName = "idPais"
+            gLista.Columns.ColumnByName("D1").FieldName = "GlsPais"
+            gLista.Columns.ColumnByName("C2").FieldName = "idDpto"
+            gLista.Columns.ColumnByName("D2").FieldName = "GlsDpto"
+            gLista.Columns.ColumnByName("C3").FieldName = "idProv"
+            gLista.Columns.ColumnByName("D3").FieldName = "GlsProv"
+            gLista.Columns.ColumnByName("C4").FieldName = "idDist"
+            gLista.Columns.ColumnByName("D4").FieldName = "GlsDist"
+            gLista.Columns.ColumnByName("D1").Visible = True
+            gLista.Columns.ColumnByName("D2").Visible = True
+            gLista.Columns.ColumnByName("D3").Visible = True
+            gLista.Columns.ColumnByName("C4").Visible = True
+            gLista.Columns.ColumnByName("D4").Visible = True
     End Select
-    
-    If Trim(txt_TextoBuscar.Text) <> "" Then
-        csql = csql & " AND " & strCampoMostrar & " LIKE '%" & Trim(txt_TextoBuscar.Text) & "%'"
-    End If
-    csql = csql & " ORDER BY " & strCampoMostrar
 
+    csql = "EXEC dbo.spu_MantUbigeo_Listar " & CStr(cbx_TipoUbigeo.ListIndex) & ",'" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
     If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
     rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
-        
     Set gLista.DataSource = rsdatos
 
-'    With gLista
-'        .DefaultFields = False
-'        .Dataset.ADODataset.ConnectionString = strcn
-'        .Dataset.ADODataset.CursorLocation = clUseClient
-'        .Dataset.Active = False
-'        .Dataset.ADODataset.CommandText = csql
-'        .Dataset.DisableControls
-'        .Dataset.Active = True
-'        .KeyField = "Codigo"
-'    End With
-    
-    
     Select Case cbx_TipoUbigeo.ListIndex
-        Case 1 '--- Departamento
+        Case 1
             gLista.Columns.ColumnByName("D1").GroupIndex = 0
-        Case 2 '--- Provincia
+        Case 2
             gLista.Columns.ColumnByName("D1").GroupIndex = 0
             gLista.Columns.ColumnByName("D2").GroupIndex = 1
-        Case 3 '--- Distrito
+        Case 3
             gLista.Columns.ColumnByName("D1").GroupIndex = 0
             gLista.Columns.ColumnByName("D2").GroupIndex = 1
             gLista.Columns.ColumnByName("D3").GroupIndex = 2
-        End Select
+    End Select
     Me.Refresh
-    
     Exit Sub
 
 Err:
@@ -1249,18 +1197,14 @@ Dim rst As New ADODB.Recordset
     fraUbigeo.Enabled = False
     
     If cbx_TipoUbigeo.ListIndex = 0 Then
-        csql = "SELECT a.GlsDato " & _
-               "FROM datos a " & _
-               "WHERE a.idDato = '" & strCod & "'"
+        csql = "EXEC dbo.spu_MantUbigeo_Obtener 0,'" & Replace(strCod, "'", "''") & "',''"
         rst.Open csql, Cn, adOpenStatic, adLockReadOnly
         
         txtCodigo.Text = strCod
         txtGlosa.Text = "" & rst.Fields("GlsDato")
     
     Else
-        csql = "SELECT a.GlsUbigeo,a.idZona " & _
-               "FROM ubigeo a " & _
-               "WHERE a.idDistrito = '" & strCod & "' AND a.idPais = '" & gLista.Columns.ColumnByFieldName("idPais").Value & "'"
+        csql = "EXEC dbo.spu_MantUbigeo_Obtener " & CStr(cbx_TipoUbigeo.ListIndex) & ",'" & Replace(strCod, "'", "''") & "','" & Replace(gLista.Columns.ColumnByFieldName("idPais").Value, "'", "''") & "'"
         rst.Open csql, Cn, adOpenStatic, adLockReadOnly
         
         txtCodigo.Text = strCod

@@ -616,6 +616,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma Codex 15/10/2026: listado, carga y ubicaciones de almacenes obtenidos mediante procedimientos almacenados.
 Dim sw_ModUbicacion As Boolean
 
 Private Sub cmbAyudaSucursal_Click()
@@ -775,8 +776,7 @@ Dim RsUbicacion     As New ADODB.Recordset
     If RsUbicacion.State = 1 Then RsUbicacion.Close
     Set RsUbicacion = Nothing
 
-    Cadmysql = "Select idUbicacion, GlsUbicacion, idAlmacen, idEmpresa from almacenesubicacion " & _
-               "where idalmacen = '" & Trim("" & txtCod_Almacen.Text) & "' and idubicacion = '" & Trim("" & gUbicaciones.Columns.ColumnByFieldName("idubicacion").Value) & "' and idempresa = '" & glsEmpresa & "' "
+    Cadmysql = "EXEC dbo.spu_MantAlmacenes_Ubicacion_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(Trim(txtCod_Almacen.Text), "'", "''") & "','" & Replace(Trim("" & gUbicaciones.Columns.ColumnByFieldName("idubicacion").Value), "'", "''") & "'"
 
     RsUbicacion.Open Cadmysql, Cn, adOpenStatic, adLockOptimistic
     
@@ -892,17 +892,9 @@ Dim indHabilitar As Boolean
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
-On Error GoTo Err
-Dim StrMsgError As String
 
-    listaAlmacen StrMsgError
-    If StrMsgError <> "" Then GoTo Err
-    
-    Exit Sub
+    'La consulta se ejecuta al presionar Enter para evitar una llamada por cada tecla.
 
-Err:
-    If StrMsgError = "" Then StrMsgError = Err.Description
-    MsgBox StrMsgError, vbInformation, App.Title
 End Sub
 
 Private Sub txt_TextoBuscar_KeyDown(KeyCode As Integer, Shift As Integer)
@@ -916,16 +908,7 @@ On Error GoTo Err
 Dim strCond As String
 Dim rsdatos                     As New ADODB.Recordset
 
-    strCond = ""
-    If Trim(txt_TextoBuscar.Text) <> "" Then
-        strCond = Trim(txt_TextoBuscar.Text)
-        strCond = " AND GlsAlmacen LIKE '%" & strCond & "%'"
-    End If
-    
-    csql = "SELECT a.idSucursal,s.GlsPersona AS GlsSucursal, a.idAlmacen, a.GlsAlmacen " & _
-           "FROM almacenes a,personas s WHERE a.idSucursal = s.idPersona AND a.idEmpresa = '" & glsEmpresa & "'"
-    If strCond <> "" Then csql = csql & strCond
-    csql = csql & " ORDER BY a.idAlmacen"
+    csql = "EXEC dbo.spu_MantAlmacenes_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
     
 
 If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
@@ -956,9 +939,7 @@ Private Sub mostrarAlmacen(strCodAlm As String, ByRef StrMsgError As String)
 On Error GoTo Err
 Dim rst As New ADODB.Recordset
 
-    csql = "SELECT a.idAlmacen,a.GlsAlmacen,a.idSucursal " & _
-           "FROM almacenes a " & _
-           "WHERE a.idAlmacen = '" & strCodAlm & "' AND a.idEmpresa = '" & glsEmpresa & "'"
+    csql = "EXEC dbo.spu_MantAlmacenes_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodAlm, "'", "''") & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     
     mostrarDatosFormSQL Me, rst, StrMsgError
@@ -1050,12 +1031,10 @@ Dim strCond     As String
 Dim Cadmysql    As String
 Dim rsdatos                     As New ADODB.Recordset
 
-    Cadmysql = "SELECT (@i:=@i +1) Item,idUbicacion, GlsUbicacion, idAlmacen, idEmpresa " & _
-               "FROM almacenesubicacion ,(SELECT @i:= 0) foo WHERE idalmacen = '" & txtCod_Almacen.Text & "' and idEmpresa = '" & glsEmpresa & "' " & _
-               "Order by idUbicacion "
+    Cadmysql = "EXEC dbo.spu_MantAlmacenes_Ubicaciones_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(txtCod_Almacen.Text, "'", "''") & "'"
 
 If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
-rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
+rsdatos.Open Cadmysql, Cn, adOpenStatic, adLockOptimistic
     
 Set gUbicaciones.DataSource = rsdatos
 

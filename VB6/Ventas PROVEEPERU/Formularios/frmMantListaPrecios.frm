@@ -1,7 +1,7 @@
 VERSION 5.00
 Object = "{6A24B331-7634-11D3-A5B0-0050044A7E1A}#1.5#0"; "DXDBGrid.dll"
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "mscomctl.OCX"
-Object = "{86CF1D34-0C5F-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomct2.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "MSCOMCTL.OCX"
+Object = "{86CF1D34-0C5F-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCT2.OCX"
 Object = "{F41D1D30-7878-4923-8CB3-6CCACDC9C9DE}#1.0#0"; "CATControls.ocx"
 Begin VB.Form frmMantListaPrecios 
    Appearance      =   0  'Flat
@@ -767,7 +767,7 @@ Begin VB.Form frmMantListaPrecios
                Italic          =   0   'False
                Strikethrough   =   0   'False
             EndProperty
-            Format          =   132120577
+            Format          =   140967937
             CurrentDate     =   38955
          End
          Begin CATControls.CATTextBox txtCod_Moneda 
@@ -1023,6 +1023,8 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
+' Firma Codex 15/10/2026: listado, cabecera, niveles y detalle de listas de precios obtenidos mediante procedimientos almacenados.
+' Firma Codex 17/10/2026: parametros del mantenimiento obtenidos desde la cache cargada en el login.
 
 Private indInserta  As Boolean
 Private NumNiveles As Integer
@@ -1059,8 +1061,8 @@ Dim strCodNivel As String
     frmMantPrecios.mostrarFormNuevo txtCod_Lista.Text, strCodNivel, StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
-    ListaDetallePrecios StrMsgError
-    If StrMsgError <> "" Then GoTo Err
+    'ListaDetallePrecios StrMsgError
+    'If StrMsgError <> "" Then GoTo Err
     
     Exit Sub
 
@@ -1089,7 +1091,7 @@ On Error GoTo Err
     mostrarNiveles StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
-    cParametro = traerCampo("Parametros", "Valparametro", "GlsParametro", "VISUALIZA_LISTA_PRECIO_ALMACEN", True)
+    cParametro = STR_VISUALIZA_LISTA_PRECIO_ALMACEN
     listaListaPrecio StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
@@ -1189,8 +1191,8 @@ Dim lngFila As Long
     frmMantPrecios.MostrarForm txtCod_Lista.Text, strCodProd, strCodUM, dblFactor, dblVV, dblIGV, dblPV, dblCostoUnit, dblFactorUnit, dblFactor2Unit, StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
-    ListaDetallePrecios StrMsgError
-    If StrMsgError <> "" Then GoTo Err
+'''    ListaDetallePrecios StrMsgError
+'''    If StrMsgError <> "" Then GoTo Err
     gListaPrecio.Dataset.RecNo = lngFila
     
     Exit Sub
@@ -1322,7 +1324,7 @@ Dim indHabilitar As Boolean
             Toolbar1.Buttons(8).Visible = True
             Toolbar1.Buttons(9).Visible = False 'Max Dcto
             
-            If indexBoton = "7" And traerCampo("Parametros", "ValParametro", "GlsParametro", "ACTUALIZA_DESCUENTO_NIVEL", True) = "1" Then
+            If indexBoton = "7" And STR_ACTUALIZA_DESCUENTO_NIVEL = "1" Then
                 Toolbar1.Buttons(9).Visible = True
             End If
     End Select
@@ -1330,17 +1332,9 @@ Dim indHabilitar As Boolean
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
-On Error GoTo Err
-Dim StrMsgError As String
 
-    listaListaPrecio StrMsgError
-    If StrMsgError <> "" Then GoTo Err
-    
-    Exit Sub
+    'La consulta se ejecuta al presionar Enter para evitar una llamada por cada tecla.
 
-Err:
-    If StrMsgError = "" Then StrMsgError = Err.Description
-    MsgBox StrMsgError, vbInformation, App.Title
 End Sub
 
 Private Sub txt_TextoBuscar_KeyDown(KeyCode As Integer, Shift As Integer)
@@ -1354,15 +1348,7 @@ On Error GoTo Err
 Dim strCond As String
 Dim rsdatos                     As New ADODB.Recordset
 
-    strCond = ""
-    If Trim(txt_TextoBuscar.Text) <> "" Then
-        strCond = Trim(txt_TextoBuscar.Text)
-        strCond = " AND GlsLista LIKE '%" & strCond & "%'"
-    End If
-    csql = "SELECT a.idLista ,a.GlsLista,a.FecVcto,a.estLista " & _
-           "FROM ListaPrecios a WHERE a.idEmpresa = '" & glsEmpresa & "'"
-    If strCond <> "" Then csql = csql & strCond
-    csql = csql & " ORDER BY a.idLista"
+    csql = "EXEC dbo.spu_MantListaPrecios_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
     
 '    With gLista
 '        .DefaultFields = False
@@ -1389,9 +1375,7 @@ Private Sub mostrarLista(strCodLista As String, ByRef StrMsgError As String)
 On Error GoTo Err
 Dim rst As New ADODB.Recordset
 
-    csql = "SELECT p.idLista,p.GlsLista,p.fecVcto,p.estLista,p.idMoneda " & _
-           "FROM ListaPrecios p " & _
-           "WHERE p.idLista = '" & strCodLista & "' AND p.idEmpresa = '" & glsEmpresa & "'"
+    csql = "EXEC dbo.spu_MantListaPrecios_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodLista, "'", "''") & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     
     mostrarDatosFormSQL Me, rst, StrMsgError
@@ -1497,7 +1481,7 @@ Dim i As Integer
     Next
     
     '--- Jalamos tipos nivel
-    rsj.Open "SELECT GlsTipoNivel FROM tiposniveles WHERE idEmpresa = '" & glsEmpresa & "' Order BY Peso ASC", Cn, adOpenForwardOnly, adLockReadOnly
+    rsj.Open "EXEC dbo.spu_MantListaPrecios_TiposNiveles_Listar '" & Replace(glsEmpresa, "'", "''") & "'", Cn, adOpenForwardOnly, adLockReadOnly
     NumNiveles = Val("" & rsj.RecordCount)
     fraNivel.Height = 355 * NumNiveles
     i = 0
@@ -1540,77 +1524,16 @@ Dim cCadStkAlmacenes As String
 Dim cCadColAlmacenes As String
 Dim rsdatos                     As New ADODB.Recordset
 
-    For i = 1 To NumNiveles
-        strTabla = "niveles" & Format(i, "00")
-        If i = 1 Then
-            strWhere = "p.idNivel = " & strTabla & ".idNivel AND " & strTabla & ".idEmpresa = '" & glsEmpresa & "' "
-        Else
-            strWhere = strTablaAnt & ".idNivelPred = " & strTabla & ".idNivel AND " & strTabla & ".idEmpresa = '" & glsEmpresa & "' "
-        End If
-        strCampos = strCampos & strTabla & ".idNivel as idNivel" & Format(i, "00") & "," & strTabla & ".GlsNivel as GlsNivel" & Format(i, "00") & ","
-        
-        strTablas = strTablas & " INNER JOIN niveles " & strTabla & " ON " & strWhere
-        strTablaAnt = strTabla
-    Next
-    
-    If Trim(txtBus_Producto.Text) <> "" Then
-        strCond = Trim(txtBus_Producto.Text)
-        strCond = " AND p.GlsProducto LIKE '%" & strCond & "%'"
-    End If
-    
-    strCodNivel = Trim(txtCod_Nivel(NumNiveles - 1).Text)
-    If strCodNivel <> "" Then
-        strCond = strCond + " AND p.idNivel = '" & strCodNivel & "'"
-    End If
-    
     If cParametro = "S" Then
-        cCadStkAlmacenes = "Left Join (Select idAlmacen, p.idProducto, item, idUM, vc.idEmpresa, vc.idSucursal, " & _
-                        "CAST(sum(if(vd.tipovale = 'I',Cantidad,Cantidad * -1)) AS NUMERIC(12,2)) as  StkPrincipal, vvUnit " & _
-                        "From  ValesDet vd " & _
-                        "Inner Join ValesCab vc " & _
-                        "On vd.idValesCab = vc.idValesCab   And vd.idEmpresa = vc.idEmpresa   And vd.idSucursal = vc.idSucursal   And vd.tipoVale = vc.tipoVale " & _
-                        "Inner Join PeriodosINV pi on vc.idEmpresa = pi.idEmpresa And vc.idPeriodoINV = pi.idPeriodoINV And vc.idSucursal = pi.idSucursal " & _
-                        "Inner Join productos p ON vd.idEmpresa = p.idEmpresa AND vd.idProducto = p.idProducto   " & _
-                        "Where vc.idEmpresa = '" & glsEmpresa & "' And vc.idSucursal ='08090001' And vc.idAlmacen = '11010001' And vc.estValeCab <> 'ANU'   And p.GlsProducto Like '%" & txtBus_Producto.Text & "%'  And pi.estPeriodoInv = 'ACT' " & _
-                        "Group by vd.idProducto,vd.idEmpresa,vd.idSucursal) P01 " & _
-                        "ON p.idEmpresa = P01.idEmpresa   And p.idProducto = P01.idProducto   And p.idUMCompra = P01.idUM " & _
-                        "Left Join (Select idAlmacen, p.idProducto, item, idUM, vc.idEmpresa, vc.idSucursal, " & _
-                        "Format(sum(if(vd.tipovale = 'I',Cantidad,Cantidad * -1)),2) as  StkDansey, vvUnit " & _
-                        "From  ValesDet vd " & _
-                        "Inner Join ValesCab vc " & _
-                        "On vd.idValesCab = vc.idValesCab   And vd.idEmpresa = vc.idEmpresa   And vd.idSucursal = vc.idSucursal   And vd.tipoVale = vc.tipoVale " & _
-                        "Inner Join PeriodosINV pi on vc.idEmpresa = pi.idEmpresa And vc.idPeriodoINV = pi.idPeriodoINV And vc.idSucursal = pi.idSucursal " & _
-                        "Inner Join productos p ON vd.idEmpresa = p.idEmpresa AND vd.idProducto = p.idProducto  " & _
-                        "Where vc.idEmpresa = '01' And vc.idSucursal ='08090004' And vc.idAlmacen = '11030001' And vc.estValeCab <> 'ANU' And pi.estPeriodoInv = 'ACT' And p.GlsProducto Like '%" & txtBus_Producto.Text & "%'   And pi.estPeriodoInv = 'ACT' " & _
-                        "Group by vd.idProducto,vd.idEmpresa,vd.idSucursal) P03 " & _
-                        "On p.idEmpresa = P03.idEmpresa   And p.idProducto = P03.idProducto   And p.idUMCompra = P03.idUM "
-            
         gListaPrecio.Columns.ColumnByFieldName("StkPrincipal").Visible = True
         gListaPrecio.Columns.ColumnByFieldName("StkDansey").Visible = True
-        cCadColAlmacenes = ",P01.StkPrincipal,P03.StkDansey  "
-           
     Else
-        cCadStkAlmacenes = ""
-        cCadColAlmacenes = ""
         gListaPrecio.Columns.ColumnByFieldName("StkPrincipal").Visible = False
         gListaPrecio.Columns.ColumnByFieldName("StkDansey").Visible = False
     End If
     
-    csql = "Select " & strCampos & " (L.IdProducto + L.IdUM) As Item,L.IdProducto,P.GlsProducto,P.IdFabricante,uv.abreUM as UMCompra,p.AfectoIGV as Afecto," & _
-            "l.idUM , ul.abreUM as GlsUM, r.factor, l.VVUnit as VVUnit, l.IGVUnit AS IGVUnit, l.PVUnit AS PVUnit, l.CostoUnit,l.FactorUnit,l.Factor2Unit " & cCadColAlmacenes & _
-            "FROM preciosventa l " & _
-            "INNER JOIN productos p ON l.idEmpresa = p.idEmpresa AND l.idProducto = p.idProducto " & _
-            "INNER JOIN unidadMedida uv ON p.idUMCompra = uv.idUM " & _
-            "INNER JOIN unidadMedida ul ON l.idUM       = ul.idUM " & _
-            "INNER JOIN presentaciones r ON l.idProducto  = r.idProducto AND l.idUM = r.idUM AND r.idEmpresa = '" & glsEmpresa & "' " & _
-            strTablas & " " & cCadStkAlmacenes & _
-            "WHERE l.idLista = '" & txtCod_Lista.Text & "' " & _
-            "AND l.idEmpresa = '" & glsEmpresa & "' "
-            
-    If strCond <> "" Then csql = csql & strCond
-    csql = csql & ccadagrupa
-    csql = csql & " ORDER BY l.idProducto"
-    
+    strCodNivel = Trim(txtCod_Nivel(NumNiveles - 1).Text)
+    csql = "EXEC dbo.spu_MantListaPrecios_Detalle_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(txtCod_Lista.Text, "'", "''") & "','" & Replace(strCodNivel, "'", "''") & "','" & Replace(Trim(txtBus_Producto.Text), "'", "''") & "'," & IIf(cParametro = "S", "1", "0")
 If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
 rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
     

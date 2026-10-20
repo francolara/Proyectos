@@ -441,6 +441,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma FRANCO LARA 19/10/2026 - Conserva el item del documento origen para controlar importaciones por linea.
 Private rsg             As New ADODB.Recordset
 Private RsD             As New ADODB.Recordset
 Private strTDExportar   As String
@@ -622,6 +623,7 @@ Dim F_SoloVta   As String
     RsD.Fields.Append "CodigoRapido", adVarChar, 30, adFldIsNullable
     RsD.Fields.Append "idTallaPeso", adDouble, 14, adFldIsNullable
     RsD.Fields.Append "ItemPro", adInteger, , adFldRowID
+    RsD.Fields.Append "ItemOrigen", adInteger, , adFldIsNullable
     RsD.Fields.Append "IvapUnit", adDouble, 14, adFldIsNullable
     RsD.Fields.Append "TotalIvapNeto", adDouble, 14, adFldIsNullable
     
@@ -918,6 +920,7 @@ On Error GoTo Err
             RsD.Fields("CodigoRapido") = "" & rst.Fields("CodigoRapido")
             RsD.Fields("idTallaPeso") = Val("" & rst.Fields("idTallaPeso"))
             RsD.Fields("ItemPro") = Val("" & rst.Fields("ItemPro"))
+            RsD.Fields("ItemOrigen") = Val("" & rst.Fields("Item"))
             RsD.Fields("IvapUnit") = Val("" & rst.Fields("IvapUnit"))
             RsD.Fields("TotalIvapNeto") = Val("" & rst.Fields("TotalIvapNeto"))
                         

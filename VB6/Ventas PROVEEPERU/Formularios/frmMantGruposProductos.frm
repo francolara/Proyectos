@@ -316,6 +316,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma Codex 15/10/2026: listado y carga de grupos de productos mediante procedimientos almacenados.
 
 Private Sub Form_Load()
 On Error GoTo Err
@@ -453,12 +454,17 @@ Dim indHabilitar As Boolean
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
+    ' La consulta se ejecuta al presionar Enter.
+End Sub
+
+Private Sub txt_TextoBuscar_KeyPress(KeyAscii As Integer)
 On Error GoTo Err
 Dim StrMsgError As String
 
+    If KeyAscii <> 13 Then Exit Sub
+    KeyAscii = 0
     listaGrupos StrMsgError
     If StrMsgError <> "" Then GoTo Err
-    
     Exit Sub
 
 Err:
@@ -474,19 +480,9 @@ End Sub
 
 Private Sub listaGrupos(ByRef StrMsgError As String)
 On Error GoTo Err
-Dim strCond As String
 Dim rsdatos                     As New ADODB.Recordset
 
-    strCond = ""
-    If Trim(txt_TextoBuscar.Text) <> "" Then
-        strCond = Trim(txt_TextoBuscar.Text)
-        strCond = " AND GlsGrupo LIKE '%" & strCond & "%'"
-    End If
-    
-    csql = "SELECT a.idGrupo ,a.GlsGrupo " & _
-           "FROM GruposProducto a WHERE a.idEmpresa = '" & glsEmpresa & "'"
-    If strCond <> "" Then csql = csql & strCond
-    csql = csql & " ORDER BY a.idGrupo"
+    csql = "EXEC dbo.spu_MantGruposProductos_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
     
     If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
     rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
@@ -516,9 +512,7 @@ Private Sub mostrarGrupo(strCod As String, ByRef StrMsgError As String)
 On Error GoTo Err
 Dim rst As New ADODB.Recordset
 
-    csql = "SELECT a.idGrupo,a.GlsGrupo " & _
-           "FROM GruposProducto a " & _
-           "WHERE a.idGrupo = '" & strCod & "' AND a.idEmpresa = '" & glsEmpresa & "'"
+        csql = "EXEC dbo.spu_MantGruposProductos_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCod, "'", "''") & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     
     mostrarDatosFormSQL Me, rst, StrMsgError

@@ -982,6 +982,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma Codex 15/10/2026: listado y carga de proveedores obtenidos mediante procedimientos almacenados.
 Dim indBoton As Integer
 
 Private Sub cmbAyudaPersona_Click()
@@ -994,10 +995,7 @@ End Sub
 Private Sub mostrarDatosPersona()
 Dim rst As New ADODB.Recordset
 
-    csql = "SELECT idPersona,GlsPersona," & _
-            "tipoPersona , ruc, direccion, p.iddistrito, u.idDpto, u.idProv,p.idPais " & _
-            "FROM personas p,ubigeo u " & _
-            "WHERE p.iddistrito = u.iddistrito and p.idPais = u.idPais  and idpersona = '" & Trim(txtCod_Persona.Text) & "'"
+    csql = "EXEC dbo.spu_MantProveedores_Persona_Obtener '" & Replace(Trim(txtCod_Persona.Text), "'", "''") & "'"
                
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     If Not rst.EOF Then
@@ -1081,7 +1079,7 @@ End Sub
 Private Sub mostrarDatosPersona_prov()
 Dim rst As New ADODB.Recordset
 
-    csql = "SELECT idPersona, GlsPersona ,Telefonos,Mail FROM PERSONAS WHERE IDPERSONA= '" & Trim(txtCod_Persona.Text) & "'"
+    csql = "EXEC dbo.spu_MantProveedores_Persona_Obtener '" & Replace(Trim(txtCod_Persona.Text), "'", "''") & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     If Not rst.EOF Then
         gContactos.Dataset.Edit
@@ -1229,19 +1227,9 @@ Err:
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
-On Error GoTo Err
-Dim StrMsgError As String
-    
-    If glsEnterAyudaClientes = False Then
-        listaProveedor StrMsgError
-        If StrMsgError <> "" Then GoTo Err
-    End If
-    
-    Exit Sub
-    
-Err:
-    If StrMsgError = "" Then StrMsgError = Err.Description
-    MsgBox StrMsgError, vbInformation, App.Title
+
+    'La consulta se ejecuta al presionar Enter para evitar una llamada por cada tecla.
+
 End Sub
 
 Private Sub txt_TextoBuscar_KeyPress(KeyAscii As Integer)
@@ -1630,23 +1618,8 @@ End Sub
 Private Sub listaProveedor(ByRef StrMsgError As String)
 Dim rsdatos                     As New ADODB.Recordset
 On Error GoTo Err
-Dim strCond As String
     
-    strCond = ""
-    If Trim(txt_TextoBuscar.Text) <> "" Then
-        strCond = Trim(txt_TextoBuscar.Text)
-        strCond = " And (idProveedor LIKE '%" & strCond & "%'  OR  GlsPersona LIKE '%" & strCond & "%' OR GlsObservacion LIKE '%" & strCond & "%' OR ruc LIKE '%" & strCond & "%') "
-    End If
-    
-    csql = "SELECT c.idProveedor ,p.GlsPersona ," & _
-            "CASE WHEN p.tipoPersona = '01001' THEN 'Natural' ELSE 'Juridica' END as TipoPersona,p.ruc,(p.direccion + ', ' + u.GlsUbigeo) as Direccion,GlsObservacion " & _
-            "FROM proveedores c " & _
-            "inner join personas p " & _
-            "on c.idProveedor = p.idPersona " & _
-            "left join ubigeo u " & _
-            "on p.iddistrito = u.iddistrito  and p.idPais = u.idPais  " & _
-            "WHERE c.idEmpresa = '" & glsEmpresa & "'" & strCond & _
-            "ORDER BY c.idProveedor"
+    csql = "EXEC dbo.spu_MantProveedores_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
             
 If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
 rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
@@ -1679,9 +1652,7 @@ Dim rsg As New ADODB.Recordset
 Dim RsC As New ADODB.Recordset
 Dim item As Integer
 
-    csql = "SELECT c.idProveedor, c.GlsObservacion, c.indretencion, c.indpercepcion, c.IndBnContribuyente " & _
-           "FROM Proveedores c " & _
-           "WHERE c.idProveedor = '" & strCodProv & "' and idempresa = '" & glsEmpresa & "'"
+    csql = "EXEC dbo.spu_MantProveedores_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodProv, "'", "''") & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     
     If Not rst.EOF Then
@@ -1710,11 +1681,7 @@ Dim item As Integer
     mostrarDatosPersona
 
     '--- TRAE EL LISTADO DE PRODUCTOS Y LO ALMACENA EN UN RECORSET
-    csql = "SELECT p.item,p.idProducto,a.glsProducto,p.ValorVenta,p.IGVVenta,p.PrecioVenta " & _
-            "FROM productosproveedor p, productos a " & _
-            "WHERE p.idProducto = a.idProducto and p.idempresa = '" & glsEmpresa & "' " & _
-            "AND p.idProveedor = '" & strCodProv & "' and p.idempresa = a.idempresa " & _
-            "order by p.item"
+    csql = "EXEC dbo.spu_MantProveedores_Productos_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodProv, "'", "''") & "'"
     rst.Open csql, Cn, adOpenKeyset, adLockOptimistic
     
     rsg.Fields.Append "Item", adInteger, , adFldRowID
@@ -1751,12 +1718,7 @@ Dim item As Integer
     If StrMsgError <> "" Then GoTo Err
     
     '--- TRAE EL LISTADO DE CONTACTOS
-    csql = "select p.idPersona, p.glsPersona,P.Telefonos,P.Mail " & _
-             "from contactosproveedores c, personas p " & _
-             "where c.idContacto = p.idPersona " & _
-             "and c.idProveedor = '" & strCodProv & "' " & _
-             "and c.idEmpresa = '" & glsEmpresa & "' " & _
-             "order by p.glsPersona "
+    csql = "EXEC dbo.spu_MantProveedores_Contactos_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodProv, "'", "''") & "'"
     rst.Open csql, Cn, adOpenKeyset, adLockOptimistic
     
     RsC.Fields.Append "Item", adInteger, , adFldRowID

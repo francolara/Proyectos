@@ -1,4 +1,6 @@
 Attribute VB_Name = "mdlFunciones"
+' Firma Codex 15/10/2026: carga en login de parametros y configuracion de FrmBusqueda.
+' Firma Codex 17/10/2026: carga y reinicio por empresa de parametros de ordenes de compra, su ayuda de productos y mantenimientos.
 Public Declare Function ShellExecute _
                            Lib "shell32.dll" _
                            Alias "ShellExecuteA" ( _
@@ -1889,10 +1891,109 @@ Err:
     If StrMsgError = "" Then StrMsgError = Err.Description
 End Function
 
+Public Sub cargarConfiguracionBusquedaUsuario(ByRef StrMsgError As String)
+On Error GoTo Err
+Dim rst As New ADODB.Recordset
+
+    STR_IND_VISUALIZACLIENTES_VENDEDOR = ""
+    If UCase(Trim(STR_VISUALIZA_CLIENTESXVENDEDOR)) <> "S" Then Exit Sub
+
+    rst.Open "EXEC dbo.spu_Usuario_ConfiguracionBusqueda '" & Replace(glsUser, "'", "''") & "'", Cn, adOpenForwardOnly, adLockReadOnly
+    If Not rst.EOF Then
+        STR_IND_VISUALIZACLIENTES_VENDEDOR = Trim("" & rst.Fields("IndVisualizaClientes") & "")
+    End If
+
+    If rst.State = 1 Then rst.Close: Set rst = Nothing
+    Exit Sub
+
+Err:
+    If rst.State = 1 Then rst.Close: Set rst = Nothing
+    If StrMsgError = "" Then StrMsgError = Err.Description
+End Sub
 Public Sub cargarParametrosSistema(ByRef StrMsgError As String)
 On Error GoTo Err
 Dim rst As New ADODB.Recordset
     
+    STR_IGV = ""
+    STR_VISUALIZA_OC_FACTURA_PEDIDO = ""
+    STR_IMPORTAR_DOCUMENTOS_ENTRE_EMPRESAS = ""
+    STR_EMPRESA_SUCURSAL_DOCUMENTOS_ENTRE_EMPRESAS = ""
+    STR_BLOQUEA_CHK_AFECTO = ""
+    STR_VISUALIZAR_AYUDA_REQUERIMIENTO_COMPRA = ""
+    STR_LONGITUD_IMPRESION_DETALLE_PRODUCTO = ""
+    STR_DESCRIPCION_AREA_O_UPP = ""
+    STR_IMPORTA_ATENCIONES = ""
+    STR_APRUEBA_PEDIDO_AUTOMATICO = ""
+    STR_VENTA_ELECTRONICA = ""
+    STR_STOCK_POR_LOTE = ""
+    STR_LIQUIDACIONES = ""
+    STR_VALIDA_SEPARACION = ""
+    STR_IGV_ANT = ""
+    STR_PERIODO_CAMBIO_IGV = ""
+    STR_CLIENTE_ANULA = ""
+    STR_SUCURSAL_PARTIDA_UBIGEO = ""
+    STR_SUCURSAL_PARTIDA_DIRECCION = ""
+    STR_CONCEPTO_VENTA_GRATUITA = ""
+    STR_FORMA_PAGOS_X_CLIENTE = ""
+    STR_VISUALIZA_CLIENTESXVENDEDOR = ""
+    STR_VISUALIZA_NOMBRE_COMERCIAL = ""
+    STR_IND_VISUALIZACLIENTES_VENDEDOR = ""
+    STR_VIZUALIZA_SON = ""
+    STR_VIZUALIZA_CODIGO_RAPIDO = ""
+    STR_CONTABILIDAD_ONLINE = ""
+    STR_CONTABILIDAD_ONLINE_VB = ""
+    STR_MODIFICA_REGDOC_DESPROD = ""
+    STR_SOLOVALIDADCTOMAX = ""
+    STR_BLOQUEA_DETALLE = ""
+    STR_VALIDA_REFERENCIA = ""
+    STR_PRODUCTO_ANULA = ""
+    STR_EVALUA_ITEM_DETALLE_PRODUCTO = ""
+    STR_AGRUPAPRODUCTOS = ""
+    STR_IMP_FORMATO_PEDIDO = ""
+    STR_CONCEPTO_AUTOMATICO_SALIDA = ""
+    STR_ALMACEN_AUTOMATICO_DESTINO = ""
+    STR_CONCEPTO_AUTOMATICO_INGRESO = ""
+    STR_CODIGO_PRODUCTO_APIMAS = ""
+    STR_PORCENTAJE_FACTURACION = ""
+    STR_MONEDA_LINEA_CREDITO = ""
+    STR_EXTRAE_PRECIO_COMPRAS = ""
+    STR_EXTRAE_PRECIO_ULTIMA_VENTA = ""
+    STR_FACTURACION_ENTRE_EMPRESAS = ""
+    STR_DNSCONTABILIDAD = ""
+    STR_TIPO_IGV = ""
+    STR_AYUDA_CENTRO_COSTO_DETALLE = ""
+    STR_VALIDA_FACTURADO_HCOSTO = ""
+    STR_CARPETA_XML_VE = ""
+    STR_VALIDA_PERMISOS = ""
+    STR_PORCENTAJE_IVAP = ""
+    STR_FORMAPAGO_PEDIDO = ""
+    STR_CODIGO_SERVICIO_ATENCIONES = ""
+    STR_FORMA_PAGOS_ACTIVO_FACTURA = ""
+    STR_IMP_COT_ALSISAC = ""
+    STR_TRANS_CONTA_CTA_40 = ""
+    STR_TRANS_CONTA_CTA_70 = ""
+    STR_IVAP_CUENTA = ""
+    STR_NO_VALIDAR_CONTACTO_OC = ""
+    STR_VISUALIZA_CENTROCOSTO_OC = ""
+    STR_VALIDAPRESUPUESTO = ""
+    STR_VALIDA_HC_OS = ""
+    STR_FORMATO_OC = ""
+    STR_PROVEEDOR_POR_DEFECTO = ""
+    STR_ALMACEN_COMPRAS = ""
+    STR_VALIDA_APROBACION_BANDEJA = ""
+    STR_VALIDA_PRODUCTOPROVEEDOR_OC = ""
+    STR_OPCION_AYUDA_PRODUCTOS = ""
+    STR_CLIENTE_ESPECIAL = ""
+    STR_VISUALIZA_LISTA_PRECIO_ALMACEN = ""
+    STR_ACTUALIZA_DESCUENTO_NIVEL = ""
+    STR_NIVEL_CUENTA_CONTABLE = ""
+    STR_VISUALIZA_STOCK_MINIMO = ""
+    STR_VISUALIZA_REPORTE_GL = ""
+    STR_VALIDA_CODIGO_FABRICANTE = ""
+    STR_MUESTRA_ALM_DEFECTO = ""
+    STR_TIPO_CAMBIO_BANCOS = ""
+    STR_MONTO_MAXIMO_TIPO_DE_CAMBIO = ""
+    STR_VISUALIZA_TIPOVENTA = ""
     If rst.State = 1 Then rst.Close: Set rst = Nothing
     rst.Open "EXEC spu_Parametros '" & glsEmpresa & "'", Cn, adOpenStatic, adLockReadOnly
 
@@ -1954,6 +2055,72 @@ Dim rst As New ADODB.Recordset
             
             Case "SUCURSAL_PARTIDA_UBIGEO":  STR_SUCURSAL_PARTIDA_UBIGEO = Trim(rst.Fields("ValParametro") & "")
             Case "SUCURSAL_PARTIDA_DIRECCION":  STR_SUCURSAL_PARTIDA_DIRECCION = Trim(rst.Fields("ValParametro") & "")
+
+            'Parametros de frmDocVentas cargados en el login.
+            Case "CONCEPTO_VENTA_GRATUITA": STR_CONCEPTO_VENTA_GRATUITA = Trim(rst.Fields("ValParametro") & "")
+            Case "FORMA_PAGOS_X_CLIENTE": STR_FORMA_PAGOS_X_CLIENTE = Trim(rst.Fields("ValParametro") & "")
+            Case "VISUALIZA_CLIENTESXVENDEDOR": STR_VISUALIZA_CLIENTESXVENDEDOR = Trim(rst.Fields("ValParametro") & "")
+            Case "VISUALIZA_NOMBRE_COMERCIAL": STR_VISUALIZA_NOMBRE_COMERCIAL = Trim(rst.Fields("ValParametro") & "")
+            Case "VIZUALIZA_SON": STR_VIZUALIZA_SON = Trim(rst.Fields("ValParametro") & "")
+            Case "VIZUALIZA_CODIGO_RAPIDO": STR_VIZUALIZA_CODIGO_RAPIDO = Trim(rst.Fields("ValParametro") & "")
+            Case "CONTABILIDAD_ONLINE": STR_CONTABILIDAD_ONLINE = Trim(rst.Fields("ValParametro") & "")
+            Case "CONTABILIDAD_ONLINE_VB": STR_CONTABILIDAD_ONLINE_VB = Trim(rst.Fields("ValParametro") & "")
+            Case "MODIFICA_REGDOC_DESPROD": STR_MODIFICA_REGDOC_DESPROD = Trim(rst.Fields("ValParametro") & "")
+            Case "SOLOVALIDADCTOMAX": STR_SOLOVALIDADCTOMAX = Trim(rst.Fields("ValParametro") & "")
+            Case "BLOQUEA_DETALLE": STR_BLOQUEA_DETALLE = Trim(rst.Fields("ValParametro") & "")
+            Case "VALIDA_REFERENCIA": STR_VALIDA_REFERENCIA = Trim(rst.Fields("ValParametro") & "")
+            Case "PRODUCTO_ANULA": STR_PRODUCTO_ANULA = Trim(rst.Fields("ValParametro") & "")
+            Case "EVALUA_ITEM_DETALLE_PRODUCTO": STR_EVALUA_ITEM_DETALLE_PRODUCTO = Trim(rst.Fields("ValParametro") & "")
+            Case "AGRUPAPRODUCTOS": STR_AGRUPAPRODUCTOS = Trim(rst.Fields("ValParametro") & "")
+            Case "IMP_FORMATO_PEDIDO": STR_IMP_FORMATO_PEDIDO = Trim(rst.Fields("ValParametro") & "")
+            Case "CONCEPTO_AUTOMATICO_SALIDA": STR_CONCEPTO_AUTOMATICO_SALIDA = Trim(rst.Fields("ValParametro") & "")
+            Case "ALMACEN_AUTOMATICO_DESTINO": STR_ALMACEN_AUTOMATICO_DESTINO = Trim(rst.Fields("ValParametro") & "")
+            Case "CONCEPTO_AUTOMATICO_INGRESO": STR_CONCEPTO_AUTOMATICO_INGRESO = Trim(rst.Fields("ValParametro") & "")
+            Case "CODIGO_PRODUCTO_APIMAS": STR_CODIGO_PRODUCTO_APIMAS = Trim(rst.Fields("ValParametro") & "")
+            Case "PORCENTAJE_FACTURACION": STR_PORCENTAJE_FACTURACION = Trim(rst.Fields("ValParametro") & "")
+            Case "MONEDA_LINEA_CREDITO": STR_MONEDA_LINEA_CREDITO = Trim(rst.Fields("ValParametro") & "")
+            Case "EXTRAE_PRECIO_COMPRAS": STR_EXTRAE_PRECIO_COMPRAS = Trim(rst.Fields("ValParametro") & "")
+            Case "EXTRAE_PRECIO_ULTIMA_VENTA": STR_EXTRAE_PRECIO_ULTIMA_VENTA = Trim(rst.Fields("ValParametro") & "")
+            Case "FACTURACION_ENTRE_EMPRESAS": STR_FACTURACION_ENTRE_EMPRESAS = Trim(rst.Fields("ValParametro") & "")
+            Case "DNSCONTABILIDAD": STR_DNSCONTABILIDAD = Trim(rst.Fields("ValParametro") & "")
+            Case "TIPO_IGV": STR_TIPO_IGV = Trim(rst.Fields("ValParametro") & "")
+            Case "AYUDA_CENTRO_COSTO_DETALLE": STR_AYUDA_CENTRO_COSTO_DETALLE = Trim(rst.Fields("ValParametro") & "")
+            Case "VALIDA_FACTURADO_HCOSTO": STR_VALIDA_FACTURADO_HCOSTO = Trim(rst.Fields("ValParametro") & "")
+            Case "CARPETA_XML_VE": STR_CARPETA_XML_VE = Trim(rst.Fields("ValParametro") & "")
+            Case "VALIDA_PERMISOS": STR_VALIDA_PERMISOS = Trim(rst.Fields("ValParametro") & "")
+            Case "PORCENTAJE_IVAP": STR_PORCENTAJE_IVAP = Trim(rst.Fields("ValParametro") & "")
+            Case "FORMAPAGO_PEDIDO": STR_FORMAPAGO_PEDIDO = Trim(rst.Fields("ValParametro") & "")
+            Case "CODIGO_SERVICIO_ATENCIONES": STR_CODIGO_SERVICIO_ATENCIONES = Trim(rst.Fields("ValParametro") & "")
+            Case "FORMA_PAGOS_ACTIVO_FACTURA": STR_FORMA_PAGOS_ACTIVO_FACTURA = Trim(rst.Fields("ValParametro") & "")
+            Case "IMP_COT_ALSISAC": STR_IMP_COT_ALSISAC = Trim(rst.Fields("ValParametro") & "")
+            Case "TRANS_CONTA_CTA_40": STR_TRANS_CONTA_CTA_40 = Trim(rst.Fields("ValParametro") & "")
+            Case "TRANS_CONTA_CTA_70": STR_TRANS_CONTA_CTA_70 = Trim(rst.Fields("ValParametro") & "")
+            Case "IVAP_CUENTA": STR_IVAP_CUENTA = Trim(rst.Fields("ValParametro") & "")
+
+            'Parametros de frmDocVentas_OC y su ayuda de productos.
+            Case "NO_VALIDAR_CONTACTO_OC": STR_NO_VALIDAR_CONTACTO_OC = Trim(rst.Fields("ValParametro") & "")
+            Case "VISUALIZA_CENTROCOSTO_OC": STR_VISUALIZA_CENTROCOSTO_OC = Trim(rst.Fields("ValParametro") & "")
+            Case "VALIDAPRESUPUESTO": STR_VALIDAPRESUPUESTO = Trim(rst.Fields("ValParametro") & "")
+            Case "VALIDA_HC_OS": STR_VALIDA_HC_OS = Trim(rst.Fields("ValParametro") & "")
+            Case "FORMATO_OC": STR_FORMATO_OC = Trim(rst.Fields("ValParametro") & "")
+            Case "PROVEEDOR_POR_DEFECTO": STR_PROVEEDOR_POR_DEFECTO = Trim(rst.Fields("ValParametro") & "")
+            Case "ALMACEN_COMPRAS": STR_ALMACEN_COMPRAS = Trim(rst.Fields("ValParametro") & "")
+            Case "VALIDA_APROBACION_BANDEJA": STR_VALIDA_APROBACION_BANDEJA = Trim(rst.Fields("ValParametro") & "")
+            Case "VALIDA_PRODUCTOPROVEEDOR_OC": STR_VALIDA_PRODUCTOPROVEEDOR_OC = Trim(rst.Fields("ValParametro") & "")
+            Case "OPCION_AYUDA_PRODUCTOS": STR_OPCION_AYUDA_PRODUCTOS = Trim(rst.Fields("ValParametro") & "")
+
+            'Parametros utilizados por los mantenimientos.
+            Case "CLIENTE_ESPECIAL": STR_CLIENTE_ESPECIAL = Trim(rst.Fields("ValParametro") & "")
+            Case "VISUALIZA_LISTA_PRECIO_ALMACEN": STR_VISUALIZA_LISTA_PRECIO_ALMACEN = Trim(rst.Fields("ValParametro") & "")
+            Case "ACTUALIZA_DESCUENTO_NIVEL": STR_ACTUALIZA_DESCUENTO_NIVEL = Trim(rst.Fields("ValParametro") & "")
+            Case "NIVEL_CUENTA_CONTABLE": STR_NIVEL_CUENTA_CONTABLE = Trim(rst.Fields("ValParametro") & "")
+            Case "VISUALIZA_STOCK_MINIMO": STR_VISUALIZA_STOCK_MINIMO = Trim(rst.Fields("ValParametro") & "")
+            Case "VISUALIZA_REPORTE_GL": STR_VISUALIZA_REPORTE_GL = Trim(rst.Fields("ValParametro") & "")
+            Case "VALIDA_CODIGO_FABRICANTE": STR_VALIDA_CODIGO_FABRICANTE = Trim(rst.Fields("ValParametro") & "")
+            Case "MUESTRA_ALM_DEFECTO": STR_MUESTRA_ALM_DEFECTO = Trim(rst.Fields("ValParametro") & "")
+            Case "TIPO_CAMBIO_BANCOS": STR_TIPO_CAMBIO_BANCOS = Trim(rst.Fields("ValParametro") & "")
+            Case "MONTO_MAXIMO_TIPO_DE_CAMBIO": STR_MONTO_MAXIMO_TIPO_DE_CAMBIO = Trim(rst.Fields("ValParametro") & "")
+            Case "VISUALIZA_TIPOVENTA": STR_VISUALIZA_TIPOVENTA = Trim(rst.Fields("ValParametro") & "")
             
         End Select
         

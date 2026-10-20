@@ -322,6 +322,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma Codex 15/10/2026: listado y carga de zonas mediante procedimientos almacenados.
 
 Private Sub Form_Load()
 On Error GoTo Err
@@ -494,10 +495,7 @@ Dim rsdatos                     As New ADODB.Recordset
         strCond = " WHERE a.GlsZona LIKE '%" & strCond & "%'"
     End If
     
-    csql = "SELECT a.idZona ,a.GlsZona " & _
-           "FROM zonas a "
-    If strCond <> "" Then csql = csql & strCond
-    csql = csql & " ORDER BY a.idZona"
+    csql = "EXEC dbo.spu_MantZonas_Listar '" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
     
     If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
     rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
@@ -527,9 +525,7 @@ Private Sub mostrarZonas(strCod As String, ByRef StrMsgError As String)
 On Error GoTo Err
 Dim rst As New ADODB.Recordset
 
-    csql = "SELECT a.idZona,a.GlsZona " & _
-           "FROM zonas a " & _
-           "WHERE a.idZona = '" & strCod & "'"
+    csql = "EXEC dbo.spu_MantZonas_Obtener '" & Replace(strCod, "'", "''") & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     
     mostrarDatosFormSQL Me, rst, StrMsgError

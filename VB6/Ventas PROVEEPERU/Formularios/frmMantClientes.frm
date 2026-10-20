@@ -2043,6 +2043,8 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
+' Firma Codex 15/10/2026: listado y carga de clientes obtenidos mediante procedimientos almacenados.
+' Firma Codex 17/10/2026: parametros del mantenimiento obtenidos desde la cache cargada en el login.
 Dim indBoton                            As Integer
 Dim CTmpDocumentos                      As String
 Dim CTmpGuiasNF                         As String
@@ -2079,10 +2081,7 @@ Private Sub mostrarDatosPersona()
 Dim rst         As New ADODB.Recordset
 Dim rsg         As New ADODB.Recordset
 Dim StrMsgError As String
-    csql = "SELECT idPersona,GlsPersona," & _
-            "tipoPersona , ruc, direccion, p.iddistrito, u.idDpto, u.idProv ,p.Telefonos, p.Mail,p.GlsContacto,p.idPais " & _
-            "FROM personas p,ubigeo u " & _
-            "WHERE p.iddistrito = u.iddistrito  and p.idPais = u.idPais and idpersona = '" & Trim(txtCod_Persona.Text) & "' "
+    csql = "EXEC dbo.spu_MantClientes_Persona_Obtener '" & Replace(Trim(txtCod_Persona.Text), "'", "''") & "'"
                
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     If Not rst.EOF Then
@@ -2721,19 +2720,8 @@ Err:
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
-On Error GoTo Err
-Dim StrMsgError As String
-    
-    If glsEnterAyudaClientes = False Then
-        listaCliente StrMsgError
-        If StrMsgError <> "" Then GoTo Err
-    End If
-    
-    Exit Sub
-    
-Err:
-    If StrMsgError = "" Then StrMsgError = Err.Description
-    MsgBox StrMsgError, vbInformation, App.Title
+
+    'La consulta se ejecuta al presionar Enter para evitar una llamada por cada tecla.
 
 End Sub
 
@@ -3243,13 +3231,13 @@ Dim rsp As New ADODB.Recordset
     mostrarDatosGridSQL gProductos, rsp, StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
-    If traerCampo("Parametros", "ValParametro", "GlsParametro", "CLIENTE_ANULA", True) = "S" Then
+    If STR_CLIENTE_ANULA = "S" Then
         ChkAnula.Visible = True
     Else
         ChkAnula.Visible = False
     End If
         
-    If traerCampo("Parametros", "ValParametro", "GlsParametro", "CLIENTE_ESPECIAL", True) = "S" Then
+    If STR_CLIENTE_ESPECIAL = "S" Then
         ChkEspecial.Visible = True
     Else
         ChkEspecial.Visible = False
@@ -3270,20 +3258,8 @@ End Sub
 Private Sub listaCliente(ByRef StrMsgError As String)
 Dim rsdatos                     As New ADODB.Recordset
 On Error GoTo Err
-Dim strCond As String
 
-    strCond = ""
-    If Trim(txt_TextoBuscar.Text) <> "" Then
-        strCond = Trim(txt_TextoBuscar.Text)
-        strCond = "AND (GlsPersona LIKE '%" & strCond & "%' Or idCliente LIKE '%" & strCond & "%' Or ruc LIKE '%" & strCond & "%') "
-    End If
-    
-    csql = "SELECT c.idCliente ,p.GlsPersona ," & _
-            "CASE WHEN p.tipoPersona = '01001' THEN 'Natural' ELSE 'Juridica' END as TipoPersona,p.ruc,(p.direccion + ', ' + iSnull(u.glsUbigeo, '')) as Direccion, " & _
-            "c.idClienteInterno, c.Val_Dscto " & _
-            "FROM clientes c inner join personas p " & _
-            "on c.idCliente = p.idPersona left join ubigeo u on p.iddistrito = u.iddistrito and p.idPais = u.idPais WHERE c.idEmpresa = '" & glsEmpresa & "'" & strCond & _
-            "ORDER BY idCliente"
+    csql = "EXEC dbo.spu_MantClientes_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
             
     If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
     rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
@@ -3323,11 +3299,7 @@ Dim rsp         As New ADODB.Recordset
 
     limpiaForm Me
 
-    CSqlC = "SELECT c.idProvCliente,c.idCliente, c.idVendedorCampo, c.idEmpTrans, c.idLista, c.idFormaPago, c.Val_LineaCredito, c.indAgenteRetencion, " & _
-            "c.idMonedaLineaCredito, c.idClienteInterno, c.Val_Dscto, c.idCanal,c.indventasterceros, " & _
-            "p.Telefonos, p.Mail,p.GlsContacto,c.GlsObservacion,c.indComision,c.indAnula,C.IndEspecial " & _
-            "FROM Clientes c  Inner Join Personas p On c.idCliente=p.idPersona " & _
-            "WHERE c.idCliente = '" & strCodCli & "' AND idEmpresa = '" & glsEmpresa & "'"
+    CSqlC = "EXEC dbo.spu_MantClientes_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodCli, "'", "''") & "'"
             rst.Open CSqlC, Cn, adOpenStatic, adLockReadOnly
     
     mostrarDatosFormSQL Me, rst, StrMsgError
@@ -3337,14 +3309,7 @@ Dim rsp         As New ADODB.Recordset
     
     '-- TRAE EL LISTADO DE TIENDAS Y LO ALMACENA EN UN RECORSET
     If rst.State = 1 Then rst.Close
-    CSqlC = "SELECT p.idPais,p.iddistrito, u.idDpto, u.idProv,p.idtdacli,p.item, p.GlsNombre, p.GlsDireccion, p.GlsTelefonos, p.GlsContacto, p.idVendedor, pp.GlsPersona As GlsVendedor " & _
-            "FROM TiendasCliente p " & _
-            "Left Join Ubigeo u " & _
-                "On p.iddistrito = u.iddistrito and p.idPais = u.idPais " & _
-            "Left Join  Personas PP " & _
-                "On p.idVendedor = PP.idPersona " & _
-            "WHERE p.idEmpresa = '" & glsEmpresa & "' " & _
-            "AND p.idPersona = '" & strCodCli & "'"
+    CSqlC = "EXEC dbo.spu_MantClientes_Tiendas_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodCli, "'", "''") & "'"
             
     rst.Open CSqlC, Cn, adOpenKeyset, adLockOptimistic
     rsg.Fields.Append "Item", adInteger, , adFldRowID
@@ -3403,12 +3368,7 @@ Dim rsp         As New ADODB.Recordset
     If StrMsgError <> "" Then GoTo Err
     
     '--- TRAE EL LISTADO DE CONTACTOS
-    CSqlC = "Select P.IdPersona,P.GlsPersona,P.Telefonos,P.Mail " & _
-            "From ContactosClientes C " & _
-            "Inner Join Personas P " & _
-            "On C.IdContacto = P.IdPersona " & _
-            "Where C.IdEmpresa = '" & glsEmpresa & "' And C.IdCliente = '" & txtCod_Persona.Text & "' " & _
-            "Order By P.GlsPersona"
+    CSqlC = "EXEC dbo.spu_MantClientes_Contactos_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(txtCod_Persona.Text, "'", "''") & "'"
     rst.Open CSqlC, Cn, adOpenKeyset, adLockOptimistic
     RsC.Fields.Append "Item", adInteger, , adFldRowID
     RsC.Fields.Append "IdPersona", adVarChar, 8, adFldIsNullable
@@ -3446,18 +3406,12 @@ Dim rsp         As New ADODB.Recordset
     mostrarDatosGridSQL gContactos, RsC, StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
-    TxtCodMoneda.Text = Trim("" & traerCampo("ControlLineaCredito", "IdMoneda", "IdCliente", Trim("" & txtCod_Persona.Text), True))
-    
+
     CargaLineaCredito StrMsgError, txtCod_Persona.Text
     If StrMsgError <> "" Then GoTo Err
     
     '--- LISTA FORMA DE PAGO
-    CSqlC = "Select p.GlsPersona, c.idFormaPago, C.indEstado, C.FecRegistro, C.idUsuario,'0' IndPrincipal " & _
-             "from clientesformapagos c, personas p " & _
-             "where c.idcliente = p.idPersona " & _
-             "and c.idcliente = '" & txtCod_Persona.Text & "' " & _
-             "and c.idEmpresa = '" & glsEmpresa & "' " & _
-             "order by c.idFormaPago "
+    CSqlC = "EXEC dbo.spu_MantClientes_FormasPago_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(txtCod_Persona.Text, "'", "''") & "'"
     rst.Open CSqlC, Cn, adOpenKeyset, adLockOptimistic
     rsF.Fields.Append "Item", adInteger, , adFldRowID
     rsF.Fields.Append "IdCliente", adVarChar, 8, adFldIsNullable
@@ -3491,7 +3445,7 @@ Dim rsp         As New ADODB.Recordset
             rsF.Fields("IdCliente") = Trim("" & txtCod_Persona.Text)
             rsF.Fields("idFormaPago") = Trim("" & rst.Fields("idFormaPago"))
             rsF.Fields("GlsCliente") = Trim("" & rst.Fields("GlsPersona"))
-            rsF.Fields("GlsFormaPago") = Trim("" & traerCampo("formaspagos", "GlsFormaPago", "idFormaPago", Trim("" & rst.Fields("idFormaPago")), True))
+            rsF.Fields("GlsFormaPago") = Trim("" & rst.Fields("GlsFormaPago"))
             rsF.Fields("indEstado") = Val(rst.Fields("indEstado"))
             rsF.Fields("IndPrincipal") = Val(rst.Fields("IndPrincipal"))
             rsF.Fields("idUsuario") = Trim("" & rst.Fields("idUsuario"))
@@ -3505,12 +3459,7 @@ Dim rsp         As New ADODB.Recordset
     If StrMsgError <> "" Then GoTo Err
     
     '--- LISTA PRODUCTOS
-    CSqlC = "Select A.IdEmpresa,A.IdProducto,B.GlsProducto,A.Codigo,A.CodigoBarra " & _
-            "From ProductosClientes A " & _
-            "Inner Join Productos B " & _
-                "On A.IdEmpresa = B.IdEmpresa And A.IdProducto = B.IdProducto " & _
-            "Where A.IdEmpresa = '" & glsEmpresa & "' And A.IdCliente = '" & txtCod_Persona.Text & "' " & _
-            "Order By A.IdProducto"
+    CSqlC = "EXEC dbo.spu_MantClientes_Productos_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(txtCod_Persona.Text, "'", "''") & "'"
             
     rst.Open CSqlC, Cn, adOpenKeyset, adLockOptimistic
     rsp.Fields.Append "Item", adInteger, , adFldRowID
@@ -3625,36 +3574,20 @@ Dim RsC                                 As New ADODB.Recordset
 Dim CPC                                 As String
     
     'Linea Actual
-    CSqlC = "Select A.Linea_Actual,A.Linea_Usada,A.Saldo,A.IndSuspension,B.GlsDato " & _
-            "From ControlLineaCredito A " & _
-            "Inner Join Datos B " & _
-                "On A.Estado = B.IdDato " & _
-            "Where A.IdEmpresa = '" & glsEmpresa & "' And A.IdCliente = '" & PIdCliente & "'"
+    CSqlC = "EXEC dbo.spu_MantClientes_LineaCredito_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(PIdCliente, "'", "''") & "'"
     RsC.Open CSqlC, Cn, adOpenStatic, adLockReadOnly
     If Not RsC.EOF Then
+        TxtCodMoneda.Text = Trim("" & RsC.Fields("IdMoneda"))
         
         If Trim("" & RsC.Fields("IndSuspension")) = "1" Then
-            
             TxtGlsEstado.Text = "Suspendido"
-        
         Else
-            
             TxtGlsEstado.Text = "" & RsC.Fields("GlsDato")
-            
         End If
         
         TxtLineaAprobada.Text = Val("" & RsC.Fields("Linea_Actual"))
         TxtDeuda.Text = Val("" & RsC.Fields("Linea_Usada"))
         TxtSaldo.Text = Format(Val("" & RsC.Fields("Saldo")), "#,###,##0.00")
-        
-    Else
-        
-        TxtCodMoneda.Text = traerCampo("Parametros", "ValParametro", "GlsParametro", "MONEDA_LINEA_CREDITO", True)
-        
-        TxtLineaAprobada.Text = "0"
-        TxtDeuda.Text = "0"
-        TxtSaldo.Text = Format(Val("0"), "#,###,##0.00")
-        
     End If
     
     RsC.Close: Set RsC = Nothing

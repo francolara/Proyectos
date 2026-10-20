@@ -457,6 +457,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma Codex 15/10/2026: listado y carga de conceptos obtenidos mediante procedimientos almacenados.
 
 Private Sub chkcosto_Click()
     
@@ -644,9 +645,15 @@ Dim indHabilitar As Boolean
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
+    ' La consulta se ejecuta al presionar Enter.
+End Sub
+
+Private Sub txt_TextoBuscar_KeyPress(KeyAscii As Integer)
 On Error GoTo Err
 Dim StrMsgError As String
     
+    If KeyAscii <> 13 Then Exit Sub
+    KeyAscii = 0
     Lista StrMsgError
     If StrMsgError <> "" Then GoTo Err
     Exit Sub
@@ -665,21 +672,9 @@ End Sub
 
 Private Sub Lista(ByRef StrMsgError As String)
 On Error GoTo Err
-Dim strCond As String
 Dim rsdatos                     As New ADODB.Recordset
  
-    strCond = ""
-    If Trim(txt_TextoBuscar.Text) <> "" Then
-        strCond = Trim(txt_TextoBuscar.Text)
-        strCond = " WHERE GlsConcepto LIKE '%" & strCond & "%' or tipoconcepto LIKE '%" & strCond & "%'"
-    End If
-    
-    csql = "SELECT idconcepto,GlsConcepto,tipoconcepto " & _
-           "FROM conceptos "
-           
-    If strCond <> "" Then csql = csql + strCond
-
-    csql = csql + " ORDER BY idconcepto"
+    csql = "EXEC dbo.spu_MantConceptos_Listar '" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
     
     
 If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
@@ -712,9 +707,7 @@ Private Sub mostrar(strCod As String, ByRef StrMsgError As String)
 On Error GoTo Err
 Dim rst As New ADODB.Recordset
     
-    csql = "SELECT idconcepto,glsconcepto,tipoconcepto,indcosto " & _
-           "FROM conceptos " & _
-           "WHERE idconcepto = '" & strCod & "'"
+    csql = "EXEC dbo.spu_MantConceptos_Obtener '" & Replace(strCod, "'", "''") & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     
     mostrarDatosFormSQL Me, rst, StrMsgError

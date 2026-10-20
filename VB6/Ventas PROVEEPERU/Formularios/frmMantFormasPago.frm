@@ -1,6 +1,6 @@
 VERSION 5.00
 Object = "{6A24B331-7634-11D3-A5B0-0050044A7E1A}#1.5#0"; "DXDBGrid.dll"
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "mscomctl.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "MSCOMCTL.OCX"
 Object = "{F41D1D30-7878-4923-8CB3-6CCACDC9C9DE}#1.0#0"; "CATControls.ocx"
 Begin VB.Form frmMantFormasPago 
    Appearance      =   0  'Flat
@@ -588,6 +588,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Firma Codex 15/10/2026: listado y carga de formas de pago obtenidos mediante procedimientos almacenados.
 
 Private Sub Chk_cheque_Click()
 
@@ -769,17 +770,9 @@ Dim indHabilitar As Boolean
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
-On Error GoTo Err
-Dim StrMsgError As String
 
-    listaFP StrMsgError
-    If StrMsgError <> "" Then GoTo Err
-    
-    Exit Sub
+    'La consulta se ejecuta al presionar Enter para evitar una llamada por cada tecla.
 
-Err:
-    If StrMsgError = "" Then StrMsgError = Err.Description
-    MsgBox StrMsgError, vbInformation, App.Title
 End Sub
 
 Private Sub txt_TextoBuscar_KeyDown(KeyCode As Integer, Shift As Integer)
@@ -793,19 +786,8 @@ On Error GoTo Err
 Dim strCond As String
 Dim rsdatos                     As New ADODB.Recordset
 
-    strCond = ""
-    If Trim(txt_TextoBuscar.Text) <> "" Then
-        strCond = Trim(txt_TextoBuscar.Text)
-        strCond = " AND f.GlsFormaPago LIKE '%" & strCond & "%'"
-    End If
-    
-    csql = "SELECT f.idFormaPago ,f.GlsFormaPago,t.GlsTipoFormaPago,diasVcto " & _
-           "FROM formaspagos f,tipoformaspago t " & _
-           "WHERE f.idTipoFormaPago = t.idTipoFormaPago AND f.idEmpresa = '" & glsEmpresa & "'"
-    
-    If strCond <> "" Then csql = csql & strCond
-    csql = csql & " ORDER BY f.idFormaPago"
-    
+csql = "EXEC dbo.spu_MantFormasPago_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
+  
 If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
 rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
     
@@ -834,9 +816,7 @@ Private Sub mostrarFP(strCodFP As String, ByRef StrMsgError As String)
 On Error GoTo Err
 Dim rst As New ADODB.Recordset
 
-    csql = "SELECT f.idFormaPago,f.GlsFormaPago,f.idTipoFormaPago,f.diasVcto,f.visible_ventas,f.cheque " & _
-           "FROM formaspagos f " & _
-           "WHERE f.idFormaPago = '" & strCodFP & "' AND f.idEmpresa = '" & glsEmpresa & "'"
+    csql = "EXEC dbo.spu_MantFormasPago_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(strCodFP, "'", "''") & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
     
     If Not rst.EOF Then
@@ -940,7 +920,7 @@ Private Sub EjecutaSQLFormFP(F As Form, tipoOperacion As Integer, indEmpresa As 
 On Error GoTo Err
 Dim C As Object
 Dim csql As String
-Dim strCampo As String
+Dim StrCampo As String
 Dim strTipoDato As String
 Dim strCampos As String
 Dim strValores As String
@@ -971,10 +951,10 @@ Dim CArrLog(2)                      As String
         If TypeOf C Is CATTextBox Or TypeOf C Is DTPicker Or TypeOf C Is CheckBox Then
             If C.Tag <> "" Then
                 strTipoDato = left(C.Tag, 1)
-                strCampo = right(C.Tag, Len(C.Tag) - 1)
+                StrCampo = right(C.Tag, Len(C.Tag) - 1)
                 Select Case tipoOperacion
                     Case 0 'inserta
-                        strCampos = strCampos & strCampo & ","
+                        strCampos = strCampos & StrCampo & ","
                         
                         Select Case strTipoDato
                             Case "N"
@@ -985,7 +965,7 @@ Dim CArrLog(2)                      As String
                                 strValores = strValores & "'" & Format(C.Value, "yyyy-mm-dd") & "',"
                         End Select
                     Case 1
-                        If UCase(strCampoCod) <> UCase(strCampo) Then
+                        If UCase(strCampoCod) <> UCase(StrCampo) Then
                             Select Case strTipoDato
                                 Case "N"
                                     strValores = C.Value
@@ -994,7 +974,7 @@ Dim CArrLog(2)                      As String
                                 Case "F"
                                     strValores = "'" & Format(C.Value, "yyyy-mm-dd") & "'"
                             End Select
-                            strCampos = strCampos & strCampo & "=" & strValores & ","
+                            strCampos = strCampos & StrCampo & "=" & strValores & ","
                         Else
                             strValCod = C.Value
                         End If
@@ -1051,9 +1031,9 @@ Dim CArrLog(2)                      As String
             For i = 0 To g.Columns.Count - 1
                 If UCase(left(g.Columns(i).ObjectName, 1)) = "W" Then
                     strTipoDato = Mid(g.Columns(i).ObjectName, 2, 1)
-                    strCampo = Mid(g.Columns(i).ObjectName, 3)
+                    StrCampo = Mid(g.Columns(i).ObjectName, 3)
                     
-                    strCampos = strCampos & strCampo & ","
+                    strCampos = strCampos & StrCampo & ","
                     
                     Select Case strTipoDato
                         Case "N"

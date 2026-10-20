@@ -971,7 +971,9 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 
+' Firma Codex 16/10/2026: listado y carga integral de usuarios mediante procedimientos almacenados; búsqueda ejecutada con Enter.
 Dim indBoton As Integer
+Dim mCargandoUsuario As Boolean
 
 Private Sub cmbAyudaPerfil_Click()
 
@@ -1215,12 +1217,21 @@ Err:
 End Sub
 
 Private Sub txt_TextoBuscar_Change()
+
+    ' La consulta se ejecuta al presionar Enter para evitar una llamada por cada tecla.
+
+End Sub
+
+Private Sub txt_TextoBuscar_KeyPress(KeyAscii As Integer)
 On Error GoTo Err
 Dim StrMsgError As String
 
+    If KeyAscii <> 13 Then Exit Sub
+    KeyAscii = 0
+
     listaUsuario StrMsgError
     If StrMsgError <> "" Then GoTo Err
-    
+
     Exit Sub
 
 Err:
@@ -1229,7 +1240,8 @@ Err:
 End Sub
 
 Private Sub txtCod_Perfil_Change()
-    
+
+    If mCargandoUsuario Then Exit Sub
     txtGls_Perfil.Text = traerCampo("perfil", "GlsPerfil", "idPerfil", txtCod_Perfil.Text, True)
 
 End Sub
@@ -1245,25 +1257,29 @@ Private Sub txtCod_Perfil_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub txtCod_Persona_Change()
-    
+
+    If mCargandoUsuario Then Exit Sub
     txtGls_Persona.Text = traerCampo("personas", "GlsPersona", "idPersona", txtCod_Persona.Text, False)
 
 End Sub
 
 Private Sub txtCod_Depa_Change()
-    
+
+    If mCargandoUsuario Then Exit Sub
     txtGls_Depa.Text = traerCampo("Ubigeo", "GlsUbigeo", "idDpto", txtCod_Depa.Text, False, " idProv = '00'")
 
 End Sub
 
 Private Sub txtCod_Distrito_Change()
-    
+
+    If mCargandoUsuario Then Exit Sub
     txtGls_Distrito.Text = traerCampo("Ubigeo", "GlsUbigeo", "idDistrito", txtCod_Distrito.Text, False)
 
 End Sub
 
 Private Sub txtCod_Pais_Change()
-    
+
+    If mCargandoUsuario Then Exit Sub
     txtGls_Pais.Text = traerCampo("Datos", "GlsDato", "idDato", txtCod_Pais.Text, False)
 
 End Sub
@@ -1282,7 +1298,8 @@ Private Sub txtCod_Persona_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub txtCod_Prov_Change()
-    
+
+    If mCargandoUsuario Then Exit Sub
     txtGls_Prov.Text = traerCampo("Ubigeo", "GlsUbigeo", "idProv", txtCod_Prov.Text, False, " idDpto = '" & txtCod_Depa.Text & "' and idProv <> '00' and idDist = '00'")
 
 End Sub
@@ -1398,38 +1415,17 @@ End Sub
 
 Private Sub listaUsuario(ByRef StrMsgError As String)
 On Error GoTo Err
-Dim strCond As String
-Dim rsdatos                     As New ADODB.Recordset
+Dim rsdatos As New ADODB.Recordset
 
-    strCond = ""
-    If Trim(txt_TextoBuscar.Text) <> "" Then
-        strCond = Trim(txt_TextoBuscar.Text)
-        strCond = " AND GlsPersona LIKE '%" & strCond & "%'"
-    End If
-    
-    csql = "SELECT v.idUsuario ,p.GlsPersona ," & _
-            "concat(p.direccion,', ',u.GlsUbigeo) as Direccion " & _
-            "FROM usuarios v,personas p,ubigeo u " & _
-            "WHERE v.idUsuario = p.idPersona AND p.iddistrito = u.iddistrito AND v.idEmpresa = '" & glsEmpresa & "'" & strCond & _
-            "ORDER BY idusuario"
-            
+    csql = "EXEC dbo.spu_MantUsuarios_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & _
+           Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "'"
+
     If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
     rsdatos.Open csql, Cn, adOpenStatic, adLockOptimistic
-        
-    Set gLista.DataSource = rsdatos
 
-'    With gLista
-'        .DefaultFields = False
-'        .Dataset.ADODataset.ConnectionString = strcn
-'        .Dataset.ADODataset.CursorLocation = clUseClient
-'        .Dataset.Active = False
-'        .Dataset.ADODataset.CommandText = csql
-'        .Dataset.DisableControls
-'        .Dataset.Active = True
-'        .KeyField = "idusuario"
-'    End With
+    Set gLista.DataSource = rsdatos
     Me.Refresh
-    
+
     Exit Sub
 
 Err:
@@ -1440,37 +1436,45 @@ Private Sub mostrarUsuario(strCodUsu As String, ByRef StrMsgError As String)
 On Error GoTo Err
 Dim rst As New ADODB.Recordset
 Dim rsg As New ADODB.Recordset
-Dim rsdatos  As New ADODB.Recordset
-Dim sql As String
 
-    csql = "SELECT ISNULL(v.IndCompra,0) AS IndCompra,v.indJefe,v.idusuario,v.idPerfil,varUsuario,varPass,v.serieetiquetera, v.ImpresoraLetras " & _
-           "FROM usuarios v " & _
-           "WHERE v.idEmpresa = '" & glsEmpresa & "' AND v.idusuario = '" & strCodUsu & "'"
+    mCargandoUsuario = True
+
+    csql = "EXEC dbo.spu_MantUsuarios_Obtener '" & Replace(glsEmpresa, "'", "''") & "','" & _
+           Replace(strCodUsu, "'", "''") & "','" & Replace(StrcodSistema, "'", "''") & "'"
     rst.Open csql, Cn, adOpenStatic, adLockReadOnly
-    
+
+
+    If Not rst.EOF Then
+        txtCod_Pais.Text = "02001"
+        txtCod_Depa.Text = Trim("" & rst.Fields("IdDpto"))
+        txtCod_Prov.Text = Trim("" & rst.Fields("IdProv"))
+        txtCod_Distrito.Text = Trim("" & rst.Fields("IdDistrito"))
+        txtGls_Direccion.Text = Trim("" & rst.Fields("Direccion"))
+        txtGls_Persona.Text = Trim("" & rst.Fields("GlsPersona"))
+        txtGls_Perfil.Text = Trim("" & rst.Fields("GlsPerfil"))
+        txtGls_Pais.Text = Trim("" & rst.Fields("GlsPais"))
+        txtGls_Depa.Text = Trim("" & rst.Fields("GlsDepa"))
+        txtGls_Prov.Text = Trim("" & rst.Fields("GlsProv"))
+        txtGls_Distrito.Text = Trim("" & rst.Fields("GlsDistrito"))
+    End If
+
     mostrarDatosFormSQL Me, rst, StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
-    mostrarDatosPersona
-    
-    csql = "SELECT se.item,se.idEmpresa,e.glsEmpresa,se.idSucursal,p.glsPersona GlsSucursal " & _
-            "FROM sucursalesempresa se,empresas e,sucursales s,personas p " & _
-            "WHERE se.idEmpresa = e.idEmpresa " & _
-            "AND se.idSucursal = s.idSucursal " & _
-            "AND s.idSucursal = p.idPersona " & _
-            "AND se.idEmpresa = '" & glsEmpresa & "' " & _
-            "AND s.idEmpresa = '" & glsEmpresa & "' " & _
-            "AND se.idUsuario = '" & strCodUsu & "'"
+    mCargandoUsuario = False
     If rst.State = 1 Then rst.Close
+
+    csql = "EXEC dbo.spu_MantUsuarios_Sucursales_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & _
+           Replace(strCodUsu, "'", "''") & "'"
     rst.Open csql, Cn, adOpenKeyset, adLockOptimistic
-    
+
     rsg.Fields.Append "Item", adInteger, , adFldRowID
     rsg.Fields.Append "idEmpresa", adVarChar, 8, adFldIsNullable
     rsg.Fields.Append "GlsEmpresa", adVarChar, 250, adFldIsNullable
     rsg.Fields.Append "idSucursal", adVarChar, 8, adFldIsNullable
     rsg.Fields.Append "GlsSucursal", adVarChar, 250, adFldIsNullable
     rsg.Open
-    
+
     If rst.RecordCount = 0 Then
         rsg.AddNew
         rsg.Fields("Item") = 1
@@ -1489,32 +1493,17 @@ Dim sql As String
             rst.MoveNext
         Loop
     End If
-    rst.Close: Set rst = Nothing
-    
+    rst.Close
+
     mostrarDatosGridSQL gSucursales, rsg, StrMsgError
     If StrMsgError <> "" Then GoTo Err
-          
-    sql = "Select P.IdPerfil,P.GlsPerfil " & _
-          "From Perfil P " & _
-          "Inner Join PerfilesPorUsuario Pxu " & _
-            "On P.IdEmpresa = Pxu.IdEmpresa And P.IdPerfil = Pxu.IdPerfil And P.CodSistema = Pxu.CodSistema " & _
-          "Where P.IdEmpresa = '" & glsEmpresa & "' And Pxu.IdUsuario = '" & txtCod_Persona.Text & "' And Pxu.CodSistema = '" & StrcodSistema & "'"
-    
-    If rsdatos.State = 1 Then rsdatos.Close
-    rsdatos.Open sql, Cn, adOpenStatic, adLockBatchOptimistic
-    
-    If Not rsdatos.EOF Then
-        txtCod_Perfil.Text = "" & Trim(rsdatos.Fields("idperfil"))
-        txtGls_Perfil.Text = "" & Trim(rsdatos.Fields("glsperfil"))
-    Else
-        txtCod_Perfil.Text = ""
-        txtGls_Perfil.Text = ""
-    End If
-    Me.Refresh
 
+    Me.Refresh
     Exit Sub
-    
+
 Err:
+    mCargandoUsuario = False
+    If rst.State = 1 Then rst.Close
     If StrMsgError = "" Then StrMsgError = Err.Description
 End Sub
 
