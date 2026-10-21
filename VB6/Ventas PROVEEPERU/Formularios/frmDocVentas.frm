@@ -426,6 +426,16 @@ Begin VB.Form frmDocVentas
          TabIndex        =   60
          Top             =   240
          Width           =   14580
+         Begin VB.ComboBox CbxCompraItems 
+            Height          =   330
+            Left            =   5190
+            Style           =   2  'Dropdown List
+            TabIndex        =   238
+            ToolTipText     =   "Filtrar pedidos por la marca de compra de sus ítems"
+            Top             =   270
+            Visible         =   0   'False
+            Width           =   2925
+         End
          Begin CATControls.CATTextBox txt_TextoBuscar 
             Height          =   315
             Left            =   990
@@ -499,6 +509,17 @@ Begin VB.Form frmDocVentas
             Top             =   270
             Width           =   1335
          End
+         Begin VB.Label lblCompraItems 
+            Appearance      =   0  'Flat
+            Caption         =   "Compra ítems"
+            ForeColor       =   &H80000008&
+            Height          =   210
+            Left            =   4020
+            TabIndex        =   239
+            Top             =   330
+            Visible         =   0   'False
+            Width           =   1155
+         End
          Begin VB.Label Label3 
             Appearance      =   0  'Flat
             AutoSize        =   -1  'True
@@ -546,7 +567,7 @@ Begin VB.Form frmDocVentas
       End
       Begin DXDBGRIDLibCtl.dxDBGrid gListaDetalle 
          Height          =   3210
-         Left            =   90
+         Left            =   120
          OleObjectBlob   =   "frmDocVentas.frx":04ED
          TabIndex        =   4
          Top             =   5475
@@ -555,7 +576,7 @@ Begin VB.Form frmDocVentas
       Begin DXDBGRIDLibCtl.dxDBGrid gLista 
          Height          =   4185
          Left            =   120
-         OleObjectBlob   =   "frmDocVentas.frx":4129
+         OleObjectBlob   =   "frmDocVentas.frx":4B87
          TabIndex        =   3
          Top             =   1080
          Width           =   15015
@@ -694,7 +715,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":A04C
+         Container       =   "frmDocVentas.frx":AAAA
          Text            =   "0"
          Estilo          =   4
          Vacio           =   -1  'True
@@ -724,7 +745,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":A068
+         Container       =   "frmDocVentas.frx":AAC6
          Text            =   "0"
          Estilo          =   4
          Vacio           =   -1  'True
@@ -755,7 +776,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":A084
+         Container       =   "frmDocVentas.frx":AAE2
          Text            =   "0"
          Estilo          =   4
          Vacio           =   -1  'True
@@ -786,7 +807,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":A0A0
+         Container       =   "frmDocVentas.frx":AAFE
          Text            =   "0"
          Estilo          =   4
          Vacio           =   -1  'True
@@ -818,7 +839,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":A0BC
+         Container       =   "frmDocVentas.frx":AB1A
          Text            =   "0"
          Estilo          =   4
          Vacio           =   -1  'True
@@ -849,7 +870,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          Locked          =   -1  'True
-         Container       =   "frmDocVentas.frx":A0D8
+         Container       =   "frmDocVentas.frx":AB36
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -879,7 +900,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          Locked          =   -1  'True
-         Container       =   "frmDocVentas.frx":A0F4
+         Container       =   "frmDocVentas.frx":AB52
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -909,7 +930,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          Locked          =   -1  'True
-         Container       =   "frmDocVentas.frx":A110
+         Container       =   "frmDocVentas.frx":AB6E
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -939,7 +960,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          Locked          =   -1  'True
-         Container       =   "frmDocVentas.frx":A12C
+         Container       =   "frmDocVentas.frx":AB8A
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -969,7 +990,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          Locked          =   -1  'True
-         Container       =   "frmDocVentas.frx":A148
+         Container       =   "frmDocVentas.frx":ABA6
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -998,7 +1019,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":A164
+         Container       =   "frmDocVentas.frx":ABC2
          Text            =   "0"
          Estilo          =   4
          Vacio           =   -1  'True
@@ -1028,7 +1049,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":A180
+         Container       =   "frmDocVentas.frx":ABDE
          Text            =   "0"
          Estilo          =   4
          Vacio           =   -1  'True
@@ -1060,7 +1081,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":A19C
+         Container       =   "frmDocVentas.frx":ABFA
          Text            =   "0"
          Estilo          =   4
          Vacio           =   -1  'True
@@ -1091,7 +1112,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":A1B8
+         Container       =   "frmDocVentas.frx":AC16
          Text            =   "------- "
          Decimales       =   2
          TextoInicio     =   "0"
@@ -1287,7 +1308,7 @@ Begin VB.Form frmDocVentas
       Begin DXDBGRIDLibCtl.dxDBGrid gDetalle 
          Height          =   3090
          Left            =   90
-         OleObjectBlob   =   "frmDocVentas.frx":A1D4
+         OleObjectBlob   =   "frmDocVentas.frx":AC32
          TabIndex        =   70
          Top             =   210
          Width           =   14985
@@ -1301,13 +1322,13 @@ Begin VB.Form frmDocVentas
       End
    End
    Begin MSComctlLib.Toolbar Toolbar1 
-      Height          =   660
+      Height          =   1800
       Left            =   120
       TabIndex        =   159
       Top             =   0
       Width           =   15270
       _ExtentX        =   26935
-      _ExtentY        =   1164
+      _ExtentY        =   3175
       ButtonWidth     =   3043
       ButtonHeight    =   1005
       AllowCustomize  =   0   'False
@@ -1474,7 +1495,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5520
-         Picture         =   "frmDocVentas.frx":1D565
+         Picture         =   "frmDocVentas.frx":1DFC3
          Style           =   1  'Graphical
          TabIndex        =   214
          Top             =   1560
@@ -1505,7 +1526,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":1D8EF
+         Container       =   "frmDocVentas.frx":1E34D
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -1532,7 +1553,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":1D90B
+         Container       =   "frmDocVentas.frx":1E369
          Vacio           =   -1  'True
       End
       Begin VB.CheckBox ChkfContado 
@@ -1566,7 +1587,7 @@ Begin VB.Form frmDocVentas
             EndProperty
             Height          =   315
             Left            =   4710
-            Picture         =   "frmDocVentas.frx":1D927
+            Picture         =   "frmDocVentas.frx":1E385
             Style           =   1  'Graphical
             TabIndex        =   210
             Top             =   360
@@ -1594,7 +1615,7 @@ Begin VB.Form frmDocVentas
             FontSize        =   8.25
             ForeColor       =   -2147483640
             MaxLength       =   8
-            Container       =   "frmDocVentas.frx":1DCB1
+            Container       =   "frmDocVentas.frx":1E70F
             Estilo          =   1
             Vacio           =   -1  'True
             EnterTab        =   -1  'True
@@ -1621,7 +1642,7 @@ Begin VB.Form frmDocVentas
             FontName        =   "Arial"
             FontSize        =   8.25
             ForeColor       =   -2147483640
-            Container       =   "frmDocVentas.frx":1DCCD
+            Container       =   "frmDocVentas.frx":1E72B
             Vacio           =   -1  'True
          End
       End
@@ -1678,7 +1699,7 @@ Begin VB.Form frmDocVentas
             FontSize        =   8.25
             ForeColor       =   -2147483640
             MaxLength       =   8
-            Container       =   "frmDocVentas.frx":1DCE9
+            Container       =   "frmDocVentas.frx":1E747
             Text            =   "------- "
             Decimales       =   2
             TextoInicio     =   "0"
@@ -1709,7 +1730,7 @@ Begin VB.Form frmDocVentas
             FontSize        =   8.25
             ForeColor       =   -2147483640
             MaxLength       =   8
-            Container       =   "frmDocVentas.frx":1DD05
+            Container       =   "frmDocVentas.frx":1E763
             Text            =   "------- "
             Decimales       =   2
             TextoInicio     =   "0"
@@ -1740,7 +1761,7 @@ Begin VB.Form frmDocVentas
             FontSize        =   8.25
             ForeColor       =   -2147483640
             MaxLength       =   8
-            Container       =   "frmDocVentas.frx":1DD21
+            Container       =   "frmDocVentas.frx":1E77F
             Text            =   "------- "
             Decimales       =   2
             TextoInicio     =   "0"
@@ -1771,7 +1792,7 @@ Begin VB.Form frmDocVentas
             FontSize        =   8.25
             ForeColor       =   -2147483640
             MaxLength       =   8
-            Container       =   "frmDocVentas.frx":1DD3D
+            Container       =   "frmDocVentas.frx":1E79B
             Text            =   "------- "
             Decimales       =   2
             TextoInicio     =   "0"
@@ -1802,7 +1823,7 @@ Begin VB.Form frmDocVentas
             FontSize        =   8.25
             ForeColor       =   -2147483640
             MaxLength       =   8
-            Container       =   "frmDocVentas.frx":1DD59
+            Container       =   "frmDocVentas.frx":1E7B7
             Text            =   "------- "
             Decimales       =   2
             TextoInicio     =   "0"
@@ -1845,7 +1866,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11370
-         Picture         =   "frmDocVentas.frx":1DD75
+         Picture         =   "frmDocVentas.frx":1E7D3
          Style           =   1  'Graphical
          TabIndex        =   181
          Top             =   1935
@@ -1876,7 +1897,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":1E0FF
+         Container       =   "frmDocVentas.frx":1EB5D
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_AlmacenDestino 
@@ -1903,7 +1924,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":1E11B
+         Container       =   "frmDocVentas.frx":1EB79
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -1931,7 +1952,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":1E137
+         Container       =   "frmDocVentas.frx":1EB95
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_SucursalDestino 
@@ -1958,14 +1979,14 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":1E153
+         Container       =   "frmDocVentas.frx":1EBB1
          Estilo          =   1
          EnterTab        =   -1  'True
       End
       Begin VB.CommandButton cmbAyudaAlmacenDestino 
          Height          =   315
          Left            =   11400
-         Picture         =   "frmDocVentas.frx":1E16F
+         Picture         =   "frmDocVentas.frx":1EBCD
          Style           =   1  'Graphical
          TabIndex        =   174
          Top             =   4500
@@ -1975,7 +1996,7 @@ Begin VB.Form frmDocVentas
       Begin VB.CommandButton cmbAyudaSucursalDestino 
          Height          =   315
          Left            =   11385
-         Picture         =   "frmDocVentas.frx":1E4F9
+         Picture         =   "frmDocVentas.frx":1EF57
          Style           =   1  'Graphical
          TabIndex        =   173
          Top             =   4155
@@ -2006,7 +2027,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5520
-         Picture         =   "frmDocVentas.frx":1E883
+         Picture         =   "frmDocVentas.frx":1F2E1
          Style           =   1  'Graphical
          TabIndex        =   171
          Top             =   1260
@@ -2058,7 +2079,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":1EC0D
+         Container       =   "frmDocVentas.frx":1F66B
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -2085,7 +2106,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":1EC29
+         Container       =   "frmDocVentas.frx":1F687
       End
       Begin VB.CommandButton cmbcontactosclientes 
          BeginProperty Font 
@@ -2099,7 +2120,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5445
-         Picture         =   "frmDocVentas.frx":1EC45
+         Picture         =   "frmDocVentas.frx":1F6A3
          Style           =   1  'Graphical
          TabIndex        =   157
          Top             =   3690
@@ -2109,7 +2130,7 @@ Begin VB.Form frmDocVentas
       Begin VB.CommandButton btnvt 
          Height          =   315
          Left            =   9600
-         Picture         =   "frmDocVentas.frx":1EFCF
+         Picture         =   "frmDocVentas.frx":1FA2D
          Style           =   1  'Graphical
          TabIndex        =   144
          Top             =   3840
@@ -2139,7 +2160,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5460
-         Picture         =   "frmDocVentas.frx":1F359
+         Picture         =   "frmDocVentas.frx":1FDB7
          Style           =   1  'Graphical
          TabIndex        =   138
          Top             =   600
@@ -2158,7 +2179,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11385
-         Picture         =   "frmDocVentas.frx":1F6E3
+         Picture         =   "frmDocVentas.frx":20141
          Style           =   1  'Graphical
          TabIndex        =   135
          Top             =   495
@@ -2190,7 +2211,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":1FA6D
+         Container       =   "frmDocVentas.frx":204CB
          Text            =   "0.00"
          Decimales       =   2
          Estilo          =   4
@@ -2221,7 +2242,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   255
-         Container       =   "frmDocVentas.frx":1FA89
+         Container       =   "frmDocVentas.frx":204E7
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -2250,7 +2271,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   255
-         Container       =   "frmDocVentas.frx":1FAA5
+         Container       =   "frmDocVentas.frx":20503
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -2267,7 +2288,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5460
-         Picture         =   "frmDocVentas.frx":1FAC1
+         Picture         =   "frmDocVentas.frx":2051F
          Style           =   1  'Graphical
          TabIndex        =   121
          Top             =   4170
@@ -2298,7 +2319,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":1FE4B
+         Container       =   "frmDocVentas.frx":208A9
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -2326,7 +2347,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":1FE67
+         Container       =   "frmDocVentas.frx":208C5
          Vacio           =   -1  'True
       End
       Begin VB.CommandButton cmbAyudaVendedorCampo 
@@ -2341,7 +2362,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5460
-         Picture         =   "frmDocVentas.frx":1FE83
+         Picture         =   "frmDocVentas.frx":208E1
          Style           =   1  'Graphical
          TabIndex        =   113
          Top             =   4500
@@ -2360,7 +2381,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11340
-         Picture         =   "frmDocVentas.frx":2020D
+         Picture         =   "frmDocVentas.frx":20C6B
          Style           =   1  'Graphical
          TabIndex        =   109
          Top             =   3840
@@ -2391,7 +2412,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":20597
+         Container       =   "frmDocVentas.frx":20FF5
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -2419,7 +2440,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":205B3
+         Container       =   "frmDocVentas.frx":21011
          Vacio           =   -1  'True
       End
       Begin MSComCtl2.DTPicker dtp_IniTraslado 
@@ -2442,7 +2463,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   143130625
+         Format          =   131727361
          CurrentDate     =   38955
       End
       Begin VB.CommandButton cmbAyudaMotivoNCD 
@@ -2457,7 +2478,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11340
-         Picture         =   "frmDocVentas.frx":205CF
+         Picture         =   "frmDocVentas.frx":2102D
          Style           =   1  'Graphical
          TabIndex        =   91
          Top             =   4320
@@ -2489,7 +2510,7 @@ Begin VB.Form frmDocVentas
          ForeColor       =   -2147483640
          Locked          =   -1  'True
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":20959
+         Container       =   "frmDocVentas.frx":213B7
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -2517,7 +2538,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":20975
+         Container       =   "frmDocVentas.frx":213D3
          Vacio           =   -1  'True
       End
       Begin VB.CommandButton cmbAyudaMotivoTraslado 
@@ -2532,7 +2553,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11325
-         Picture         =   "frmDocVentas.frx":20991
+         Picture         =   "frmDocVentas.frx":213EF
          Style           =   1  'Graphical
          TabIndex        =   86
          Top             =   4425
@@ -2551,7 +2572,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11325
-         Picture         =   "frmDocVentas.frx":20D1B
+         Picture         =   "frmDocVentas.frx":21779
          Style           =   1  'Graphical
          TabIndex        =   74
          Top             =   4050
@@ -2570,7 +2591,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11400
-         Picture         =   "frmDocVentas.frx":210A5
+         Picture         =   "frmDocVentas.frx":21B03
          Style           =   1  'Graphical
          TabIndex        =   73
          Top             =   1500
@@ -2589,7 +2610,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11400
-         Picture         =   "frmDocVentas.frx":2142F
+         Picture         =   "frmDocVentas.frx":21E8D
          Style           =   1  'Graphical
          TabIndex        =   72
          Top             =   1200
@@ -2608,7 +2629,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11400
-         Picture         =   "frmDocVentas.frx":217B9
+         Picture         =   "frmDocVentas.frx":22217
          Style           =   1  'Graphical
          TabIndex        =   71
          Top             =   1800
@@ -2639,7 +2660,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":21B43
+         Container       =   "frmDocVentas.frx":225A1
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -2667,7 +2688,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":21B5F
+         Container       =   "frmDocVentas.frx":225BD
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
       End
@@ -2683,7 +2704,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5445
-         Picture         =   "frmDocVentas.frx":21B7B
+         Picture         =   "frmDocVentas.frx":225D9
          Style           =   1  'Graphical
          TabIndex        =   32
          Top             =   3375
@@ -2702,7 +2723,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5445
-         Picture         =   "frmDocVentas.frx":21F05
+         Picture         =   "frmDocVentas.frx":22963
          Style           =   1  'Graphical
          TabIndex        =   30
          Top             =   3075
@@ -2721,7 +2742,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5445
-         Picture         =   "frmDocVentas.frx":2228F
+         Picture         =   "frmDocVentas.frx":22CED
          Style           =   1  'Graphical
          TabIndex        =   26
          Top             =   2400
@@ -2740,7 +2761,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5440
-         Picture         =   "frmDocVentas.frx":22619
+         Picture         =   "frmDocVentas.frx":23077
          Style           =   1  'Graphical
          TabIndex        =   19
          Top             =   870
@@ -2767,7 +2788,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   143130625
+         Format          =   131727361
          CurrentDate     =   38955
       End
       Begin MSComctlLib.ImageList imgDocVentas 
@@ -2783,67 +2804,67 @@ Begin VB.Form frmDocVentas
          BeginProperty Images {2C247F25-8591-11D1-B16A-00C0F0283628} 
             NumListImages   =   16
             BeginProperty ListImage1 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":229A3
+               Picture         =   "frmDocVentas.frx":23401
                Key             =   ""
             EndProperty
             BeginProperty ListImage2 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":22D3D
+               Picture         =   "frmDocVentas.frx":2379B
                Key             =   ""
             EndProperty
             BeginProperty ListImage3 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":2318F
+               Picture         =   "frmDocVentas.frx":23BED
                Key             =   ""
             EndProperty
             BeginProperty ListImage4 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":23529
+               Picture         =   "frmDocVentas.frx":23F87
                Key             =   ""
             EndProperty
             BeginProperty ListImage5 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":238C3
+               Picture         =   "frmDocVentas.frx":24321
                Key             =   ""
             EndProperty
             BeginProperty ListImage6 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":23C5D
+               Picture         =   "frmDocVentas.frx":246BB
                Key             =   ""
             EndProperty
             BeginProperty ListImage7 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":23FF7
+               Picture         =   "frmDocVentas.frx":24A55
                Key             =   ""
             EndProperty
             BeginProperty ListImage8 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":24391
+               Picture         =   "frmDocVentas.frx":24DEF
                Key             =   ""
             EndProperty
             BeginProperty ListImage9 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":2472B
+               Picture         =   "frmDocVentas.frx":25189
                Key             =   ""
             EndProperty
             BeginProperty ListImage10 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":24AC5
+               Picture         =   "frmDocVentas.frx":25523
                Key             =   ""
             EndProperty
             BeginProperty ListImage11 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":24E5F
+               Picture         =   "frmDocVentas.frx":258BD
                Key             =   ""
             EndProperty
             BeginProperty ListImage12 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":25B21
+               Picture         =   "frmDocVentas.frx":2657F
                Key             =   ""
             EndProperty
             BeginProperty ListImage13 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":25EBB
+               Picture         =   "frmDocVentas.frx":26919
                Key             =   ""
             EndProperty
             BeginProperty ListImage14 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":2630D
+               Picture         =   "frmDocVentas.frx":26D6B
                Key             =   ""
             EndProperty
             BeginProperty ListImage15 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":266A7
+               Picture         =   "frmDocVentas.frx":27105
                Key             =   ""
             EndProperty
             BeginProperty ListImage16 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":270B9
+               Picture         =   "frmDocVentas.frx":27B17
                Key             =   ""
             EndProperty
          EndProperty
@@ -2872,7 +2893,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   4
-         Container       =   "frmDocVentas.frx":2778B
+         Container       =   "frmDocVentas.frx":281E9
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -2901,7 +2922,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          Locked          =   -1  'True
-         Container       =   "frmDocVentas.frx":277A7
+         Container       =   "frmDocVentas.frx":28205
          Estilo          =   1
          Vacio           =   -1  'True
       End
@@ -2929,7 +2950,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":277C3
+         Container       =   "frmDocVentas.frx":28221
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -2958,7 +2979,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":277DF
+         Container       =   "frmDocVentas.frx":2823D
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_EmpTrans 
@@ -2985,7 +3006,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":277FB
+         Container       =   "frmDocVentas.frx":28259
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3014,7 +3035,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":27817
+         Container       =   "frmDocVentas.frx":28275
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_Vehiculo 
@@ -3041,7 +3062,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":27833
+         Container       =   "frmDocVentas.frx":28291
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3070,7 +3091,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":2784F
+         Container       =   "frmDocVentas.frx":282AD
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_Almacen 
@@ -3097,7 +3118,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":2786B
+         Container       =   "frmDocVentas.frx":282C9
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3124,7 +3145,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":27887
+         Container       =   "frmDocVentas.frx":282E5
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_Vendedor 
@@ -3151,7 +3172,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":278A3
+         Container       =   "frmDocVentas.frx":28301
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3179,7 +3200,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":278BF
+         Container       =   "frmDocVentas.frx":2831D
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_Moneda 
@@ -3206,7 +3227,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":278DB
+         Container       =   "frmDocVentas.frx":28339
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3234,7 +3255,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":278F7
+         Container       =   "frmDocVentas.frx":28355
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txt_RUC 
@@ -3262,7 +3283,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":27913
+         Container       =   "frmDocVentas.frx":28371
          EnterTab        =   -1  'True
       End
       Begin CATControls.CATTextBox txt_Direccion 
@@ -3289,7 +3310,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   255
-         Container       =   "frmDocVentas.frx":2792F
+         Container       =   "frmDocVentas.frx":2838D
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3317,7 +3338,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   255
-         Container       =   "frmDocVentas.frx":2794B
+         Container       =   "frmDocVentas.frx":283A9
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3345,7 +3366,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   255
-         Container       =   "frmDocVentas.frx":27967
+         Container       =   "frmDocVentas.frx":283C5
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3373,7 +3394,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   45
-         Container       =   "frmDocVentas.frx":27983
+         Container       =   "frmDocVentas.frx":283E1
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3402,7 +3423,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   10
-         Container       =   "frmDocVentas.frx":2799F
+         Container       =   "frmDocVentas.frx":283FD
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3431,7 +3452,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":279BB
+         Container       =   "frmDocVentas.frx":28419
          Estilo          =   3
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3460,7 +3481,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":279D7
+         Container       =   "frmDocVentas.frx":28435
          Text            =   "0"
          Estilo          =   4
          EnterTab        =   -1  'True
@@ -3489,7 +3510,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   128
-         Container       =   "frmDocVentas.frx":279F3
+         Container       =   "frmDocVentas.frx":28451
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3518,7 +3539,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   128
-         Container       =   "frmDocVentas.frx":27A0F
+         Container       =   "frmDocVentas.frx":2846D
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3546,7 +3567,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   128
-         Container       =   "frmDocVentas.frx":27A2B
+         Container       =   "frmDocVentas.frx":28489
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3574,7 +3595,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   128
-         Container       =   "frmDocVentas.frx":27A47
+         Container       =   "frmDocVentas.frx":284A5
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3603,7 +3624,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":27A63
+         Container       =   "frmDocVentas.frx":284C1
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3630,7 +3651,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":27A7F
+         Container       =   "frmDocVentas.frx":284DD
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_MotivoTraslado 
@@ -3658,7 +3679,7 @@ Begin VB.Form frmDocVentas
          ForeColor       =   -2147483640
          Locked          =   -1  'True
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":27A9B
+         Container       =   "frmDocVentas.frx":284F9
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3685,13 +3706,13 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":27AB7
+         Container       =   "frmDocVentas.frx":28515
          Vacio           =   -1  'True
       End
       Begin DXDBGRIDLibCtl.dxDBGrid gDocReferencia 
          Height          =   1200
          Left            =   5985
-         OleObjectBlob   =   "frmDocVentas.frx":27AD3
+         OleObjectBlob   =   "frmDocVentas.frx":28531
          TabIndex        =   22
          Top             =   2160
          Visible         =   0   'False
@@ -3721,7 +3742,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":2B001
+         Container       =   "frmDocVentas.frx":2BA5F
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
       End
@@ -3749,7 +3770,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":2B01D
+         Container       =   "frmDocVentas.frx":2BA7B
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3778,7 +3799,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":2B039
+         Container       =   "frmDocVentas.frx":2BA97
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txt_OrdenCompra 
@@ -3805,7 +3826,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   25
-         Container       =   "frmDocVentas.frx":2B055
+         Container       =   "frmDocVentas.frx":2BAB3
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3834,7 +3855,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":2B071
+         Container       =   "frmDocVentas.frx":2BACF
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3861,7 +3882,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":2B08D
+         Container       =   "frmDocVentas.frx":2BAEB
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_FormaPago 
@@ -3888,7 +3909,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":2B0A9
+         Container       =   "frmDocVentas.frx":2BB07
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3916,7 +3937,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":2B0C5
+         Container       =   "frmDocVentas.frx":2BB23
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtvtcodigo 
@@ -3943,7 +3964,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":2B0E1
+         Container       =   "frmDocVentas.frx":2BB3F
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3970,7 +3991,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":2B0FD
+         Container       =   "frmDocVentas.frx":2BB5B
          Estilo          =   1
          Vacio           =   -1  'True
       End
@@ -3998,7 +4019,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":2B119
+         Container       =   "frmDocVentas.frx":2BB77
          EnterTab        =   -1  'True
       End
       Begin CATControls.CATTextBox txtvtdireccion 
@@ -4025,7 +4046,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   255
-         Container       =   "frmDocVentas.frx":2B135
+         Container       =   "frmDocVentas.frx":2BB93
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -4049,7 +4070,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   143130625
+         Format          =   131727361
          CurrentDate     =   38955
       End
       Begin CATControls.CATTextBox txtgls_contacto 
@@ -4075,7 +4096,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":2B151
+         Container       =   "frmDocVentas.frx":2BBAF
       End
       Begin CATControls.CATTextBox Txt_ProvCliente 
          Height          =   285
@@ -4101,7 +4122,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":2B16D
+         Container       =   "frmDocVentas.frx":2BBCB
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
       End
@@ -4128,7 +4149,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":2B189
+         Container       =   "frmDocVentas.frx":2BBE7
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
       End
@@ -4155,7 +4176,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":2B1A5
+         Container       =   "frmDocVentas.frx":2BC03
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox TxtCodSucursalDestino 
@@ -4182,7 +4203,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":2B1C1
+         Container       =   "frmDocVentas.frx":2BC1F
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -4210,7 +4231,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":2B1DD
+         Container       =   "frmDocVentas.frx":2BC3B
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
       End
@@ -4238,7 +4259,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":2B1F9
+         Container       =   "frmDocVentas.frx":2BC57
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
       End
@@ -4978,6 +4999,25 @@ Dim StrMsgError As String
         If StrMsgError <> "" Then GoTo Err
     End If
     
+Exit Sub
+Err:
+    If StrMsgError = "" Then StrMsgError = Err.Description
+    MsgBox StrMsgError, vbInformation, App.Title
+End Sub
+
+' =============================================
+' Author:        FRANCO LARA
+' Create date:   21/10/2026
+' Description:   Filtra solo pedidos por compra de items; define columnas fijas Comprado/Proveedor; limpia detalle y exporta dos hojas Excel con compra SI/NO, sin MotivoTras, Cantidad2 ni PorDcto.
+' =============================================
+Private Sub CbxCompraItems_Click()
+On Error GoTo Err
+Dim StrMsgError As String
+
+    If strTipoDoc <> "40" Or indNuevoDoc Or CbxCompraItems.ListIndex < 0 Then Exit Sub
+    listaDocVentas StrMsgError
+    If StrMsgError <> "" Then GoTo Err
+
 Exit Sub
 Err:
     If StrMsgError = "" Then StrMsgError = Err.Description
@@ -5791,6 +5831,17 @@ On Error GoTo Err
     txt_Ano.Text = Year(getFechaSistema)
     cbx_Mes.ListIndex = Month(getFechaSistema) - 1
     CbxGanadas.ListIndex = 2
+    If strTipoDoc = "40" Then
+        CbxCompraItems.AddItem "Todos"
+        CbxCompraItems.ItemData(0) = 2
+        CbxCompraItems.AddItem "Con ítems pendientes de compra"
+        CbxCompraItems.ItemData(1) = 0
+        CbxCompraItems.AddItem "Con ítems comprados"
+        CbxCompraItems.ItemData(2) = 1
+        CbxCompraItems.ListIndex = 0
+        CbxCompraItems.Visible = True
+        lblCompraItems.Visible = True
+    End If
     
     If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
     rsdatos.Open "EXEC spu_Documento '" & strTipoDoc & "'", Cn, adOpenStatic, adLockOptimistic
@@ -5835,6 +5886,8 @@ On Error GoTo Err
     
     ConfGrid gLista, True, True, False, False
     ConfGrid gListaDetalle, False, False, False, False
+    gListaDetalle.Columns.ColumnByFieldName("Comprado").Visible = (strTipoDoc = "40")
+    gListaDetalle.Columns.ColumnByFieldName("GlsProveedor").Visible = (strTipoDoc = "40")
     ConfGrid gDetalle, True, False, False, False
     ConfGrid gDocReferencia, True, False, False, True
     
@@ -5862,7 +5915,11 @@ On Error GoTo Err
 '
 '    Else
         gLista.Columns.ColumnByFieldName("btnRC").Visible = False
-        txt_TextoBuscar.Width = 7125
+        If strTipoDoc = "40" Then
+            txt_TextoBuscar.Width = 2940
+        Else
+            txt_TextoBuscar.Width = 7125
+        End If
 '    End If
     
     If strTipoDoc = "86" Or strTipoDoc = "01" Or strTipoDoc = "92" Or strTipoDoc = "40" Or strTipoDoc = "07" Then
@@ -11589,8 +11646,8 @@ On Error GoTo Err
             StrCarpetaTemp = App.Path & "\Temporales"
             If Dir$(StrCarpetaTemp, vbDirectory) = "" Then MkDir StrCarpetaTemp
 
-            StrRutaExcel = StrCarpetaTemp & "\Listado_" & Format(Now, "yyyymmdd_hhnnss") & ".csv"
-            ExportarRecordsetCSV RsListaCab, StrRutaExcel, StrMsgError
+            StrRutaExcel = StrCarpetaTemp & "\Listado_" & Format(Now, "yyyymmdd_hhnnss") & ".xlsx"
+            ExportarListadoExcel RsListaCab, StrRutaExcel, StrMsgError
             If StrMsgError <> "" Then GoTo Err
 
             ShellEx StrRutaExcel, essSW_MAXIMIZE, , , "open", Me.hwnd
@@ -11968,91 +12025,205 @@ Err:
     MsgBox StrMsgError, vbInformation, App.Title
 End Sub
 
-Private Sub ExportarRecordsetCSV(ByVal RsFuente As ADODB.Recordset, ByVal StrRutaCSV As String, StrMsgError As String)
+Private Sub ExportarListadoExcel(ByVal RsFuente As ADODB.Recordset, ByVal StrRutaExcel As String, ByRef StrMsgError As String)
 On Error GoTo Err
-Dim rsExporta           As ADODB.Recordset
-Dim intFile             As Integer
-Dim StrLinea            As String
-Dim ArrCampos           As Variant
-Dim ArrCamposTexto      As Variant
-Dim ArrIndices()        As Integer
-Dim ArrNombres()        As String
-Dim intDefinido         As Integer
-Dim intExportado        As Integer
-Dim intCampo            As Integer
-Dim intIndiceCampo      As Integer
-Dim StrValor            As String
+Dim rsCab               As ADODB.Recordset
+Dim rsDet               As ADODB.Recordset
+Dim cmd                 As ADODB.Command
+Dim xml                 As Object
+Dim nodo                As Object
+Dim xl                  As Object
+Dim libro               As Object
+Dim hojaCab             As Object
+Dim hojaDet             As Object
+Dim camposCab           As Variant
+Dim camposDet           As Variant
+Dim indicesCab()        As Integer
+Dim nombresCab()        As String
+Dim valoresCab()        As Variant
+Dim datosCab()          As Variant
+Dim datosDet()          As Variant
+Dim cantidadCab         As Long
+Dim cantidadDet         As Long
+Dim indice              As Integer
+Dim i                   As Long
+Dim j                   As Long
+Dim orden               As Long
+Dim filasCab            As Long
+Dim filasDet            As Long
+Dim filaExcelCab        As Long
+Dim filaExcelDet        As Long
+Dim textoXml            As String
 
-    If TypeName(RsFuente) = "Nothing" Then Exit Sub
-
-    Set rsExporta = RsFuente.Clone(adLockReadOnly)
-
-    ArrCampos = Split("idSerie|idDocVentas|idPerCliente|GlsCliente|RUCCliente|FecEmision|estDocVentas|Moneda|TotalPrecioVenta|DocReferencia|NumOrdenCompra|CostoTotal|Obs|MotivoTras", "|")
-    ArrCamposTexto = Split("idDocVentas|NumOrdenCompra", "|")
-
-    ReDim ArrIndices(0 To UBound(ArrCampos))
-    ReDim ArrNombres(0 To UBound(ArrCampos))
-
-    intExportado = 0
-    For intDefinido = 0 To UBound(ArrCampos)
-        intIndiceCampo = ObtenerIndiceCampoRecordset(rsExporta, CStr(ArrCampos(intDefinido)))
-        If intIndiceCampo >= 0 Then
-            ArrIndices(intExportado) = intIndiceCampo
-            ArrNombres(intExportado) = CStr(ArrCampos(intDefinido))
-            intExportado = intExportado + 1
+    If RsFuente Is Nothing Then Err.Raise vbObjectError + 2100, , "No existe un listado para exportar."
+    Set rsCab = RsFuente.Clone(adLockReadOnly)
+    If rsCab.BOF And rsCab.EOF Then Err.Raise vbObjectError + 2101, , "No existen registros para exportar."
+    camposCab = Split("idSerie|idDocVentas|idPerCliente|GlsCliente|RUCCliente|FecEmision|estDocVentas|Moneda|TotalPrecioVenta|DocReferencia|NumOrdenCompra|CostoTotal|Obs", "|")
+    ReDim indicesCab(0 To UBound(camposCab))
+    ReDim nombresCab(0 To UBound(camposCab))
+    For i = 0 To UBound(camposCab)
+        indice = ObtenerIndiceCampoRecordset(rsCab, CStr(camposCab(i)))
+        If indice >= 0 Then
+            indicesCab(cantidadCab) = indice
+            nombresCab(cantidadCab) = CStr(camposCab(i))
+            cantidadCab = cantidadCab + 1
         End If
-    Next intDefinido
+    Next i
+    If cantidadCab = 0 Then Err.Raise vbObjectError + 2102, , "No hay columnas de cabecera para exportar."
+    ReDim Preserve nombresCab(0 To cantidadCab - 1)
 
-    If intExportado = 0 Then
-        StrMsgError = "No se encontraron columnas configuradas para exportar."
-        GoTo Err
-    End If
+    ' Se envian las claves del resultado actual, sin repetir la busqueda ni consultar por cada pedido.
+    Set xml = CreateObject("MSXML2.DOMDocument.6.0")
+    xml.appendChild xml.createElement("documentos")
+    rsCab.MoveFirst
+    Do While Not rsCab.EOF
+        orden = orden + 1
+        Set nodo = xml.createElement("documento")
+        nodo.setAttribute "orden", CStr(orden)
+        nodo.setAttribute "serie", Trim$("" & rsCab.Fields("idSerie").Value)
+        nodo.setAttribute "numero", Trim$("" & rsCab.Fields("idDocVentas").Value)
+        xml.documentElement.appendChild nodo
+        rsCab.MoveNext
+    Loop
+    If orden > 1048575 Then Err.Raise vbObjectError + 2103, , "El listado supera el limite de filas de una hoja Excel."
+    textoXml = xml.xml
+    Set cmd = New ADODB.Command
+    Set cmd.ActiveConnection = Cn
+    cmd.CommandType = adCmdStoredProc
+    cmd.CommandText = "dbo.spu_Docventas_ExportarDetalle"
+    cmd.Parameters.Append cmd.CreateParameter("@idEmpresa", adChar, adParamInput, 2, glsEmpresa)
+    cmd.Parameters.Append cmd.CreateParameter("@idSucursal", adVarChar, adParamInput, 8, glsSucursal)
+    cmd.Parameters.Append cmd.CreateParameter("@idDocumento", adChar, adParamInput, 2, strTipoDoc)
+    cmd.Parameters.Append cmd.CreateParameter("@Documentos", adLongVarWChar, adParamInput, Len(textoXml), textoXml)
+    Set rsDet = New ADODB.Recordset
+    rsDet.CursorLocation = adUseClient
+    rsDet.Open cmd, , adOpenStatic, adLockReadOnly
+    Set rsDet.ActiveConnection = Nothing
+    If rsDet.RecordCount > 1048575 Then Err.Raise vbObjectError + 2104, , "El consolidado supera el limite de filas de una hoja Excel. Reduzca el resultado de la consulta."
 
-    ReDim Preserve ArrIndices(0 To intExportado - 1)
-    ReDim Preserve ArrNombres(0 To intExportado - 1)
-
-    intFile = FreeFile
-    Open StrRutaCSV For Output As #intFile
-
-    StrLinea = ""
-    For intCampo = 0 To intExportado - 1
-        If intCampo > 0 Then StrLinea = StrLinea & ";"
-        StrLinea = StrLinea & FormatearValorCSV(ArrNombres(intCampo))
-    Next intCampo
-    Print #intFile, StrLinea
-
-    If Not (rsExporta.BOF And rsExporta.EOF) Then
-        rsExporta.MoveFirst
-
-        Do While Not rsExporta.EOF
-            StrLinea = ""
-            For intCampo = 0 To intExportado - 1
-                If intCampo > 0 Then StrLinea = StrLinea & ";"
-
-                StrValor = Trim("" & rsExporta.Fields(ArrIndices(intCampo)).Value)
-                If CampoExportacionTexto(ArrNombres(intCampo), ArrCamposTexto) Then
-                    StrValor = "=" & Chr$(34) & StrValor & Chr$(34)
+    camposDet = Split("item|idProducto|GlsProducto|GlsMarca|GlsUM|Cantidad|PVUnit|TotalPVNeto|CantidadImp", "|")
+    If strTipoDoc = "40" Then camposDet = Split(Join(camposDet, "|") & "|Comprado|GlsProveedor", "|")
+    cantidadDet = UBound(camposDet) + 1
+    Set xl = CreateObject("Excel.Application")
+    xl.DisplayAlerts = False
+    xl.ScreenUpdating = False
+    Set libro = xl.Workbooks.Add(-4167)
+    Set hojaCab = libro.Worksheets(1)
+    hojaCab.Name = "Listado"
+    Set hojaDet = libro.Worksheets.Add(, hojaCab)
+    hojaDet.Name = "Cabecera y detalle"
+    For i = 0 To cantidadCab - 1
+        ConfigurarColumnaExcel hojaCab, i + 1, nombresCab(i), nombresCab(i)
+        ConfigurarColumnaExcel hojaDet, i + 1, nombresCab(i), nombresCab(i)
+    Next i
+    For i = 0 To cantidadDet - 1
+        ConfigurarColumnaExcel hojaDet, cantidadCab + i + 1, "Detalle_" & CStr(camposDet(i)), CStr(camposDet(i))
+    Next i
+    ReDim valoresCab(1 To cantidadCab)
+    ReDim datosCab(1 To 1000, 1 To cantidadCab)
+    ReDim datosDet(1 To 1000, 1 To cantidadCab + cantidadDet)
+    filaExcelCab = 2
+    filaExcelDet = 2
+    orden = 0
+    rsCab.MoveFirst
+    Do While Not rsCab.EOF
+        orden = orden + 1
+        filasCab = filasCab + 1
+        For i = 1 To cantidadCab
+            valoresCab(i) = rsCab.Fields(indicesCab(i - 1)).Value
+            If IsNull(valoresCab(i)) Then valoresCab(i) = Empty
+            datosCab(filasCab, i) = valoresCab(i)
+        Next i
+        Do While Not rsDet.EOF
+            If CLng(rsDet.Fields("OrdenCabecera").Value) <> orden Then Exit Do
+            filasDet = filasDet + 1
+            For i = 1 To cantidadCab
+                datosDet(filasDet, i) = valoresCab(i)
+            Next i
+            For j = 0 To cantidadDet - 1
+                datosDet(filasDet, cantidadCab + j + 1) = rsDet.Fields(CStr(camposDet(j))).Value
+                If IsNull(datosDet(filasDet, cantidadCab + j + 1)) Then
+                    datosDet(filasDet, cantidadCab + j + 1) = Empty
+                ElseIf CStr(camposDet(j)) = "Comprado" Then
+                    datosDet(filasDet, cantidadCab + j + 1) = IIf(Val("" & datosDet(filasDet, cantidadCab + j + 1)) = 1, "SI", "NO")
                 End If
-
-                StrLinea = StrLinea & FormatearValorCSV(StrValor)
-            Next intCampo
-            Print #intFile, StrLinea
-            rsExporta.MoveNext
+            Next j
+            If filasDet = 1000 Then VolcarFilasExcel hojaDet, datosDet, filasDet, cantidadCab + cantidadDet, filaExcelDet
+            rsDet.MoveNext
         Loop
-    End If
+        If filasCab = 1000 Then VolcarFilasExcel hojaCab, datosCab, filasCab, cantidadCab, filaExcelCab
+        rsCab.MoveNext
+    Loop
+    VolcarFilasExcel hojaCab, datosCab, filasCab, cantidadCab, filaExcelCab
+    VolcarFilasExcel hojaDet, datosDet, filasDet, cantidadCab + cantidadDet, filaExcelDet
+    FormatearHojaExcel hojaCab, filaExcelCab - 1, cantidadCab
+    FormatearHojaExcel hojaDet, filaExcelDet - 1, cantidadCab + cantidadDet
+    hojaCab.Activate
+    libro.SaveAs StrRutaExcel, 51
 
-    Close #intFile
-    Set rsExporta = Nothing
+Salir:
+    On Error Resume Next
+    Set hojaDet = Nothing
+    Set hojaCab = Nothing
+    If Not libro Is Nothing Then libro.Close False
+    Set libro = Nothing
+    If Not xl Is Nothing Then xl.Quit
+    Set xl = Nothing
+    If Not rsDet Is Nothing Then
+        If rsDet.State = adStateOpen Then rsDet.Close
+    End If
+    If Not rsCab Is Nothing Then rsCab.Close
+    Set rsDet = Nothing
+    Set rsCab = Nothing
+    Set cmd = Nothing
+    Set nodo = Nothing
+    Set xml = Nothing
     Exit Sub
-
 Err:
-    If intFile > 0 Then Close #intFile
-    If TypeName(rsExporta) <> "Nothing" Then
-        If rsExporta.State = 1 Then rsExporta.Close
-        Set rsExporta = Nothing
-    End If
     If StrMsgError = "" Then StrMsgError = Err.Description
+    Resume Salir
 End Sub
+
+Private Sub ConfigurarColumnaExcel(ByVal Hoja As Object, ByVal Columna As Long, ByVal Titulo As String, ByVal Campo As String)
+    Hoja.Columns(Columna).NumberFormat = "@"
+    Select Case LCase$(Campo)
+        Case "fecemision": Hoja.Columns(Columna).NumberFormat = "dd/mm/yyyy"
+        Case "item": Hoja.Columns(Columna).NumberFormat = "0"
+        Case "totalprecioventa", "costototal", "cantidad", "cantidad2", "pvunit", "pordcto", "totalpvneto", "cantidadimp"
+            Hoja.Columns(Columna).NumberFormat = "#,##0.00"
+    End Select
+    Hoja.Cells(1, Columna).Value = Titulo
+End Sub
+
+Private Sub VolcarFilasExcel(ByVal Hoja As Object, ByRef Datos() As Variant, ByRef CantFilas As Long, ByVal CantColumnas As Long, ByRef FilaExcel As Long)
+Dim salida() As Variant
+Dim i As Long
+Dim j As Long
+    If CantFilas = 0 Then Exit Sub
+    ReDim salida(1 To CantFilas, 1 To CantColumnas)
+    For i = 1 To CantFilas
+        For j = 1 To CantColumnas
+            salida(i, j) = Datos(i, j)
+        Next j
+    Next i
+    Hoja.Cells(FilaExcel, 1).Resize(CantFilas, CantColumnas).Value = salida
+    FilaExcel = FilaExcel + CantFilas
+    CantFilas = 0
+End Sub
+
+Private Sub FormatearHojaExcel(ByVal Hoja As Object, ByVal Filas As Long, ByVal Columnas As Long)
+Dim i As Long
+    With Hoja.Range(Hoja.Cells(1, 1), Hoja.Cells(1, Columnas))
+        .Font.Bold = True
+        .Interior.Color = RGB(220, 230, 241)
+    End With
+    Hoja.Range(Hoja.Cells(1, 1), Hoja.Cells(Filas, Columnas)).AutoFilter
+    Hoja.UsedRange.Columns.AutoFit
+    For i = 1 To Columnas
+        If Hoja.Columns(i).ColumnWidth > 60 Then Hoja.Columns(i).ColumnWidth = 60
+    Next i
+End Sub
+
 
 Private Function ObtenerIndiceCampoRecordset(ByVal RsFuente As ADODB.Recordset, ByVal StrCampo As String) As Integer
 Dim intCampo As Integer
@@ -12064,22 +12235,6 @@ Dim intCampo As Integer
             Exit Function
         End If
     Next intCampo
-End Function
-
-Private Function CampoExportacionTexto(ByVal StrCampo As String, ByVal ArrCamposTexto As Variant) As Boolean
-Dim intCampo As Integer
-
-    CampoExportacionTexto = False
-    For intCampo = 0 To UBound(ArrCamposTexto)
-        If UCase$(Trim$(CStr(ArrCamposTexto(intCampo)))) = UCase$(Trim$(StrCampo)) Then
-            CampoExportacionTexto = True
-            Exit Function
-        End If
-    Next intCampo
-End Function
-
-Private Function FormatearValorCSV(ByVal StrValor As String) As String
-    FormatearValorCSV = Chr$(34) & Replace(StrValor, Chr$(34), Chr$(34) & Chr$(34)) & Chr$(34)
 End Function
 
 Private Sub QuitarAprobacion(StrMsgError As String)
@@ -13338,6 +13493,12 @@ Dim strCond         As String
 Dim Vizualiza_Docum As String
 Dim Orden           As String
 Dim FILTRO          As String
+Dim EstadoCompra    As Integer
+
+    EstadoCompra = 2
+    If strTipoDoc = "40" And CbxCompraItems.ListIndex >= 0 Then
+        EstadoCompra = CbxCompraItems.ItemData(CbxCompraItems.ListIndex)
+    End If
 
     FILTRO = txt_TextoBuscar.Text
     FILTRO = Replace(FILTRO, "'", " ")
@@ -13345,9 +13506,10 @@ Dim FILTRO          As String
     FILTRO = Replace(FILTRO, "%", " ")
 
     mClaveDetalleListado = ""
+    Set gListaDetalle.DataSource = Nothing
     Set gLista.DataSource = Nothing
     'txt_TextoBuscar.Text = ""
-    csql = "EXEC spu_Docventas_Listacab '" & glsEmpresa & "','" & glsSucursal & "','" & strTipoDoc & "'," & Val(txt_Ano.Text) & "," & Val(cbx_Mes.ListIndex + 1) & ",'" & FILTRO & "'," & Val(CbxGanadas.ListIndex) & ""
+    csql = "EXEC spu_Docventas_Listacab '" & glsEmpresa & "','" & glsSucursal & "','" & strTipoDoc & "'," & Val(txt_Ano.Text) & "," & Val(cbx_Mes.ListIndex + 1) & ",'" & FILTRO & "'," & Val(CbxGanadas.ListIndex) & "," & EstadoCompra
     
     If RsListaCab.State = 1 Then RsListaCab.Close: Set RsListaCab = Nothing
     RsListaCab.Open csql, Cn, adOpenStatic, adLockOptimistic

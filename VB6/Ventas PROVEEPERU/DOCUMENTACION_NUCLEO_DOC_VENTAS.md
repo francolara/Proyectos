@@ -3,7 +3,7 @@
 **Proyecto:** `Ventas PROVEEPERU` (VB6)  
 **Fecha de levantamiento:** 13/10/2026  
 **Alcance inicial:** levantamiento técnico y funcional.
-**Última actualización:** 19/10/2026 — implementación del control universal de importaciones por documento e ítem origen.
+**Última actualización:** 21/10/2026 — filtro de compra de ítems en la consulta de pedidos; se conserva el control universal de importaciones por documento e ítem origen.
 
 ## 1. Resumen ejecutivo
 
@@ -321,3 +321,67 @@ La validación realizada en código comprende firmas, codificación, finales de 
 - LocalDB tampoco pudo iniciarse porque el mismo contexto no tiene acceso a su configuración del registro.
 
 Antes de producción se debe compilar VB6 desde una sesión con los componentes registrados y desplegar los procedimientos en una base de pruebas con credenciales proporcionadas expresamente para ese ambiente.
+
+## 12. Consulta de pedidos por compra de ítems (21/10/2026)
+
+En `frmDocVentas`, únicamente al consultar pedidos (`strTipoDoc = "40"`), se muestra el combo **Compra ítems**. Su selección inicial es **Todos** y cambiarla vuelve a consultar el listado conservando texto, año, mes y el filtro existente de ganadas.
+
+| Opción | Valor enviado | Condición sobre el detalle del pedido |
+|---|---:|---|
+| Todos | 2 | No se aplica una condición de compra. |
+| Con ítems pendientes de compra | 0 | Existe al menos un ítem sin marcar como comprado. |
+| Con ítems comprados | 1 | Existe al menos un ítem marcado como comprado. |
+
+Los pedidos mixtos aparecen en ambos filtros. Una marca `Comprado` nula o vacía se considera pendiente; únicamente el valor `1` representa comprado. La coincidencia incluye empresa, sucursal, documento, serie y número para evitar mezclar detalles de otros pedidos. Un pedido sin detalles propios solo aparece al seleccionar Todos.
+
+`dbo.spu_Docventas_Listacab` recibe el nuevo parámetro final opcional `@EstadoCompra INT = 2`. Los consumidores existentes que envían siete parámetros conservan la consulta habitual. El filtro de compra se omite para documentos distintos de pedidos.
+
+`dbo.spu_Docventas_ListaDet` incorpora `Comprado` como entero normalizado a 0/1 y devuelve todos los ítems del documento, independientemente de la opción seleccionada en el listado. La columna de check **Comprado**, de solo lectura, queda definida físicamente en `gListaDetalle` y guardada en `frmDocVentas.frx`, disponible en el diseñador. Al cargar el formulario solo se ajusta su visibilidad: se muestra para pedidos y se oculta para los demás documentos; no se crean columnas en ejecución. No se modifica la edición ni los permisos de compra de `gDetalle`. Al volver a consultar se limpia el detalle anterior, incluso si el nuevo resultado está vacío.
+
+### Archivos y despliegue
+
+- Formulario: `VB6/Ventas PROVEEPERU/Formularios/frmDocVentas.frm` (ya registrado en `Ventas.vbp`).
+- Procedimientos: `Basededatos/DbSistema/StoreProcedure/dbo.spu_Docventas_Listacab.StoredProcedure.sql` y `dbo.spu_Docventas_ListaDet.StoredProcedure.sql`.
+- Ejecutar ambos scripts en la base destino antes de usar el nuevo ejecutable; después recompilar y comprobar el formulario en VB6.
+- No se requieren cambios de tablas. Se modifica únicamente el recurso de `gListaDetalle` en `frmDocVentas.frx`, serializado mediante el propio componente DXDBGrid; los demás recursos se conservan byte por byte y se actualizan sus referencias de posición en el `.frm`. El formulario conserva Windows-1252 sin BOM y CRLF. Los dos scripts se convierten desde UTF-16 LE a UTF-8 sin BOM y LF, según las pautas locales.
+
+### Validación
+
+Los dos procedimientos pasaron `TSql160Parser` sin errores. Se ejecutaron copias de sus cuerpos sobre tablas y procedimientos temporales en SQL Server Express local: Todos, pendientes, comprados, pedidos mixtos, valores nulos/vacíos, aislamiento por sucursal y serie, parámetro omitido, documentos distintos de pedidos, combinación con texto y mes sin resultados. También se verificó que el detalle mixto conserva ambos ítems con sus respectivas marcas y normaliza los nulos. No se desplegaron procedimientos ni se modificaron datos del sistema.
+
+Se intentó compilar una copia temporal de `Ventas.vbp` con salida independiente. VB6 terminó con **Permiso denegado**, sin completar la compilación. La comprobación del formulario en ejecución queda pendiente en una sesión con acceso al compilador y sus componentes.
+
+La columna física se validó volviendo a cargar el recurso final con DXDBGrid: 11 columnas, incluida `Comprado`, con valores 1/0, ancho 80, solo lectura y editor deshabilitado. Las diez columnas anteriores se conservaron. Esta comprobación valida la persistencia del control; la compilación completa y la inspección visual en el IDE siguen pendientes.
+
+### 12.1 Proveedor en la consulta de pedidos (21/10/2026)
+
+Se añade físicamente la columna **Proveedor** en `gListaDetalle`, enlazada a `docventasdet.GlsProveedor` (varchar de 150 caracteres existente). La columna queda guardada en `frmDocVentas.frx`, como texto de solo lectura, ancho 200 y editor deshabilitado. Solo es visible para pedidos (`40`), igual que Comprado; no se crean columnas al ejecutar el formulario.
+
+`dbo.spu_Docventas_ListaDet` devuelve también `ISNULL(d.GlsProveedor, '') AS GlsProveedor`. `dbo.spu_Docventas_Listacab` permite buscar pedidos por coincidencia parcial del proveedor de cualquiera de sus ítems. Este criterio se suma a los campos de búsqueda existentes y se combina con el filtro de compra. El detalle sigue mostrando todos los ítems. La coincidencia del proveedor respeta empresa, sucursal, documento, serie y número; los demás tipos de documento no incorporan el criterio de proveedor.
+
+El recurso se guarda mediante el propio componente DXDBGrid y se actualizan las posiciones posteriores del `.frm`, conservando los demás recursos byte por byte. El control se vuelve a cargar para comprobar las 12 columnas físicas y sus propiedades. No hay cambios de tablas. Para activar el cambio deben desplegarse las versiones actualizadas de ambos procedimientos y recompilar el proyecto; la limitación de compilación VB6 indicada anteriormente sigue pendiente.
+
+Validación de proveedor: ambos procedimientos pasaron TSql160Parser sin errores. Las copias temporales de sus cuerpos pasaron pruebas en SQL Server local de búsqueda parcial, combinación con pendiente/comprado, pedido mixto, ausencia de coincidencias, aislamiento por empresa/sucursal/serie/tipo, exclusión de facturas, búsqueda previa de productos y proveedor nulo. Se confirmó que el detalle conserva todos sus ítems con los respectivos proveedores. No se desplegaron procedimientos ni se modificaron datos del sistema.
+
+## 13. Exportación Excel de listado y consolidado (21/10/2026)
+
+La opción Excel del toolbar de `frmDocVentas` genera ahora `Temporales/Listado_yyyymmdd_hhnnss.xlsx`, en lugar de CSV. Utiliza Excel mediante automatización, guarda el archivo, cierra su instancia de trabajo y abre el resultado con la asociación habitual del sistema.
+
+- **Listado:** conserva las columnas de cabecera que exportaba el listado, con una fila por documento del resultado actual.
+- **Cabecera y detalle:** repite esas columnas de cabecera por cada ítem del documento y añade las columnas del detalle con el prefijo `Detalle_`, para distinguirlas y facilitar cruces y filtros. Incluye ítem, código, descripción, marca, unidad, cantidades, precio, descuento, total y atendido. En pedidos añade Comprado y GlsProveedor.
+
+Se exportan todos los ítems de los documentos encontrados, conservando los filtros que determinaron ese resultado (texto, proveedor, compra, año, mes, ganadas), sin volver a ejecutar el buscador. Los documentos sin detalle conservan una fila con los datos de cabecera. Los importes de cabecera aparecen repetidos en la segunda hoja y no deben sumarse como si fueran importes por ítem; para totalizar documentos se debe usar Listado.
+
+La rutina `ExportarListadoExcel` trabaja con una copia del recordset de cabeceras para no desplazar la selección del formulario. Envía sus claves y su orden en un XML parametrizado al nuevo procedimiento `dbo.spu_Docventas_ExportarDetalle`. El procedimiento recupera en una sola consulta los detalles, limitados por empresa, sucursal, tipo, serie y número, y conserva el orden de las cabeceras. No consulta el detalle documento por documento ni cambia tablas.
+
+La escritura en Excel se realiza por bloques de 1000 filas. Los códigos, RUC, series, números y órdenes de compra se guardan como texto para conservar ceros iniciales y evitar pérdida de precisión. Fechas y cantidades/importes conservan sus tipos y formatos. Ambas hojas incluyen encabezados, autofiltro y anchos ajustados. Se valida el límite de 1 048 575 filas de datos por hoja antes de crear el archivo; los errores cierran los recursos de trabajo de Excel y muestran el mensaje en el formulario.
+
+### Despliegue y validación
+
+Ejecutar `Basededatos/DbSistema/StoreProcedure/dbo.spu_Docventas_ExportarDetalle.StoredProcedure.sql` en la base destino y recompilar `Ventas.vbp`. El formulario ya está registrado en el proyecto. El nuevo procedimiento es un script independiente conforme a las pautas del repositorio; no existe un proyecto SQL que requiera registrarlo. No se modifica la interfaz ni el `.frx` para esta ampliación de exportación.
+
+El nuevo procedimiento pasó TSql160Parser sin errores. Se compiló con éxito un proyecto VB6 aislado que incorpora las mismas rutinas de exportación y usa copias temporales del procedimiento y de la tabla de detalle. Su ejecución generó libros reales de prueba de pedidos, facturas y más de 1000 ítems. Se verificaron estructura de dos hojas, repetición de cabeceras, claves con el mismo número y distinta serie, exclusión de detalles de otra sucursal o fuera del resultado, documentos sin detalle, valores de compra/proveedor, ceros iniciales, fechas/importes nativos y texto literal que empieza con `=`. La prueba por bloques verificó las filas 1000 y 1002 y el cierre del bloque parcial sin pérdidas ni duplicados. No se desplegó el procedimiento ni se alteraron datos del sistema. La prueba aislada no sustituye la compilación completa del proyecto y la comprobación del toolbar en el sistema.
+
+### 13.1 Columnas del Excel (21/10/2026)
+
+La exportación omite MotivoTras en ambas hojas y excluye Detalle_PorDcto y Detalle_Cantidad2 del consolidado. En pedidos, Detalle_Comprado se exporta como texto SI/NO (1 = SI, 0 = NO). Para las cabeceras sin detalle el campo permanece vacío. La grilla y los valores almacenados conservan su funcionamiento. Este ajuste solo requiere recompilar VB6; no cambia el procedimiento de exportación.
