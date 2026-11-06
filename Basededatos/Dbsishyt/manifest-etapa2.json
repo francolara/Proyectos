@@ -1,0 +1,12 @@
+{
+  "database": "SistemaWebHYT",
+  "requires": "etapa1",
+  "scripts": [
+    "StoreProcedure/spu_ConsultarAcceso.sql",
+    "StoreProcedure/spu_FinalizarAcceso.sql",
+    "StoreProcedure/spu_RegistrarSalida.sql",
+    "StoreProcedure/spu_CrearAdministradorInicial.sql",
+    "StoreProcedure/spu_RestablecerAcceso.sql",
+    "Script/010_PermisosAcceso.sql"
+  ]
+}

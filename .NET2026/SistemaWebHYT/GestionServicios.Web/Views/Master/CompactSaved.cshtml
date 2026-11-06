@@ -1,0 +1,4 @@
+@model long
+@{Layout=null;}
+@* Firma: FRANCO LARA - 05/11/2026 | Confirmación del guardado contextual sin perder los campos de la ficha principal, manteniendo el tema visual. *@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/><script src="~/hyt-theme-switch.js" asp-append-version="true"></script><title>Registro guardado | HYT</title><link rel="stylesheet" href="~/hyt-theme.css" asp-append-version="true"/><link rel="stylesheet" href="~/hyt-interface.css" asp-append-version="true"/></head><body data-price-frame-material="@Model" data-price-frame-saved data-price-reset-page="@(ViewData["ResetMaterialPricePage"] is true)"><main class="hyt-workspace"><p role="status">Registro guardado.</p><button class="hyt-button-secondary" type="button" data-price-frame-cancel>Cerrar ventana</button></main><script src="~/hyt-material-tariffs-frame.js" asp-append-version="true" defer></script></body></html>

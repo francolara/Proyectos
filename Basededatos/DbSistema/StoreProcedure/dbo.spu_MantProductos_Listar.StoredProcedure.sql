@@ -1,3 +1,8 @@
+﻿-- =============================================
+-- Author:      FRANCO LARA / Codex
+-- Create date: 05/11/2026
+-- Description: Acepta % y * y busca todos los terminos en cualquier orden.
+-- =============================================
 -- =============================================
 -- Author:      FRANCO LARA / Codex
 -- Create date: 15/10/2026
@@ -19,10 +24,29 @@ BEGIN
         DECLARE @AliasAnterior SYSNAME = N'';
         DECLARE @Indice INT = 0;
         DECLARE @Peso INT;
-        DECLARE @BusquedaLike VARCHAR(252);
+        DECLARE @Termino VARCHAR(500);
+        DECLARE @PosSeparador INT;
+        DECLARE @FiltroBusqueda NVARCHAR(MAX) = N'';
 
-        SET @Busqueda = LTRIM(RTRIM(ISNULL(@Busqueda, '')));
-        SET @BusquedaLike = '%' + @Busqueda + '%';
+        SET @Busqueda = REPLACE(REPLACE(REPLACE(LTRIM(RTRIM(ISNULL(@Busqueda, ''))), '*', ' '), '%', ' '), CHAR(9), ' ');
+
+        WHILE LEN(@Busqueda) > 0
+        BEGIN
+            SET @PosSeparador = CHARINDEX(' ', @Busqueda + ' ');
+            SET @Termino = LEFT(@Busqueda, @PosSeparador - 1);
+            SET @Busqueda = LTRIM(SUBSTRING(@Busqueda, @PosSeparador + 1, 250));
+
+            IF @Termino <> ''
+            BEGIN
+                -- Escapar comillas antes de incorporar el termino al SQL dinamico.
+                SET @Termino = REPLACE(@Termino, '''', '''''');
+                SET @FiltroBusqueda = @FiltroBusqueda
+                    + N'AND (CHARINDEX(''' + @Termino + N''', P.GlsProducto) > 0 '
+                    + N'OR CHARINDEX(''' + @Termino + N''', P.CodigoRapido) > 0 '
+                    + N'OR CHARINDEX(''' + @Termino + N''', P.IdFabricante) > 0 '
+                    + N'OR CHARINDEX(''' + @Termino + N''', P.IdProducto) > 0) ';
+            END;
+        END;
 
         DECLARE CursorNiveles CURSOR LOCAL FAST_FORWARD FOR
             SELECT TN.Peso
@@ -71,11 +95,7 @@ BEGIN
             + @UnionesNivel
             + N' WHERE P.IdEmpresa = @PIdEmpresa ';
 
-        IF @Busqueda <> ''
-            SET @Sql = @Sql + N'AND (P.GlsProducto LIKE @PBusquedaLike '
-                + N'OR P.CodigoRapido LIKE @PBusquedaLike '
-                + N'OR P.IdFabricante LIKE @PBusquedaLike '
-                + N'OR P.IdProducto LIKE @PBusquedaLike) ';
+        SET @Sql = @Sql + @FiltroBusqueda;
 
         IF @OrdenarPorCodigoRapido = 1
             SET @Sql = @Sql + N'ORDER BY P.CodigoRapido;';
@@ -84,9 +104,8 @@ BEGIN
 
         EXEC sys.sp_executesql
             @Sql,
-            N'@PIdEmpresa CHAR(2), @PBusquedaLike VARCHAR(252)',
-            @PIdEmpresa = @IdEmpresa,
-            @PBusquedaLike = @BusquedaLike;
+            N'@PIdEmpresa CHAR(2)',
+            @PIdEmpresa = @IdEmpresa;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000);

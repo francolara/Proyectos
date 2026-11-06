@@ -1,0 +1,17 @@
+  Determinando los proyectos que se van a restaurar...
+  Todos los proyectos están actualizados para la restauración.
+  GestionServicios.Domain -> C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaWebHYT\entregables\qa-codigos\bin\GestionServicios.Domain\debug\GestionServicios.Domain.dll
+  GestionServicios.Contracts -> C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaWebHYT\entregables\qa-codigos\bin\GestionServicios.Contracts\debug\GestionServicios.Contracts.dll
+  Hyt.SqlValidation -> C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaWebHYT\entregables\qa-codigos\bin\Hyt.SqlValidation\debug\Hyt.SqlValidation.dll
+  GestionServicios.Application -> C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaWebHYT\entregables\qa-codigos\bin\GestionServicios.Application\debug\GestionServicios.Application.dll
+  GestionServicios.Infrastructure -> C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaWebHYT\entregables\qa-codigos\bin\GestionServicios.Infrastructure\debug\GestionServicios.Infrastructure.dll
+  Hyt.DatabaseTests -> C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaWebHYT\entregables\qa-codigos\bin\Hyt.DatabaseTests\debug\Hyt.DatabaseTests.dll
+  Hyt.Admin -> C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaWebHYT\entregables\qa-codigos\bin\Hyt.Admin\debug\Hyt.Admin.dll
+  GestionServicios.Web -> C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaWebHYT\entregables\qa-codigos\bin\GestionServicios.Web\debug\GestionServicios.Web.dll
+  Hyt.AccessTests -> C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaWebHYT\entregables\qa-codigos\bin\Hyt.AccessTests\debug\Hyt.AccessTests.dll
+
+Compilación correcta.
+    0 Advertencia(s)
+    0 Errores
+
+Tiempo transcurrido 00:00:03.82

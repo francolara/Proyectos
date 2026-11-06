@@ -1,0 +1,22 @@
+{
+  "database": "SistemaWebHYT",
+  "requires": "etapa4",
+  "scripts": [
+    "Tablas/PresupuestoCorrelativoMensual.sql",
+    "Script/026_NumeroPresupuestoMensual.sql",
+    "Script/027_NombreTipoServicioPresupuesto.sql",
+    "Script/014_PresupuestosDocumentos.sql",
+    "StoreProcedure/spu_Presupuesto_AyudaTarifario.sql",
+    "StoreProcedure/spu_Presupuesto_CambiarEstado.sql",
+    "StoreProcedure/spu_Presupuesto_DatosIniciales.sql",
+    "StoreProcedure/spu_Presupuesto_Guardar.sql",
+    "StoreProcedure/spu_Presupuesto_Listar.sql",
+    "StoreProcedure/spu_Presupuesto_ListarImpresiones.sql",
+    "StoreProcedure/spu_Presupuesto_Obtener.sql",
+    "StoreProcedure/spu_Presupuesto_ObtenerImpresion.sql",
+    "StoreProcedure/spu_Presupuesto_RegistrarImpresion.sql",
+    "StoreProcedure/spu_ConfiguracionHYT_Guardar.sql",
+    "StoreProcedure/spu_ConfiguracionHYT_Obtener.sql",
+    "Script/015_PermisosEtapa5.sql"
+  ]
+}

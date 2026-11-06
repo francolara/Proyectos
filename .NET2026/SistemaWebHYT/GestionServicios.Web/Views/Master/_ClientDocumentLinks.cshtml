@@ -1,0 +1,31 @@
+@model GestionServicios.Web.ViewModels.Maintenance.MaintenanceFormModel
+@* Firma: FRANCO LARA - 05/11/2026 | Lista de enlaces por cliente con descripción, alta/retiro y apertura segura. *@
+<section class="hyt-client-links" data-client-links aria-labelledby="client-links-title">
+<h2 id="client-links-title">Enlaces para documentos</h2>
+<p>Registra una descripción y el enlace correspondiente. Se guardan junto con el cliente.</p>
+<div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Enlaces del cliente"><table class="hyt-table"><thead><tr><th>Descripción</th><th>Enlace</th><th>Abrir</th>@if(!Model.ReadOnly){<th>Acciones</th>}</tr></thead><tbody data-client-link-rows>
+@for(var index=0;index<Model.Input.DocumentLinks.Count;index++)
+{
+    var link=Model.Input.DocumentLinks[index];
+    var safe=Uri.TryCreate(link.Url,UriKind.Absolute,out var uri)&&uri.Scheme is "http" or "https"&&string.IsNullOrEmpty(uri.UserInfo);
+    <tr data-client-link-row>
+    <td>@if(Model.ReadOnly){@link.Description}else{<input type="hidden" name="DocumentLinks[@index].Id" data-link-field="Id" value="@link.Id"/><input name="DocumentLinks[@index].Description" data-link-field="Description" value="@link.Description" maxlength="200" required aria-label="Descripción del enlace @(index+1)"/>}</td>
+    <td>@if(Model.ReadOnly){<span>@link.Url</span>}else{<input name="DocumentLinks[@index].Url" data-link-field="Url" value="@link.Url" type="url" maxlength="2048" required placeholder="https://" aria-label="URL del enlace @(index+1)"/>}</td>
+    <td><a data-client-link-open class="hyt-button-secondary hyt-link-open" href="@(safe?uri!.AbsoluteUri:null)" hidden="@(!safe)" target="_blank" rel="noopener noreferrer" aria-label="Abrir enlace @(index+1) en otra pestaña" title="Abrir enlace"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 3h7v7m0-7L10 14M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/></svg></a></td>
+    @if(!Model.ReadOnly){<td><button type="button" class="hyt-button-secondary" data-client-link-remove>Quitar</button></td>}
+    </tr>
+}
+</tbody></table></div>
+<p data-client-link-empty hidden="@(Model.Input.DocumentLinks.Count>0)">Este cliente todavía no tiene enlaces registrados.</p>
+@if(!Model.ReadOnly)
+{
+    <button type="button" class="hyt-button-secondary" data-client-link-add>Agregar enlace</button>
+    <template data-client-link-template><tr data-client-link-row>
+    <td><input type="hidden" data-link-field="Id"/><input data-link-field="Description" maxlength="200" required/></td>
+    <td><input data-link-field="Url" type="url" maxlength="2048" required placeholder="https://"/></td>
+    <td><a data-client-link-open class="hyt-button-secondary hyt-link-open" hidden target="_blank" rel="noopener noreferrer" title="Abrir enlace"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 3h7v7m0-7L10 14M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/></svg></a></td>
+    <td><button type="button" class="hyt-button-secondary" data-client-link-remove>Quitar</button></td>
+    </tr></template>
+}
+<p role="status" data-client-link-status></p>
+</section>

@@ -1,0 +1,18 @@
+[
+  {
+    "path": "StoreProcedure/spu_Dashboard_Obtener.sql",
+    "sha256": "0d5fef5e97537af8333895503d52dccefef9ed0380fc40b5ed455c547f3847cd"
+  },
+  {
+    "path": "StoreProcedure/spu_Reporte_Listar.sql",
+    "sha256": "2712ed2a42d418d0f0ca6ad5dd043b93f1946f596eee429b2d2329ef9abd8afc"
+  },
+  {
+    "path": "Script/019_PermisosEtapa8.sql",
+    "sha256": "78800ce0224f784988099783f77a81c305dde024deecc58cf17aa1c4a64d6caa"
+  },
+  {
+    "path": "ETAPA_8_HYT.sql",
+    "sha256": "6e957d6b6b33f4e25f85d8f7ea40b9469fd2ec3082a2f1a7673e3b7813ee7af5"
+  }
+]

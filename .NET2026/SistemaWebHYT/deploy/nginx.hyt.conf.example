@@ -1,0 +1,18 @@
+# Plantilla sin activar. Reemplazar dominio, certificados y puerto, y validar con nginx -t.
+# Conservar la protección de origen y configuración real-IP Cloudflare de la infraestructura FRALSE.
+server {
+    listen 443 ssl;
+    server_name hyt.example.invalid;
+    ssl_certificate /RUTA/AL/CERTIFICADO_ORIGIN_CA.pem;
+    ssl_certificate_key /RUTA/A/LA/CLAVE_ORIGIN_CA.key;
+    client_max_body_size 18m;
+    location / {
+        proxy_pass http://127.0.0.1:5186;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Host "";
+        proxy_read_timeout 120s;
+    }
+}

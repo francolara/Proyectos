@@ -1,0 +1,166 @@
+[
+  {
+    "path": "Tablas/UbigeoDepartamentos.sql",
+    "sha256": "1b71a779187b4ce94cbca4a6758103b3bb52348226893c94dbd6aff1a1995891"
+  },
+  {
+    "path": "Tablas/UbigeoProvincias.sql",
+    "sha256": "253873304df328ecf0fd3f98eb9c2b7092373b2c3d04c73bcffcadf1ac9556e3"
+  },
+  {
+    "path": "Tablas/UbigeoDistritos.sql",
+    "sha256": "ba5dd502774f3f5e1b146700b9bdf8de4c2c72e0e6aff11af83b0507b046ab8c"
+  },
+  {
+    "path": "Script/024_UbigeosCatalogo.sql",
+    "sha256": "6d738b0d97239e36418c34532c914c15cea3fb1574256dead28aef488fc3c67a"
+  },
+  {
+    "path": "Script/025_DireccionesYConsideraciones.sql",
+    "sha256": "dcb2c1294a47f51626c65bd8525ec5bc451ff4268d84ebcdc771f471c2007cdb"
+  },
+  {
+    "path": "Script/028_UbigeoConfiguracionHYT.sql",
+    "sha256": "178a8e2d8e14536d7c58b711c8e9dba3540fd37d9be98f4916101dd7cc9a342b"
+  },
+  {
+    "path": "Script/011_EstadosMantenimientos.sql",
+    "sha256": "786501863df6fb5973b7c1b8bb1d3d111c1c18557945546a18bd21de29e99db8"
+  },
+  {
+    "path": "Script/020_CodigosInternosAutomaticos.sql",
+    "sha256": "bae14a38df753cdbc91699d65023b09125915cfb587025bb7b2d8f3345efe968"
+  },
+  {
+    "path": "Script/021_CodigoSAPCliente.sql",
+    "sha256": "c8718ef68a4682009d654121851fed416d1556c98c60715cd39aee2204e1b978"
+  },
+  {
+    "path": "Tablas/ClienteEnlaceDocumento.sql",
+    "sha256": "e4fe9e3f766993e771a8704aae23e495a3e6ccdc2322e3e8335714dd57c1d95d"
+  },
+  {
+    "path": "Script/022_EnlacesDocumentosCliente.sql",
+    "sha256": "c4d348461e30d36dfa242bee25a78f110ecaa456c0b06ad8df74d66262180679"
+  },
+  {
+    "path": "StoreProcedure/spu_MantCatalogos.sql",
+    "sha256": "217d0840b4d4571a2b2deeb55ebe40b305ee7b971bc6a8fb1940721e6c12dc10"
+  },
+  {
+    "path": "StoreProcedure/spu_MantCliente_Listar.sql",
+    "sha256": "2e9b5be25b5a7f2b40a50bcf627e34a729e180c3e4fb62e61c3a2310d47eea2b"
+  },
+  {
+    "path": "StoreProcedure/spu_MantCliente_Obtener.sql",
+    "sha256": "62a23efc4a583fc9c5eadecdb0e202a92a44751bde7afa995580a58a3ca80791"
+  },
+  {
+    "path": "StoreProcedure/spu_MantCliente_Guardar.sql",
+    "sha256": "aeb8a8f116952a5853e899d7725a9599074f635b1ee14b64560842f0f08b85c3"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTienda_Listar.sql",
+    "sha256": "e0b87169b6d937744443e9ee79ead0e1d21d9e31518c971ece0b87a4a001d424"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTienda_Obtener.sql",
+    "sha256": "b37f03399235b5d3d7156b48dde95e28154d6a9bbfc38d255deadc2bbfa8fd9a"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTienda_Guardar.sql",
+    "sha256": "cf530785ede2060c0b018103f696c8aaad009118fe211df8941fa5374643e546"
+  },
+  {
+    "path": "StoreProcedure/spu_MantContactoCliente_Listar.sql",
+    "sha256": "4cd335f1ab998e61b63855e7f979e0ef64d06b78787a1c52e7065f6cce015759"
+  },
+  {
+    "path": "StoreProcedure/spu_MantContactoCliente_Obtener.sql",
+    "sha256": "375fa51c2b186a48d2fbb9ca64affc6325d465716f1945cd728fb717b65bc5c5"
+  },
+  {
+    "path": "StoreProcedure/spu_MantContactoCliente_Guardar.sql",
+    "sha256": "2ade67e66dcaef94a9b1b06016a4cffbd53dd4b6a87e68fe6c4c343b2356d1f2"
+  },
+  {
+    "path": "StoreProcedure/spu_MantProveedorCliente_Listar.sql",
+    "sha256": "139102c83bd97afa07a75cd3a736c3fc13d3418bd9cdb21295c4d3e7fda4af59"
+  },
+  {
+    "path": "StoreProcedure/spu_MantProveedorCliente_Obtener.sql",
+    "sha256": "fb8f4c85faffd8d80ab8c22499e1d1bdcada9769cb44c8cc76f8e2b9d3635a2f"
+  },
+  {
+    "path": "StoreProcedure/spu_MantProveedorCliente_Guardar.sql",
+    "sha256": "2859ce8c8e585671e24e7ae09189877696a7b1eb76761d63ab265ba594ee3ae0"
+  },
+  {
+    "path": "StoreProcedure/spu_MantUnidadMedida_Listar.sql",
+    "sha256": "b618e33b89619cf609d39d33049b11aefc663035e38df2a3475a193d720b4828"
+  },
+  {
+    "path": "StoreProcedure/spu_MantUnidadMedida_Obtener.sql",
+    "sha256": "462e5eaf431cbf02b658f8f6cd05e4303777432cbc0e0b5d1dd5d096e251d2be"
+  },
+  {
+    "path": "StoreProcedure/spu_MantUnidadMedida_Guardar.sql",
+    "sha256": "e51c4e5de940755e37075abda5cc3e54ab1d6aa2eb1c9f624fbe4034d22b16da"
+  },
+  {
+    "path": "StoreProcedure/spu_MantZona_Listar.sql",
+    "sha256": "0f9f279469aa8758fa7c345bd115eb743d225272ec20424d4008caaf13637f66"
+  },
+  {
+    "path": "StoreProcedure/spu_MantZona_Obtener.sql",
+    "sha256": "a4bc3ba01e5d377df92fc25ebf3c98fd39b6bcc49cdb019c67f4038eb2f58e1e"
+  },
+  {
+    "path": "StoreProcedure/spu_MantZona_Guardar.sql",
+    "sha256": "c55d907cbe3697f57846b58021fdca174eb6d59036644811069f6c2923e4acdd"
+  },
+  {
+    "path": "StoreProcedure/spu_MantEspecialidad_Listar.sql",
+    "sha256": "57813a76e9e5250941770213d69d214a11f66b8e9441e06a9718011c048cb47f"
+  },
+  {
+    "path": "StoreProcedure/spu_MantEspecialidad_Obtener.sql",
+    "sha256": "dace5ad63ffbc9f540c7454184cbb8630f3e19bba6c259cad3970c9b265675f0"
+  },
+  {
+    "path": "StoreProcedure/spu_MantEspecialidad_Guardar.sql",
+    "sha256": "cc87c77f6640898421c652e040e9dcfd4c902325f753dc92d77b62ce3343844e"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTipoServicio_Listar.sql",
+    "sha256": "468748d3be42cb17386b8da02b863933af70d737bea3da88a7b467067a756063"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTipoServicio_Obtener.sql",
+    "sha256": "6457a4a196635eaf0b8dbbc9c5be2cfb2717b9b4f56d4cc515656e66ef19fe34"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTipoServicio_Guardar.sql",
+    "sha256": "bfdc3cf9addf9e49d3390a32932bf76dde2050763b9ffb10f7019cd98cb10672"
+  },
+  {
+    "path": "StoreProcedure/spu_MantServicioMaterial_Listar.sql",
+    "sha256": "7450e385f8ff40cfdcf35d3033038d61fe40ac273a051de832c8a2d4c3469ffd"
+  },
+  {
+    "path": "StoreProcedure/spu_MantServicioMaterial_Obtener.sql",
+    "sha256": "fc0c37ce88d09c0b67d085e50162579bbab97f65bf5db1e8b160a65fbc202f6d"
+  },
+  {
+    "path": "StoreProcedure/spu_MantServicioMaterial_Guardar.sql",
+    "sha256": "fc63cfba27d6d8aa6680efc3b58db02f4d5af1984d3abc4818c7fe26c2902dc0"
+  },
+  {
+    "path": "Script/012_PermisosEtapa3.sql",
+    "sha256": "8e94453312e62841e530a1963b0389ea942e70a18b847ae9b46f3035ff25b948"
+  },
+  {
+    "path": "ETAPA_3_HYT.sql",
+    "sha256": "9030f918744964be27a69f8dd2612836ec0f30768e8040ad720fca7430b8de8c"
+  }
+]

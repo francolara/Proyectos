@@ -1,0 +1,6 @@
+@model TraceSummary
+@* Firma: FRANCO LARA - 05/11/2026 | Franja compacta de fechas y responsables adaptable a ambos temas. *@
+<aside class="hyt-trace-summary" aria-label="Fechas y responsables"><h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Fechas y responsables</h2><dl>
+<div><dt>Usuario de registro</dt><dd>@(string.IsNullOrWhiteSpace(Model.CreatedBy)?"—":Model.CreatedBy)</dd></div><div><dt>Fecha de registro</dt><dd>@Model.CreatedAt</dd></div>
+<div><dt>Usuario de actualización</dt><dd>@(string.IsNullOrWhiteSpace(Model.UpdatedBy)?"Sin actualizaciones":Model.UpdatedBy)</dd></div><div><dt>Fecha de actualización</dt><dd>@Model.UpdatedAt</dd></div>
+</dl></aside>

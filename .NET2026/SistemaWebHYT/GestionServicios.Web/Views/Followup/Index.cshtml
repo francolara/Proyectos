@@ -1,0 +1,9 @@
+@{ViewData["Wide"]=true;}
+@using GestionServicios.Web.ViewModels.Followup
+@model DocumentListModel
+@* Firma: FRANCO LARA - 03/11/2026 | Listado documental con grilla compartida, fechas y responsables. *@
+@* Firma: FRANCO LARA - 05/11/2026 | Listado al ancho disponible y acciones uniformes. *@
+@{ViewData["Title"]=Model.Kind.Title;}
+<header class="hyt-page-header"><div><h1>@Model.Kind.Title</h1><p>Documentos registrados por cliente y tienda.</p></div></header>
+<partial name="_Filters" model="Model.Filter" />
+<partial name="_Grid" model="Model.Grid" />

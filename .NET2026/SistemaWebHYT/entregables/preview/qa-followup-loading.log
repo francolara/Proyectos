@@ -1,0 +1,10 @@
+OK navegador: /Seguimiento/oc-cliente escritorio y móvil sin desbordamiento.
+OK navegador: /Seguimiento/guias escritorio y móvil sin desbordamiento.
+OK navegador: /Seguimiento/oc-cliente/1 escritorio y móvil sin desbordamiento.
+OK navegador: /Seguimiento/guias/1 escritorio y móvil sin desbordamiento.
+OK navegador: /Seguimiento/confirmaciones/1 escritorio y móvil sin desbordamiento.
+OK navegador: guía desde presupuesto y confirmación desde OC con guardado popup y retorno. Operación presente: true
+OK navegador: tres aperturas OC sin duplicar paneles de calendario.
+OK navegador: carga PDF desde popup y recuperación privada con tipo y contenido correctos.
+OK navegador: aceptación auditada, regularización de emergencia y filtro de OC confirmadas.
+OK navegador: captura y guardado Facturado desde popup OC conservando número alfanumérico.

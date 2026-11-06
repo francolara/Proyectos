@@ -1,0 +1,9 @@
+@model RecordFormModel
+@* Firma: FRANCO LARA - 03/11/2026 | Ficha MVC compartida Nuevo, Editar y Ver con antifalsificación. *@
+<header class="hyt-page-heading"><div><p class="hyt-caption">@Model.Section</p><h1>@Model.Title</h1><p>@(Model.ReadOnly ? "Consulta del registro" : Model.IsNew ? "Nuevo registro" : "Edición del registro")</p></div></header>
+@if (Model.Error is not null) { <p role="alert" class="hyt-alert validation-summary-errors">@Model.Error</p> }
+<form asp-controller="@Model.Controller" asp-action="@Model.SaveAction" method="post" data-hyt-save>
+<input type="hidden" name="Id" value="@Model.Id" /><div asp-validation-summary="All" role="alert"></div>
+<section class="hyt-panel hyt-record-body"><fieldset disabled="@Model.ReadOnly">@if (Model.FieldsPartial is not null) { @await Html.PartialAsync(Model.FieldsPartial, Model.Fields) }</fieldset></section>
+<footer class="hyt-record-actions">@if (!Model.ReadOnly) { <button class="hyt-button-primary" type="submit">Guardar</button> } <a class="hyt-button-secondary" asp-controller="@Model.Controller" asp-action="Index">@(Model.ReadOnly ? "Volver" : "Cancelar")</a></footer>
+</form>@if (Model.Trace is not null) { <partial name="_Trace" model="Model.Trace" /> }

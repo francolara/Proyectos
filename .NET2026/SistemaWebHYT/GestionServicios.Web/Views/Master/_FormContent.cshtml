@@ -1,0 +1,114 @@
+@using GestionServicios.Web.ViewModels.Maintenance
+@using GestionServicios.Application.Maintenance
+@using System.Globalization
+@model MaintenanceFormModel
+@* Firma: FRANCO LARA - 05/11/2026 | Campos compartidos, código interno informativo bajo el retorno fuera del formulario y tarifas contextuales; campos según persona y tipo de documento oculto; Código SAP en Cliente y datos HYT ocultos y lista de enlaces con descripción e icono de apertura; Acciones presentadas como botones HYT; Franja de responsables, historial oculto en todas las vistas y descripción de tres líneas y dirección con combos de ubigeo. *@
+@{ ViewData["Title"] = Model.Entity.Title; var record = Model.Record; var current = Context.Request.Path + Context.Request.QueryString; var codeField = Model.Entity.Fields.FirstOrDefault(field => field.Kind == "AutoCode"); var internalCode = codeField is null ? Model.Input.Id?.ToString() : Model.Input.Fields.GetValueOrDefault(codeField.Name); }
+<header class="hyt-page-header"><div><h1>@Model.Entity.Title</h1><p>@(Model.Input.Id.HasValue ? Model.ReadOnly ? "Consulta del registro" : "Edición del registro" : "Nuevo registro")</p></div><div class="hyt-master-heading-actions">@if(Model.Input.Compact){<button type="button" class="hyt-button-secondary" data-price-frame-cancel>Cerrar ventana</button>}else{<a class="hyt-button-secondary" href="@Model.Input.ReturnUrl">Volver al listado</a>}<div class="hyt-internal-code"><span>Código interno</span><output id="internal-record-code">@(string.IsNullOrWhiteSpace(internalCode) ? "Se asigna al guardar" : internalCode)</output></div></div></header>
+@if (TempData["Notice"] is string notice) { <p role="status">@notice</p> }
+@if (Model.Error is not null) { <p role="alert">@Model.Error</p> }
+<form method="post" asp-action="Save" asp-route-entity="@Model.Entity.Key" class="hyt-panel hyt-master-form" data-client-form="@(Model.Entity.Key == "clientes" ? "true" : null)" data-readonly="@Model.ReadOnly.ToString().ToLowerInvariant()">
+<input type="hidden" name="Compact" value="@Model.Input.Compact.ToString().ToLowerInvariant()" /><input type="hidden" name="MaterialContextId" value="@Model.Input.MaterialContextId" /><input type="hidden" name="Id" value="@Model.Input.Id" /><input type="hidden" name="RowVersion" value="@Model.Input.RowVersion" /><input type="hidden" name="ReturnUrl" value="@Model.Input.ReturnUrl" />
+<div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+@if (Model.Entity.Key == "partidas-tarifario" && !Model.ReadOnly)
+{
+    <p>Los predeterminados se aplican a partidas nuevas. Cambiar la cabecera no modifica las partidas existentes.</p>
+    @if (!Model.Input.Id.HasValue) { <button type="button" class="hyt-button-secondary" data-apply-defaults>Aplicar moneda, IGV y zonas de la versión</button> }
+    <button type="button" class="hyt-button-secondary" data-material-codes>Copiar código SAP del material</button>
+    <p data-defaults-status role="status"></p>
+}
+@if(Model.MaterialContextLabel is not null){<p><strong>Material:</strong> @Model.MaterialContextLabel</p>}
+<div class="hyt-master-fields">
+@foreach (var field in Model.Entity.Fields.Where(field => field.Kind is not ("AutoCode" or "Hidden")))
+{
+    var value = Model.Input.Fields.GetValueOrDefault(field.Name) ?? "";
+    var clientType=Model.Input.Fields.GetValueOrDefault("TipoEntidad");
+    var clientField=Model.Entity.Key=="clientes";
+    var inactive=clientField && (field.Name=="RazonSocial" && clientType!="JURIDICA" || field.Name is "Nombres" or "Apellidos" && clientType!="NATURAL");
+    var required=field.Required || clientField && !inactive && field.Name is "RazonSocial" or "Nombres" or "Apellidos";
+    var disabled = Model.ReadOnly || field.Kind is "ReadOnly" or "AutoCode" || field.Name=="MaterialId"&&Model.Input.MaterialContextId.HasValue || Model.Input.Id.HasValue && field.Name == Model.Entity.ParentField;
+    <div class="hyt-field @(field.Kind is "LongText" or "Ubigeo"?"hyt-field-wide":null)" data-field="@field.Name">@if (field.Kind != "Date") { <label for="field-@field.Name">@field.Label @(required ? "*" : "")</label> }
+    @if (field.Kind == "Reference")
+    {
+        <div class="hyt-reference" data-reference="@field.Name" data-lookup="@field.Lookup">
+        <input type="hidden" id="field-@field.Name" name="Fields[@field.Name]" value="@value" />
+        <span data-reference-label>@((field.Name=="MaterialId"&&Model.MaterialContextLabel is not null?Model.MaterialContextLabel:record?.Text(field.Name + "Label")) is { Length: > 0 } label ? label : string.IsNullOrEmpty(value) ? "Sin seleccionar" : "Registro " + value)</span>
+        @if (!disabled) { <button type="button" class="hyt-button-secondary" data-open-lookup>Buscar</button><button type="button" class="hyt-button-secondary" data-clear-reference>Limpiar</button> }
+        </div>
+    }
+    else if(field.Kind=="Ubigeo")
+    {
+        <div data-ubigeo data-value="@value"><div class="hyt-master-fields">
+        @foreach(var level in new[]{("Departments","Departamento"),("Provinces","Provincia"),("Districts","Distrito")}){
+            <div class="hyt-field"><label for="ubigeo-@level.Item1">@level.Item2</label><select id="ubigeo-@level.Item1" data-ubigeo-level="@level.Item1" disabled="@Model.ReadOnly" name="@(level.Item1=="Districts"?"Fields[CodigoUbigeo]":null)"><option value="">Selecciona</option>@foreach(var option in Model.Catalogs.GetValueOrDefault(level.Item1)??[]){<option value="@option.Code">@option.Label</option>}</select></div>
+        }</div></div>
+    }
+    else if(field.Kind=="LongText")
+    {
+        <textarea id="field-@field.Name" name="Fields[@field.Name]" rows="3" maxlength="@field.MaxLength" required="@required" readonly="@disabled">@value</textarea>
+    }
+    else if (field.Kind == "Select")
+    {
+        var options = Model.Catalogs.GetValueOrDefault(field.Catalog ?? "") ?? [];
+        <select id="field-@field.Name" name="Fields[@field.Name]" disabled="@disabled" required="@(required && !inactive)"><option value="">Selecciona</option>@foreach (var option in options) { <option value="@option.Code" selected="@(option.Code == value)">@option.Label</option> }</select>
+    }
+    else if (field.Kind == "Boolean")
+    {
+        <select id="field-@field.Name" name="Fields[@field.Name]" disabled="@disabled"><option value="true" selected="@(value.Equals("true", StringComparison.OrdinalIgnoreCase))">Sí</option><option value="false" selected="@(value.Equals("false", StringComparison.OrdinalIgnoreCase))">No</option></select>
+    }
+    else if (field.Kind == "Date")
+    {
+        var date = DateOnly.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed) ? parsed : (DateOnly?)null;
+        <partial name="_DatePicker" model="@(new DatePickerModel("Fields[" + field.Name + "]", field.Label, date, disabled, field.Required))" />
+    }
+    else
+    {
+        <input id="field-@field.Name" name="Fields[@field.Name]" value="@value" placeholder="@(field.Kind=="AutoCode"?"Se asigna al guardar":null)" readonly="@disabled" disabled="@inactive" required="@(required && !inactive)" maxlength="@(field.MaxLength > 0 ? field.MaxLength : null)" type="@(field.Kind == "Email" ? "email" : field.Kind == "Url" ? "url" : "text")" inputmode="@(field.Kind == "Decimal" ? "decimal" : "text")" />
+        @if (field.Kind == "Decimal") { <small>Usa punto decimal; hasta dos decimales. Vacío significa sin precio.</small> }
+    }
+    </div>
+}
+</div>
+@if (Model.Entity.HasZones)
+{
+    <section class="hyt-master-zones" data-zone-picker><h2>Zonas</h2><p>Selecciona una o varias zonas. Son informativas.</p><div data-zone-values>
+    @foreach (var zone in Model.Input.ZoneIds) {
+        var zoneLabel = "Zona " + zone;
+        if (record?.Values.TryGetValue("Zonas", out var zoneData) == true && zoneData.ValueKind == System.Text.Json.JsonValueKind.Array)
+        { foreach (var item in zoneData.EnumerateArray()) { if (item.GetProperty("Id").GetInt32() == zone && item.TryGetProperty("Descripcion", out var zoneName)) zoneLabel = zoneName.GetString() ?? zoneLabel; } }
+        <label data-zone-item="@zone"><input type="checkbox" name="ZoneIds" value="@zone" checked disabled="@Model.ReadOnly" /> @zoneLabel</label>
+    }
+    </div>@if (!Model.ReadOnly) { <button type="button" class="hyt-button-secondary" data-open-zones>Seleccionar zonas</button> }</section>
+}
+@if(Model.Entity.Key=="clientes"){<partial name="_ClientDocumentLinks" model="Model" />}
+@if (!Model.ReadOnly) { <button type="submit" class="hyt-button-primary">Guardar registro</button> }
+</form>
+@if (Model.ReadOnly && Model.CanEdit) { <p><a class="hyt-button-primary" asp-action="Edit" asp-route-entity="@Model.Entity.Key" asp-route-id="@Model.Input.Id" asp-route-compact="@Model.Input.Compact" asp-route-materialId="@Model.Input.MaterialContextId" asp-route-returnUrl="@Model.Input.ReturnUrl">Editar registro</a></p> }
+@if (record is not null)
+{
+    <partial name="_TraceSummary" model="@(TraceSummary.From(record.Text))" />
+    @if(!Model.Input.Compact){<nav class="hyt-master-related" aria-label="Registros relacionados">
+    @foreach (var related in MaintenanceDefinitions.All.Where(item => item.Key != "proveedor-cliente" && item.ParentField == (Model.Entity.Key switch { "clientes" => "ClienteId", "tarifarios" => "TarifarioId", "versiones-tarifario" => "VersionId", _ => "" })))
+    { <a class="hyt-button-secondary" asp-action="Index" asp-route-entity="@related.Key" asp-route-parentId="@record.Id">@related.Title</a> }
+    </nav>}
+    @if (Model.Entity.Key == "versiones-tarifario" && Model.ReadOnly && User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "TARIFARIOS.EDITAR"))
+    {
+        <section class="hyt-panel hyt-master-trace"><h2>Acciones de versión</h2>
+        @if (record.Text("Estado") == "BORRADOR")
+        {
+            <form method="post" asp-action="Publish" asp-route-entity="@Model.Entity.Key" asp-route-id="@record.Id" data-hyt-save>
+            <input type="hidden" name="compact" value="@Model.Input.Compact.ToString().ToLowerInvariant()" /><input type="hidden" name="materialId" value="@Model.Input.MaterialContextId" /><input type="hidden" name="rowVersion" value="@Model.Input.RowVersion" /><input type="hidden" name="returnUrl" value="@Model.Input.ReturnUrl" />
+            <p>Publicar protege esta versión frente a cambios. Revisa sus partidas y precios antes de continuar.</p>
+            <label><input type="checkbox" name="confirmed" value="true" required /> Confirmo que la versión está lista para publicar.</label>
+            <p><button type="submit" class="hyt-button-primary">Publicar versión</button></p></form>
+        }
+        <form method="post" asp-action="Clone" asp-route-entity="@Model.Entity.Key" asp-route-id="@record.Id" data-hyt-save>
+        <input type="hidden" name="compact" value="@Model.Input.Compact.ToString().ToLowerInvariant()" /><input type="hidden" name="materialId" value="@Model.Input.MaterialContextId" /><input type="hidden" name="rowVersion" value="@Model.Input.RowVersion" /><input type="hidden" name="returnUrl" value="@Model.Input.ReturnUrl" />
+        <p>La copia crea un nuevo borrador con los mismos valores, precios y zonas. Revisa las fechas de vigencia del nuevo borrador.</p>
+        <label><input type="checkbox" name="confirmed" value="true" required /> Confirmo la creación de una nueva versión.</label>
+        <p><button type="submit" class="hyt-button-secondary">Copiar a nueva versión</button></p></form></section>
+    }
+
+}
+<dialog id="master-lookup" class="hyt-modal" aria-labelledby="lookup-title"><header class="hyt-modal-header"><h2 id="lookup-title">Seleccionar registro</h2><button type="button" class="hyt-modal-close" data-close-lookup aria-label="Cerrar ayuda">×</button></header><div class="hyt-modal-body"><form data-lookup-search class="hyt-filters"><label>Buscar por código o descripción<input name="search" maxlength="200" type="search" /></label><button class="hyt-button-secondary">Buscar</button></form><p data-lookup-status role="status"></p><div class="hyt-table-wrap"><table class="hyt-table"><thead><tr><th data-lookup-code-heading>Código interno</th><th>Descripción</th><th>Información</th><th>Seleccionar</th></tr></thead><tbody data-lookup-rows></tbody></table></div><footer class="hyt-pagination"><button type="button" data-lookup-prev class="hyt-button-secondary">Anterior</button><span data-lookup-page></span><button type="button" data-lookup-next class="hyt-button-secondary">Siguiente</button></footer></div><footer class="hyt-modal-footer"><button type="button" class="hyt-button-primary" data-close-lookup>Listo</button></footer></dialog>
+

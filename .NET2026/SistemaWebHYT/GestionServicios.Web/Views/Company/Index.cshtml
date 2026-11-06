@@ -1,0 +1,21 @@
+@* Firma: FRANCO LARA - 06/11/2026 | Configuración HYT con departamento, provincia y distrito después de dirección. *@
+@using GestionServicios.Web.ViewModels.Maintenance
+@using GestionServicios.Application.Maintenance
+@model CompanyModel
+@* Firma: FRANCO LARA - 03/11/2026 | Datos únicos de HYT y responsables de cambios. *@
+@* Firma: FRANCO LARA - 05/11/2026 | Acciones presentadas como botones HYT; Franja común de responsables sin historial en edición. Consideraciones predeterminadas editables para presupuestos. *@
+@{ViewData["Title"]="Datos de HYT";}
+<header class="hyt-page-header"><div><h1>Datos de HYT</h1><p>Identificación y contacto utilizados al preparar nuevas revisiones de presupuesto.</p></div><a class="hyt-button-secondary" asp-controller="TaxRate" asp-action="Index">Vigencias del IGV</a></header>
+@if(TempData["Notice"] is string notice){<p role="status">@notice</p>}
+<form asp-action="Save" method="post" class="hyt-panel hyt-master-form" data-hyt-save><div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+<input name="Id" type="hidden" value="@Model.Input.Id" /><input name="RowVersion" type="hidden" value="@Model.Input.RowVersion" />
+<fieldset disabled="@(!Model.CanEdit)" class="hyt-budget-fieldset"><legend>Identificación y datos de contacto</legend><div class="hyt-master-fields">
+@foreach(var field in CompanySettings.Definition.Fields){<div class="hyt-field @(field.Kind is "LongText" or "Ubigeo"?"hyt-field-wide":null)"><label for="@("company-"+field.Name)">@field.Label @(field.Required?"*":"")</label>@if(field.Kind=="Ubigeo"){
+<div data-ubigeo data-value="@Model.Input.Fields.GetValueOrDefault("CodigoUbigeo")"><div class="hyt-master-fields">
+@foreach(var level in new[]{("Departments","Departamento"),("Provinces","Provincia"),("Districts","Distrito")}){<div class="hyt-field"><label for="company-@level.Item1">@level.Item2</label><select id="company-@level.Item1" data-ubigeo-level="@level.Item1" name="@(level.Item1=="Districts"?"Fields[CodigoUbigeo]":null)"><option value="">Selecciona</option>@foreach(var option in Model.Catalogs.GetValueOrDefault(level.Item1)??[]){<option value="@option.Code">@option.Label</option>}</select></div>}
+</div></div>
+}else if(field.Kind=="LongText"){<textarea id="@("company-"+field.Name)" name="Fields[@field.Name]" rows="6" maxlength="@field.MaxLength">@Model.Input.Fields.GetValueOrDefault(field.Name)</textarea>}else{<input id="@("company-"+field.Name)" name="Fields[@field.Name]" value="@Model.Input.Fields.GetValueOrDefault(field.Name)" maxlength="@field.MaxLength" required="@field.Required" type="@(field.Kind=="Email"?"email":"text")" />}</div>}
+</div>@if(Model.CanEdit){<button type="submit" class="hyt-button-primary">Guardar datos de HYT</button>}</fieldset></form>
+@if(Model.Record is not null){<partial name="_TraceSummary" model="@(TraceSummary.From(Model.Record.Text))" />}
+
+@section Scripts{<script src="~/hyt-ubigeo.js" asp-append-version="true" defer></script>}

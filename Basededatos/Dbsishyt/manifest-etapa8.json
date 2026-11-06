@@ -1,0 +1,9 @@
+{
+  "database": "SistemaWebHYT",
+  "requires": "etapa7",
+  "scripts": [
+    "StoreProcedure/spu_Dashboard_Obtener.sql",
+    "StoreProcedure/spu_Reporte_Listar.sql",
+    "Script/019_PermisosEtapa8.sql"
+  ]
+}

@@ -1,0 +1,16 @@
+@using GestionServicios.Web.ViewModels.Followup
+@model DocumentDetailsModel
+@* Firma: FRANCO LARA - 03/11/2026 | Consulta de datos documentales y auditoría paginada. *@
+@* Firma: FRANCO LARA - 05/11/2026 | Acciones presentadas como botones HYT; Franja común de fechas y responsables; historial de auditoría oculto también en consulta. *@
+@{ViewData["Title"]=Model.Kind.Title;}
+<header class="hyt-page-header"><div><h1>@Model.Kind.Title</h1><p>@Model.Text("PresupuestoNumero") · @Model.Text("ClienteNombre") / @Model.Text("TiendaNombre")</p></div><a class="hyt-button-secondary" asp-action="Index" asp-route-kind="@Model.Kind.Key">Volver al listado</a></header>
+@if(User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim,Model.Kind.Permission+".EDITAR")){<p><a class="hyt-button-secondary" asp-action="Edit" asp-route-kind="@Model.Kind.Key" asp-route-id="@Context.Request.RouteValues["id"]">Editar registro</a></p>}
+@if(TempData["DocumentNotice"] is string notice){<p role="status">@notice</p>}
+<partial name="_Related" model="Model" />
+<partial name="_State" model="Model" />
+<section class="hyt-panel hyt-master-trace" aria-label="Datos del documento"><h2>Datos del documento</h2><dl class="hyt-document-summary">
+@foreach(var field in Model.Fields){<dt>@field.Label</dt><dd>@DocumentDetailsModel.Display(Model.Document,field.Name)</dd>}
+<dt>Estado</dt><dd>@DocumentDetailsModel.Display(Model.Document,"EstadoDocumento")</dd>
+</dl></section>
+<partial name="_TraceSummary" model="@(TraceSummary.From(key=>GestionServicios.Application.Budgets.BudgetRecord.Text(Model.Document,key)))" />
+@if(Model.Record.Data.TryGetProperty("Adjuntos",out var files)&&files.ValueKind==System.Text.Json.JsonValueKind.Array&&files.GetArrayLength()>0){<section class="hyt-panel hyt-master-trace" aria-label="Adjuntos"><partial name="_Attachments" model="@(new DocumentFormModel(Model.Kind,new DocumentInputModel(),Model.Record))" /></section>}

@@ -1,0 +1,11 @@
+<Solution>
+  <Project Path="GestionServicios.Domain/GestionServicios.Domain.csproj" />
+  <Project Path="GestionServicios.Contracts/GestionServicios.Contracts.csproj" />
+  <Project Path="GestionServicios.Application/GestionServicios.Application.csproj" />
+  <Project Path="GestionServicios.Infrastructure/GestionServicios.Infrastructure.csproj" />
+  <Project Path="GestionServicios.Web/GestionServicios.Web.csproj" />
+  <Project Path="tools/Hyt.SqlValidation/Hyt.SqlValidation.csproj" />
+  <Project Path="tools/Hyt.AccessTests/Hyt.AccessTests.csproj" />
+  <Project Path="tools/Hyt.Admin/Hyt.Admin.csproj" />
+  <Project Path="tools/Hyt.DatabaseTests/Hyt.DatabaseTests.csproj" />
+</Solution>

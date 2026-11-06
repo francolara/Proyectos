@@ -1,0 +1,15 @@
+@{ViewData["Wide"]=true;}
+@using GestionServicios.Web.ViewModels.Maintenance
+@model MaintenanceListModel
+@* Firma: FRANCO LARA - 03/11/2026 | Listado MVC de mantenimientos con filtros persistentes y trazabilidad. *@
+@* Firma: FRANCO LARA - 05/11/2026 | Maestros con código interno; especialidades y tipos de servicio en menú independiente; tiendas y contactos con búsqueda por cliente; Listado al ancho disponible y acciones uniformes. *@
+@{ ViewData["Title"] = Model.Entity.Title; }
+<header class="hyt-page-header"><div><h1>@Model.Entity.Title</h1><p>Consulta y administra los registros de HYT.</p></div>
+@if (Model.CanEdit) { <a class="hyt-button-primary" asp-action="New" asp-route-entity="@Model.Entity.Key" asp-route-parentId="@Model.ParentId" asp-route-returnUrl="@(Context.Request.Path + Context.Request.QueryString)">Nuevo registro</a> }
+</header>
+<form method="get" class="hyt-filters" asp-action="Index" asp-route-entity="@Model.Entity.Key">
+@if (Model.ParentId.HasValue) { <input type="hidden" name="parentId" value="@Model.ParentId" /> }
+<div class="hyt-field"><label for="master-search">@(Model.Entity.Key=="unidades"?"Buscar por código, abreviatura o descripción":Model.Entity.Key is "tiendas" or "contactos"?"Buscar por código o descripción del registro o cliente":"Buscar por código o descripción")</label><input id="master-search" name="search" value="@Model.Search" maxlength="200" type="search" /></div>
+<button class="hyt-button-primary" type="submit">Buscar</button><a class="hyt-button-secondary" asp-action="Index" asp-route-entity="@Model.Entity.Key" asp-route-parentId="@Model.ParentId">Limpiar</a>
+</form>
+<div class="@(Model.Entity.Key is "tiendas" or "contactos" ? "hyt-client-related-list" : null)"><partial name="_Grid" model="Model.Grid" /></div>

@@ -1,0 +1,67 @@
+/* Firma: FRANCO LARA - 05/11/2026 | Interfaz HYT uniforme, acciones, trazabilidad, cabeceras, temas claro/oscuro y ventana compacta de tarifario simple. Detalle de presupuesto al ancho completo. */
+:root{--hyt-neutral-0:#fff;--hyt-neutral-50:#f5f5f5;--hyt-neutral-100:#ededed;--hyt-neutral-200:#dedede;--hyt-neutral-600:#626262;--hyt-neutral-800:#252525;--hyt-neutral-900:#181818;--hyt-surface:var(--hyt-neutral-0);--hyt-surface-alt:var(--hyt-neutral-50);--hyt-input:var(--hyt-neutral-0);--hyt-text:var(--hyt-neutral-900);--hyt-muted:var(--hyt-neutral-600);--hyt-border:var(--hyt-neutral-200);--hyt-control-border:#aaa;--hyt-background:var(--hyt-neutral-50);--hyt-hover:#fff3f3;--hyt-subtle:#fff8f8;--hyt-link:#b0101b;--hyt-disabled:#efefef;--hyt-chart-ink:#181818;--hyt-chart-muted:#969696;color-scheme:light;color:var(--hyt-text);background:var(--hyt-background)}
+:root[data-hyt-theme=dark]{--hyt-surface:#222225;--hyt-surface-alt:#2b2b2f;--hyt-input:#1b1b1e;--hyt-text:#f2f2f3;--hyt-muted:#bcbcc4;--hyt-border:#44444c;--hyt-control-border:#73737d;--hyt-background:#151517;--hyt-hover:#39282c;--hyt-subtle:#2d2327;--hyt-link:#ff858e;--hyt-disabled:#303035;--hyt-chart-ink:#ededf0;--hyt-chart-muted:#b3b3bd;color-scheme:dark}
+body{color:var(--hyt-text);background:var(--hyt-background)}
+.hyt-app-shell .hyt-workspace{width:100%}.hyt-app-shell .hyt-workspace-wide{max-width:none}
+.hyt-page-header,.hyt-page-heading{background:var(--hyt-surface);border:1px solid var(--hyt-border);border-left:5px solid var(--hyt-red);border-radius:10px;padding:20px 24px;margin-bottom:24px;min-width:0}
+.hyt-page-header h1,.hyt-page-heading h1{margin:0 0 8px;font-size:28px;color:var(--hyt-text)}.hyt-page-header p,.hyt-page-heading p{margin-bottom:0;color:var(--hyt-muted)}
+.hyt-button-primary,.hyt-button-secondary,.hyt-action-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;line-height:1.4;font-weight:600}
+.hyt-grid-actions{flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:8px;min-width:180px;max-width:360px}.hyt-grid-actions .hyt-action-button,.hyt-price-row-actions .hyt-action-button{min-height:44px;padding:8px 12px;white-space:nowrap;text-decoration:none}
+.hyt-price-row-actions{gap:8px}.hyt-action-button:hover{border-color:var(--hyt-red);color:var(--hyt-link)}
+.hyt-theme-toggle{display:flex;align-items:center;gap:10px;justify-content:center;min-height:44px;background:#252525;color:white;border:1px solid #696969;border-radius:6px;padding:10px 12px;margin:0 0 12px;cursor:pointer;font:inherit;font-size:14px}.hyt-theme-toggle:hover{background:#333}.hyt-theme-toggle:focus-visible{outline:3px solid #ff858e}
+.hyt-trace-summary{margin:24px 0;border:1px solid var(--hyt-border);border-left:3px solid var(--hyt-red);border-radius:8px;background:var(--hyt-subtle);padding:14px 16px}.hyt-trace-summary h2{display:flex;align-items:center;gap:8px;color:var(--hyt-link);font-size:14px;margin:0 0 14px}.hyt-trace-summary dl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:0}.hyt-trace-summary dt{font-size:12px;color:var(--hyt-muted);margin-bottom:4px}.hyt-trace-summary dd{margin:0;font-size:13px;font-weight:600;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.hyt-modal{overflow:hidden;background:var(--hyt-surface);color:var(--hyt-text)}.hyt-modal-header{background:var(--hyt-red);color:white;position:sticky;top:0;z-index:2;padding:20px 24px;border-bottom:3px solid #8f0b14}.hyt-modal-header h2{color:white;font-size:24px;font-weight:700;line-height:1.25}.hyt-modal-header p{color:#fff;margin-top:8px}.hyt-modal-close{background:transparent;color:white;border-color:#ffffff80;border-radius:6px}.hyt-modal-close:hover{background:#ffffff20}.hyt-modal-close:focus-visible{outline-color:white}.hyt-modal-body{max-height:calc(100dvh - 210px);overflow:auto;overscroll-behavior:contain}.hyt-modal-footer{background:var(--hyt-surface);position:sticky;bottom:0}.hyt-modal-body .hyt-master-form{margin:0}.hyt-modal-body .hyt-trace-summary{margin-bottom:0}
+.hyt-compact-master .hyt-page-header{background:transparent;border:0;padding:0;margin:0 0 16px}.hyt-compact-master .hyt-page-header h1,.hyt-compact-master .hyt-page-header>div:first-child>p{display:none}.hyt-compact-master .hyt-page-header{justify-content:flex-end}.hyt-material-price-dialog iframe{background:var(--hyt-surface)}
+.app-date-picker-banner{background:var(--hyt-red);color:white;font-size:15px;font-weight:700;padding:12px 14px;margin:-12px -12px 10px;border-radius:8px 8px 0 0}.app-date-picker-panel{color:var(--hyt-text);background:var(--hyt-surface);border-color:var(--hyt-border)}
+.hyt-field-wide{grid-column:1/-1}.hyt-master-fields textarea{font:inherit;line-height:1.6;padding:12px;min-height:100px;resize:vertical;width:100%;border:1px solid var(--hyt-control-border);border-radius:6px;background:var(--hyt-input);color:var(--hyt-text)}
+.hyt-table td{overflow-wrap:anywhere}.hyt-table td:has(.hyt-action-button){vertical-align:middle}.hyt-table td a.hyt-action-button{color:var(--hyt-text)}
+:root[data-hyt-theme=dark] .hyt-field span{color:var(--hyt-muted)}:root[data-hyt-theme=dark] .hyt-validation,:root[data-hyt-theme=dark] .hyt-alert{color:#ffb0b6;background:var(--hyt-subtle)}
+:root[data-hyt-theme=dark] .hyt-budget-table input[readonly],:root[data-hyt-theme=dark] [data-client-form=true] input:disabled{background:var(--hyt-disabled);color:var(--hyt-muted)}
+.hyt-dashboard-chart svg text{fill:var(--hyt-muted)}
+@media(max-width:900px){.hyt-trace-summary dl{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.hyt-page-header,.hyt-page-heading{padding:16px}.hyt-page-header h1,.hyt-page-heading h1{font-size:24px}.hyt-modal-header{padding:16px}.hyt-modal-header h2{font-size:21px}.hyt-modal-body{max-height:calc(100dvh - 190px)}.hyt-theme-toggle{align-self:flex-start}.hyt-trace-summary dl{grid-template-columns:1fr;gap:12px}.hyt-grid-actions{min-width:160px}}
+@media print{:root[data-hyt-theme],:root{--hyt-surface:#fff;--hyt-surface-alt:#f5f5f5;--hyt-input:#fff;--hyt-text:#181818;--hyt-muted:#626262;--hyt-border:#dedede;--hyt-background:#fff;--hyt-hover:#fff;--hyt-subtle:#fff;--hyt-link:#a81019;--hyt-chart-ink:#181818;--hyt-chart-muted:#969696;color-scheme:light;background:white;color:#181818}.hyt-theme-toggle{display:none!important}.hyt-page-header,.hyt-page-heading{background:white;box-shadow:none}.hyt-trace-summary{break-inside:avoid}}
+
+.app-date-picker-control,.app-date-picker-display,.app-date-picker-trigger{background:var(--hyt-input);color:var(--hyt-text)}.app-date-picker-title strong,.app-date-picker-day{color:var(--hyt-text)}.app-date-picker-nav{background:var(--hyt-surface-alt);color:var(--hyt-text);border-color:var(--hyt-border)}.app-date-picker-day.is-other-month{color:var(--hyt-muted);opacity:.7}.app-date-picker-day:hover,.app-date-picker-day:focus,.app-date-picker-day.is-today{color:var(--hyt-link);background:var(--hyt-hover)}.app-date-picker-day.is-selected{background:var(--hyt-red);color:white;box-shadow:none}.app-date-picker-control.is-disabled{background:var(--hyt-disabled)}.app-date-picker-banner{margin:-.9rem -.9rem 12px;border-radius:1.1rem 1.1rem 0 0}.app-date-picker-nav,.app-date-picker-footer button{min-height:44px;min-width:44px}
+.hyt-field input,.hyt-field select,.hyt-field textarea,.hyt-budget-table input,.hyt-budget-table select,.hyt-budget-table textarea{color:var(--hyt-text);background:var(--hyt-input)}
+.hyt-table th{background:var(--hyt-surface-alt);color:var(--hyt-text)}.hyt-button-secondary{background:var(--hyt-surface);color:var(--hyt-text);border-color:var(--hyt-control-border)}a{color:var(--hyt-link)}.hyt-button-primary{color:white}.hyt-modal-header .hyt-button-secondary{background:transparent;color:white;border-color:#ffffff80}
+
+.app-date-picker-panel{max-height:calc(100dvh - 24px);overflow:auto;padding:12px}.app-date-picker-banner{margin:-12px -12px 12px}.app-date-picker-grid{gap:4px}.app-date-picker-day{min-height:44px}
+
+.hyt-internal-code output{color:var(--hyt-text)}
+
+[hidden]{display:none!important}.hyt-workspace-wide>.hyt-master-form{max-width:1376px;margin-inline:auto}
+
+.hyt-material-price-dialog{max-width:900px}.hyt-material-price-dialog iframe{height:min(560px,calc(90dvh - 90px))}
+
+.hyt-workspace-wide>[data-budget-form]{max-width:none}.hyt-budget-table td small{display:block;margin-top:8px}.hyt-budget-table td:nth-child(4){min-width:110px}.hyt-budget-table td:nth-child(5){min-width:180px}.hyt-budget-table td:nth-child(6){min-width:80px}.hyt-budget-table td:nth-child(7),.hyt-budget-table td:nth-child(8){min-width:110px}
+
+.hyt-budget-table button{white-space:nowrap}.hyt-budget-table td:last-child{min-width:100px}.hyt-budget-table td:nth-child(3){min-width:140px}
+
+/* Firma: FRANCO LARA - 06/11/2026 | Acciones uniformes, tarjeta de código y controles compactos del detalle. Campos de servicio y valores numéricos reducidos; ancho del material reducido y espacio repartido entre columnas, con controles de altura uniforme. Botones de sesión y retorno uniformes. */
+.hyt-table .hyt-record-action{width:84px;min-width:84px;max-width:84px;box-sizing:border-box;flex:0 0 84px;justify-content:center}
+.hyt-internal-code{background:var(--hyt-surface);border:1px solid var(--hyt-border);border-top:4px solid var(--hyt-red);border-radius:8px;padding:10px 16px;min-width:160px;margin-top:10px;box-shadow:0 2px 5px #00000008}.hyt-internal-code output{font-weight:700;font-variant-numeric:tabular-nums}
+.hyt-budget-table .hyt-detail-icon{width:34px;min-width:34px;height:34px;min-height:34px;padding:7px;display:inline-flex;align-items:center;justify-content:center}.hyt-budget-table [data-remove-line]{color:var(--hyt-link)}
+.hyt-detail-reference{display:flex;align-items:center;gap:6px;min-width:0}.hyt-detail-reference textarea,.hyt-detail-reference input{flex:1;min-width:0}.hyt-detail-reference textarea{height:36px;min-height:36px;resize:vertical}
+.hyt-budget-table td:nth-child(3),.hyt-budget-table th:nth-child(3){min-width:90px;width:90px}.hyt-budget-table td:nth-child(4),.hyt-budget-table th:nth-child(4){min-width:52px;width:52px}.hyt-budget-table td:nth-child(4) input{width:46px;min-width:46px;max-width:46px;padding-inline:4px}.hyt-budget-table td:last-child{min-width:54px;width:54px}.hyt-budget-table td small{margin-top:3px}.hyt-budget-table{min-width:1180px}
+
+/* Columnas proporcionales: el espacio liberado por material se reparte en el detalle. */
+form[data-budget-form] .hyt-budget-table{table-layout:fixed;width:100%;min-width:1300px}
+form[data-budget-form] .hyt-budget-table th,form[data-budget-form] .hyt-budget-table td{min-width:0;padding:10px 8px;vertical-align:middle}
+form[data-budget-form] .hyt-budget-table .hyt-col-item{width:3%}
+form[data-budget-form] .hyt-budget-table .hyt-col-material{width:40%}
+form[data-budget-form] .hyt-budget-table .hyt-col-sap{width:9%}
+form[data-budget-form] .hyt-budget-table .hyt-col-tariff{width:4%}
+form[data-budget-form] .hyt-budget-table .hyt-col-need{width:5%}
+form[data-budget-form] .hyt-budget-table .hyt-col-service{width:11%}
+form[data-budget-form] .hyt-budget-table .hyt-col-unit{width:6%}
+form[data-budget-form] .hyt-budget-table .hyt-col-quantity{width:6%}
+form[data-budget-form] .hyt-budget-table .hyt-col-price{width:6%}
+form[data-budget-form] .hyt-budget-table .hyt-col-subtotal{width:6%}
+form[data-budget-form] .hyt-budget-table .hyt-col-action{width:4%}
+form[data-budget-form] .hyt-budget-table .hyt-detail-reference{width:100%;align-items:center}
+form[data-budget-form] .hyt-budget-table td input:not([type=hidden]),form[data-budget-form] .hyt-budget-table td textarea{box-sizing:border-box;width:100%;min-width:0;max-width:none;height:44px;min-height:44px;padding:8px 6px}
+form[data-budget-form] .hyt-budget-table td textarea{resize:vertical}
+form[data-budget-form] .hyt-budget-table .hyt-detail-icon{box-sizing:border-box;width:36px;min-width:36px;max-width:36px;height:44px;min-height:44px;max-height:44px;flex:0 0 36px;padding:8px;align-self:center;margin:0}
+
+.hyt-topbar .hyt-logout-button{min-height:44px;padding:10px 16px;color:#fff;text-decoration:none;gap:8px}.hyt-logout-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px}.hyt-logout-actions .hyt-button-primary,.hyt-logout-actions .hyt-button-secondary{min-height:44px;box-sizing:border-box;text-decoration:none;gap:8px}

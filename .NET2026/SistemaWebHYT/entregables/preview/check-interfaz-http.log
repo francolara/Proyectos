@@ -1,0 +1,262 @@
+OK: Presupuesto SIN IGV calcula base, impuesto y total por partida
+OK: Precio CON IGV no vuelve a sumar impuesto
+OK: Conversión entre tratamientos IGV mantiene importes equivalentes
+OK: USD ausente deja el presupuesto incompleto sin convertirlo en cero
+OK: Redondeo comercial a dos decimales y suma de partidas
+OK: Cantidad con más de dos decimales se rechaza
+OK: Cambio de moneda exige revalorizar y no aplica tipo de cambio automático
+OK: Material ignora código interno enviado y conserva zonas sin duplicados
+OK: Edición rechaza versión de concurrencia inválida
+OK: Precio USD ausente se conserva como nulo
+OK: Precio con más de dos decimales requiere corrección
+OK: Precio negativo rechazado
+OK: Cliente natural exige nombres y rechaza enlace ejecutable
+OK: Natural admite CE y descarta razón social
+OK: Tipo oculto no valida documentos de persona natural
+OK: Jurídica admite RUC y descarta nombres y apellidos
+OK: Tipo oculto no valida documentos de persona jurídica
+OK: Cliente exige número de documento
+OK: Inicio privado redirige al acceso
+OK: Acceso HYT y campos identificados
+OK: POST sin antifalsificación rechazado
+OK: Usuario desconocido recibe error genérico
+OK: Contraseña incorrecta registra intento fallido
+OK: Cuenta desactivada no puede entrar
+OK: Cuenta bloqueada no puede entrar
+OK: Acceso válido y rechazo de retorno externo
+OK: Cookie segura, privada y con prefijo Host
+OK: Sesión válida abre inicio y menú permitido
+OK: Menú omite opción sin permiso
+OK: Ruta de módulo sin permiso no muestra contenido protegido
+OK: Desactivación invalida sesión existente en siguiente solicitud
+OK: Cambio de sello invalida sesión existente
+OK: GET de salida solicita confirmación y no cierra sesión
+OK: Cierre POST registrado en auditoría
+OK: Sesión cerrada ya no accede al inicio
+OK: Permiso retirado desaparece en la siguiente solicitud
+warn: GestionServicios.Web.Security.HytCookieEvents[0]
+      No se pudo validar la sesión HYT. Acceso denegado.
+OK: Fallo del repositorio rechaza una sesión existente
+OK: Límite absoluto de ocho horas invalida la sesión
+OK: Todas las acciones activas pertenecen a controladores MVC
+OK: Las vistas no cargan el runtime Blazor
+OK: Grilla MVC conserva filtros y página SQL de 20
+OK: La grilla codifica datos de texto sin inyectar HTML
+OK: Fecha MVC conserva nombre y valor ISO para el controlador
+OK: Filtros MVC envían búsqueda y rango de fechas
+OK: Auditoría MVC muestra fecha y hora de Perú
+OK: Ficha MVC de consulta no ofrece guardar ni editar campos
+OK: Ayuda MVC usa popup común accesible
+Pruebas MVC de acceso y parciales completadas sin SQL Server.
+OK: Listado real envía búsqueda/página al repositorio y conserva retorno seguro
+OK: Ficha nueva MVC contiene campos, antifalsificación y popup
+OK: Formulario inválido conserva vista y no guarda
+OK: Guardado MVC usa repositorio y rechaza retorno externo
+OK: Ficha inexistente responde 404
+OK: Ayuda rechaza página inválida
+OK: Ayuda consulta resultados paginados del repositorio
+OK: Versión publicada abre ficha inmutable
+OK: POST directo no modifica versión publicada
+OK: Publicación exige confirmación explícita
+OK: Publicación confirmada pasa versión original al repositorio
+OK: Copia abre la nueva versión devuelta por el repositorio
+OK: Publicación no se ejecuta por GET
+OK: Listado de vigencias muestra tasa, paginación y versión de configuración
+OK: Tasa 18 se rechaza; se requiere fracción como 0.18
+OK: Vigencia concurrente se informa sin sobrescribir cambios
+OK: Nueva vigencia válida utiliza el repositorio
+OK: Ayuda de predeterminados devuelve datos permitidos de la versión
+OK: Versión publicada no sirve de padre editable para partidas nuevas
+fail: GestionServicios.Web.MaintenanceUnavailableFilter[0]
+      El mantenimiento no pudo acceder al repositorio
+      TestDatabaseException (0x80004005): Datos internos de prueba que no deben aparecer en la vista
+         at TestMaintenanceRepository.GetAsync(EntityDefinition entity, String actorId, Int64 id, Int32 auditPage, CancellationToken cancellationToken) in C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaWebHYT\tools\Hyt.AccessTests\TestMaintenanceRepository.cs:line 23
+         at GestionServicios.Web.Controllers.MasterController.Read(String entity, Int64 id, Boolean readOnly, String returnUrl, Int32 auditPage, CancellationToken ct, Boolean compact, Nullable`1 materialId) in C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaWebHYT\GestionServicios.Web\Controllers\MasterController.cs:line 91
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.TaskOfIActionResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Awaited|12_0(ControllerActionInvoker invoker, ValueTask`1 actionResultValueTask)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeInnerFilterAsync()
+      --- End of stack trace from previous location ---
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeNextExceptionFilterAsync>g__Awaited|26_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+OK: Fallo de datos devuelve 503 sin detalles internos
+OK: Listado y ficha disponibles: Clientes
+OK: Listado y ficha disponibles: Tiendas
+OK: Listado y ficha disponibles: Contactos
+OK: Listado y ficha disponibles: Unidades de medida
+OK: Listado y ficha disponibles: Zonas
+OK: Listado y ficha disponibles: Especialidades
+OK: Listado y ficha disponibles: Tipos de servicio
+OK: Listado y ficha disponibles: Materiales y servicios
+OK: Listado y ficha disponibles: Tarifarios
+OK: Listado y ficha disponibles: Versiones de tarifario
+OK: Listado y ficha disponibles: Partidas del tarifario
+OK: Conflicto de edición conserva datos introducidos y no sobrescribe el registro
+OK: Presupuestos filtra límites UTC de Perú y codifica la grilla
+OK: Ficha de presupuesto incluye campos de ambos Excel y ayudas
+OK: Presupuesto inválido conserva formulario y no guarda
+OK: Borrador de emergencia se guarda por repositorio y rechaza retorno externo
+OK: Consulta de presupuesto no permite editar campos
+OK: Presupuesto inexistente responde 404
+OK: No se abre edición de una revisión enviada
+OK: Corrección de revisión enviada abre nueva revisión
+OK: Ayuda de presupuesto muestra zonas informativas y USD pendiente
+OK: Previsualización calcula en servidor con dos decimales
+OK: Acción de presupuesto envía responsable, fecha y versiones al repositorio
+OK: Consulta de presupuestos no concede permiso de crear
+OK: Configuración corporativa muestra campos y fechas de Perú
+OK: Configuración exige RUC de once dígitos
+OK: Configuración guarda por repositorio con versión original
+OK: Generación HTML autorizada: NUEVO
+OK: Reporte autónomo conserva logo, importes y política sin scripts: NUEVO
+OK: Columnas del formato NUEVO
+OK: Reporte codifica datos de cliente: NUEVO
+OK: Generación HTML autorizada: ANTERIOR
+OK: Reporte autónomo conserva logo, importes y política sin scripts: ANTERIOR
+OK: Columnas del formato ANTERIOR
+OK: Reporte codifica datos de cliente: ANTERIOR
+OK: Historial conserva ambas generaciones y versión del formato
+OK: Impresión conservada permite descarga HTML
+OK: Borrador sin partidas se identifica en la impresión
+OK: Sin permiso de reportes no se entrega el HTML conservado
+OK: Sin permiso de edición no abre formulario nuevo
+OK: Listado documental filtra, pagina y codifica datos: oc-cliente
+OK: Ficha documental muestra fechas Perú y auditoría: oc-cliente
+OK: Listado documental filtra, pagina y codifica datos: guias
+OK: Ficha documental muestra fechas Perú y auditoría: guias
+OK: Listado documental filtra, pagina y codifica datos: confirmaciones
+OK: Ficha documental muestra fechas Perú y auditoría: confirmaciones
+OK: Documento inexistente responde 404
+OK: Listado documental rechaza página inválida
+OK: Menú OC abre el listado operativo
+OK: Consulta documental exige permiso propio
+OK: Registro de guía devuelve captura parcial para popup
+warn: Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware[9]
+      A request body size limit could not be applied. This server does not support the IHttpMaxRequestBodySizeFeature.
+warn: Microsoft.AspNetCore.Mvc.Filters.RequestSizeLimitFilter[1]
+      A request body size limit could not be applied. This server does not support the IHttpRequestBodySizeFeature.
+OK: Guía popup guarda campos permitidos con operación y retorno seguro
+warn: Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware[9]
+      A request body size limit could not be applied. This server does not support the IHttpMaxRequestBodySizeFeature.
+warn: Microsoft.AspNetCore.Mvc.Filters.RequestSizeLimitFilter[1]
+      A request body size limit could not be applied. This server does not support the IHttpRequestBodySizeFeature.
+OK: Validación conserva operación y campos sin guardar
+warn: Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware[9]
+      A request body size limit could not be applied. This server does not support the IHttpMaxRequestBodySizeFeature.
+warn: Microsoft.AspNetCore.Mvc.Filters.RequestSizeLimitFilter[1]
+      A request body size limit could not be applied. This server does not support the IHttpRequestBodySizeFeature.
+OK: Guardado documental sin antifalsificación se rechaza
+OK: Edición OC carga número externo, motivo y versión original
+OK: Captura OC rechaza más de dos decimales sin redondear silenciosamente
+OK: Listado OC ofrece confirmación del cliente mediante popup
+OK: Listado presupuesto ofrece guía mediante popup
+OK: Consulta de guías no concede permiso para registrar
+OK: Archivo privado usa nombre limpio, clave opaca y tipo verificado
+OK: Archivo recuperado conserva contenido y huella
+OK: Reintento de archivo no crea duplicados ni deja temporales
+OK: Extensión PDF no permite contenido de otro formato
+OK: Guía exige escaneado PDF aunque la imagen sea válida
+OK: Misma operación no puede reemplazar contenido privado previo
+OK: Archivo físico alterado se rechaza por integridad
+OK: Referencia de archivo impide salir de la carpeta privada
+warn: Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware[9]
+      A request body size limit could not be applied. This server does not support the IHttpMaxRequestBodySizeFeature.
+warn: Microsoft.AspNetCore.Mvc.Filters.RequestSizeLimitFilter[1]
+      A request body size limit could not be applied. This server does not support the IHttpRequestBodySizeFeature.
+OK: Carga multipart conserva archivo privado y envía metadatos al repositorio
+OK: Visualización de adjunto requiere consulta y entrega tipo seguro
+OK: Adjunto privado permite descarga con nombre original
+OK: Archivo privado no se abre sin permiso del documento
+OK: Ficha guía expone estados permitidos con fecha y responsable
+OK: Acción MVC registra aceptación mediante repositorio de estados
+OK: Cambio de estado documental exige fecha válida
+OK: Consulta documental no concede cambios de estado
+OK: Emergencia con OC permite enviar sin editar ni cancelar su presupuesto
+OK: Regularización enviada con OC ofrece solo aprobación
+OK: Invitación con OC no ofrece regularización de emergencia
+OK: OC muestra confirmación, importe y filtro de confirmadas
+OK: Filtro de confirmación rechaza valores inválidos
+OK: Turnstile valida token con Siteverify, acción, dominio y fecha
+OK: Turnstile rechaza token ausente o demasiado largo antes de llamar al servicio
+OK: Turnstile rechaza token emitido para otra acción
+OK: Turnstile rechaza dominio no autorizado
+OK: Turnstile rechaza desafío vencido
+OK: Turnstile respeta rechazo del servicio
+OK: Respuesta inválida de Turnstile no permite acceso
+OK: Fallo de red de Turnstile no omite la verificación
+OK: Turnstile es obligatorio en producción aunque se intente desactivar
+OK: R2 conserva contenido, verifica huella y reutiliza reintento sin sobrescribir
+OK: R2 no reemplaza un archivo existente con contenido diferente
+OK: R2 rechaza contenido alterado antes de entregarlo al usuario
+OK: Nombre predeterminado de bucket HYT coincide con el entorno de ejemplo
+OK: Cliente nuevo muestra código interno automático no editable ni obligatorio
+OK: Código SAP editable se presenta en el cliente
+OK: Cliente sustituye enlace único por lista con descripción y apertura
+OK: Cliente oculta el acceso a datos de HYT por cliente
+OK: Acceso anterior redirige a la ficha del cliente
+OK: Menú y listado muestran cliente en tiendas
+OK: Menú y listado muestran cliente en contactos
+OK: Material retira posición y distingue código interno de SAP editable
+OK: Especialidades y tipos de servicio figuran en el menú principal
+OK: Materiales ya no contiene enlaces de mantenimiento anidados
+OK: Unidad distingue identificador automático de abreviatura editable
+OK: Ficha de material integra precios y acciones en la misma ventana
+OK: Ventana compacta conserva material y omite el menú duplicado
+OK: Precio contextual no permite elegir otro material
+OK: POST manipulado no mueve el precio a otro material
+OK: Precio guardado notifica a ficha principal para actualizar la tabla
+OK: Precio de versión publicada se abre en consulta sin guardar
+OK: Servidor rechaza edición de precio publicado desde popup
+OK: Crear tarifario desde material continúa a versión conservando el contexto
+OK: Nueva versión continúa al precio del mismo material
+OK: Ficha y endpoint ocultan precios sin permiso de tarifarios
+OK: Captcha manual admite respuesta correcta sin distinguir mayúsculas
+OK: Captcha manual consumido no permite repetición
+OK: Respuesta errónea consume el intento de captcha
+OK: Otro navegador no obtiene ni consume un captcha ajeno
+OK: Captcha manual rechaza imágenes y respuestas vencidas
+OK: Dos intentos concurrentes solo consumen un captcha una vez
+OK: Captcha usa cookie de navegador segura sin guardar el código en ella
+OK: Marcar modo manual sin desafío no omite la validación
+OK: Sin claves públicas se habilita captcha manual e ingreso
+OK: Login incluye indicador compartido de espera
+OK: Imagen de captcha se sirve sin caché y vinculada al navegador
+OK: El HTML no expone la solución del captcha
+OK: Captcha erróneo no consulta credenciales y ofrece un código nuevo
+OK: Rechazo renueva desafío y no devuelve contraseña en HTML
+OK: Modo manual falsificado sin desafío no autentica
+OK: Resolver captcha no evita validar contraseña ni registra sesión si es incorrecta
+OK: Captcha manual válido permite verificar contraseña y emitir sesión
+OK: Fallo de Turnstile activa respaldo sin aceptar todavía credenciales
+OK: Otro código entrega un identificador nuevo sin exponer respuesta
+OK: Acceso renderiza widget público sin exponer la clave secreta
+OK: Token Turnstile rechazado impide consultar y autenticar al usuario
+OK: Acceso valida Turnstile en servidor antes de las credenciales
+OK: Consulta muestra enlaces para recuperar el adjunto registrado
+OK: Ficha enlaza documentos del expediente con permiso de consulta
+OK: Consulta del expediente permite abrir ejecución sin permiso de editar
+OK: Documento aún no registrado no abre una ficha vacía
+OK: Popup permite acceder a ficha completa y acciones de estado
+OK: Facturado abre captura popup con tipos 01/03
+OK: Facturado MVC conserva número externo y retorno seguro
+OK: Facturado incompleto no llega al repositorio
+OK: OC ofrece botón Facturado según permiso
+OK: Consulta de Facturado no concede edición
+OK: Reporte HTML pagina, muestra moneda y codifica datos: GANADOS
+OK: Reporte HTML pagina, muestra moneda y codifica datos: OC_COMPLETADAS
+OK: Reporte HTML pagina, muestra moneda y codifica datos: OC_CON_ACTA
+OK: Reporte HTML pagina, muestra moneda y codifica datos: OC_PENDIENTES_FACTURA
+OK: Catálogo de reportes rechaza tipos arbitrarios
+OK: Reporte exige además permiso del documento fuente
+OK: Inicio conecta indicadores y separa importes por moneda
+OK: Dashboard ofrece curvas, columnas, dona y detalle accesible
+OK: Dashboard rechaza rango de fechas invertido
+OK: Panel expone agrupación, eventos y bandeja histórica
+OK: Dashboard valida página y longitud de filtros comerciales
+OK: Filtro presupuesto conserva todos los estados válidos del dashboard
+OK: Listado presupuesto rechaza estado inexistente y fecha inválida
+OK: Perfil sin reportes no consulta ni recibe indicadores
+OK: Sonda de vida pública confirma proceso sin exponer SQL ni secretos
+OK: Publicación rechaza proxy sin IP verificada
+OK: Solo proxy explícito puede proporcionar IP/protocolo de una solicitud

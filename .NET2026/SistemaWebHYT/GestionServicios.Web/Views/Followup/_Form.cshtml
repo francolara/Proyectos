@@ -1,0 +1,58 @@
+@using GestionServicios.Application.Budgets
+@using GestionServicios.Application.Followup
+@using GestionServicios.Web.ViewModels.Followup
+@using GestionServicios.Web.ViewModels.Shared
+@using System.Globalization
+@using System.Text.Json
+@model DocumentFormModel
+@* Firma: FRANCO LARA - 03/11/2026 | Captura documental con calendario FralseCont, datos del expediente y motivo de edición. *@
+@* Firma: FRANCO LARA - 05/11/2026 | Acciones presentadas como botones HYT; Responsables uniformes en edición y popups. *@
+@{var input=Model.Input;string Value(string name)=>input.Fields.GetValueOrDefault(name)??"";}
+<form asp-controller="Followup" asp-action="Save" asp-route-kind="@Model.Kind.Key" asp-route-popup="@Model.Popup" method="post" enctype="multipart/form-data" class="hyt-panel hyt-master-form" data-hyt-save data-document-form data-document-title="@Model.Kind.Title">
+<input type="hidden" name="ParentId" value="@input.ParentId" /><input type="hidden" name="Id" value="@input.Id" />
+<input type="hidden" name="ParentVersion" value="@input.ParentVersion" /><input type="hidden" name="OriginalVersion" value="@input.OriginalVersion" />
+<input type="hidden" name="OperationId" value="@input.OperationId" /><input type="hidden" name="ReturnUrl" value="@input.ReturnUrl" />
+<div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+<p>@BudgetRecord.Text(Model.Record.Data,"PresupuestoNumero") · @BudgetRecord.Text(Model.Record.Data,"ClienteNombre") / @BudgetRecord.Text(Model.Record.Data,"TiendaNombre")</p>
+<div class="hyt-master-fields">
+@foreach(var field in DocumentFields.For(Model.Kind))
+{
+    var name="Fields["+field.Name+"]";var id="document-"+field.Name;var value=Value(field.Name);
+    <div class="hyt-field">
+    @if(field.Kind=="Date")
+    {<partial name="_DatePicker" model="@(new DatePickerModel(name,field.Label,DateOnly.TryParseExact(value,"yyyy-MM-dd",CultureInfo.InvariantCulture,DateTimeStyles.None,out var date)?date:null,Required:field.Required))" />}
+    else
+    {
+        <label for="@id">@field.Label @(field.Required?"*":"")</label>
+        @if(field.Kind=="Revision")
+        {
+            <select id="@id" name="@name" required><option value="">Seleccionar revisión</option>
+            @if(Model.Record.Data.TryGetProperty("Revisiones",out var revisions)&&revisions.ValueKind==JsonValueKind.Array)
+            {
+                @foreach(var revision in revisions.EnumerateArray())
+                {var revisionId=BudgetRecord.Text(revision,"RevisionId");<option value="@revisionId" selected="@(revisionId==value)">Revisión @BudgetRecord.Text(revision,"NumeroRevision") · @BudgetRecord.Text(revision,"Estado") · @BudgetRecord.Text(revision,"CodigoMoneda")</option>}
+            }
+            </select>
+        }
+        else if(field.Kind=="LongText")
+        {<textarea id="@id" name="@name" maxlength="@field.Maximum" rows="3">@value</textarea>}
+        else if(field.Kind=="Money")
+        {<input id="@id" name="@name" value="@value" inputmode="decimal" pattern="[0-9]{1,17}([.][0-9]{1,2})?" maxlength="20" /><small>Moneda de la revisión. Hasta dos decimales; usa punto decimal.</small>}
+        else
+        {<input id="@id" name="@name" value="@value" maxlength="@field.Maximum" required="@field.Required" />}
+    }
+    </div>
+}
+</div>
+@if(input.Id.HasValue){<div class="hyt-field"><label for="document-reason">Motivo de la modificación *</label><textarea id="document-reason" name="MotivoCambio" maxlength="1000" rows="2" required>@input.MotivoCambio</textarea></div>}
+@if(Model.Kind.Code!="EJECUCION")
+{
+<div class="hyt-field"><label for="document-attachment">Adjuntar documento</label><input id="document-attachment" type="file" name="Attachment" accept="@(Model.Kind.Code=="GUIA"?".pdf":".pdf,.png,.jpg,.jpeg")" /><small>@(Model.Kind.Code=="GUIA"?"PDF escaneado":"PDF, PNG o JPG") · Máximo 15 MB. Si hay errores al guardar, vuelve a seleccionar el archivo.</small></div>
+<partial name="_Attachments" model="Model" />
+}
+@if(input.Id.HasValue){<p><a class="hyt-button-secondary hyt-action-button" asp-controller="Followup" asp-action="Details" asp-route-kind="@Model.Kind.Key" asp-route-id="@input.Id">Ver registro y estados</a></p>}
+<div class="hyt-form-actions"><button type="submit" class="hyt-button-primary">Guardar registro</button>
+@if(Model.Popup){<button type="button" class="hyt-button-secondary" data-hyt-close>Cancelar</button>}
+else{<a class="hyt-button-secondary" href="@input.ReturnUrl">Volver</a>}
+</div></form>
+@if(input.Id.HasValue&&Model.Record.Data.TryGetProperty("Documento",out var traceDocument)&&traceDocument.ValueKind==JsonValueKind.Object){<partial name="_TraceSummary" model="@(TraceSummary.From(key=>BudgetRecord.Text(traceDocument,key)))" />}

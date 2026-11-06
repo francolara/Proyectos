@@ -1,0 +1,192 @@
+OK SQL: Numeración interna y primera revisión
+OK SQL: Código de tienda y centro FICO se recuperan de datos reales
+OK SQL: Totales reales calculados en SQL a dos decimales
+OK SQL: Rechaza cantidades con tres decimales
+OK SQL: Rechaza tienda ajena al cliente
+OK SQL: Rechaza guardado con versiones anteriores
+OK SQL: Guardado concurrente fallido no modifica importes
+OK SQL: Revisión enviada no permite editar contenido
+OK SQL: Nueva revisión mantiene la anterior
+OK SQL: Descripción histórica conservada por revisión
+OK SQL: Nueva revisión no recalcula la enviada
+OK SQL: Aprobación conserva fecha del evento
+OK SQL: Tarifa usa precio de servidor e ignora precio y moneda manipulados
+OK SQL: USD sin precio permanece NULL
+OK SQL: No envía presupuesto con precios pendientes
+OK SQL: Cambio de moneda exige confirmación explícita
+OK SQL: Revalorización manual USD recalcula sin conversión cambiaria
+OK SQL: Conversión SIN IGV a CON IGV usa unitario de dos decimales
+OK SQL: Guardados y transiciones tienen auditoría persistida
+OK SQL: Repositorio ADO.NET mapea listado y totales incompletos reales
+OK SQL: Repositorio recupera snapshot histórico y eventos reales
+OK SQL: Ayuda ADO.NET conserva ceros y precio USD ausente
+OK SQL: Datos iniciales reales devuelven tasa y tienda del cliente
+OK SQL: Datos HYT se actualizan con auditoría real
+OK SQL: Configuración rechaza versión anterior
+OK SQL: Cambiar datos HYT no reescribe la empresa de revisiones históricas
+OK SQL: Guardado y transición ADO.NET con fecha de evento sin desfase horario
+OK SQL: HTML Unicode y huella se conservan y verifican contra SQL
+OK SQL: Historial SQL conserva ambos formatos con versión y usuario
+OK SQL: Generación rechaza revisión cambiada durante el renderizado
+OK SQL: Cada generación queda auditada en la revisión
+OK SQL: Contenido alterado no se entrega como impresión íntegra
+OK SQL: SQL impide consultar impresiones sin permiso de reportes
+OK SQL: Edición conserva referencia y descripción histórica de material desactivado
+OK SQL: Permite preparar borrador sin empresa configurada y bloquea su envío
+OK SQL: Configuración corporativa permite el registro inicial único
+OK SQL: Precio manual no puede referenciar tarifario privado de otro cliente
+OK SQL: Emergencia en borrador permite guía sin OC ni partidas
+OK SQL: Reintento de guía es idempotente con versión original
+OK SQL: Guía conserva número alfanumérico y ceros
+OK SQL: Reintento no duplica auditoría de creación
+OK SQL: Segunda guía del mismo presupuesto es rechazada
+OK SQL: Invitación impide OC sin revisión aprobada
+OK SQL: OC conserva número externo alfanumérico después de aprobar invitación
+OK SQL: Un presupuesto no admite segunda OC
+OK SQL: Confirmación del cliente se registra en su OC
+OK SQL: OC impide dos confirmaciones vigentes
+OK SQL: Consulta SQL recupera contexto y documento GUIA
+OK SQL: Listado SQL devuelve documento GUIA
+OK SQL: Consulta SQL recupera contexto y documento OC
+OK SQL: Listado SQL devuelve documento OC
+OK SQL: Consulta SQL recupera contexto y documento CONFIRMACION
+OK SQL: Listado SQL devuelve documento CONFIRMACION
+OK SQL: Repositorio documental mapea ficha, contexto y auditoría reales
+OK SQL: Repositorio documental mapea listado y filtro de confirmación
+OK SQL: Filtro sin confirmar excluye OC con confirmación vigente
+OK SQL: Repositorio guarda ejecución sin cambiar su estado automáticamente
+OK SQL: Repositorio protege consulta documental con permisos SQL
+OK SQL: Adjunto SQL conserva nombre Unicode y metadatos vinculados
+OK SQL: Archivo de guía no se expone bajo ruta OC
+OK SQL: Adjunto requiere permiso específico del documento
+OK SQL: Reintento con archivo no duplica metadatos ni auditoría
+OK SQL: Archivo retirado deja de estar disponible para visualización
+OK SQL: Retiro de archivo conserva auditoría y motivo
+OK SQL: Trabajo no puede terminar antes de su inicio real
+OK SQL: Emergencia termina ejecución sin OC
+OK SQL: Aceptación de guía idempotente no duplica auditoría
+OK SQL: Guía conserva fecha de aceptación y representante
+OK SQL: Cambio documental rechaza versiones anteriores
+OK SQL: OC no marca trabajo completado sin ejecución terminada
+OK SQL: Ejecución pendiente no salta directamente a terminada
+OK SQL: Cierre OC requiere guía aceptada
+OK SQL: OC cierra después de ejecución terminada y guía aceptada
+OK SQL: Guía aceptada no se revoca mientras OC sigue cerrada
+OK SQL: Trabajo no se reabre mientras OC figura trabajo completado
+OK SQL: Reapertura de trabajo limpia término actual y conserva historial
+OK SQL: Retiro de confirmación conserva historia y permite solo una nueva vigente
+OK SQL: Repositorio de estados conserva fecha real sin desfase horario
+OK SQL: Cambio de estado documental exige permiso de edición SQL
+OK SQL: Emergencia con OC mantiene bloqueados contenido e importes
+OK SQL: Regularización con OC no habilita rechazo que contradiga el documento
+OK SQL: Emergencia se regulariza después de OC sin recalcular importes
+OK SQL: Presupuesto aprobado con OC no se cancela desde regularización
+OK SQL: Error de auditoría rechaza la transición completa
+OK SQL: Fallo al auditar no deja aplicado el cambio de estado
+OK SQL: Expediente consolida eventos repetidos con páginas SQL sin duplicación
+OK SQL: Historial del presupuesto no revela documentos sin permiso específico
+OK SQL: Historial consolidado incluye archivos y ejecución del mismo expediente
+OK SQL: Listado presupuesto muestra la última actualización documental
+OK SQL: Consulta SQL de presupuesto inexistente devuelve vacío sin error
+OK SQL: Invitación no inicia ejecución sin OC aunque tenga programación
+OK SQL: Emergencia puede iniciar directamente sin programación ni OC
+OK SQL: Cancelación OC exige resolver confirmación y guía vigentes
+OK SQL: Cancelar y reactivar OC conserva el mismo registro único
+OK SQL: SQL también rechaza imagen en guía aunque se omita la validación web
+OK SQL: Adjunto rechazado no deja metadatos parciales
+OK SQL: Identificador de operación no se reutiliza para otra transición
+OK SQL: Facturado exige confirmación del cliente de la OC
+OK SQL: Facturado guarda código textual y número externo sin perder ceros
+OK SQL: Reintento Facturado no duplica referencia
+OK SQL: OC no admite dos referencias vigentes
+OK SQL: Retiro Facturado conserva referencia y auditoría con motivo
+OK SQL: Repositorio Facturado recupera historial retirado sin marcado vigente
+OK SQL: Repositorio ADO.NET registra boleta con código textual 03
+OK SQL: Corrección Facturado conserva valor anterior en auditoría consultable
+OK SQL: Listado OC muestra la referencia Facturado vigente tras corregir
+OK SQL: Consulta OC sin permiso Facturado no revela datos del comprobante
+OK SQL: Dashboard cuenta un presupuesto por expediente sin duplicar revisiones
+OK SQL: Dashboard concilia OC sin multiplicar confirmaciones históricas
+OK SQL: Dashboard separa importes PEN y USD
+OK SQL: Reporte paginado sin documentos duplicados: GANADOS
+OK SQL: Reporte paginado sin documentos duplicados: OC_COMPLETADAS
+OK SQL: Reporte paginado sin documentos duplicados: OC_CON_ACTA
+OK SQL: Reporte paginado sin documentos duplicados: OC_PENDIENTES_FACTURA
+OK SQL: Reporte pendientes excluye OC marcada con referencia vigente
+OK SQL: Indicadores exigen permiso de reportes
+OK SQL: Movimientos agrupan por fecha Perú aunque el registro UTC sea del día siguiente
+OK SQL: Repositorio reportes recupera filas, conteo y totales por moneda reales
+OK SQL: Repositorio de indicadores recupera las fuentes autorizadas
+OK SQL: Reporte real pagina más de veinte documentos sin solapamiento
+OK SQL: Totales por moneda corresponden a toda la consulta y no cambian de página
+OK SQL: Bandeja histórica SQL pagina veinte expedientes sin repetirlos
+OK SQL: Pendientes acumulados incluyen expedientes anteriores al período
+OK SQL: Filtro cliente se aplica a cifras, movimientos y pendientes
+OK SQL: Filtro tienda se aplica a cifras, movimientos y pendientes
+OK SQL: Primera confirmación cuenta una vez por OC pese al historial
+OK SQL: Primer marcado cuenta una vez por OC pese a correcciones y retiro
+OK SQL: Bandeja no revela guía sin su permiso específico
+OK SQL: Navegación a listados/reportes aplica filtros comerciales antes de conteo y totales
+OK SQL: Acceso desde columnas del dashboard conserva estado en consulta SQL
+OK SQL: Cliente y tienda combinados recuperan los expedientes coincidentes del conjunto de prueba
+OK SQL: Acceso rápido concilia exactamente su indicador: SIN_CONFIRMAR
+OK SQL: Acceso rápido concilia exactamente su indicador: CONFIRMADAS
+OK SQL: Acceso rápido concilia exactamente su indicador: LISTAS
+OK SQL: Acceso rápido concilia exactamente su indicador: FACTURADAS
+OK SQL: SQL rechaza aplicar seguimiento OC a presupuestos
+OK SQL: Código de cliente generado en SQL ignora el enviado por el navegador
+OK SQL: Código interno existente se conserva aunque el JSON intente cambiarlo
+OK SQL: Código SAP alfanumérico por cliente conserva ceros y se actualiza con auditoría
+OK SQL: Nuevo presupuesto toma SAP del cliente aunque no existan datos HYT por cliente
+OK SQL: Listado y búsqueda por código de cliente en tiendas
+OK SQL: Listado y búsqueda por código de cliente en contactos
+OK SQL: Contacto muestra y busca nombres/apellidos del cliente natural
+OK SQL: Natural guarda número y nombres sin exigir tipo de documento
+OK SQL: SQL admite natural sin tipo de documento
+OK SQL: SQL admite jurídica sin tipo de documento
+OK SQL: SQL exige número de documento
+OK SQL: Cliente guarda varios enlaces ordenados con descripción
+OK SQL: Editar y retirar enlaces conserva ID y auditoría anterior/nueva
+OK SQL: SQL rechaza esquema no permitido sin perder enlaces anteriores
+OK SQL: SQL rechaza un enlace de otro cliente
+OK SQL: Cliente puede retirar todos los enlaces con auditoría
+OK SQL: Migración conserva el enlace anterior sin duplicarlo al repetir
+OK SQL: Repetir migración no restaura enlaces retirados por el usuario
+OK SQL: Altas concurrentes reciben códigos distintos sin código manual
+OK SQL: Abreviatura de unidad es libre y su identificador interno es automático
+OK SQL: Unidad duplicada devuelve validación de abreviatura
+OK SQL: Especialidades, tipos y zonas usan numeración automática
+OK SQL: Material conserva SAP libre, genera código interno y no recibe posición del maestro
+OK SQL: Precios de ficha recuperan moneda, zonas y USD vacío desde SQL
+OK SQL: Tarifas del material se paginan en SQL de veinte sin duplicados
+OK SQL: Precios del material exigen consulta de materiales y tarifarios
+OK SQL: Precio publicado no se modifica desde ninguna ruta
+OK SQL: Copiar versión deja precios borrador disponibles sin alterar el histórico
+OK SQL: Ubigeos copiados íntegros de FralseCont en HYT
+OK SQL: Presupuesto recibe direcciones completas del cliente y tienda con ubigeo
+OK SQL: Datos iniciales incluyen las consideraciones de configuración HYT
+OK SQL: Listado de clientes muestra dirección con departamento provincia distrito
+OK SQL: Presupuesto conserva dirección y ubigeo en su instantánea histórica
+OK SQL: SQL rechaza distrito inexistente con mensaje de validación
+OK SQL: Configuración guarda consideraciones de más de 4000 caracteres sin truncarlas
+OK SQL: Nuevo presupuesto recibe las consideraciones completas de configuración
+OK SQL: Tarifario directo queda disponible sin publicación manual y permite USD vacío
+OK SQL: Ayuda de tarifa filtra el material y registro elegido en SQL
+OK SQL: Ayuda no devuelve tarifas de otro material
+OK SQL: Detalle guarda precio neto editado, subtotal cantidad por precio e IGV por separado
+OK SQL: SQL exige tratamiento neto en el nuevo detalle
+OK SQL: SQL rechaza una tarifa perteneciente a otro material
+OK SQL: Presupuesto encuentra el precio agregado desde el material
+OK SQL: Tarifarios unificado respeta filtro sin coincidencias
+OK SQL: Tarifarios unificado incluye precio creado desde material y su identidad
+OK SQL: Tarifario permite solo dólares sin inventar precio en soles
+OK SQL: Tarifario rechaza ambos importes vacíos
+OK SQL: Tarifario conserva registro propio y audita actualización e inactivación
+OK SQL: Presupuesto excluye el tarifario inactivo
+OK SQL: Tarifario directo protege cambios concurrentes
+OK SQL: Tarifario directo valida el material propietario
+OK SQL: SQL mantiene precisión de dos decimales en tarifario simple
+OK SQL: Tarifario simple no modifica publicaciones convencionales protegidas
+OK SQL: Rol SQL limitado ejecuta numeración automática por cadena de propiedad
+SQL real: 190 comprobaciones aprobadas en base aislada.
+Base temporal eliminada; SistemaWebHYT de trabajo no recibió datos de prueba.

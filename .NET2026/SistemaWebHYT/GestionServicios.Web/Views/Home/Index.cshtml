@@ -1,0 +1,14 @@
+@{ViewData["Wide"]=true;}
+@using GestionServicios.Web.ViewModels.Reporting
+@model DashboardModel?
+@* Firma: FRANCO LARA - 03/11/2026 | Inicio HYT con indicadores reales; acceso básico sin cifras para perfiles sin reportes. *@
+@* Firma: FRANCO LARA - 05/11/2026 | Listado al ancho disponible y acciones uniformes. *@
+@{ViewData["Title"]="Gestión de servicios";}
+@if(Model is not null){<partial name="_Dashboard" model="Model" />}
+else
+{
+<header class="hyt-page-header"><div><h1>Gestión de servicios</h1><p>Presupuestos y seguimiento documental de H Y T Servicios Generales.</p></div></header>
+@if(ViewData["DashboardError"] is string error){<p role="alert">@error</p>}
+<section class="hyt-panel hyt-master-trace"><h2>Bienvenido a HYT</h2><p>Utiliza el menú para acceder a los módulos habilitados para tu perfil.</p></section>
+}
+@section Scripts{ @if(Model is not null){<script src="~/hyt-dashboard.js" asp-append-version="true" defer></script>} }

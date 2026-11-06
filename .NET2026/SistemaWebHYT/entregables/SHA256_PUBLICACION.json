@@ -1,0 +1,518 @@
+[
+  {
+    "path": "appsettings.Development.json",
+    "sha256": "73f95f9e0ceb205fc1c4dc50c07697fcfa29d7087868c2aef1d504cb38c771ec"
+  },
+  {
+    "path": "appsettings.json",
+    "sha256": "200332b434757a0054a3d356c91cde01f2c48712be8aa2bcb0f3e973619f06e3"
+  },
+  {
+    "path": "AWSSDK.Core.dll",
+    "sha256": "4da118a1fabd575a646acab50af45c9a72de8881876ef71a363ad03372f55df3"
+  },
+  {
+    "path": "AWSSDK.S3.dll",
+    "sha256": "118c52369a40d8849263e8647bee111cb1864f9e7e22681d0efa17266196650a"
+  },
+  {
+    "path": "Azure.Core.dll",
+    "sha256": "f87221287bde26eac8b932da37db8a9ed2998e1e0559408585a48339a625d938"
+  },
+  {
+    "path": "Azure.Identity.dll",
+    "sha256": "c2d572e9be14a4d686c18d8da6ef548503c2817b76a5ada742d641f3a7cf5831"
+  },
+  {
+    "path": "cs/Microsoft.Data.SqlClient.resources.dll",
+    "sha256": "561fd29c842c27a97abbffe12400597dec99b269bb3d26a289dd5c176a88fdac"
+  },
+  {
+    "path": "de/Microsoft.Data.SqlClient.resources.dll",
+    "sha256": "1134a7105b5c0297b861340129ff24af672a7eb0990c70c4e4f2e8a169d843bf"
+  },
+  {
+    "path": "es/Microsoft.Data.SqlClient.resources.dll",
+    "sha256": "7afb4660d008f03666c041a26cfe5bb34629b6d4d1aaed98df881ad33732afaf"
+  },
+  {
+    "path": "fr/Microsoft.Data.SqlClient.resources.dll",
+    "sha256": "5a31e85a20d75e852c9dea6bc2fa7ddaa16b43b135839bedc52c8fbee5f35d4c"
+  },
+  {
+    "path": "GestionServicios.Application.dll",
+    "sha256": "9904b5bf94e51e27dda32a2fcd2d9b9e1977778383fe475dc2906b65df6c0251"
+  },
+  {
+    "path": "GestionServicios.Application.pdb",
+    "sha256": "d92c3ef786ae22a1f4c8233b8f24df3d97cf395a1c3eb5063c9735138cf57ab6"
+  },
+  {
+    "path": "GestionServicios.Contracts.dll",
+    "sha256": "088d72b7d904a5ebf9a87766d2f28cc488010433d61b216a1fb922156f8f7cf1"
+  },
+  {
+    "path": "GestionServicios.Contracts.pdb",
+    "sha256": "8f1cdbd69ca69e9b4fc3a9ae141817574e0b05e9bd3f54f4dbb3f3bbf25c6f48"
+  },
+  {
+    "path": "GestionServicios.Domain.dll",
+    "sha256": "8191c1f2dd1f3682cb084129b0b71f8f2454fcfbfbf5969624614d43f72e988a"
+  },
+  {
+    "path": "GestionServicios.Domain.pdb",
+    "sha256": "bde244e8a0297236bbbf2c920f0f14808a46e29d71514907817fc1c3720fa2db"
+  },
+  {
+    "path": "GestionServicios.Infrastructure.dll",
+    "sha256": "b1443679967311055a1d700981db585a99ead95fd235c62d0ceab432a65996fe"
+  },
+  {
+    "path": "GestionServicios.Infrastructure.pdb",
+    "sha256": "f2904a5a227cfcc19d306e732fb45c78f1143149b33b954694a7b6fe0020dc46"
+  },
+  {
+    "path": "GestionServicios.Web.deps.json",
+    "sha256": "bc0c28e97477f1bfa52d3eb8c762830bee61d384d647e992c8c3cc4c42688204"
+  },
+  {
+    "path": "GestionServicios.Web.dll",
+    "sha256": "5afc813af7e98bc8272214b9802cb1c205414293ddff564bc27a799a8fa418af"
+  },
+  {
+    "path": "GestionServicios.Web.exe",
+    "sha256": "95311534b486aba1f2ac1a7298265a66dcfe3876d98e12ddac4e9728f8d3540d"
+  },
+  {
+    "path": "GestionServicios.Web.pdb",
+    "sha256": "088d4d9fee1f8261c22e1b9f427edd2fc3202b67f98e0da85cb406dcdb35536f"
+  },
+  {
+    "path": "GestionServicios.Web.runtimeconfig.json",
+    "sha256": "41442586a8262bc96a1c80f82f4d9384c03bfd465d221cbf01fb3563170f9e65"
+  },
+  {
+    "path": "GestionServicios.Web.staticwebassets.endpoints.json",
+    "sha256": "7fa23bbbbc07969d05adfd007589f06948ae92e401072d82c4e9839a675bedf9"
+  },
+  {
+    "path": "it/Microsoft.Data.SqlClient.resources.dll",
+    "sha256": "4662f53808935925fbc5e12c8589f5f14457599e0add075a6e5682933bc761fd"
+  },
+  {
+    "path": "ja/Microsoft.Data.SqlClient.resources.dll",
+    "sha256": "5a3c48d975f273893d32d068a69295617ee2dc9dcb75b60735c308d7ba6bef38"
+  },
+  {
+    "path": "ko/Microsoft.Data.SqlClient.resources.dll",
+    "sha256": "0f26736443be2c377c243394aaff627add036d5fc6fc05b73d1bb113c1ae8ead"
+  },
+  {
+    "path": "Microsoft.Bcl.AsyncInterfaces.dll",
+    "sha256": "136d5965cf4768e8420b547a8bddea882921f426c371833d558a858a2f0c235a"
+  },
+  {
+    "path": "Microsoft.Data.SqlClient.dll",
+    "sha256": "5e40c6a8b1ae4d0a925a8088d9b9c60f56da70818cf0d5209cce7525b7a392f8"
+  },
+  {
+    "path": "Microsoft.Identity.Client.Broker.dll",
+    "sha256": "c89854b2bcde4401b80552063ea9166efcc523edcddec79c9c3def04bf7c745f"
+  },
+  {
+    "path": "Microsoft.Identity.Client.dll",
+    "sha256": "f9bc295d0011112fe4d7d8a728a27a38627739df6cd144c8402b5dae03bf40af"
+  },
+  {
+    "path": "Microsoft.Identity.Client.Extensions.Msal.dll",
+    "sha256": "741cf55cadca6e0c5913bd1fad11d0cd1d82ee2afea9bd95a94843aa6fa3a9d9"
+  },
+  {
+    "path": "Microsoft.Identity.Client.NativeInterop.dll",
+    "sha256": "ab9315edf6dcc91f26f20bce51e11b75d5bd4e673b44a3784cf3752555bbdbd3"
+  },
+  {
+    "path": "Microsoft.IdentityModel.Abstractions.dll",
+    "sha256": "24e97b54b6b5c234a124a336757e3116617ac6c30b655cdae74517dc2ecb5746"
+  },
+  {
+    "path": "Microsoft.IdentityModel.JsonWebTokens.dll",
+    "sha256": "e6add69ec50664469f739c527fb74c37fbffa072c36e889d91e058faa64542b1"
+  },
+  {
+    "path": "Microsoft.IdentityModel.Logging.dll",
+    "sha256": "4eb68fb71d38d86e93e0c9145620ea3e528fc49333d82c923140f9868f1ea426"
+  },
+  {
+    "path": "Microsoft.IdentityModel.Protocols.dll",
+    "sha256": "4e81eb0584e24d6274916a6f470c990ac3aaa924c2f10255e64679c1a032f0e2"
+  },
+  {
+    "path": "Microsoft.IdentityModel.Protocols.OpenIdConnect.dll",
+    "sha256": "8e845988a113b5c146f1392e993e8f554a34756d37563a85c64bb399e45a4c0b"
+  },
+  {
+    "path": "Microsoft.IdentityModel.Tokens.dll",
+    "sha256": "07d46c63c931f8792e932cc131dc9580dd4575e0872cae92878d26847c9f248e"
+  },
+  {
+    "path": "Microsoft.SqlServer.Server.dll",
+    "sha256": "a9dca1b42bc875f966b78b2c0880e62b838f0ed6567166d7f1f07ae4b76ec4bf"
+  },
+  {
+    "path": "pl/Microsoft.Data.SqlClient.resources.dll",
+    "sha256": "722436c4726622924b8c824eaf79699632525e617018aaf8423e78e5874c53e7"
+  },
+  {
+    "path": "pt-BR/Microsoft.Data.SqlClient.resources.dll",
+    "sha256": "a6aa860d1ff1502b373e8c36f1df669b2a25f370b7433c1713f8afc4cd9c1d35"
+  },
+  {
+    "path": "ru/Microsoft.Data.SqlClient.resources.dll",
+    "sha256": "18c44101097613ab3f86a495b924e1a09ebb3faf68741978737358fcb3eb6fbf"
+  },
+  {
+    "path": "runtimes/linux-x64/native/libmsalruntime.so",
+    "sha256": "74b3915898f387982de19677c157e6dff45f6e116b7fa9026e4a491bdf51d023"
+  },
+  {
+    "path": "runtimes/osx-arm64/native/msalruntime_arm64.dylib",
+    "sha256": "1e36b7bc708c467a259b7a33df8fd1c150027953dd8a7f550b8da241622d2deb"
+  },
+  {
+    "path": "runtimes/osx-x64/native/msalruntime.dylib",
+    "sha256": "aa57c18b28eba92ccac0d18c8ebe2f782b90f84abc7c47b1b7951a548b72d34f"
+  },
+  {
+    "path": "runtimes/unix/lib/net9.0/Microsoft.Data.SqlClient.dll",
+    "sha256": "456036d24e04f605be8a969034a7bba670e76d93fd0ca949aa540b6d7c9932c3"
+  },
+  {
+    "path": "runtimes/win/lib/net10.0/System.Security.Cryptography.Pkcs.dll",
+    "sha256": "7bce9317b8eccd6b261b1af3321ac4a5ff4e770a2c6c666f133f0108c5d066f4"
+  },
+  {
+    "path": "runtimes/win/lib/net9.0/Microsoft.Data.SqlClient.dll",
+    "sha256": "2169a8917c3cb43dd7b3e951ed51fdf0a5bf3a2b7ac42dab16e7c1c60dd3c40d"
+  },
+  {
+    "path": "runtimes/win-arm64/native/Microsoft.Data.SqlClient.SNI.dll",
+    "sha256": "2568d3b42f7a607c9e81bde6de99c84c0880b2e0aacaa6122ff474f589a4356c"
+  },
+  {
+    "path": "runtimes/win-arm64/native/msalruntime_arm64.dll",
+    "sha256": "75a9174e5f6fde56d113f920110dc718d651c8f3dfcdb47c0956a938330836c2"
+  },
+  {
+    "path": "runtimes/win-x64/native/Microsoft.Data.SqlClient.SNI.dll",
+    "sha256": "4b699d5208390414848b2165f8ae442504852afd87221169233a5d7c7bda4ff9"
+  },
+  {
+    "path": "runtimes/win-x64/native/msalruntime.dll",
+    "sha256": "060ff9a4d78ed94498618b0b5255f0cc17693cd4a436a23de759dfc79daed21d"
+  },
+  {
+    "path": "runtimes/win-x86/native/Microsoft.Data.SqlClient.SNI.dll",
+    "sha256": "817ae569b1b00ea746cdeda3328cccc552f27daef729812e928854a1c32499ab"
+  },
+  {
+    "path": "runtimes/win-x86/native/msalruntime_x86.dll",
+    "sha256": "549dba086f8ba3d25b9d2a4784f4880c6d6e6aa353b29234ce62d95122ca28aa"
+  },
+  {
+    "path": "System.ClientModel.dll",
+    "sha256": "3c4062071d51b56d7b64e12e98f195692fe58cbc907f0252d1ba5d90a366b965"
+  },
+  {
+    "path": "System.Configuration.ConfigurationManager.dll",
+    "sha256": "1691863e2c9476081af4f50a9ee60a14acd42e5705ba745469217930edb7aa35"
+  },
+  {
+    "path": "System.IdentityModel.Tokens.Jwt.dll",
+    "sha256": "8027f6bfe795fd5718b1c7bbb3951af064ba29cb92ee965bbe237f6808cfd28c"
+  },
+  {
+    "path": "System.Memory.Data.dll",
+    "sha256": "bae79a4ff6e8fcfb65a3d88eb53d281898e699e5471ebd780843e5616753f0c3"
+  },
+  {
+    "path": "System.Security.Cryptography.Pkcs.dll",
+    "sha256": "eff9ed505c194f0f5c9faef1a175459cd0560eeb4ad08890c7c0c0e1ff4d34c3"
+  },
+  {
+    "path": "System.Security.Cryptography.ProtectedData.dll",
+    "sha256": "520b3ae88b5daa4752cd59631cd25332cafccfbbe24866d3fefb162dd2034309"
+  },
+  {
+    "path": "tr/Microsoft.Data.SqlClient.resources.dll",
+    "sha256": "bd8f65a1711c7345fd3fa4745e9b482ef2205aa8c4d8c7ee0eb09cc58d074194"
+  },
+  {
+    "path": "web.config",
+    "sha256": "284a78c4bddae16f56ed7c492004d8b0f0c666fbd689418032e53e2599e0a9bb"
+  },
+  {
+    "path": "wwwroot/hyt-access.js",
+    "sha256": "64be635e82e5522a9e14e3c0070fbbf2fc0470f0a62bedfe3b30970e4dd4aaf8"
+  },
+  {
+    "path": "wwwroot/hyt-access.js.br",
+    "sha256": "0835a520e11e5f7cc5555c92deed7ff4523a922935ee99fc97bf974308eb338c"
+  },
+  {
+    "path": "wwwroot/hyt-access.js.gz",
+    "sha256": "a567ee6fdb2487e6daed77fc018de9b3313e39fdfc7ab8309e3ff7ebf47151c0"
+  },
+  {
+    "path": "wwwroot/hyt-budget.js",
+    "sha256": "48ba3947b88f77381faebb64866272834798c99d8fa8688ef3e9368659e8b016"
+  },
+  {
+    "path": "wwwroot/hyt-budget.js.br",
+    "sha256": "a7b18c9bbba4763fba9a34e22e0d6b33a20352e6be834be523a6bc95833edece"
+  },
+  {
+    "path": "wwwroot/hyt-budget.js.gz",
+    "sha256": "f0236fa361da1a593469d6369888d2d4eb418727d441e630af2b22091327042b"
+  },
+  {
+    "path": "wwwroot/hyt-client-links.js",
+    "sha256": "c2ddc5431bef03647de6d821e705c31cbe41095455bbe20992ba6be434d08278"
+  },
+  {
+    "path": "wwwroot/hyt-client-links.js.br",
+    "sha256": "3f4c09c6f0bba23eb3a7efc455de4a2186312edf0d21ded7e05d2fc9d3c05970"
+  },
+  {
+    "path": "wwwroot/hyt-client-links.js.gz",
+    "sha256": "7a21f5c5409f392412ce89edaf717196a03d8d58a75dea07e043a7d56954b97b"
+  },
+  {
+    "path": "wwwroot/hyt-components.css",
+    "sha256": "4fc3bd18286d804d215368daad1a864a44d88751f9d82135951b6695a41c1b5c"
+  },
+  {
+    "path": "wwwroot/hyt-components.css.br",
+    "sha256": "af2a7ee1ec72e26831cc4d8e83e8c1d9f3c072fffcec3f9f533013d9da9526c4"
+  },
+  {
+    "path": "wwwroot/hyt-components.css.gz",
+    "sha256": "0d3f2273adbc8efb73af0d497b0f2ca74087f04fab2f84fe8bc629e155ef5081"
+  },
+  {
+    "path": "wwwroot/hyt-dashboard.css",
+    "sha256": "542835a39edf87f173c1d177098e01dd27cb3a220713ed0a7a23544b49b6b01e"
+  },
+  {
+    "path": "wwwroot/hyt-dashboard.css.br",
+    "sha256": "7437d57c7bfa9c61586fbfc62ccfcd9e80de604f126b09a29fda4234ca7524c8"
+  },
+  {
+    "path": "wwwroot/hyt-dashboard.css.gz",
+    "sha256": "b1bf156080dbae28795ff0cfc1bb1b94832d6bdf454c3ee9cd2abeba17aa61f3"
+  },
+  {
+    "path": "wwwroot/hyt-dashboard.js",
+    "sha256": "f9e6f8d8d176671da7fa9ee247950a0034d6ef85e7c366911b5dddb489cb377e"
+  },
+  {
+    "path": "wwwroot/hyt-dashboard.js.br",
+    "sha256": "b0724644d66a6ea270a963c9f28f0208035c7e01adadc11c48da07e97189df43"
+  },
+  {
+    "path": "wwwroot/hyt-dashboard.js.gz",
+    "sha256": "40e980d7d0228aa8f7c0fbfd8a59c35252171f7677a18df49613c8fe2c4900b3"
+  },
+  {
+    "path": "wwwroot/hyt-dates.js",
+    "sha256": "d314834898c5dfe43fdb2481e0eb00e9c833e2658a9738530bbb215206fe6f67"
+  },
+  {
+    "path": "wwwroot/hyt-dates.js.br",
+    "sha256": "98337ae79c0fbf5fd4076112080ec1464809f3cc95a6aa2c8098c0fb762c428b"
+  },
+  {
+    "path": "wwwroot/hyt-dates.js.gz",
+    "sha256": "b00032ca888400fbb50ab8a717821982b6d804ee23573f35af8481e1f517fb6a"
+  },
+  {
+    "path": "wwwroot/hyt-documents.js",
+    "sha256": "aa2b83a5409e778f8fb8e1ae592acc8f718251238ecfd1c1d6efa81a3ff5b7c7"
+  },
+  {
+    "path": "wwwroot/hyt-documents.js.br",
+    "sha256": "804eec1a405f2ef6c75b0ceeba4dc7de1101892a416a6925e75cb6d53b9fd74e"
+  },
+  {
+    "path": "wwwroot/hyt-documents.js.gz",
+    "sha256": "ee386be22828009342f39042b9fe230e4d74376a823283b9719fa72422163ec1"
+  },
+  {
+    "path": "wwwroot/hyt-interface.css",
+    "sha256": "b78d0e74d6aa1e13047befa677cc219acdb1db303da3a2cbb9165727c39ad6b0"
+  },
+  {
+    "path": "wwwroot/hyt-interface.css.br",
+    "sha256": "cd39d784e19ce81bd30828ca7c75b5a5fdb23789c3a7afc62f429eb5e67a9bb4"
+  },
+  {
+    "path": "wwwroot/hyt-interface.css.gz",
+    "sha256": "0138b1e39cd3ae5b5e055a299cb40871cb9cff48eb0dd693b2c73d5111b4190f"
+  },
+  {
+    "path": "wwwroot/hyt-loading.css",
+    "sha256": "bdaf31de09fca9043be3b6e603a56369309ec4e244ff9fd8111ac01f3b075569"
+  },
+  {
+    "path": "wwwroot/hyt-loading.css.br",
+    "sha256": "49b492bc56cd2356e4b44a7b5146f0a2a26818d7fcf11657fd48a1198ad46c17"
+  },
+  {
+    "path": "wwwroot/hyt-loading.css.gz",
+    "sha256": "81c368ef9238c30993b2dc694a51e851e009bb4627d63a0cb6235510321deefc"
+  },
+  {
+    "path": "wwwroot/hyt-loading.js",
+    "sha256": "960da1404140968d8f5c53e3b6445b1dd5376b06dcccbc207079dd460d75d8ac"
+  },
+  {
+    "path": "wwwroot/hyt-loading.js.br",
+    "sha256": "af656c635108e16d56eb13e0d637304acd602324ad3f3c62ed1133fd39c78866"
+  },
+  {
+    "path": "wwwroot/hyt-loading.js.gz",
+    "sha256": "ce08b59ecb96747d8114a3776a11aa223ce5e0f722092f9e6611936a7234ba0c"
+  },
+  {
+    "path": "wwwroot/hyt-maintenance.js",
+    "sha256": "00d96f16ae16c91a661f9098cf3efb28f9761fd41dd4f3dbd46dd2cda69fac81"
+  },
+  {
+    "path": "wwwroot/hyt-maintenance.js.br",
+    "sha256": "bd94a335ed54405b0bccc4131bcf300ef6bec1756b79a5ac5c8c6af0710740bf"
+  },
+  {
+    "path": "wwwroot/hyt-maintenance.js.gz",
+    "sha256": "e4305789e465f67bb5bd80080805b3ad6dbd8c68a58d047c83d013fb0bb32eaf"
+  },
+  {
+    "path": "wwwroot/hyt-material-tariffs-frame.js",
+    "sha256": "6fd1c4442e86e11e668c36cf8e9ec5ba5e7267f1af6e8c629a33aeaa4ccfc1bf"
+  },
+  {
+    "path": "wwwroot/hyt-material-tariffs-frame.js.br",
+    "sha256": "d0dc6497adf16a5a37068c39edcf916f8333e2ca6a64641c63be5fa89f379ff3"
+  },
+  {
+    "path": "wwwroot/hyt-material-tariffs-frame.js.gz",
+    "sha256": "04d89336edce923bea3494c1b997008be2831669d85d7008dc20e57381678b60"
+  },
+  {
+    "path": "wwwroot/hyt-material-tariffs.js",
+    "sha256": "649b6cee699f6c4217b4b25bcbbc536fd2ee1b12a81f1f1def55a48b34517168"
+  },
+  {
+    "path": "wwwroot/hyt-material-tariffs.js.br",
+    "sha256": "0b26d8740e105285cc5026a839b2dfb920942f3ebbe7e6c2bf5870115944206b"
+  },
+  {
+    "path": "wwwroot/hyt-material-tariffs.js.gz",
+    "sha256": "ee68e921617096e3139990261da7395e37c7d9f95260952db924ae4c183e2429"
+  },
+  {
+    "path": "wwwroot/hyt-report.css",
+    "sha256": "f08959d8167439c4f78a97c62d5e51f18641667c86ed8f0aa58223dd4e97f954"
+  },
+  {
+    "path": "wwwroot/hyt-report.css.br",
+    "sha256": "bc8fbc97003029d299f1ad200247b19e82a1826b1e255f8fa3df3da47ebec741"
+  },
+  {
+    "path": "wwwroot/hyt-report.css.gz",
+    "sha256": "47c9e1c4fbb55a20b38643f4b3baf958a21999a9011cc3632be061403957abbc"
+  },
+  {
+    "path": "wwwroot/hyt-reports.css",
+    "sha256": "adaed008ec3fa24cec84e466e4f3880eac192f736db6dea17cb3589ded479559"
+  },
+  {
+    "path": "wwwroot/hyt-reports.css.br",
+    "sha256": "d5f562dc3e1eebf53b740b3e95f99659cc41d108a4d530d6c4505461bc4f66e8"
+  },
+  {
+    "path": "wwwroot/hyt-reports.css.gz",
+    "sha256": "1fb0c463de314cbaf4b7b0df35f0dba62039f14ad0aa3a66f60921f7cf53fc0c"
+  },
+  {
+    "path": "wwwroot/hyt-reports.js",
+    "sha256": "00874b9d23b7e8612936c1b186a67fb6928407004559348c93f025cc2d215c5b"
+  },
+  {
+    "path": "wwwroot/hyt-reports.js.br",
+    "sha256": "9620a533aca0f0c0ef0ea5a130623c1e63dc48d840ad42f03040924ae46e07d7"
+  },
+  {
+    "path": "wwwroot/hyt-reports.js.gz",
+    "sha256": "9044b2e27e3193cecba9a03a0eb1b5387b4ed5d286a915faab8668ef59d069e0"
+  },
+  {
+    "path": "wwwroot/hyt-theme-switch.js",
+    "sha256": "fca7879dea468d4aa1268329c9fcfe2ad82e21251bd5cb5edd45773c07bb6b51"
+  },
+  {
+    "path": "wwwroot/hyt-theme-switch.js.br",
+    "sha256": "c2911c385bb02296a3b6f353c557e50b4a60d6ec5aef9c5fc62fdeab1dcfc910"
+  },
+  {
+    "path": "wwwroot/hyt-theme-switch.js.gz",
+    "sha256": "1370def2fde2d230578761c00e939ea0bd0bc299567dd7967ec6cd8fbe65d8fd"
+  },
+  {
+    "path": "wwwroot/hyt-theme.css",
+    "sha256": "2c85bc63983fb956eb297cd44583c26067db5f3b361dd4798dafa2b25cf274d9"
+  },
+  {
+    "path": "wwwroot/hyt-theme.css.br",
+    "sha256": "1295bfccd51fe18361b3c3f5ad9587aa39bcd366b9742c715a58520d4333bac6"
+  },
+  {
+    "path": "wwwroot/hyt-theme.css.gz",
+    "sha256": "3705e982dc4a5f5389f5072b358a1cfb05327ee3ce3776f049abe698a0a424c9"
+  },
+  {
+    "path": "wwwroot/hyt-ubigeo.js",
+    "sha256": "a87d7b674eefbd597a1c94ba7efc01c40d61a5bfbdd695d4513ec8e432318da7"
+  },
+  {
+    "path": "wwwroot/hyt-ubigeo.js.br",
+    "sha256": "9f469a13d10b3a4f7de5584bed868703f11a4ae5de8c448676b6379081214ed5"
+  },
+  {
+    "path": "wwwroot/hyt-ubigeo.js.gz",
+    "sha256": "e27b62e2d0b88e4c92ee56a2f556f40ad886a0ec51093553f43231b7f4b46588"
+  },
+  {
+    "path": "wwwroot/hyt-ui.js",
+    "sha256": "58d7e920e2a6974b87397e7b411e67c83b7f2b4f814e2de66ada49ef624011ee"
+  },
+  {
+    "path": "wwwroot/hyt-ui.js.br",
+    "sha256": "8052544723738d5d6a2178a90ba38d80bdba02bbc3175c1fadd889a64862b073"
+  },
+  {
+    "path": "wwwroot/hyt-ui.js.gz",
+    "sha256": "f8edb10347637e9162e9459de9e3e902e3c348b76847711651bbc55a590e5a35"
+  },
+  {
+    "path": "wwwroot/images/logo-hyt.png",
+    "sha256": "0950e5f3e927419d18a32c2190786238c541f8c0cb4f19ddb953e7a04388f9c5"
+  },
+  {
+    "path": "zh-Hans/Microsoft.Data.SqlClient.resources.dll",
+    "sha256": "b1433731d034fd0f558347d20f9049e88ffac8fd3c0973451108cc363bda3107"
+  },
+  {
+    "path": "zh-Hant/Microsoft.Data.SqlClient.resources.dll",
+    "sha256": "e16c4e56036eda6958f20f1ecf5a96ae879628ed89c200b1154fbaff70ffa31a"
+  }
+]

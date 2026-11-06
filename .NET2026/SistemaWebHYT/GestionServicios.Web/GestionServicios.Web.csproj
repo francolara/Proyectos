@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <UserSecretsId>aspnet-SistemaWebHYT-0b5cb513-f035-40a5-b180-58a7e2a649a3</UserSecretsId>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Firma: FRANCO LARA - 05/11/2026 | Referencia explícita a los modelos y contratos de Application utilizados por MVC. -->
+    <ProjectReference Include="../GestionServicios.Application/GestionServicios.Application.csproj" />
+    <ProjectReference Include="../GestionServicios.Infrastructure/GestionServicios.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="3.7.415" />
+  </ItemGroup>
+</Project>

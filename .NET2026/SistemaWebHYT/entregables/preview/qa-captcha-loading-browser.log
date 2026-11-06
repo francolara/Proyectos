@@ -1,0 +1,3 @@
+OK navegador: captcha sin claves, script Turnstile bloqueado, renovación, error, acceso y doble envío.
+OK navegador: solicitudes simultáneas, cuerpo demorado, error HTTP/JSON, cancelación y XHR retiran loading.
+OK navegador: envíos nativos, submitter, consultas GET y retorno con controles habilitados.

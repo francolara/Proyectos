@@ -1,0 +1,86 @@
+[
+  {
+    "path": "Tablas/DocumentoOperacion.sql",
+    "sha256": "d2f7f2bc178d13d55731cf0e1bd676007e62acf5f847bc52136798bafb4c9168"
+  },
+  {
+    "path": "Script/016_SeguimientoDocumental.sql",
+    "sha256": "6f12fc52360cf1becf1c0369ac891f0fbfe3e9a97c1abecea776f58b8d9c7a60"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoCONFIRMACION_CambiarEstado.sql",
+    "sha256": "0b136a60acd03a51826be3f005aae8754e38c539ea7ce67daadc8d93b80ecc19"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoCONFIRMACION_Guardar.sql",
+    "sha256": "2665adc8ffd97046d1ff1c9f5774fe5c845473b6788eab2c124e4f1c904c74e5"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoCONFIRMACION_Listar.sql",
+    "sha256": "e45f9dbbcdcbb7afaef26900165dd23d5a7e23d8afca1f666131b324d6ae26b5"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoCONFIRMACION_Obtener.sql",
+    "sha256": "6ebb0df1617fea254394937ff90b69495f5f5ef3021b66e8a081fa3a5b128dc2"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoEJECUCION_CambiarEstado.sql",
+    "sha256": "58d6d810477eb2bb7241aa46e2978de15697ac5922ec0a60c5bf15ec5714435f"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoEJECUCION_Guardar.sql",
+    "sha256": "0c7e0ca73ee50f7669356e8f4d787ee6e6a376b64924e9bc2ad7da7246cf9807"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoEJECUCION_Listar.sql",
+    "sha256": "2937f8887b19a5735618c75441f2281f455f7f015dca052d07c6752f0bc53d98"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoEJECUCION_Obtener.sql",
+    "sha256": "12f124c11f3efbd56b6206e3e92cd75913fbfa4bf9ffbc2e4f428c228f71958c"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoGUIA_CambiarEstado.sql",
+    "sha256": "7523bb0057447bd6b0a9baa034a887fb4f4cefda9a7d2c2debabf8414330f12f"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoGUIA_Guardar.sql",
+    "sha256": "80b85539f0b7d382b407ec1e60a9aa9f38192b0a3c2efe6f1288ea4f6070b4ac"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoGUIA_Listar.sql",
+    "sha256": "dcede0cf528492f7e7f16fb5afb9e1a1b3acdf2f87d22b1e562dd2762f2d95fc"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoGUIA_Obtener.sql",
+    "sha256": "7ff0de8abfc5c3090655f668b4b3ef35345949cdfe3546a9a53124b534d1914b"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoOC_CambiarEstado.sql",
+    "sha256": "3b00303309f4bcc0d2b997dc196b7edc33774652395c404c8e16d814a958b8c3"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoOC_Guardar.sql",
+    "sha256": "ed4e456f7702490c13fe9c61492e67f2846188f80f8b5cde418d4152f5f2879a"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoOC_Listar.sql",
+    "sha256": "ab0a303482f0f37eca9a11a2daa4d9f45a777a61aeab67001ebefa5ae5a468f5"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoOC_Obtener.sql",
+    "sha256": "8d72b6c3c35bc993671ac702332b6b2b36796625a21d98838cce8611b6b66c96"
+  },
+  {
+    "path": "StoreProcedure/spu_Seguimiento_ObtenerArchivo.sql",
+    "sha256": "a809a881b46566e2e1c22f1a28cbd2ef907aad71923a03b2b97cdb18bbe0c8e2"
+  },
+  {
+    "path": "Script/017_PermisosEtapa6.sql",
+    "sha256": "8abac0e6faff7197dbaf8c35c4ef7d95248315692d25cc4ec22f804451e8251b"
+  },
+  {
+    "path": "ETAPA_6_HYT.sql",
+    "sha256": "fc69208fcb38e4c29c4380027a04b3a08e2cec38880775ae9c5693190943039a"
+  }
+]

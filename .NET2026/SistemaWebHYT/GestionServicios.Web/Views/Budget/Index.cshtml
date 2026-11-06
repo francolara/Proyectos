@@ -1,0 +1,8 @@
+@{ViewData["Wide"]=true;}
+@using GestionServicios.Web.ViewModels.Budgets
+@model BudgetListModel
+@* Firma: FRANCO LARA - 03/11/2026 | Listado de presupuestos con rango del último mes y trazabilidad. *@
+@* Firma: FRANCO LARA - 05/11/2026 | Listado al ancho disponible y acciones uniformes. *@
+@{ ViewData["Title"]="Presupuestos"; }
+<header class="hyt-page-header"><div><h1>Presupuestos</h1><p>Última revisión, importes y seguimiento por cliente y tienda.</p></div>@if(Model.CanEdit){<a class="hyt-button-primary" asp-action="New" asp-route-returnUrl="@(Context.Request.Path+Context.Request.QueryString)">Nuevo presupuesto</a>}</header>
+<partial name="_Filters" model="Model.Filter" /><partial name="_Grid" model="Model.Grid" />

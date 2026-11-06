@@ -1,0 +1,17 @@
+@model GestionServicios.Web.ViewModels.Maintenance.MaterialTariffFormModel
+@{Layout=null;var input=Model.Input;var title=Model.ReadOnly?"Ver tarifario":input.Id.HasValue?"Editar tarifario":"Agregar tarifario";}
+@* Firma: FRANCO LARA - 05/11/2026 | Ventana simple de tarifario: IGV, soles, dólares opcionales y estado con responsables propios. *@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><script src="~/hyt-theme-switch.js" asp-append-version="true"></script><title>@title | HYT</title><link rel="stylesheet" href="~/hyt-theme.css" asp-append-version="true"/><link rel="stylesheet" href="~/hyt-components.css" asp-append-version="true"/><link rel="stylesheet" href="~/hyt-loading.css" asp-append-version="true"/><link rel="stylesheet" href="~/hyt-interface.css" asp-append-version="true"/><script src="~/hyt-loading.js" asp-append-version="true" defer></script></head>
+<body class="hyt-compact-master" data-price-frame-material="@Model.MaterialId"><main><h1 class="hyt-sr-only">@title</h1><p><strong>Material:</strong> @Model.MaterialLabel</p>
+<form asp-action="Save" asp-route-materialId="@Model.MaterialId" method="post" class="hyt-panel hyt-master-form" data-hyt-save>
+<input name="Id" type="hidden" value="@input.Id"/><input name="RowVersion" type="hidden" value="@input.RowVersion"/>
+<div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+<fieldset disabled="@Model.ReadOnly" class="hyt-budget-fieldset"><div class="hyt-master-fields">
+<div class="hyt-field"><label for="tariff-tax">Tipo de IGV *</label><select id="tariff-tax" name="TaxCode" required><option value="SIN_IGV" selected="@(input.TaxCode=="SIN_IGV")">SIN IGV</option><option value="CON_IGV" selected="@(input.TaxCode=="CON_IGV")">CON IGV</option></select></div>
+<div class="hyt-field"><label for="tariff-state">Estado *</label><select id="tariff-state" name="Active"><option value="true" selected="@input.Active">Activo</option><option value="false" selected="@(!input.Active)">Inactivo</option></select></div>
+<div class="hyt-field"><label for="tariff-pen">Precio en soles (S/)</label><input id="tariff-pen" name="PricePEN" value="@input.PricePEN" inputmode="decimal" maxlength="16"/><small>Ingresa un precio en soles o dólares. Hasta dos decimales.</small></div>
+<div class="hyt-field"><label for="tariff-usd">Precio en dólares ($)</label><input id="tariff-usd" name="PriceUSD" value="@input.PriceUSD" inputmode="decimal" maxlength="16"/><small>Opcional. Hasta dos decimales.</small></div>
+</div></fieldset><div class="hyt-form-actions">@if(!Model.ReadOnly){<button type="submit" class="hyt-button-primary">Guardar tarifario</button>}<button type="button" class="hyt-button-secondary" data-price-frame-cancel>@(Model.ReadOnly?"Cerrar":"Cancelar")</button></div>
+</form>
+@if(Model.Record is not null){<partial name="_TraceSummary" model="@(TraceSummary.From(Model.Record.Text))"/>}
+</main><script src="~/hyt-material-tariffs-frame.js" asp-append-version="true" defer></script></body></html>

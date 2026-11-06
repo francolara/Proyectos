@@ -1,0 +1,9 @@
+{
+  "database": "SistemaWebHYT",
+  "requires": "etapa6",
+  "scripts": [
+    "StoreProcedure/spu_Facturado_Guardar.sql",
+    "StoreProcedure/spu_Facturado_Obtener.sql",
+    "Script/018_PermisosEtapa7.sql"
+  ]
+}

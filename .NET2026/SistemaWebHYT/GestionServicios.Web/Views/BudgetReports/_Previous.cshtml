@@ -1,0 +1,10 @@
+@using GestionServicios.Web.ViewModels.Budgets
+@model BudgetPrintModel
+@* Firma: FRANCO LARA - 03/11/2026 | Formato anterior con parciales y total de grupo sin duplicación. *@
+<section class="report-metadata"><dl><dt>Descripción</dt><dd>@Model.Text("DescripcionTrabajo")</dd><dt>N° cotización</dt><dd>@Model.Text("NumeroCotizacionCliente")</dd><dt>Fecha</dt><dd>@BudgetPrintModel.Date(Model.Text("FechaEmision"))</dd><dt>Cliente</dt><dd>@Model.Text("ClienteNombre")</dd><dt>Tienda</dt><dd>@Model.Text("TiendaNombre")</dd><dt>Coordinador / encargado</dt><dd>@Model.Text("Coordinador") / @Model.Text("Encargado")</dd><dt>Código de proveedor</dt><dd>@Model.Text("CodigoSAPProveedor")</dd></dl></section>
+<table class="report-detail report-old-table"><colgroup><col style="width:6%" /><col style="width:43%" /><col style="width:7%" /><col style="width:9%" /><col style="width:12%" /><col style="width:12%" /><col style="width:11%" /></colgroup><thead><tr><th>Ítem</th><th>Descripción</th><th>Und.</th><th>Cantidad</th><th>P. unitario @Model.PriceTax</th><th>P. parcial @Model.PriceTax</th><th>Total de grupo</th></tr></thead>
+@if(Model.Groups.Count==0){<tbody><tr><td colspan="7">El borrador todavía no contiene partidas.</td></tr></tbody>}
+@foreach(var group in Model.Groups){<tbody><tr class="report-group"><th colspan="6">@(string.IsNullOrEmpty(group.Name)?"Detalle de trabajos":group.Name)</th><td class="report-number">@BudgetPrintModel.Money(Model.GroupAmount(group))</td></tr>
+@foreach(var line in group.Lines){<tr><td>@BudgetPrintModel.Value(line,"NumeroLinea")</td><td class="report-description">@BudgetPrintModel.Value(line,"Descripcion")</td><td>@BudgetPrintModel.Value(line,"Unidad")</td><td class="report-number">@BudgetPrintModel.Money(BudgetPrintModel.Amount(line,"Cantidad"))</td><td class="report-number">@BudgetPrintModel.Money(BudgetPrintModel.Amount(line,"PrecioUnitario"))</td><td class="report-number">@BudgetPrintModel.Money(Model.LineAmount(line))</td><td></td></tr>}
+</tbody>}
+</table>

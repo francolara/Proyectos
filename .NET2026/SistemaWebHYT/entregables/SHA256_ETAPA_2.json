@@ -1,0 +1,30 @@
+[
+  {
+    "path": "StoreProcedure/spu_ConsultarAcceso.sql",
+    "sha256": "a71d9c669c63391413da28109f5217809feb22bb079ca6e8c0c4861fbc14628c"
+  },
+  {
+    "path": "StoreProcedure/spu_FinalizarAcceso.sql",
+    "sha256": "e17c1f522d65d8a32d039be3fcc167992c2c508d9c78e70e366526979afda6f5"
+  },
+  {
+    "path": "StoreProcedure/spu_RegistrarSalida.sql",
+    "sha256": "449e3bbed9d2c01bb992825efe9463172e8432003f855a776eef26d4b1310a20"
+  },
+  {
+    "path": "StoreProcedure/spu_CrearAdministradorInicial.sql",
+    "sha256": "fdf2fe88cbed21d087281ecef91b8dc42caefa4dd1ef558717d0d5571d9e7cf3"
+  },
+  {
+    "path": "StoreProcedure/spu_RestablecerAcceso.sql",
+    "sha256": "18b613a7a20e3a8bb1592bc147b4e20f98de66d78a7af80faee805d3a658eac7"
+  },
+  {
+    "path": "Script/010_PermisosAcceso.sql",
+    "sha256": "17dcddc9ca370066b0de52876781595cea056d0d20535171ecad497f3bc15ed4"
+  },
+  {
+    "path": "ETAPA_2_HYT.sql",
+    "sha256": "fd69771e40259d5925cdadb27f879c73363fca220a22290ea21ac2ef4db20af5"
+  }
+]

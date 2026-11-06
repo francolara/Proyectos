@@ -3147,7 +3147,12 @@ Dim i                               As Integer
 Dim CSqlC                           As String
 Dim rsdatos                         As New ADODB.Recordset
 
-    CSqlC = "EXEC dbo.spu_MantProductos_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(Trim(txt_TextoBuscar.Text), "'", "''") & "','" & IIf(UCase(Trim(STR_VIZUALIZA_CODIGO_RAPIDO)) = "S", "1", "0") & "'"
+' =============================================
+' Author:      FRANCO LARA / Codex
+' Create date: 05/11/2026
+' Description: Acepta % y * como comodines en la busqueda de productos.
+' =============================================
+    CSqlC = "EXEC dbo.spu_MantProductos_Listar '" & Replace(glsEmpresa, "'", "''") & "','" & Replace(Replace(Trim(txt_TextoBuscar.Text), "*", "%"), "'", "''") & "','" & IIf(UCase(Trim(STR_VIZUALIZA_CODIGO_RAPIDO)) = "S", "1", "0") & "'"
     rsdatos.Open CSqlC, Cn, adOpenStatic, adLockReadOnly
 
     For i = 0 To rsdatos.Fields.Count - 1

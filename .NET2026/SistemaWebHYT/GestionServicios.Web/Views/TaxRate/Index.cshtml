@@ -1,0 +1,29 @@
+@{ViewData["Wide"]=true;}
+@using GestionServicios.Web.ViewModels.Maintenance
+@using System.Globalization
+@model TaxRateModel
+@* Firma: FRANCO LARA - 03/11/2026 | Vigencias IGV con auditoría, calendario y paginación de veinte. *@
+@* Firma: FRANCO LARA - 05/11/2026 | Listado al ancho disponible y acciones uniformes; Acciones presentadas como botones HYT. *@
+@{ ViewData["Title"] = "Vigencias del IGV"; var pages = Model.Data.Total / 20 + (Model.Data.Total % 20 == 0 ? 0 : 1); }
+<header class="hyt-page-header"><div><h1>Vigencias del IGV</h1><p>Cada presupuesto conservará la tasa aplicada en su revisión.</p></div><a class="hyt-button-secondary" asp-controller="Company" asp-action="Index">Datos de HYT</a></header>
+@if (TempData["Notice"] is string notice) { <p role="status">@notice</p> }
+@if (Model.Error is not null) { <p role="alert">@Model.Error</p><a class="hyt-button-secondary hyt-action-button" asp-action="Index">Reintentar</a> }
+else
+{
+<form method="get" class="hyt-filters" asp-action="Index"><div class="hyt-field"><label for="rate-search">Buscar por fecha de inicio o tasa</label><input id="rate-search" name="search" type="search" value="@Model.Search" maxlength="200" /></div><button class="hyt-button-primary">Buscar</button><a class="hyt-button-secondary" asp-action="Index">Limpiar</a></form>
+<section class="hyt-panel"><div class="hyt-table-wrap" tabindex="0"><table class="hyt-table"><caption class="hyt-sr-only">Historial de vigencias de IGV</caption><thead><tr><th>Desde</th><th>Hasta (exclusiva)</th><th>Tasa</th><th>Porcentaje</th><th>Registro</th><th>Registrado por</th><th>Actualización</th><th>Actualizado por</th><th>Motivo</th></tr></thead><tbody>
+@if (Model.Data.Rows.Count == 0) { <tr><td colspan="9">No se encontraron vigencias.</td></tr> }
+@foreach (var rate in Model.Data.Rows)
+{ <tr><td>@rate.From.ToString("dd/MM/yyyy")</td><td>@(rate.Until?.ToString("dd/MM/yyyy") ?? "Sin cierre")</td><td>@rate.Value.ToString("0.######", CultureInfo.InvariantCulture)</td><td>@((rate.Value * 100).ToString("0.####", CultureInfo.GetCultureInfo("es-PE"))) %</td><td>@(rate.CreatedAt.HasValue ? PeruDate.Display(rate.CreatedAt.Value) : "Carga inicial")</td><td>@(rate.CreatedBy ?? "—")</td><td>@(rate.UpdatedAt.HasValue ? PeruDate.Display(rate.UpdatedAt.Value) : "—")</td><td>@(rate.UpdatedBy ?? "—")</td><td>@(rate.Reason ?? "—")</td></tr> }
+</tbody></table></div><footer class="hyt-pagination"><span>@Model.Data.Total registros · Página @(pages == 0 ? 0 : Model.Page) de @pages · 20 por página</span><nav>@if (Model.Page > 1) { <a class="hyt-button-secondary hyt-action-button" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@(Model.Page - 1)">Anterior</a> } @if (Model.Page < pages) { <a class="hyt-button-secondary hyt-action-button" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@(Model.Page + 1)">Siguiente</a> }</nav></footer></section>
+@if (Model.CanEdit)
+{
+<form method="post" asp-action="Add" class="hyt-panel hyt-master-form" data-hyt-save><h2>Nueva vigencia</h2><p>La nueva fecha debe ser posterior a la última registrada. La vigencia anterior termina al comenzar la nueva.</p>
+<div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+<input type="hidden" name="ExpectedLatest" value="@Model.Input.ExpectedLatest" />
+<div class="hyt-master-fields"><div class="hyt-field"><partial name="_DatePicker" model="@(new DatePickerModel("From", "Fecha de inicio", DateOnly.TryParseExact(Model.Input.From, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date) ? date : null, Required: true))" /></div>
+<div class="hyt-field"><label for="rate-value">Tasa (por ejemplo, 0.18)</label><input id="rate-value" name="Value" value="@Model.Input.Value" inputmode="decimal" required /><small>Usa punto decimal. 0.18 equivale a 18 %.</small></div>
+<div class="hyt-field"><label for="rate-reason">Motivo</label><input id="rate-reason" name="Reason" value="@Model.Input.Reason" maxlength="1000" required /></div></div>
+<button type="submit" class="hyt-button-primary">Registrar vigencia</button></form>
+}
+}

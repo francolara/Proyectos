@@ -1,0 +1,24 @@
+@using System.Text.Json
+@using GestionServicios.Application.Budgets
+@using GestionServicios.Web.ViewModels.Followup
+@model DocumentFormModel
+@* Firma: FRANCO LARA - 03/11/2026 | Adjuntos del documento consultables y selección de retiro auditado. *@
+@* Firma: FRANCO LARA - 05/11/2026 | Acciones presentadas como botones HYT. *@
+@if(Model.Record.Data.TryGetProperty("Adjuntos",out var attachments)&&attachments.ValueKind==JsonValueKind.Array&&attachments.GetArrayLength()>0)
+{
+<section aria-label="Archivos registrados"><h2>Archivos registrados</h2><ul>
+@foreach(var attachment in attachments.EnumerateArray())
+{
+    var id=attachment.GetProperty("ArchivoId").GetInt64();var retired=attachment.GetProperty("Retirado").GetBoolean();
+    <li class="hyt-document-attachment"><span>@BudgetRecord.Text(attachment,"NombreOriginal")</span>
+    @if(retired){<span> · Retirado</span>}
+    else
+    {
+        <a class="hyt-button-secondary hyt-action-button" asp-controller="Followup" asp-action="FileDocument" asp-route-kind="@Model.Kind.Key" asp-route-fileId="@id" target="_blank" rel="noopener">Visualizar</a>
+        <a class="hyt-button-secondary hyt-action-button" asp-controller="Followup" asp-action="FileDocument" asp-route-kind="@Model.Kind.Key" asp-route-fileId="@id" asp-route-download="true">Descargar</a>
+        @if(Model.Input.Id.HasValue){<label><input type="checkbox" name="RemovedFiles" value="@id" checked="@Model.Input.RemovedFiles.Contains(id)" /> Retirar archivo</label>}
+    }
+    <small>@DocumentDetailsModel.Display(attachment,"FechaRegistro") · @BudgetRecord.Text(attachment,"UsuarioRegistro")</small></li>
+}
+</ul></section>
+}

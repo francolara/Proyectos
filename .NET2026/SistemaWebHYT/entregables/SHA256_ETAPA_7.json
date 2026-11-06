@@ -1,0 +1,18 @@
+[
+  {
+    "path": "StoreProcedure/spu_Facturado_Guardar.sql",
+    "sha256": "3ed972242c1742bb7a5ea3d0fb5e794e9469e51f059b9d87afe4b661820449b1"
+  },
+  {
+    "path": "StoreProcedure/spu_Facturado_Obtener.sql",
+    "sha256": "b09834a68be612ac2ea788b728dcb9a93d262d76e1bf33b18ad9cbbee199f3fd"
+  },
+  {
+    "path": "Script/018_PermisosEtapa7.sql",
+    "sha256": "2343ee69913704ef16b29cf28d4eaeac1497c4ba88cf3f9f168a01fee33b137b"
+  },
+  {
+    "path": "ETAPA_7_HYT.sql",
+    "sha256": "21fc3b4c21e113273f44b9a2cf124627e4663ead04e9825d4a063db1764f42bd"
+  }
+]

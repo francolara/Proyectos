@@ -1,0 +1,10 @@
+/* Firma: FRANCO LARA - 05/11/2026 | Indicador HYT accesible, visible sobre popups, sin interrumpir campos, con movimiento reducido y contraste en ambos temas. */
+.hyt-loading{position:fixed;inset:auto 20px 20px auto;margin:0;max-width:min(420px,calc(100vw - 32px));display:flex;align-items:center;gap:14px;padding:18px 22px;border:1px solid var(--hyt-border,#dedede);border-left:4px solid #c91620;border-radius:10px;background:var(--hyt-surface,#fff);color:var(--hyt-text,#181818);box-shadow:0 8px 30px #0002;font:14px/1.5 "Segoe UI",Arial,sans-serif;z-index:2147483647;pointer-events:none}
+.hyt-loading[hidden]{display:none!important}.hyt-loading::backdrop{background:transparent;pointer-events:none}
+.hyt-loading-spinner{width:24px;height:24px;flex:0 0 24px;border:3px solid var(--hyt-border,#e4e4e4);border-top-color:#c91620;border-radius:50%;animation:hyt-loading-turn .8s linear infinite}
+.hyt-is-submitting{opacity:.65;cursor:wait;pointer-events:none}
+.hyt-captcha{margin:16px 0;padding:16px;border:1px solid var(--hyt-border,#dedede);border-radius:10px;background:var(--hyt-surface-alt,#fafafa)}.hyt-captcha[hidden],.hyt-turnstile[hidden]{display:none}.hyt-captcha img{display:block;width:260px;max-width:100%;height:auto;margin:0 0 12px}.hyt-captcha input{text-transform:uppercase;letter-spacing:.15em}.hyt-captcha-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.hyt-captcha button,.hyt-captcha-switch{min-height:44px;padding:8px 12px;border:1px solid var(--hyt-control-border,#aaa);border-radius:6px;background:var(--hyt-surface,#fff);color:var(--hyt-text,#181818);cursor:pointer}.hyt-captcha-status{font-size:13px;color:var(--hyt-muted,#626262)}.hyt-captcha p{line-height:1.5}
+@keyframes hyt-loading-turn{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.hyt-loading-spinner{animation:none;border-style:dotted}}
+@media(max-width:600px){.hyt-loading{right:16px;bottom:16px;padding:14px 16px}}
+@media print{.hyt-loading{display:none!important}}

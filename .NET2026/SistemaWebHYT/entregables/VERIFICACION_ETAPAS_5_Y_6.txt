@@ -1,0 +1,10 @@
+Fecha: 03/11/2026
+HTTP/C#: 164 comprobaciones aprobadas.
+SQL real: 97 comprobaciones aprobadas en base aislada.
+Base temporal eliminada; SistemaWebHYT de trabajo no recibió datos de prueba.
+Chrome: presupuesto, seguimiento documental, adjuntos, estados, regularización, filtros y mantenimientos aprobados.
+Impresiones: siete casos Chrome/PDF aprobados; formatos nuevo/anterior, moneda, varias páginas y descripción larga.
+Cloudflare: pruebas con dobles de servicio aprobadas; conexión real pendiente de bucket y claves del usuario.
+28 SP de etapas 5/6: definiciones locales coinciden con fuentes.
+Validación offline: 142 scripts, 47 tablas, 105 relaciones y cinco regresiones del validador aprobadas.
+Compilación: cero advertencias y cero errores.

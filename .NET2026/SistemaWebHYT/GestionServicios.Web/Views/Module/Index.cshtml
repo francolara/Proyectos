@@ -1,0 +1,5 @@
+@model GestionServicios.Web.Navigation.HytMenuItem
+@{ ViewData["Title"] = Model.Label; }
+@* Firma: FRANCO LARA - 03/11/2026 | Vista MVC de módulo pendiente con autorización en controlador. *@
+@* Firma: FRANCO LARA - 05/11/2026 | Acciones presentadas como botones HYT. *@
+<header class="hyt-page-header"><div><h1>@Model.Label</h1><p>@Model.Group</p></div></header><section class="hyt-panel hyt-empty"><h2>Módulo en preparación</h2><p>Esta sección se habilitará con su registro, consulta e historial en la siguiente entrega correspondiente.</p><a class="hyt-button-secondary hyt-action-button" asp-controller="Home" asp-action="Index">Volver al inicio</a></section>

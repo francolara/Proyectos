@@ -1,0 +1,44 @@
+@* Firma: FRANCO LARA - 06/11/2026 | Captcha manual solo ante fallo o falta de carga de Turnstile, sin selector alternativo. *@
+@model AccessViewModel
+@{ Layout = null;var turnstileRequired=ViewData["TurnstileRequired"] is true;var siteKey=ViewData["TurnstileSiteKey"] as string??""; }
+@* Firma: FRANCO LARA - 03/11/2026 | Acceso MVC privado HYT con antifalsificacion, validacion y widget Turnstile de Cloudflare. *@
+@* Firma: FRANCO LARA - 05/11/2026 | Captcha manual de respaldo, renovación y espera común al ingresar y preferencia visual claro/oscuro. *@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script src="~/hyt-theme-switch.js" asp-append-version="true"></script><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="~/hyt-loading.css" asp-append-version="true" /><script src="~/hyt-loading.js" asp-append-version="true" defer></script><title>Ingresar | HYT</title><link rel="stylesheet" href="~/hyt-theme.css" asp-append-version="true" /><link rel="stylesheet" href="~/hyt-interface.css" asp-append-version="true" />
+</head>
+<body class="hyt-auth-page">
+    <main class="hyt-auth-shell">
+        <section class="hyt-auth-brand"><img src="~/images/logo-hyt.png" alt="HYT Servicios Generales E.I.R.L." /><h1>Cada servicio,<br />bajo control.</h1><p>Presupuestos, órdenes del cliente y conformidades en un solo lugar.</p><span>H Y T Servicios Generales E.I.R.L.</span></section>
+        <section class="hyt-auth-form" aria-labelledby="acceso-title">
+            <p class="hyt-caption">Gestión de servicios</p><h2 id="acceso-title">Ingresa a tu cuenta</h2><p class="hyt-muted">Usa el usuario asignado por tu administrador.</p>
+            <form asp-controller="Access" asp-action="Login" method="post">
+                <input type="hidden" asp-for="ReturnUrl" />
+                <div asp-validation-summary="ModelOnly" class="hyt-alert" role="alert" tabindex="-1"></div>
+                <div class="hyt-field"><label asp-for="UserName">Usuario</label><input asp-for="UserName" autocomplete="username" maxlength="256" required /><span asp-validation-for="UserName"></span></div>
+                <div class="hyt-field"><label asp-for="Password">Contraseña</label><div class="hyt-password-control"><input asp-for="Password" type="password" autocomplete="current-password" maxlength="1024" required /><button type="button" data-hyt-password-toggle aria-controls="Password" aria-label="Mostrar contraseña" aria-pressed="false">Mostrar</button></div><span asp-validation-for="Password"></span></div>
+                @if(turnstileRequired)
+                {
+                    <input asp-for="UseManualCaptcha" type="hidden" />
+                    <input asp-for="CaptchaId" type="hidden" />
+                    @if(!string.IsNullOrWhiteSpace(siteKey))
+                    {<div class="hyt-turnstile" data-turnstile-container hidden="@Model.UseManualCaptcha"><div class="cf-turnstile" data-sitekey="@siteKey" data-action="login" data-theme="light" data-language="es" data-size="flexible" data-callback="hytTurnstileSuccess" data-before-interactive-callback="hytTurnstileReady" data-unsupported-callback="hytTurnstileFallback" data-error-callback="hytTurnstileFallback" data-timeout-callback="hytTurnstileFallback"></div></div>}
+                    <section class="hyt-captcha" data-manual-captcha hidden="@(!Model.UseManualCaptcha)" aria-labelledby="captcha-title">
+                        <h3 id="captcha-title">Verificación manual</h3>
+                        <p>Escribe los seis caracteres de la imagen. No distingue mayúsculas de minúsculas.</p>
+                        <img data-captcha-image src="@Url.Action("CaptchaImage","Access",new{id=Model.CaptchaId})" alt="Imagen del código de verificación" width="260" height="80" loading="lazy" />
+                        <div class="hyt-field"><label asp-for="CaptchaAnswer">Código de la imagen</label><input asp-for="CaptchaAnswer" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="6" required="@Model.UseManualCaptcha" disabled="@(!Model.UseManualCaptcha)" /><span asp-validation-for="CaptchaAnswer"></span></div>
+                        <div class="hyt-captcha-actions"><button type="button" data-captcha-refresh>Otro código</button></div><p class="hyt-captcha-status" data-captcha-status role="status">El código vence en cinco minutos y sirve para un solo intento.</p>
+                    </section>
+                    <noscript><p>Si la verificación automática no aparece, envía el formulario para obtener el captcha manual.</p></noscript>
+                }
+                <button class="hyt-button-primary" type="submit">Ingresar</button>
+            </form>
+            <p class="hyt-muted hyt-auth-help">Si necesitas recuperar tu acceso, comunícate con el administrador de HYT.</p>
+        </section>
+    </main>
+<script src="~/hyt-access.js" asp-append-version="true" defer></script>
+@if(turnstileRequired&&!Model.UseManualCaptcha&&!string.IsNullOrWhiteSpace(siteKey)){<script id="hyt-turnstile-script" src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer></script>}
+</body></html>

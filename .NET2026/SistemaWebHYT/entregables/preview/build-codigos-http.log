@@ -1,0 +1,14 @@
+  Determinando los proyectos que se van a restaurar...
+  Todos los proyectos están actualizados para la restauración.
+  GestionServicios.Contracts -> C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaWebHYT\entregables\qa-codigos\bin\GestionServicios.Contracts\debug\GestionServicios.Contracts.dll
+  GestionServicios.Domain -> C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaWebHYT\entregables\qa-codigos\bin\GestionServicios.Domain\debug\GestionServicios.Domain.dll
+  GestionServicios.Application -> C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaWebHYT\entregables\qa-codigos\bin\GestionServicios.Application\debug\GestionServicios.Application.dll
+  GestionServicios.Infrastructure -> C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaWebHYT\entregables\qa-codigos\bin\GestionServicios.Infrastructure\debug\GestionServicios.Infrastructure.dll
+  GestionServicios.Web -> C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaWebHYT\entregables\qa-codigos\bin\GestionServicios.Web\debug\GestionServicios.Web.dll
+  Hyt.AccessTests -> C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaWebHYT\entregables\qa-codigos\bin\Hyt.AccessTests\debug\Hyt.AccessTests.dll
+
+Compilación correcta.
+    0 Advertencia(s)
+    0 Errores
+
+Tiempo transcurrido 00:00:03.25

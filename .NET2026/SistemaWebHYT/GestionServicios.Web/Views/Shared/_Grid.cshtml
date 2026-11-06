@@ -1,0 +1,15 @@
+@* Firma: FRANCO LARA - 06/11/2026 | Botones Ver y Editar con ancho uniforme. *@
+@model GridModel
+@{ Model.Validate(); }
+@* Firma: FRANCO LARA - 03/11/2026 | Grilla MVC de 20 filas SQL, acciones documentales y enlaces que conservan filtros. *@
+@* Firma: FRANCO LARA - 05/11/2026 | Acciones presentadas como botones HYT. *@
+<section class="hyt-panel" aria-label="@Model.Label">
+@if (Model.Error is not null) { <p class="hyt-grid-message" role="alert">@Model.Error</p> }
+else {
+<div class="hyt-table-wrap" tabindex="0" role="region" aria-label="@("Tabla de " + Model.Label)"><table class="hyt-table"><caption class="hyt-sr-only">@Model.Label</caption><thead><tr>@foreach (var header in Model.Headers) { <th scope="col">@header</th> }<th scope="col">Acciones</th></tr></thead><tbody>
+@if (Model.Rows.Count == 0) { <tr><td colspan="@(Model.Headers.Count + 1)" class="hyt-grid-message">No se encontraron registros con los filtros seleccionados.</td></tr> }
+@foreach (var row in Model.Rows) { <tr>@foreach (var cell in row.Cells) { <td>@cell</td> }<td><div class="hyt-grid-actions">@if (row.CanView) { <a class="hyt-button-secondary hyt-action-button hyt-record-action" asp-controller="@Model.Controller" asp-action="Details" asp-all-route-data="@Model.RowQuery" asp-route-id="@row.Id">Ver</a> } @if (row.CanEdit) { <a class="hyt-button-secondary hyt-action-button hyt-record-action" asp-controller="@Model.Controller" asp-action="Edit" asp-all-route-data="@Model.RowQuery" asp-route-id="@row.Id">Editar</a> }@foreach(var action in row.Actions??[]){if(action.Popup){<a class="hyt-button-secondary hyt-action-button" href="@action.Url" data-document-open>@action.Label</a>}else{<a class="hyt-button-secondary hyt-action-button" href="@action.Url">@action.Label</a>}}</div></td></tr> }
+</tbody></table></div>
+<footer class="hyt-pagination"><span>@Model.TotalRecords registros · Página @(Model.TotalPages == 0 ? 0 : Model.Page) de @Model.TotalPages · 20 por página</span><nav aria-label="Páginas de resultados">@if (Model.Page > 1) { <a class="hyt-button-secondary" asp-controller="@Model.Controller" asp-action="@Model.Action" asp-all-route-data="@Model.QueryFor(Model.Page - 1)">Anterior</a> } else { <span class="hyt-button-secondary" aria-disabled="true">Anterior</span> } @if (Model.Page < Model.TotalPages) { <a class="hyt-button-secondary" asp-controller="@Model.Controller" asp-action="@Model.Action" asp-all-route-data="@Model.QueryFor(Model.Page + 1)">Siguiente</a> } else { <span class="hyt-button-secondary" aria-disabled="true">Siguiente</span> }</nav></footer>
+}
+</section>

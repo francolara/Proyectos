@@ -1,0 +1,41 @@
+name: hyt
+services:
+  hyt-web:
+    image: ${HYT_IMAGE:?Definir imagen versionada de HYT}
+    restart: unless-stopped
+    env_file:
+      - ${HYT_ENV_FILE:-./hyt.env}
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+      Security__DataProtectionPath: /var/lib/hyt/keys
+      ReverseProxy__KnownProxy: ${HYT_TRUSTED_PROXY_IP:?Verificar IP del proxy vista desde el contenedor}
+      AllowedHosts: ${HYT_DOMAIN:?Definir dominio real de HYT}
+    ports:
+      - "127.0.0.1:${HYT_HOST_PORT:-5186}:8080"
+    volumes:
+      - hyt-keys:/var/lib/hyt/keys
+    networks:
+      - backend
+      - egress
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+volumes:
+  hyt-keys:
+networks:
+  backend:
+    external: true
+    name: ${HYT_BACKEND_NETWORK:?Verificar red privada SQL existente}
+  egress:
+    external: true
+    name: ${HYT_EGRESS_NETWORK:?Verificar red de salida existente}

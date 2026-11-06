@@ -1,0 +1,242 @@
+[
+  {
+    "path": "Script/001_CrearBaseDatos.sql",
+    "sha256": "9291c7d7d493b570c8ef3dd4162ed319387b11d71520a2cc01aca8cc47e78717"
+  },
+  {
+    "path": "Tablas/Moneda.sql",
+    "sha256": "16f393898bde00bd635e305667b4a2aeea0588ae6285d1a45cf30edf1b051998"
+  },
+  {
+    "path": "Tablas/TipoDocumento.sql",
+    "sha256": "adfdd80bf9727aa5cd0dd49f8552a49ee7e0bf37cd9c0f1db04b63df161f05da"
+  },
+  {
+    "path": "Tablas/TipoIGV.sql",
+    "sha256": "bb6efc7a9ed6517ed96e85bd6e9a1d8ef27a97c60d3d2255402053551015fdac"
+  },
+  {
+    "path": "Tablas/TasaIGV.sql",
+    "sha256": "90a4b564eba86a6cc63d863a0cdbe8b66cc18574f23ae4aa41de71fa5482d0bb"
+  },
+  {
+    "path": "Tablas/AspNetUsers.sql",
+    "sha256": "62ba1d3b182883483acdbdb836a5cd0452dd5cb307e614c0c9ea5026d1fcf0cb"
+  },
+  {
+    "path": "Tablas/AspNetRoles.sql",
+    "sha256": "1e75824656ad4048ae7a3876500b4620095dd7862cc5e45776e85606d952c506"
+  },
+  {
+    "path": "Tablas/AspNetUserRoles.sql",
+    "sha256": "d8249a0e91d14e7bd4677ea4307fdf503e3be71bfe9659b298f0c780b676af90"
+  },
+  {
+    "path": "Tablas/AspNetUserClaims.sql",
+    "sha256": "a72648bca76965b226500a9a1751eea1a3d15a9b466c77638ecbe6f4f41f139e"
+  },
+  {
+    "path": "Tablas/AspNetRoleClaims.sql",
+    "sha256": "75022d460c3636ac290fdc744a509dc021b9ebadf011b00e4b47a899dde60233"
+  },
+  {
+    "path": "Tablas/AspNetUserLogins.sql",
+    "sha256": "b7f14165162c8c854b738f3302a471207706ff39969b039c9d3d790647ea22e7"
+  },
+  {
+    "path": "Tablas/AspNetUserTokens.sql",
+    "sha256": "8b753267aeae9b81944f4cae35112b845c139da63542972e18f601e979cec656"
+  },
+  {
+    "path": "Tablas/Permiso.sql",
+    "sha256": "9d43c84aab28471d7ef67dd29f3b1d0dd55e51030321aff53acc734d4f050b6f"
+  },
+  {
+    "path": "Tablas/RolPermiso.sql",
+    "sha256": "db6efc6568c3d75737c02cbb7b45c3604faa657f2105c4b890a236d6a673f508"
+  },
+  {
+    "path": "Tablas/EventoAuditoria.sql",
+    "sha256": "7a474807df9cc5cbf32d7dccfa5bbd175830556d8f06b5dcefea61b2f492088f"
+  },
+  {
+    "path": "Tablas/ConfiguracionHYT.sql",
+    "sha256": "e4876f5175bba6d34a8c1a8d64427a47dff18faa9c092ff26026f442f386bb9d"
+  },
+  {
+    "path": "Tablas/UnidadMedida.sql",
+    "sha256": "eeb4133b9c86ee746cee5db29912f10e2ea103bdeae6e786f85d12dc3b00ad07"
+  },
+  {
+    "path": "Tablas/Zona.sql",
+    "sha256": "7572b63f66982136d2d206c3c7634a12deca55fc82552fd5dfbc42e7419edd56"
+  },
+  {
+    "path": "Tablas/Especialidad.sql",
+    "sha256": "de18908c75af7acdedf69fde810f47ee96f212f31df17e1cf31b3c93f919590b"
+  },
+  {
+    "path": "Tablas/TipoServicio.sql",
+    "sha256": "e73f055426ac9b6c22ec93a680d0c2e47185a5391673c41613698d2a460c7a30"
+  },
+  {
+    "path": "Tablas/Cliente.sql",
+    "sha256": "95c3a375cba6f1f7fccb6cca6f7a07cb7857169312ebeef5b606f3b632336f56"
+  },
+  {
+    "path": "Tablas/Tienda.sql",
+    "sha256": "eaac9d44b56f0c266cb7e835d28de219171ee1af39bc120f0aae19cb37914b3e"
+  },
+  {
+    "path": "Tablas/ContactoCliente.sql",
+    "sha256": "0203be1e68fca000efbce94fe3579cf197745a809d92075fd288719391e3fec0"
+  },
+  {
+    "path": "Tablas/ProveedorCliente.sql",
+    "sha256": "6a868d5054c069700d3d2469f0cdb01f7a8c3d67f0a8a9fed74c8fc679598dbc"
+  },
+  {
+    "path": "Tablas/ServicioMaterial.sql",
+    "sha256": "f5d0ef7495aa80afe48fad83bdf676359e5781b495d2c0ef44d10539cf904926"
+  },
+  {
+    "path": "Tablas/MaterialZona.sql",
+    "sha256": "e986273d0129e6065eb4c69045892fef9678e059b90e087854b4c6df6df9bc44"
+  },
+  {
+    "path": "Tablas/Tarifario.sql",
+    "sha256": "f370863c1beb83daabaf7dd1c4a9f74c2370d90e20b1da10fa312bfddfb18da9"
+  },
+  {
+    "path": "Tablas/TarifarioVersion.sql",
+    "sha256": "f396c9b56791a37b14ff318e5457d574f6f2633e583214c31c40b1a277eeb30e"
+  },
+  {
+    "path": "Tablas/TarifarioVersionZona.sql",
+    "sha256": "f4edef5a0afcc154d9326f220ffccf248714977ebd66412b53df4a8b0fe360be"
+  },
+  {
+    "path": "Tablas/TarifarioPartida.sql",
+    "sha256": "76d14aaf3dca9299b789600bd92b0e1fa688965163d3fcadcf19f227c1fedc9e"
+  },
+  {
+    "path": "Tablas/TarifarioPartidaZona.sql",
+    "sha256": "51579789838ce5ce11a5526b229554ba5e202a5a9f60ced182837247b6060f37"
+  },
+  {
+    "path": "Tablas/Presupuesto.sql",
+    "sha256": "3d92ce8480202af33209be94cb2207266d9c2116ab1165ef61e70c2c2a04bf20"
+  },
+  {
+    "path": "Tablas/PresupuestoRevision.sql",
+    "sha256": "baea81924e33d7966a6041445425ac905ce9d9a3002fbc61ae2fa2cec68dbb36"
+  },
+  {
+    "path": "Tablas/PresupuestoPartida.sql",
+    "sha256": "6cb4e73dceec5b7dbc5d4bd6f88fab71c3d0873e5a7eb476a6cb9044132ec0ed"
+  },
+  {
+    "path": "Tablas/OrdenCompraCliente.sql",
+    "sha256": "31d9689548c5bcebdb2b6daa3fa828dd7a529ed0b2df692c9c8bda5d5cee0914"
+  },
+  {
+    "path": "Tablas/Ejecucion.sql",
+    "sha256": "5d36b123090151e6f6a6775665c346e1d27fefd3cde12e1e39fa29803504a9ee"
+  },
+  {
+    "path": "Tablas/GuiaConformidad.sql",
+    "sha256": "f1c47ea46803e153cfd0e13f2b5cce6c4e48973b119225ad8d7a78a2fd7af78e"
+  },
+  {
+    "path": "Tablas/GuiaPartida.sql",
+    "sha256": "30d1384a89bd32f20a6122bb2fbeb4b72a12941af70dd301b0e8f2cbe13d70cf"
+  },
+  {
+    "path": "Tablas/SeguimientoCliente.sql",
+    "sha256": "efed8e88a918730e9e04deaaad0d48cde24206d5f999238b11c10358b3e5f9e3"
+  },
+  {
+    "path": "Tablas/ConfirmacionFacturacion.sql",
+    "sha256": "eb3c38dc24cc517ac9d850ae2bcd9696c89266251f948fca5fa6cc757f3f20f5"
+  },
+  {
+    "path": "Tablas/ReferenciaComprobanteExterno.sql",
+    "sha256": "2f73c02187c0082d2e6bfb2877af12dad4c47d269ec4fe0bb9fd449b4443fae9"
+  },
+  {
+    "path": "Tablas/ArchivoAdjunto.sql",
+    "sha256": "ce6690508f00c5738a317aa882c4ef150b558032562fe4c21d4b4b4f780b6d8b"
+  },
+  {
+    "path": "Tablas/OrdenCompraArchivo.sql",
+    "sha256": "68afe3aa910932f5f437204c3b9317bad7dc69e0ba231c00e8719eef5d8d1dbd"
+  },
+  {
+    "path": "Tablas/GuiaArchivo.sql",
+    "sha256": "e3f592517e268492650725d10d170d71041bac6cd630ad6a79e54b72c5f1b550"
+  },
+  {
+    "path": "Tablas/ConfirmacionArchivo.sql",
+    "sha256": "25ed9626128ed7d913fa49a0bef38ecf6d26a21adda1da5485f33beacf1baef2"
+  },
+  {
+    "path": "Tablas/ImpresionPresupuesto.sql",
+    "sha256": "c16870ab0c42d19d4bb191fdd7c422ee12f8fbb57eadc99272c832ed1fd6ef1f"
+  },
+  {
+    "path": "Tablas/NumeracionInterna.sql",
+    "sha256": "058c0d3ae33a747da184835c7bb5c17e2d61cc2f10c1900b2092fc3400973fb1"
+  },
+  {
+    "path": "Script/002_CargarTiposDocumento.sql",
+    "sha256": "81dc08ac0827e5f6a8b4cd13df914ee17571d1c9f8930d6b548b29fcdc39473e"
+  },
+  {
+    "path": "Script/003_CargarTiposIGV.sql",
+    "sha256": "e6348c8e106302d9e1f528652b56bcf42173a9d2fcd593b8f053c9fe64f1e671"
+  },
+  {
+    "path": "Script/004_CargarTasaIGV.sql",
+    "sha256": "f2f32a904ed0f594ac26ef837e0139cecb3d050de6e9940cd597f552d40a6fe6"
+  },
+  {
+    "path": "Script/005_CargarMonedas.sql",
+    "sha256": "fd72de83017f7abcf5fd638b27e81bee6f84813358863de562b9dccb7df0199a"
+  },
+  {
+    "path": "Script/006_CargarRolesPermisos.sql",
+    "sha256": "fb16e9e187d793f14bdf06e488b981e18621faa0daf6564c6cbc614f77b4e0e8"
+  },
+  {
+    "path": "Script/009_CargarNumeracion.sql",
+    "sha256": "96acf662950abf92b501313fefc828912e1a67bbede424b7c1cc7a368fe58522"
+  },
+  {
+    "path": "StoreProcedure/spu_ObtenerNumeroInterno.sql",
+    "sha256": "8000d63f16f967065352cae9046b9fbc93ed9e0c18b1876ad3e9e3a54ef91a73"
+  },
+  {
+    "path": "StoreProcedure/spu_RegistrarAuditoria.sql",
+    "sha256": "25cf2d4ceb3ace054ad3ab6b786ee4220c851e810261a298bf845a0da8744949"
+  },
+  {
+    "path": "StoreProcedure/spu_ListarClientes.sql",
+    "sha256": "d15779d483ed5736b6797c29eff2c913a557a53fb3ee8ec3d29664aa0ae14d93"
+  },
+  {
+    "path": "StoreProcedure/spu_RegistrarTasaIGV.sql",
+    "sha256": "79b35a8524f486db424bc8e7837f643b744f5052795a95e39aec9905e1645401"
+  },
+  {
+    "path": "Script/007_ProteccionAuditoria.sql",
+    "sha256": "80cd1dbddf3ae6ef0469b4417102acaf16e02e9e38004152f9d61aa22d2c6373"
+  },
+  {
+    "path": "Script/008_PermisosAplicacion.sql",
+    "sha256": "0d91ce832a2da1c9a396a77e5cd3a237353907398c7fea0e0805a6daa0a61ffb"
+  },
+  {
+    "path": "ETAPA_1_HYT.sql",
+    "sha256": "2d29d3dfcf48c4374a79cfcd892e4a47039826334f103883fc5c350150e388bd"
+  }
+]

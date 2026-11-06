@@ -1,0 +1,26 @@
+{
+  "database": "SistemaWebHYT",
+  "requires": "etapa5",
+  "scripts": [
+    "Tablas/DocumentoOperacion.sql",
+    "Script/016_SeguimientoDocumental.sql",
+    "StoreProcedure/spu_SeguimientoCONFIRMACION_CambiarEstado.sql",
+    "StoreProcedure/spu_SeguimientoCONFIRMACION_Guardar.sql",
+    "StoreProcedure/spu_SeguimientoCONFIRMACION_Listar.sql",
+    "StoreProcedure/spu_SeguimientoCONFIRMACION_Obtener.sql",
+    "StoreProcedure/spu_SeguimientoEJECUCION_CambiarEstado.sql",
+    "StoreProcedure/spu_SeguimientoEJECUCION_Guardar.sql",
+    "StoreProcedure/spu_SeguimientoEJECUCION_Listar.sql",
+    "StoreProcedure/spu_SeguimientoEJECUCION_Obtener.sql",
+    "StoreProcedure/spu_SeguimientoGUIA_CambiarEstado.sql",
+    "StoreProcedure/spu_SeguimientoGUIA_Guardar.sql",
+    "StoreProcedure/spu_SeguimientoGUIA_Listar.sql",
+    "StoreProcedure/spu_SeguimientoGUIA_Obtener.sql",
+    "StoreProcedure/spu_SeguimientoOC_CambiarEstado.sql",
+    "StoreProcedure/spu_SeguimientoOC_Guardar.sql",
+    "StoreProcedure/spu_SeguimientoOC_Listar.sql",
+    "StoreProcedure/spu_SeguimientoOC_Obtener.sql",
+    "StoreProcedure/spu_Seguimiento_ObtenerArchivo.sql",
+    "Script/017_PermisosEtapa6.sql"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "database": "SistemaWebHYT",
+  "requires": "etapa3",
+  "scripts": [
+    "Script/023_TarifarioMaterialDirecto.sql",
+    "StoreProcedure/spu_MantTarifario_Listar.sql",
+    "StoreProcedure/spu_MantTarifario_Obtener.sql",
+    "StoreProcedure/spu_MantTarifario_Guardar.sql",
+    "StoreProcedure/spu_MantTarifarioVersion_Listar.sql",
+    "StoreProcedure/spu_MantTarifarioVersion_Obtener.sql",
+    "StoreProcedure/spu_MantTarifarioVersion_Guardar.sql",
+    "StoreProcedure/spu_MantTarifarioPartida_Listar.sql",
+    "StoreProcedure/spu_MantTarifarioPartida_Obtener.sql",
+    "StoreProcedure/spu_MantTarifarioPartida_Guardar.sql",
+    "StoreProcedure/spu_MaterialTarifas_Listar.sql",
+    "StoreProcedure/spu_MaterialTarifa_Guardar.sql",
+    "StoreProcedure/spu_MantTarifarioVersion_Publicar.sql",
+    "StoreProcedure/spu_MantTarifarioVersion_Clonar.sql",
+    "StoreProcedure/spu_MantTasaIGV_Listar.sql",
+    "StoreProcedure/spu_MantTasaIGV_Agregar.sql",
+    "Script/013_PermisosEtapa4.sql"
+  ]
+}

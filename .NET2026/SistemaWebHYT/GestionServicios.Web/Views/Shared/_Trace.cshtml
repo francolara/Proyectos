@@ -1,0 +1,4 @@
+@model GestionServicios.Contracts.RecordTrace
+@* Firma: FRANCO LARA - 03/11/2026 | Trazabilidad MVC e historial con fecha local Peru. *@
+@* Firma: FRANCO LARA - 05/11/2026 | Franja de cuatro columnas sin historial en formularios. *@
+<partial name="_TraceSummary" model="@(new TraceSummary(Model.CreatedBy,PeruDate.Display(Model.CreatedAt),Model.UpdatedBy,Model.UpdatedAt is { } updated?PeruDate.Display(updated):"Sin actualizaciones"))" />

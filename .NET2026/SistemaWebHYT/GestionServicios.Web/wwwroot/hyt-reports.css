@@ -1,0 +1,14 @@
+/* Firma: FRANCO LARA - 05/11/2026 | Colores semánticos compartidos para tema claro y oscuro. */
+/* Firma: FRANCO LARA - 03/11/2026 | Reportes HTML con impresión horizontal de la página consultada. */
+.hyt-report-context{display:none}
+@media print{
+.hyt-report-context{display:table-row}
+@page{size:A4 landscape;margin:12mm}
+.hyt-sidebar,.hyt-topbar,.hyt-footer,.skip-link,.hyt-report .hyt-filters,.hyt-report button,.hyt-report .hyt-pagination nav{display:none!important}
+.hyt-app-shell,.hyt-main-shell{display:block!important}.hyt-workspace{padding:0!important;margin:0!important}
+.hyt-report .hyt-panel{border:0;box-shadow:none}.hyt-report .hyt-table-wrap{overflow:visible}
+.hyt-report .hyt-table{min-width:0;width:100%;font-size:9px;table-layout:fixed}
+.hyt-report .hyt-table th,.hyt-report .hyt-table td{padding:5px;overflow-wrap:anywhere}
+.hyt-report thead{display:table-header-group}.hyt-report tr{break-inside:avoid}.hyt-report a{color:inherit;text-decoration:none}
+.hyt-report h1{font-size:20px}.hyt-report h2{font-size:14px}.hyt-report .hyt-master-trace{padding:0;margin-bottom:12px}
+}

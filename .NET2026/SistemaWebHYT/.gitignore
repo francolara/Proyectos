@@ -1,0 +1,15 @@
+**/bin/
+**/obj/
+**/__pycache__/
+.vs/
+*.user
+
+.env
+.env.*
+!.env.example
+
+*.env
+!deploy/.env.compose.example
+!deploy/hyt.env.example
+
+entregables/publicacion/

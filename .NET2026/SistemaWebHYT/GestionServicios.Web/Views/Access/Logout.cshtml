@@ -1,0 +1,5 @@
+@* Firma: FRANCO LARA - 06/11/2026 | Acciones de cerrar sesión y volver al inicio como botones HYT con iconos. *@
+@{ ViewData["Title"] = "Cerrar sesión"; }
+@* Firma: FRANCO LARA - 03/11/2026 | Confirmación MVC de cierre de sesión mediante POST. *@
+<header class="hyt-page-header"><div><h1>Cerrar sesión</h1><p>¿Deseas cerrar tu sesión de HYT?</p></div></header>
+<form class="hyt-panel hyt-logout-actions" asp-controller="Access" asp-action="Logout" method="post"><button class="hyt-button-primary" type="submit">Confirmar cierre de sesión</button> <a class="hyt-button-secondary" asp-controller="Home" asp-action="Index"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v12h14V9M9 21v-8h6v8"/></svg><span>Volver al inicio</span></a></form>

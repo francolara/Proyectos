@@ -1,0 +1,70 @@
+[
+  {
+    "path": "Tablas/PresupuestoCorrelativoMensual.sql",
+    "sha256": "7321b7e94d1246fc64fc6b66272bab93a782b753c425b56bf8f93ec1474e909c"
+  },
+  {
+    "path": "Script/026_NumeroPresupuestoMensual.sql",
+    "sha256": "5a1b63b4d577cdfaec5d309c388f0987fe4b67190fe3602b57ba53330a867b3b"
+  },
+  {
+    "path": "Script/027_NombreTipoServicioPresupuesto.sql",
+    "sha256": "432e080efb972ea674612797b34eb81f38485671bfc90f9b713b904fb8d92427"
+  },
+  {
+    "path": "Script/014_PresupuestosDocumentos.sql",
+    "sha256": "0d01583a704e4443f4323abf60dd9dfc591d010a19def9420b74a7ddbb6f59b2"
+  },
+  {
+    "path": "StoreProcedure/spu_Presupuesto_AyudaTarifario.sql",
+    "sha256": "eeb41d67de99778d4ced1ecb3fadd886ad4f9b0ea1d3a0f6f823349959895cb7"
+  },
+  {
+    "path": "StoreProcedure/spu_Presupuesto_CambiarEstado.sql",
+    "sha256": "f8e4317dd09a87dde0e3409b420af92db539296cd3fc17566a37347199125f0e"
+  },
+  {
+    "path": "StoreProcedure/spu_Presupuesto_DatosIniciales.sql",
+    "sha256": "a635c0b4445123538caf0559b30ae270a31b7c84eae06595a1b1ca1540bdfedb"
+  },
+  {
+    "path": "StoreProcedure/spu_Presupuesto_Guardar.sql",
+    "sha256": "fc0b8408a9b07dea48b79b72c0319ec1dba12297825aca84a8b576989fd27582"
+  },
+  {
+    "path": "StoreProcedure/spu_Presupuesto_Listar.sql",
+    "sha256": "cc8908d58c4b37f104001c6bdbfc9565904802491bcafde44d7168473ab9cbf0"
+  },
+  {
+    "path": "StoreProcedure/spu_Presupuesto_ListarImpresiones.sql",
+    "sha256": "25cf7b472f8b97513a336734d66706655c34ef04562613accd6a5a5b8bc90393"
+  },
+  {
+    "path": "StoreProcedure/spu_Presupuesto_Obtener.sql",
+    "sha256": "838cc74b8907a47f34fd9cbe6b465c39d8d6fb6aafccd8b59a2fe18e8b0a48a9"
+  },
+  {
+    "path": "StoreProcedure/spu_Presupuesto_ObtenerImpresion.sql",
+    "sha256": "dfa37af62d5119ad31b27089a65276a54af4fa13397b0bf1abf3e986bd39a664"
+  },
+  {
+    "path": "StoreProcedure/spu_Presupuesto_RegistrarImpresion.sql",
+    "sha256": "1ee563679ec96dfea1b29120f67b896499b7fa2a050de5045d7a9e1c7d8b0cbf"
+  },
+  {
+    "path": "StoreProcedure/spu_ConfiguracionHYT_Guardar.sql",
+    "sha256": "6172fccaa65b4357f5391ecb9a13f03f1275b60891b00c43fcfc162e9c9a3565"
+  },
+  {
+    "path": "StoreProcedure/spu_ConfiguracionHYT_Obtener.sql",
+    "sha256": "26a6a17405a0de36d13ad39ab4da8f26655afab01da4abed1b48d905a923e1a8"
+  },
+  {
+    "path": "Script/015_PermisosEtapa5.sql",
+    "sha256": "bcfe4f9d30b3c583566fafd581a728710880b081045aeca321810f8510a47c48"
+  },
+  {
+    "path": "ETAPA_5_HYT.sql",
+    "sha256": "2ab0c18456a290f45d4d597b110ed3088295dabaeeffa876777a6742c49f2a82"
+  }
+]

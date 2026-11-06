@@ -1,0 +1,42 @@
+@using GestionServicios.Application.Budgets
+@using GestionServicios.Web.ViewModels.Billing
+@using GestionServicios.Web.ViewModels.Shared
+@using System.Globalization
+@using System.Text.Json
+@model InvoiceMarkModel
+@* Firma: FRANCO LARA - 03/11/2026 | Captura de fecha, tipo 01/03, serie/número y retiro con motivo. *@
+@* Firma: FRANCO LARA - 05/11/2026 | Acciones presentadas como botones HYT; Responsables en franja sin historial general de acciones en edición. *@
+@{var input=Model.Input;}
+<form asp-controller="InvoiceMark" asp-action="Save" asp-route-orderId="@input.OrderId" asp-route-popup="@Model.Popup" method="post" class="hyt-panel hyt-master-form" data-hyt-save data-document-form data-document-title="Referencia Facturado">
+<input type="hidden" name="OrderId" value="@input.OrderId" /><input type="hidden" name="OrderVersion" value="@input.OrderVersion" /><input type="hidden" name="ReferenceId" value="@input.ReferenceId" /><input type="hidden" name="ReferenceVersion" value="@input.ReferenceVersion" /><input type="hidden" name="OperationId" value="@input.OperationId" /><input type="hidden" name="ReturnUrl" value="@input.ReturnUrl" />
+<p>@BudgetRecord.Text(Model.Data,"NumeroRegistroInterno") · OC cliente @BudgetRecord.Text(Model.Data,"NumeroOCCliente")</p>
+<p>Este registro no emite comprobantes ni los envía a SUNAT.</p>
+<div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+<fieldset class="hyt-budget-fieldset" disabled="@(!Model.CanEdit)"><legend>Comprobante externo</legend>
+<div class="hyt-master-fields"><div class="hyt-field"><partial name="_DatePicker" model="@(new DatePickerModel("Date","Fecha del comprobante",input.Date,Required:true))" /></div>
+<div class="hyt-field"><label for="invoice-type">Tipo de documento *</label><select id="invoice-type" name="Type" required><option value="01" selected="@(input.Type=="01")">Factura (01)</option><option value="03" selected="@(input.Type=="03")">Boleta (03)</option></select></div>
+<div class="hyt-field"><label for="invoice-series">Serie *</label><input id="invoice-series" name="Series" value="@input.Series" maxlength="30" required /></div>
+<div class="hyt-field"><label for="invoice-number">Número *</label><input id="invoice-number" name="Number" value="@input.Number" maxlength="50" required /></div></div>
+@if(input.ReferenceId.HasValue)
+{
+<div class="hyt-field"><label for="invoice-reason">Motivo de la corrección o retiro *</label><textarea id="invoice-reason" name="Reason" maxlength="1000" required>@input.Reason</textarea></div>
+<label class="hyt-budget-revalue"><input type="checkbox" name="Withdraw" value="true" checked="@input.Withdraw" /> Retirar el marcado Facturado conservando su historial</label>
+}
+</fieldset>
+<div class="hyt-form-actions">@if(Model.CanEdit){<button type="submit" class="hyt-button-primary">Guardar referencia</button>}
+@if(Model.Popup){<button type="button" class="hyt-button-secondary" data-hyt-close>Cancelar</button>}else{<a class="hyt-button-secondary" href="@input.ReturnUrl">Volver a la OC</a>}
+</div>
+@if(Model.Data.TryGetProperty("Historial",out var history)&&history.ValueKind==JsonValueKind.Array&&history.GetArrayLength()>0)
+{
+<h2>Referencias registradas</h2><div class="hyt-table-wrap"><table class="hyt-table"><thead><tr><th>Fecha</th><th>Tipo</th><th>Serie</th><th>Número</th><th>Estado</th><th>Motivo de retiro</th></tr></thead><tbody>
+@foreach(var reference in history.EnumerateArray())
+{<tr><td>@DateOnly.Parse(BudgetRecord.Text(reference,"FechaDocumento")[..10],CultureInfo.InvariantCulture).ToString("dd/MM/yyyy")</td><td>@BudgetRecord.Text(reference,"CodigoTipoDocumento")</td><td>@BudgetRecord.Text(reference,"Serie")</td><td>@BudgetRecord.Text(reference,"NumeroDocumento")</td><td>@(reference.GetProperty("Vigente").GetBoolean()?"Vigente":"Retirada")</td><td>@BudgetRecord.Text(reference,"MotivoRetiro")</td></tr>}
+</tbody></table></div>
+<nav class="hyt-pagination" aria-label="Historial de referencias"><span>@BudgetRecord.Text(Model.Data,"TotalHistorial") referencias · 20 por página</span>
+@if(Model.Page>1){<a class="hyt-button-secondary hyt-action-button" asp-action="Index" asp-route-orderId="@input.OrderId" asp-route-page="@(Model.Page-1)">Anterior</a>}
+@if(Model.Data.GetProperty("TotalHistorial").GetInt64()>(long)Model.Page*20){<a class="hyt-button-secondary hyt-action-button" asp-action="Index" asp-route-orderId="@input.OrderId" asp-route-page="@(Model.Page+1)">Siguiente</a>}
+</nav>
+}
+
+</form>
+@if(Model.Data.TryGetProperty("Referencia",out var traceReference)&&traceReference.ValueKind==JsonValueKind.Object){<partial name="_TraceSummary" model="@(TraceSummary.From(key=>BudgetRecord.Text(traceReference,key)))" />}

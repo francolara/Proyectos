@@ -1,0 +1,74 @@
+[
+  {
+    "path": "Script/023_TarifarioMaterialDirecto.sql",
+    "sha256": "ec136983257b87c74da38f44654cb835febdf6d9f67de6b06c76cd0edef25348"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTarifario_Listar.sql",
+    "sha256": "8dd056f9b3d8aafb5d305890aad0bfb99b8fbb7e1aaf5e83f89b6dab79fb2f99"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTarifario_Obtener.sql",
+    "sha256": "d736ce295aea5ca288cc4506b935d318ef96cec4f0fc02b637572e2f93462d5f"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTarifario_Guardar.sql",
+    "sha256": "94412628266c4d746fbdd0e1e2670ba1635d09e0edf4ccb3f011c027c56e1867"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTarifarioVersion_Listar.sql",
+    "sha256": "0bd6de06b505ee89fcdcae289ddc2d13f9b77195ebc1f3ff25a51d1f1093e688"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTarifarioVersion_Obtener.sql",
+    "sha256": "8afaaed97e4083acfd732bf79613675a7f509a11b0ce04d5ed22d3660d8c9c0d"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTarifarioVersion_Guardar.sql",
+    "sha256": "61f03b850b58caf0fab52ce457046f9c8fe9caa91468716c220521cf3ce60816"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTarifarioPartida_Listar.sql",
+    "sha256": "fe4dbdeb084d2da763a57a711ba188219e9a0daf54f2c25e3128306d5a7379d3"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTarifarioPartida_Obtener.sql",
+    "sha256": "2056e567b77b0450759475d63baf78fa220d1c370ffa4e5c8fe80eca93d6f78b"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTarifarioPartida_Guardar.sql",
+    "sha256": "c81d3b437f6f65dfa1b782f3d46e2c6f461853b6b764fa52c0c41d2881c8da2e"
+  },
+  {
+    "path": "StoreProcedure/spu_MaterialTarifas_Listar.sql",
+    "sha256": "d5ce056fc187b264e035ed684e352155d15cc620d151ba1feca1df3deefbe541"
+  },
+  {
+    "path": "StoreProcedure/spu_MaterialTarifa_Guardar.sql",
+    "sha256": "bf79e8b75d485aff731b6788098d47f215e1bde6946f7f4f9f45b9f328d41f5f"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTarifarioVersion_Publicar.sql",
+    "sha256": "0c6eef0257ca9405577e590090124fdcef19b61467a31c9728e04f09cc857377"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTarifarioVersion_Clonar.sql",
+    "sha256": "a3ada32bea551e9ed32351f772c42c8287455c4d750b446a125400cbb9711862"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTasaIGV_Listar.sql",
+    "sha256": "4084703e6c41334ffd1976d5140613f9d4075bc26c7b4cb1984e7f7a4fd6713e"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTasaIGV_Agregar.sql",
+    "sha256": "471d7c4e27720456e274cf062a58fcef9656e1a279a4df892f97a1542aad8430"
+  },
+  {
+    "path": "Script/013_PermisosEtapa4.sql",
+    "sha256": "6b5b2607606434b42bdd581e7be05ae4711639991b44214465bd00601b8fc29d"
+  },
+  {
+    "path": "ETAPA_4_HYT.sql",
+    "sha256": "814e2880cd1b6cb10dd56848a046644754886051c4dbd25ada064de3770d8a38"
+  }
+]
