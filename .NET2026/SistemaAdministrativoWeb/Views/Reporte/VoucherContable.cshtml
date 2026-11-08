@@ -1,5 +1,7 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.VoucherContableViewModel
 
+@* Firma: FRANCO LARA - 07/11/2026 | Unifica el estilo HTML e impreso del reporte con linea verde, tarjeta con filtros aplicados y rotulos de tabla en negro. Mejora el contraste de Imprimir en modo oscuro. *@
+
 @* Firma: FRANCO LARA - 11/07/2026 | Crea el voucher contable HTML A4 inspirado en rptVoucherContableA4 del legacy, reutilizando el asiento actual y habilitando impresion directa. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion A4 del voucher, conserva la cabecera y tarjetas en formato horizontal, compacta el contenido, evita heredar el modo oscuro y permite volver al listado del mismo periodo. *@
 
@@ -391,30 +393,31 @@
         </div>
 
         <div class="workspace-window-body">
-            <section class="workspace-report-sheet voucher-sheet">
+            <section class="workspace-report-sheet accounting-report voucher-sheet">
                 <div class="report-action-bar no-print">
                     <a asp-controller="Asiento"
                        asp-action="Index"
                        asp-route-anio="@Model.FechaEmision.Year"
                        asp-route-mes="@Model.FechaEmision.Month"
                        class="btn btn-outline-secondary">Volver al listado</a>
-                    <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+                    <button type="button" class="btn btn-outline-secondary accounting-report-print" onclick="window.print()">Imprimir</button>
                 </div>
 
-                <header class="voucher-header">
+                <header class="voucher-header accounting-report-header">
                     <div>
                         <strong>@Model.EmpresaNombre</strong>
                         <span>RUC: @(string.IsNullOrWhiteSpace(Model.RucEmpresa) ? "-" : Model.RucEmpresa)</span>
                         <div class="voucher-title">COMPROBANTE DE CONTABILIDAD</div>
                     </div>
-                    <div class="text-md-end">
-                        <strong>Voucher @numeroVoucher</strong>
+                </header>
+
+                <section class="voucher-meta-grid accounting-report-filters">
+                    <div class="accounting-report-context">
+                        <strong class="accounting-report-filters-title">Datos del voucher</strong>
+                        <span>Voucher: @numeroVoucher</span>
                         <span>Origen: @Model.CodigoOrigen - @Model.NombreOrigen</span>
                         <span>Fecha emision: @Model.FechaEmision.ToString("dd/MM/yyyy")</span>
                     </div>
-                </header>
-
-                <section class="voucher-meta-grid">
                     <article class="voucher-meta-card">
                         <span>Moneda</span>
                         <strong>@Model.Moneda</strong>
@@ -487,7 +490,7 @@
                         </tbody>
                         <tfoot>
                             <tr class="balance-a4-total-row">
-                                <td colspan="6">Totales</td>
+                                <td class="accounting-report-total-label" colspan="6">Totales</td>
                                 <td class="workspace-money-cell">@Model.TotalDebe.ToString("N2")</td>
                                 <td class="workspace-money-cell">@Model.TotalHaber.ToString("N2")</td>
                                 <td class="workspace-money-cell">@Model.TotalSoles.ToString("N2")</td>

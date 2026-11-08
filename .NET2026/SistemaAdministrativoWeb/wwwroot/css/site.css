@@ -7794,3 +7794,151 @@ html[data-theme="dark"] .subscription-shell .alert-info {
     grid-template-columns: 1fr;
   }
 }
+
+/* Firma: FRANCO LARA - 07/11/2026 | Comparte el estilo de los reportes contables, destaca los filtros en impresion y mejora el contraste de Imprimir y de las acciones secundarias en modo oscuro. */
+.workspace-report-sheet.accounting-report {
+  --report-green: #1b5e4a;
+  --report-band: #181818;
+  --app-surface: #fff;
+  --app-ink: #202020;
+  --app-muted: #515151;
+  --app-navy: #202020;
+  --app-line: #dedede;
+  --app-line-soft: #e8e8e8;
+  --app-surface-hover: #f4f4f4;
+  color: var(--app-ink);
+  background: #fff;
+}
+
+html[data-theme="dark"] .workspace-report-sheet.accounting-report {
+  color: var(--app-ink);
+  background: #fff;
+  color-scheme: light;
+}
+
+.accounting-report .accounting-report-header,
+html[data-theme="dark"] .accounting-report .accounting-report-header {
+  display: block !important;
+  padding: 0;
+  border: 0 !important;
+  background: none !important;
+}
+
+.accounting-report-header > div:first-child {
+  padding: 0.65rem 0;
+  border-bottom: 2px solid var(--report-green);
+}
+
+.accounting-report .accounting-report-header :is(strong, span, .voucher-title, .bank-title) {
+  color: var(--app-ink);
+}
+
+.accounting-report .accounting-report-filters {
+  margin: 0.55rem 0 0.75rem;
+  padding: 0.55rem 0.7rem;
+  color: var(--app-ink);
+  background: #f3f3f3;
+  border-left: 3px solid var(--report-green);
+  text-transform: none;
+  break-inside: avoid;
+}
+
+.accounting-report-filters-title {
+  flex-basis: 100%;
+  font-weight: 800;
+}
+
+html[data-theme="dark"] .accounting-report .report-action-bar .btn-outline-secondary:not(.accounting-report-print) {
+  color: #202020;
+  background: #fff;
+  border-color: #767676;
+}
+
+html[data-theme="dark"] .accounting-report .report-action-bar .btn-outline-secondary:not(.accounting-report-print):is(:hover, :focus-visible) {
+  color: #1b5e4a;
+  background: #edf5f1;
+  border-color: var(--report-green);
+}
+
+html[data-theme="dark"] .accounting-report .accounting-report-print {
+  color: #fff;
+  background: var(--report-green);
+  border-color: #34866c;
+}
+
+html[data-theme="dark"] .accounting-report .accounting-report-print:is(:hover, :focus-visible) {
+  color: #fff;
+  background: #164b3b;
+  border-color: #34866c;
+}
+
+html[data-theme="dark"] .accounting-report .report-action-bar .btn:focus-visible {
+  outline: 2px solid var(--report-green);
+  outline-offset: 2px;
+}
+
+.accounting-report-filters .accounting-report-context {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  align-items: baseline;
+}
+
+.accounting-report-filters :is(.bank-meta-card, .voucher-meta-card),
+html[data-theme="dark"] .accounting-report-filters :is(.bank-meta-card, .voucher-meta-card) {
+  padding: 0;
+  border: 0;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .accounting-report :is(.report-ledger-summary, .report-ledger-account-header, .report-ledger-account-block, .voucher-note-box, .voucher-glosa-box) {
+  color: var(--app-ink);
+  background: #f4f4f4;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .accounting-report .report-ledger-summary span {
+  color: var(--app-ink);
+}
+
+html[data-theme="dark"] .accounting-report .table {
+  --bs-table-striped-bg: #f8f8f8;
+  --bs-table-hover-bg: #f4f4f4;
+}
+
+.accounting-report :is(thead th, .accounting-report-total-label),
+html[data-theme="dark"] .accounting-report :is(thead th, .accounting-report-total-label) {
+  color: #fff !important;
+  background: var(--report-band) !important;
+}
+
+.accounting-report :is(thead th, tfoot .accounting-report-total-label) {
+  border-color: #454545 !important;
+  box-shadow: none;
+}
+
+.accounting-report span.accounting-report-total-label {
+  display: inline-block;
+  padding: 0.15em 0.35em;
+  border-radius: 0.15rem;
+}
+
+@media print {
+  .accounting-report {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .accounting-report-header > div:first-child {
+    padding: 0 0 0.35rem;
+  }
+
+  .accounting-report .accounting-report-filters {
+    margin: 0.35rem 0 0.5rem;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.6rem;
+    background: #f3f3f3;
+    border-left: 3px solid var(--report-green);
+  }
+}

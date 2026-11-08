@@ -1,5 +1,7 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.CajaBancoEstadoCuentaViewModel
 
+@* Firma: FRANCO LARA - 07/11/2026 | Unifica el estilo HTML e impreso del reporte con linea verde, tarjeta con filtros aplicados y rotulos de tabla en negro. Mejora el contraste de Imprimir en modo oscuro. *@
+
 @* Firma: FRANCO LARA - 12/07/2026 | Crea el reporte HTML imprimible Estado de Cuenta para Caja y Bancos, mostrando saldos iniciales, movimientos del mes y saldo final de la cuenta corriente seleccionada. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion A4 vertical del Estado de cuenta, conserva cabecera y tarjetas horizontales, compacta el contenido y evita heredar el modo oscuro. *@
 
@@ -302,30 +304,31 @@
         </div>
 
         <div class="workspace-window-body">
-            <section class="workspace-report-sheet bank-sheet report-portrait-page">
+            <section class="workspace-report-sheet accounting-report bank-sheet report-portrait-page">
                 <div class="report-action-bar no-print">
                     <a asp-action="Index"
                        asp-route-idBancoConfiguracionEmpresa="@Model.IdBancoConfiguracionEmpresa"
                        asp-route-anio="@Model.AnioSeleccionado"
                        asp-route-mes="@Model.MesSeleccionado"
                        class="btn btn-outline-secondary">Volver a Caja y Bancos</a>
-                    <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+                    <button type="button" class="btn btn-outline-secondary accounting-report-print" onclick="window.print()">Imprimir</button>
                 </div>
 
-                <header class="bank-header">
+                <header class="bank-header accounting-report-header">
                     <div>
                         <strong>@Model.EmpresaNombre</strong>
                         <span>@Model.NombreBanco</span>
                         <div class="bank-title">ESTADO DE CUENTA</div>
                     </div>
-                    <div class="text-md-end">
-                        <strong>@Model.NroCuentaCorriente</strong>
+                </header>
+
+                <section class="bank-meta-grid accounting-report-filters">
+                    <div class="accounting-report-context">
+                        <strong class="accounting-report-filters-title">Filtros aplicados</strong>
+                        <span>Cuenta bancaria: @Model.NroCuentaCorriente</span>
                         <span>Moneda: @Model.CodigoMoneda - @Model.NombreMoneda</span>
                         <span>Periodo: @periodoTexto</span>
                     </div>
-                </header>
-
-                <section class="bank-meta-grid">
                     <article class="bank-meta-card">
                         <span>Titular</span>
                         <strong>@(string.IsNullOrWhiteSpace(Model.Titular) ? "-" : Model.Titular)</strong>
@@ -362,7 +365,7 @@
                         <strong>@Model.EgresosMes.ToString("N2")</strong>
                     </article>
                     <article class="bank-meta-card">
-                        <span>Saldo final</span>
+                        <span class="accounting-report-total-label">Saldo final</span>
                         <strong>@Model.SaldoFinal.ToString("N2")</strong>
                     </article>
                 </section>
@@ -414,7 +417,7 @@
                         </tbody>
                         <tfoot>
                             <tr class="balance-a4-total-row">
-                                <td colspan="7">Totales del periodo</td>
+                                <td class="accounting-report-total-label" colspan="7">Totales del periodo</td>
                                 <td class="workspace-money-cell">@Model.IngresosMes.ToString("N2")</td>
                                 <td class="workspace-money-cell">@Model.EgresosMes.ToString("N2")</td>
                                 <td class="workspace-money-cell">@Model.SaldoFinal.ToString("N2")</td>

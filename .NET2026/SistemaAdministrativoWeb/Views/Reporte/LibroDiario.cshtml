@@ -1,5 +1,7 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.LibroDiarioViewModel
 
+@* Firma: FRANCO LARA - 07/11/2026 | Unifica el estilo HTML e impreso del reporte con linea verde, tarjeta con filtros aplicados y rotulos de tabla en negro. Mejora el contraste de Imprimir en modo oscuro. *@
+
 @* Firma: FRANCO LARA - 07/07/2026 | Mantiene el reporte HTML Libro Diario, adapta su visualizacion al formato compacto tipo hoja A4 de los reportes legacy y agrega impresion directa en pantalla. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Ajusta Libro Diario para trabajar siempre en soles, elimina filtros de moneda y origen, y separa las vistas Diario auxiliar, Por Cuenta y Por Origen. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion del Libro Diario en A4 horizontal, compacta cabecera y tablas y evita heredar el modo oscuro. *@
@@ -142,25 +144,27 @@
 
             @if (Model.Resultados.Count > 0)
             {
-                <section class="workspace-report-sheet report-ledger-sheet report-landscape-page mt-4">
+                <section class="workspace-report-sheet accounting-report report-ledger-sheet report-landscape-page mt-4">
                     <div class="report-action-bar no-print">
-                        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+                        <button type="button" class="btn btn-outline-secondary accounting-report-print" onclick="window.print()">Imprimir</button>
                     </div>
 
-                    <header class="report-ledger-header">
+                    <header class="report-ledger-header accounting-report-header">
                         <div>
                             <strong>@Model.EmpresaNombre</strong>
                             <span>LIBRO DIARIO</span>
                         </div>
-                        <div class="report-ledger-meta">
-                            <span>Periodo: @Model.PeriodoConsulta</span>
-                            <span>Vista: @vistaTexto</span>
-                            <span>Cuentas: @cuentaTexto</span>
-                            <span>Moneda base: Soles</span>
-                            <span>Detalle USD: Visible</span>
-                            <span>Filas: @Model.Resultados.Count</span>
-                        </div>
                     </header>
+
+                    <div class="report-ledger-meta accounting-report-filters">
+                        <strong class="accounting-report-filters-title">Filtros aplicados</strong>
+                        <span>Periodo: @Model.PeriodoConsulta</span>
+                        <span>Vista: @vistaTexto</span>
+                        <span>Cuentas: @cuentaTexto</span>
+                        <span>Moneda base: Soles</span>
+                        <span>Detalle USD: Visible</span>
+                        <span>Filas: @Model.Resultados.Count</span>
+                    </div>
 
                     <div class="table-responsive report-ledger-table-wrap">
                         @if (esDiarioAuxiliar)
@@ -218,7 +222,7 @@
                                 </tbody>
                                 <tfoot>
                                     <tr class="report-ledger-total-row">
-                                        <td colspan="8">Totales</td>
+                                        <td class="accounting-report-total-label" colspan="8">Totales</td>
                                         <td class="workspace-money-cell">@Model.TotalDebe.ToString("N2")</td>
                                         <td class="workspace-money-cell">@Model.TotalHaber.ToString("N2")</td>
                                         <td class="workspace-money-cell">@Model.TotalDebeDolares.ToString("N2")</td>
@@ -257,7 +261,7 @@
                                 </tbody>
                                 <tfoot>
                                     <tr class="report-ledger-total-row">
-                                        <td colspan="2">Totales</td>
+                                        <td class="accounting-report-total-label" colspan="2">Totales</td>
                                         <td class="workspace-money-cell">@Model.TotalDebe.ToString("N2")</td>
                                         <td class="workspace-money-cell">@Model.TotalHaber.ToString("N2")</td>
                                         <td class="workspace-money-cell">@Model.TotalDebeDolares.ToString("N2")</td>
@@ -296,7 +300,7 @@
                                 </tbody>
                                 <tfoot>
                                     <tr class="report-ledger-total-row">
-                                        <td colspan="2">Totales</td>
+                                        <td class="accounting-report-total-label" colspan="2">Totales</td>
                                         <td class="workspace-money-cell">@Model.TotalDebe.ToString("N2")</td>
                                         <td class="workspace-money-cell">@Model.TotalHaber.ToString("N2")</td>
                                         <td class="workspace-money-cell">@Model.TotalDebeDolares.ToString("N2")</td>

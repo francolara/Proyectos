@@ -1,5 +1,7 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.RegistroVentasViewModel
 
+@* Firma: FRANCO LARA - 07/11/2026 | Unifica el estilo HTML e impreso del reporte con linea verde, tarjeta con filtros aplicados y rotulos de tabla en negro. Mejora el contraste de Imprimir en modo oscuro. *@
+
 @* Firma: FRANCO LARA - 07/07/2026 | Crea el reporte HTML Registro de ventas con formato A4 inspirado en rptRegVentasA4 del legacy, usando solo la provision actual y habilitando impresion directa. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Ajusta el formato visible del registro de ventas retirando la columna Cod. segun el disenio solicitado y actualiza el subtitulo del reporte. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion del Registro de ventas en A4 horizontal, compacta cabecera y tabla y evita heredar el modo oscuro. *@
@@ -119,22 +121,25 @@
 
             @if (Model.Resultados.Count > 0)
             {
-                <section class="workspace-report-sheet balance-a4-sheet report-landscape-page mt-4">
+                <section class="workspace-report-sheet accounting-report balance-a4-sheet report-landscape-page mt-4">
                     <div class="report-action-bar no-print">
-                        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+                        <button type="button" class="btn btn-outline-secondary accounting-report-print" onclick="window.print()">Imprimir</button>
                     </div>
 
-                    <header class="balance-a4-header">
+                    <header class="balance-a4-header accounting-report-header">
                         <div>
                             <strong>@Model.EmpresaNombre</strong>
                             <span>REGISTRO DE VENTAS - @textInfo.ToTitleCase(mesTexto) @Model.AnioSeleccionado</span>
                         </div>
-                        <div class="balance-a4-meta">
-                            <span>Codigo persona: @(string.IsNullOrWhiteSpace(Model.CodigoPersona) ? "Todos" : Model.CodigoPersona)</span>
-                            <span>Nro documento: @(string.IsNullOrWhiteSpace(Model.NumeroComprobante) ? "Todos" : Model.NumeroComprobante)</span>
-                            <span>Filas: @Model.Resultados.Count</span>
-                        </div>
                     </header>
+
+                    <div class="balance-a4-meta accounting-report-filters">
+                        <strong class="accounting-report-filters-title">Filtros aplicados</strong>
+                        <span>Periodo: @textInfo.ToTitleCase(mesTexto) @Model.AnioSeleccionado</span>
+                        <span>Codigo persona: @(string.IsNullOrWhiteSpace(Model.CodigoPersona) ? "Todos" : Model.CodigoPersona)</span>
+                        <span>Nro documento: @(string.IsNullOrWhiteSpace(Model.NumeroComprobante) ? "Todos" : Model.NumeroComprobante)</span>
+                        <span>Filas: @Model.Resultados.Count</span>
+                    </div>
 
                     <div class="table-responsive balance-a4-table-wrap">
                         <table class="table app-table balance-a4-table">
@@ -191,7 +196,7 @@
                             </tbody>
                             <tfoot>
                                 <tr class="balance-a4-total-row">
-                                    <td colspan="9">Totales</td>
+                                    <td class="accounting-report-total-label" colspan="9">Totales</td>
                                     <td class="workspace-money-cell">@Model.TotalBaseImponible.ToString("N2")</td>
                                     <td class="workspace-money-cell">@Model.TotalDescuento.ToString("N2")</td>
                                     <td class="workspace-money-cell">@Model.TotalExonerado.ToString("N2")</td>

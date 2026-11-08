@@ -1,5 +1,7 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.BalanceComprobacionViewModel
 
+@* Firma: FRANCO LARA - 07/11/2026 | Unifica el estilo HTML e impreso del reporte con linea verde, tarjeta con filtros aplicados y rotulos de tabla en negro. Mejora el contraste de Imprimir en modo oscuro. *@
+
 @* Firma: FRANCO LARA - 07/07/2026 | Crea el reporte HTML Balance de comprobacion replicando FrmBalanceComprobacion del legacy, corrige la presentacion para seguir el formato compacto tipo rptBalanceComprobacionA4, agrega impresion directa y ajusta nombres/columnas para alinearlo mejor al formato A4 legacy. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Corrige el envio por GET de los checks de filtros para que conserven el estado desmarcado al consultar el balance, apliquen correctamente los rangos configurados y actualiza el subtitulo del reporte. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion del Balance de comprobacion en A4 horizontal, compacta cabecera y tabla y evita heredar el modo oscuro. *@
@@ -174,23 +176,26 @@
 
             @if (Model.Resultados.Count > 0)
             {
-                <section class="workspace-report-sheet balance-a4-sheet report-landscape-page mt-4">
+                <section class="workspace-report-sheet accounting-report balance-a4-sheet report-landscape-page mt-4">
                     <div class="report-action-bar no-print">
-                        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+                        <button type="button" class="btn btn-outline-secondary accounting-report-print" onclick="window.print()">Imprimir</button>
                     </div>
 
-                    <header class="balance-a4-header">
+                    <header class="balance-a4-header accounting-report-header">
                         <div>
                             <strong>@Model.EmpresaNombre</strong>
                             <span>BALANCE DE COMPROBACIÓN MENSUAL A @textInfo.ToTitleCase(periodoHastaTexto) @Model.AnioSeleccionado</span>
                         </div>
-                        <div class="balance-a4-meta">
-                            <span>Moneda: @Model.MonedasDisponibles.FirstOrDefault(x => x.Valor == Model.MonedaSeleccionada)?.Texto</span>
-                            <span>Grado: @Model.GradoSeleccionado</span>
-                            <span>Rango: @Model.PeriodoDesdeSeleccionado:00 - @Model.PeriodoHastaSeleccionado:00</span>
-                            <span>Cuentas: @saldoCuentaTexto</span>
-                        </div>
                     </header>
+
+                    <div class="balance-a4-meta accounting-report-filters">
+                        <strong class="accounting-report-filters-title">Filtros aplicados</strong>
+                        <span>Año: @Model.AnioSeleccionado</span>
+                        <span>Moneda: @Model.MonedasDisponibles.FirstOrDefault(x => x.Valor == Model.MonedaSeleccionada)?.Texto</span>
+                        <span>Grado: @(Model.FiltrarGrado ? Model.GradoSeleccionado.ToString() : "Todos")</span>
+                        <span>Periodos: @Model.PeriodoDesdeSeleccionado.ToString("00") - @Model.PeriodoHastaSeleccionado.ToString("00")</span>
+                        <span>Cuentas: @saldoCuentaTexto</span>
+                    </div>
 
                     <div class="table-responsive balance-a4-table-wrap">
                         <table class="table app-table balance-a4-table">
@@ -238,7 +243,7 @@
                             </tbody>
                             <tfoot>
                                 <tr class="balance-a4-total-row">
-                                    <td colspan="2">Totales</td>
+                                    <td class="accounting-report-total-label" colspan="2">Totales</td>
                                     <td class="workspace-money-cell">@Model.TotalDebe.ToString("N2")</td>
                                     <td class="workspace-money-cell">@Model.TotalHaber.ToString("N2")</td>
                                     <td class="workspace-money-cell">@Model.TotalResultadoDebe.ToString("N2")</td>
@@ -252,8 +257,8 @@
                                 </tr>
                                 <tr class="balance-a4-subtotal-row">
                                     <td colspan="4"></td>
-                                    <td class="workspace-money-cell">Utilidad</td>
-                                    <td class="workspace-money-cell">Pérdida</td>
+                                    <td class="accounting-report-total-label workspace-money-cell">Utilidad</td>
+                                    <td class="accounting-report-total-label workspace-money-cell">Pérdida</td>
                                     <td class="workspace-money-cell">@utilidadActivoPasivo.ToString("N2")</td>
                                     <td class="workspace-money-cell">@perdidaActivoPasivo.ToString("N2")</td>
                                     <td class="workspace-money-cell">@perdidaNaturaleza.ToString("N2")</td>

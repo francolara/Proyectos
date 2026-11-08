@@ -1,5 +1,7 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.LibroMayorViewModel
 
+@* Firma: FRANCO LARA - 07/11/2026 | Unifica el estilo HTML e impreso del reporte con linea verde, tarjeta con filtros aplicados y rotulos de tabla en negro. Mejora el contraste de Imprimir en modo oscuro. *@
+
 @* Firma: FRANCO LARA - 07/07/2026 | Mantiene el reporte HTML Libro Mayor, adapta su visualizacion al formato compacto tipo hoja A4 de los reportes legacy y agrega impresion directa en pantalla. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Ajusta Libro Mayor a filtro por anio/mes y periodo contable, quita moneda editable, separa tarjetas USD y deja el saldo final solo al cierre de cada cuenta. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion del Libro Mayor en A4 horizontal, compacta cabecera y tablas, distribuye las tarjetas de totales en dos filas y evita heredar el modo oscuro. *@
@@ -137,43 +139,45 @@
 
             @if (Model.Resultados.Count > 0)
             {
-                <section class="workspace-report-sheet report-ledger-sheet report-landscape-page mt-4">
+                <section class="workspace-report-sheet accounting-report report-ledger-sheet report-landscape-page mt-4">
                     <div class="report-action-bar no-print">
-                        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+                        <button type="button" class="btn btn-outline-secondary accounting-report-print" onclick="window.print()">Imprimir</button>
                     </div>
 
-                    <header class="report-ledger-header">
+                    <header class="report-ledger-header accounting-report-header">
                         <div>
                             <strong>@Model.EmpresaNombre</strong>
                             <span>LIBRO MAYOR</span>
                         </div>
-                        <div class="report-ledger-meta">
-                            <span>Periodo: @Model.PeriodoConsulta</span>
-                            <span>Moneda base: Soles</span>
-                            <span>Cuentas: @cuentaTexto</span>
-                            <span>Nro documento: @(string.IsNullOrWhiteSpace(Model.NumeroDocumento) ? "Todos" : Model.NumeroDocumento)</span>
-                            <span>Filas: @Model.Resultados.Count</span>
-                        </div>
                     </header>
+
+                    <div class="report-ledger-meta accounting-report-filters">
+                        <strong class="accounting-report-filters-title">Filtros aplicados</strong>
+                        <span>Periodo: @Model.PeriodoConsulta</span>
+                        <span>Moneda base: Soles</span>
+                        <span>Cuentas: @cuentaTexto</span>
+                        <span>Nro documento: @(string.IsNullOrWhiteSpace(Model.NumeroDocumento) ? "Todos" : Model.NumeroDocumento)</span>
+                        <span>Filas: @Model.Resultados.Count</span>
+                    </div>
 
                     <div class="workspace-balance-summary libro-mayor-summary mb-3">
                         <div class="workspace-balance-card">
-                            <span>Total Debe</span>
+                            <span class="accounting-report-total-label">Total Debe</span>
                             <strong>@Model.TotalDebe.ToString("N2")</strong>
                             <small>Soles</small>
                         </div>
                         <div class="workspace-balance-card">
-                            <span>Total Haber</span>
+                            <span class="accounting-report-total-label">Total Haber</span>
                             <strong>@Model.TotalHaber.ToString("N2")</strong>
                             <small>Soles</small>
                         </div>
                         <div class="workspace-balance-card">
-                            <span>Total Debe USD</span>
+                            <span class="accounting-report-total-label">Total Debe USD</span>
                             <strong>@Model.TotalDebeDolares.ToString("N2")</strong>
                             <small>Dolares</small>
                         </div>
                         <div class="workspace-balance-card">
-                            <span>Total Haber USD</span>
+                            <span class="accounting-report-total-label">Total Haber USD</span>
                             <strong>@Model.TotalHaberDolares.ToString("N2")</strong>
                             <small>Dolares</small>
                         </div>
@@ -260,14 +264,14 @@
                                     </tbody>
                                     <tfoot>
                                         <tr class="report-ledger-total-row">
-                                            <td colspan="6">Subtotal @grupo.Key.CodigoCuenta</td>
+                                            <td class="accounting-report-total-label" colspan="6">Subtotal @grupo.Key.CodigoCuenta</td>
                                             <td class="workspace-money-cell">@totalDebeCuenta.ToString("N2")</td>
                                             <td class="workspace-money-cell">@totalHaberCuenta.ToString("N2")</td>
                                             <td class="workspace-money-cell">@totalDebeCuentaUsd.ToString("N2")</td>
                                             <td class="workspace-money-cell">@totalHaberCuentaUsd.ToString("N2")</td>
                                         </tr>
                                         <tr class="report-ledger-total-row">
-                                            <td colspan="8">Saldo final @grupo.Key.CodigoCuenta</td>
+                                            <td class="accounting-report-total-label" colspan="8">Saldo final @grupo.Key.CodigoCuenta</td>
                                             <td class="workspace-money-cell">@saldoFinal.ToString("N2")</td>
                                             <td class="workspace-money-cell">@saldoFinalUsd.ToString("N2")</td>
                                         </tr>

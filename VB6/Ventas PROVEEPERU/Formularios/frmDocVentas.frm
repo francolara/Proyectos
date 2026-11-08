@@ -6071,6 +6071,7 @@ Dim CSqlC               As String
 Dim RsC                 As New ADODB.Recordset
 Dim rsValida            As New ADODB.Recordset
 Dim rsDocumentosOrigenAntes As New ADODB.Recordset
+Dim indRecalculaAntesDeGrabar As Boolean
 
     If STR_VENTA_ELECTRONICA = "S" And (strTipoDoc = "01" Or strTipoDoc = "07" Or strTipoDoc = "86") Then
     
@@ -6101,14 +6102,6 @@ Dim rsDocumentosOrigenAntes As New ADODB.Recordset
     
     End If
     
-    NArrTotales(0) = NTotalBruto
-    NArrTotales(1) = NTotalIGV
-    NArrTotales(2) = NTotalIVAP
-    NArrTotales(3) = NTotalDsctoVV
-    NArrTotales(4) = NTotalDsctoPV
-    NArrTotales(5) = NTotalBaseImponible
-    NArrTotales(6) = NTotalExonerado
-        
     If gDetalle.Columns.ColumnByFieldName("IdDocVentasPres").Visible Then
     
         gDetalle.Dataset.First
@@ -6154,6 +6147,17 @@ Dim rsDocumentosOrigenAntes As New ADODB.Recordset
         ValidaItemsImportadosEnDetalle StrMsgError
         If StrMsgError <> "" Then GoTo Err
     End If
+    ' =============================================
+    ' Author:        FRANCO LARA
+    ' Create date:   08/11/2026
+    ' Description:   Confirma la edicion y recalcula cotizaciones, pedidos, guias y facturas antes de capturar sus importes.
+    ' =============================================
+    indRecalculaAntesDeGrabar = (strTipoDoc = "92" Or strTipoDoc = "40" Or strTipoDoc = "86" Or strTipoDoc = "01")
+    If indRecalculaAntesDeGrabar Then
+        If gDetalle.Dataset.State = dsEdit Or gDetalle.Dataset.State = dsInsert Then
+            gDetalle.Dataset.Post
+        End If
+    End If
     eliminaNulosGrilla
     If gDetalle.Count >= 1 Then
         If gDetalle.Count = 1 And (gDetalle.Columns.ColumnByFieldName("idProducto").Value = "" Or gDetalle.Columns.ColumnByFieldName("Cantidad").Value = 0) Then
@@ -6164,6 +6168,19 @@ Dim rsDocumentosOrigenAntes As New ADODB.Recordset
     
     eliminaNulosGrillaDocRef
     generaSTRDocReferencia
+
+    If indRecalculaAntesDeGrabar Then
+        calcularTotales StrMsgError
+        If StrMsgError <> "" Then GoTo Err
+    End If
+
+    NArrTotales(0) = NTotalBruto
+    NArrTotales(1) = NTotalIGV
+    NArrTotales(2) = NTotalIVAP
+    NArrTotales(3) = NTotalDsctoVV
+    NArrTotales(4) = NTotalDsctoPV
+    NArrTotales(5) = NTotalBaseImponible
+    NArrTotales(6) = NTotalExonerado
     
     '-------------------------------------------------------------------------------------------------------------------------------------
     '------- Validando Stock

@@ -3781,6 +3781,16 @@ Dim strMsg      As String
     validaFormSQL Me, StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
+    ' =============================================
+    ' Author:        FRANCO LARA
+    ' Create date:   08/11/2026
+    ' Description:   Confirma la edicion y recalcula la orden de compra antes de guardar su cabecera y detalle.
+    ' =============================================
+    If strTipoDoc = "94" Then
+        If gDetalle.Dataset.State = dsEdit Or gDetalle.Dataset.State = dsInsert Then
+            gDetalle.Dataset.Post
+        End If
+    End If
     eliminaNulosGrilla
 
     If gDetalle.Count >= 1 Then
@@ -3814,6 +3824,8 @@ Dim strMsg      As String
         Loop
     End If
     
+    If strTipoDoc = "94" Then calcularTotales
+
     If intBoton = 1 Then 'graba
         objDocVentas.EjecutaSQLFormDocVentas_OC Me, 0, StrMsgError, strTipoDoc, txt_Serie.Text, gDetalle, gDocReferencia, indGeneraVale
         If StrMsgError <> "" Then GoTo Err

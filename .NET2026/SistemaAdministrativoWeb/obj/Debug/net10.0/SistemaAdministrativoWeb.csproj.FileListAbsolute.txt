@@ -19482,4 +19482,4 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdminist
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\SistemaAdministrativoWeb.genruntimeconfig.cache
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\ref\SistemaAdministrativoWeb.dll
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\Debug\net10.0\.archify\mapa-operativo-contable-20260929-1645\mapa-operativo-administrador.html
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\rnf1c4oivs-{0}-n53e52e3q0-n53e52e3q0.gz
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\rnf1c4oivs-{0}-nf5f8yy353-nf5f8yy353.gz

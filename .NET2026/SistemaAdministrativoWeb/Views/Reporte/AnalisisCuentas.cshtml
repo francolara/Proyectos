@@ -1,5 +1,7 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.AnalisisCuentaViewModel
 
+@* Firma: FRANCO LARA - 07/11/2026 | Unifica el estilo HTML e impreso del reporte con linea verde, tarjeta con filtros aplicados y rotulos de tabla en negro. Mejora el contraste de Imprimir en modo oscuro. *@
+
 @* Firma: FRANCO LARA - 07/07/2026 | Mantiene el reporte HTML de Analisis de cuentas, adapta su visualizacion al formato compacto tipo hoja A4 usado en los reportes legacy y agrega impresion directa en pantalla. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Reestructura Analisis de cuentas segun las vistas legacy Por auxiliar, Auxiliar y documento y Detallado, segmentando por cuenta y persona, agrupando documentos cuando corresponde y usando solo importes de la moneda seleccionada. *@
 @* Firma: FRANCO LARA - 11/07/2026 | Corrige el bloque final de totales en modo oscuro y ajusta el formateo del saldo final del reporte. *@
@@ -180,25 +182,27 @@
 
             @if (Model.Resultados.Count > 0)
             {
-                <section class="workspace-report-sheet report-ledger-sheet report-landscape-page mt-4">
+                <section class="workspace-report-sheet accounting-report report-ledger-sheet report-landscape-page mt-4">
                     <div class="report-action-bar no-print">
-                        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+                        <button type="button" class="btn btn-outline-secondary accounting-report-print" onclick="window.print()">Imprimir</button>
                     </div>
 
-                    <header class="report-ledger-header">
+                    <header class="report-ledger-header accounting-report-header">
                         <div>
                             <strong>@Model.EmpresaNombre</strong>
                             <span>ANALISIS DE CUENTAS</span>
                         </div>
-                        <div class="report-ledger-meta">
-                            <span>Periodo: @Model.PeriodoConsulta</span>
-                            <span>Moneda: @monedaTexto</span>
-                            <span>Vista: @vistaTexto</span>
-                            <span>Estado: @estadoTexto</span>
-                            <span>Cuentas: @cuentaTexto</span>
-                            <span>Nro documento: @(string.IsNullOrWhiteSpace(Model.Auxiliar) ? "Todos" : Model.Auxiliar)</span>
-                        </div>
                     </header>
+
+                    <div class="report-ledger-meta accounting-report-filters">
+                        <strong class="accounting-report-filters-title">Filtros aplicados</strong>
+                        <span>Periodo: @Model.PeriodoConsulta</span>
+                        <span>Moneda: @monedaTexto</span>
+                        <span>Vista: @vistaTexto</span>
+                        <span>Estado: @estadoTexto</span>
+                        <span>Cuentas: @cuentaTexto</span>
+                        <span>Nro documento: @(string.IsNullOrWhiteSpace(Model.Auxiliar) ? "Todos" : Model.Auxiliar)</span>
+                    </div>
 
                     @foreach (var cuentaGroup in cuentasAgrupadas)
                     {
@@ -257,7 +261,7 @@
                                         </tbody>
                                         <tfoot>
                                             <tr class="report-ledger-total-row">
-                                                <td colspan="2">Subtotal @cuentaGroup.Key.CodigoCuenta</td>
+                                                <td class="accounting-report-total-label" colspan="2">Subtotal @cuentaGroup.Key.CodigoCuenta</td>
                                                 <td class="workspace-money-cell">@totalCuentaDebe.ToString("N2")</td>
                                                 <td class="workspace-money-cell">@totalCuentaHaber.ToString("N2")</td>
                                                 <td class="workspace-money-cell">@totalCuentaSaldo.ToString("N2")</td>
@@ -289,8 +293,8 @@
                                                 <div>@MostrarValor(persona.Key.NombreAuxiliar)</div>
                                             </div>
                                             <div class="d-flex flex-wrap gap-3 text-nowrap">
-                                                <span>Total Debe: <strong>@debePersona.ToString("N2")</strong></span>
-                                                <span>Total Haber: <strong>@haberPersona.ToString("N2")</strong></span>
+                                                <span><span class="accounting-report-total-label">Total Debe:</span> <strong>@debePersona.ToString("N2")</strong></span>
+                                                <span><span class="accounting-report-total-label">Total Haber:</span> <strong>@haberPersona.ToString("N2")</strong></span>
                                                 <span>Saldo: <strong>@saldoPersona.ToString("N2")</strong></span>
                                             </div>
                                         </div>
@@ -383,7 +387,7 @@
                                             </tbody>
                                             <tfoot>
                                                 <tr class="report-ledger-total-row">
-                                                    <td colspan="@(esPorDocumento ? 4 : 5)">Subtotal @MostrarValor(persona.Key.Auxiliar)</td>
+                                                    <td class="accounting-report-total-label" colspan="@(esPorDocumento ? 4 : 5)">Subtotal @MostrarValor(persona.Key.Auxiliar)</td>
                                                     <td class="workspace-money-cell">@debePersona.ToString("N2")</td>
                                                     <td class="workspace-money-cell">@haberPersona.ToString("N2")</td>
                                                     <td class="workspace-money-cell">@saldoPersona.ToString("N2")</td>
@@ -398,9 +402,9 @@
 
                     <div class="report-ledger-summary mt-3">
                         <div class="d-flex flex-wrap gap-4 justify-content-end">
-                            <span>Total Debe: <strong>@Model.TotalDebe.ToString("N2")</strong></span>
-                            <span>Total Haber: <strong>@Model.TotalHaber.ToString("N2")</strong></span>
-                            <span>Saldo Final: <strong>@((Model.TotalDebe - Model.TotalHaber).ToString("N2"))</strong></span>
+                            <span><span class="accounting-report-total-label">Total Debe:</span> <strong>@Model.TotalDebe.ToString("N2")</strong></span>
+                            <span><span class="accounting-report-total-label">Total Haber:</span> <strong>@Model.TotalHaber.ToString("N2")</strong></span>
+                            <span><span class="accounting-report-total-label">Saldo Final:</span> <strong>@((Model.TotalDebe - Model.TotalHaber).ToString("N2"))</strong></span>
                         </div>
                     </div>
                 </section>
