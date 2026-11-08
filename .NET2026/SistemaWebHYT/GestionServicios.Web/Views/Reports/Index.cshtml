@@ -1,30 +1,30 @@
-@{ViewData["Wide"]=true;}
+@* Firma: FRANCO LARA - 07/11/2026 | Acciones visibles según los permisos del perfil. *@
+@* Firma: FRANCO LARA - 03/11/2026 | Reporte HTML con totales por moneda. *@
+@* Firma: FRANCO LARA - 05/11/2026 | Listado al ancho disponible y acciones HYT. *@
+@* Firma: FRANCO LARA - 06/11/2026 | Dos reportes integrales, estados y pendientes con búsqueda única; impresión completa horizontal con filtros. *@
 @using GestionServicios.Application.Reporting
-@using GestionServicios.Application.Budgets
 @using GestionServicios.Web.ViewModels.Reporting
 @using GestionServicios.Web.Security
+@using GestionServicios.Web.ViewModels.Budgets
 @model ReportModel
-@* Firma: FRANCO LARA - 03/11/2026 | Reporte HTML con cohorte, filas paginadas y totales completos por moneda. *@
-@{ViewData["Title"]=ReportKinds.All[Model.Kind];var data=Model.Data;}
-@* Firma: FRANCO LARA - 05/11/2026 | Filtros comerciales conservados en consulta, paginación e impresión; Listado al ancho disponible y acciones uniformes; Acciones presentadas como botones HYT. *@
-<link rel="stylesheet" href="~/hyt-reports.css" asp-append-version="true" /><div class="hyt-report">
-<header class="hyt-page-header"><div><h1>@ReportKinds.All[Model.Kind]</h1><p>Registros del @Model.From.ToString("dd/MM/yyyy") al @Model.To.ToString("dd/MM/yyyy"). Estado actual de los documentos registrados en ese período.</p></div><button type="button" class="hyt-button-secondary" data-report-print>Imprimir esta página</button></header>
-<form asp-action="Index" method="get" class="hyt-filters"><div class="hyt-field"><label for="report-kind">Reporte</label><select id="report-kind" name="kind">
-@foreach(var option in ReportKinds.All){if(User.HasClaim(AccessService.PermissionClaim,option.Key=="GANADOS"?"PRESUPUESTOS.CONSULTAR":"OC_CLIENTE.CONSULTAR")){<option value="@option.Key" selected="@(option.Key==Model.Kind)">@option.Value</option>}}
-</select></div><partial name="_DatePicker" model="@(new DatePickerModel("from","Desde",Model.From))" /><partial name="_DatePicker" model="@(new DatePickerModel("to","Hasta",Model.To))" /><div class="hyt-field"><label for="report-client">Cliente (nombre)</label><input id="report-client" name="client" value="@Model.Client" maxlength="200" /></div><div class="hyt-field"><label for="report-store">Tienda (nombre)</label><input id="report-store" name="store" value="@Model.Store" maxlength="200" /></div><div class="hyt-field"><label for="report-situation">Seguimiento de OC</label><select id="report-situation" name="situation"><option value="">Todos</option>@foreach(var choice in new[]{(Code:"SIN_CONFIRMAR",Label:"Sin confirmar"),(Code:"CONFIRMADAS",Label:"Confirmadas sin marcado"),(Code:"LISTAS",Label:"Listas para marcar"),(Code:"FACTURADAS",Label:"Marcadas Facturado")}){<option value="@choice.Code" selected="@(choice.Code==Model.Situation)">@choice.Label</option>}</select></div><button type="submit" class="hyt-button-primary">Consultar</button></form>
-<p>Cliente: @(Model.Client??"Todos") · Tienda: @(Model.Store??"Todas") · Seguimiento: @(Model.Situation is not null?ReportSituations.All[Model.Situation]:"Todos")</p>
-<section class="hyt-panel hyt-master-trace" aria-label="Totales del reporte"><h2>Totales de la consulta</h2><p>@data.Total documentos. Los totales incluyen todas las páginas; los reportes son categorías superpuestas y no deben sumarse entre sí.</p>
-@foreach(var amount in data.Amounts){<p><strong>@amount.Currency @ReportingDates.Number(amount.Amount)</strong> · @amount.Count documentos</p>}
-@if(data.Total==0){<p>No se encontraron documentos para este período.</p>}
-</section>
-<section class="hyt-panel"><div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Detalle del reporte"><table class="hyt-table"><caption class="hyt-sr-only">Detalle de @ReportKinds.All[Model.Kind]</caption><thead><tr class="hyt-report-context"><th colspan="10">@ReportKinds.All[Model.Kind] · Registro: @Model.From.ToString("dd/MM/yyyy") – @Model.To.ToString("dd/MM/yyyy") · Seguimiento: @(Model.Situation is not null?ReportSituations.All[Model.Situation]:"Todos") · Página del sistema @data.Page</th></tr><tr><th>Registro</th><th>OC cliente</th><th>Fecha de registro</th><th>Cliente</th><th>Tienda</th><th>Moneda</th><th>Importe</th><th>Estado</th><th>Guía / acta</th><th>Seguimiento</th></tr></thead><tbody>
-@foreach(var row in data.Rows)
-{
-var id=row.GetProperty("Id").GetInt64();var total=row.GetProperty("Total");
-<tr><td>@if(Model.Kind=="GANADOS"){<a class="hyt-button-secondary hyt-action-button" asp-controller="Budget" asp-action="Details" asp-route-id="@id">@BudgetRecord.Text(row,"Numero")</a>}else{<a class="hyt-button-secondary hyt-action-button" asp-controller="Followup" asp-action="Details" asp-route-kind="oc-cliente" asp-route-id="@id">@BudgetRecord.Text(row,"Numero")</a>}</td>
-<td>@BudgetRecord.Text(row,"NumeroCliente")</td><td>@(DateTimeOffset.TryParse(BudgetRecord.Text(row,"FechaRegistro"),System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.AssumeUniversal,out var date)?PeruDate.Display(date):"—")</td><td>@BudgetRecord.Text(row,"ClienteNombre")</td><td>@BudgetRecord.Text(row,"TiendaNombre")</td><td>@BudgetRecord.Text(row,"CodigoMoneda")</td><td>@ReportingDates.Number(total.ValueKind==System.Text.Json.JsonValueKind.Null?null:total.GetDecimal())</td><td>@BudgetRecord.Text(row,"Estado")</td><td>@BudgetRecord.Text(row,"Guia")</td><td>@BudgetRecord.Text(row,"Situacion")</td></tr>
-}
-@if(data.Rows.Count==0){<tr><td colspan="10" class="hyt-grid-message">Sin registros para los filtros seleccionados.</td></tr>}
-</tbody></table></div><footer class="hyt-pagination"><span>@data.Total registros · Página @data.Page · 20 por página</span><nav aria-label="Páginas del reporte">@if(data.Page>1){<a class="hyt-button-secondary hyt-action-button" asp-route-kind="@Model.Kind" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")" asp-route-situation="@Model.Situation" asp-route-client="@Model.Client" asp-route-store="@Model.Store" asp-route-page="@(data.Page-1)">Anterior</a>}@if((long)data.Page*20<data.Total){<a class="hyt-button-secondary hyt-action-button" asp-route-kind="@Model.Kind" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")" asp-route-situation="@Model.Situation" asp-route-client="@Model.Client" asp-route-store="@Model.Store" asp-route-page="@(data.Page+1)">Siguiente</a>}</nav></footer></section>
+@{ViewData["Wide"]=true;ViewData["Title"]="Reportes";var f=Model.Filters??new ReportFilter();var budget=Model.Kind=="PRESUPUESTO";var query=ReportDisplay.Query(Model);}
+<link rel="stylesheet" href="~/hyt-reports.css" asp-append-version="true" />
+<div class="hyt-report">
+<header class="hyt-page-header"><div><h1>Reportes</h1><p>Consulta el expediente completo y sus documentos relacionados.</p></div>@if (User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "REPORTES.IMPRIMIR")) { <a class="hyt-button-primary" href="@("/Reportes/Imprimir?"+ReportDisplay.QueryString(Model))" target="_blank" rel="noopener">Imprimir reporte completo</a> }</header>
+<form action="/Reportes" method="get" class="hyt-filters" data-report-filters>
+<div class="hyt-field"><label for="report-kind">Reporte</label><select id="report-kind" name="kind">@foreach(var option in ReportKinds.All){if(User.HasClaim(AccessService.PermissionClaim,option.Key=="PRESUPUESTO"?"PRESUPUESTOS.CONSULTAR":"OC_CLIENTE.CONSULTAR")){<option value="@option.Key" selected="@(option.Key==Model.Kind)">@option.Value</option>}}</select></div>
+<div class="hyt-field"><label for="report-search">Buscar</label><input id="report-search" name="search" value="@f.Search" maxlength="200" placeholder="Número, cliente, tienda o referencia" /></div>
+<partial name="_DatePicker" model="@(new DatePickerModel("from","Desde",Model.From))" /><partial name="_DatePicker" model="@(new DatePickerModel("to","Hasta",Model.To))" />
+<div class="hyt-field"><label for="report-state">Estado de @(budget?"presupuesto":"OC cliente")</label><select id="report-state" name="state"><option value="">Todos</option>@foreach(var option in ReportDisplay.States(Model.Kind)){<option value="@option.Key" selected="@(option.Key==f.State)">@option.Value</option>}</select></div>
+<div class="hyt-field"><label for="report-type">Tipo de atención</label><select id="report-type" name="type"><option value="">Todos</option><option value="INVITACION" selected="@(f.Type=="INVITACION")">Invitación</option><option value="EMERGENCIA" selected="@(f.Type=="EMERGENCIA")">Emergencia</option></select></div>
+<div class="hyt-filter-checks">
+@if(User.HasClaim(AccessService.PermissionClaim,"GUIAS.CONSULTAR")){<label><input type="checkbox" name="pendingGuide" value="true" checked="@f.PendingGuide" />Pendiente de guía</label>}
+@if(budget&&User.HasClaim(AccessService.PermissionClaim,"OC_CLIENTE.CONSULTAR")){<label><input type="checkbox" name="pendingOrder" value="true" checked="@f.PendingOrder" />Pendiente de OC del cliente</label>}
+@if(!budget&&User.HasClaim(AccessService.PermissionClaim,"CONFIRMACIONES.CONSULTAR")){<label><input type="checkbox" name="pendingConfirmation" value="true" checked="@f.PendingConfirmation" />Pendiente de confirmación del cliente</label>}
+@if(!budget&&User.HasClaim(AccessService.PermissionClaim,"FACTURADO.CONSULTAR")){<label><input type="checkbox" name="pendingInvoice" value="true" checked="@f.PendingInvoice" />Pendiente de facturar</label>}
+</div><div class="hyt-filters-actions"><button type="submit" class="hyt-button-primary">Consultar</button><a class="hyt-button-secondary" href="/Reportes?kind=@Model.Kind">Restablecer</a></div>
+</form>
+<partial name="_Results" model="Model" />
+<nav class="hyt-pagination" aria-label="Páginas del reporte"><span>@Model.Data.Total registros · Página @Model.Data.Page · 20 por página</span><div>@if(Model.Data.Page>1){<a class="hyt-button-secondary" href="@("/Reportes?"+ReportDisplay.QueryString(Model,Model.Data.Page-1))">Anterior</a>}@if((long)Model.Data.Page*20<Model.Data.Total){<a class="hyt-button-secondary" href="@("/Reportes?"+ReportDisplay.QueryString(Model,Model.Data.Page+1))">Siguiente</a>}</div></nav>
 </div>
 @section Scripts{<script src="~/hyt-reports.js" asp-append-version="true" defer></script>}

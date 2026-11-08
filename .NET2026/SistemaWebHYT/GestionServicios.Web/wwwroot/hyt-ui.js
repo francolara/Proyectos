@@ -1,3 +1,4 @@
+// Firma: FRANCO LARA - 06/11/2026 | Ignora cancelaciones propagadas del selector de archivos; solo el diálogo puede solicitar su cierre.
 // Firma: FRANCO LARA - 03/11/2026 | Popup compartido y registro único de eventos aunque se importe con distintas URL de versión.
 // Firma: FRANCO LARA - 05/11/2026 | Unifica espera y bloqueo de envíos en el runtime común y protege el cierre de formularios dinámicos ocupados.
 const runtimeKey = Symbol.for('hyt.ui.runtime');
@@ -12,6 +13,7 @@ export function setDialog(element, open, busy = false, onClose = null) {
             if(event.key==='Escape' && (state.busy||element.querySelector('[data-hyt-submitting=true]'))){event.preventDefault();event.stopPropagation();}
         },true);
         element.addEventListener('cancel', event => {
+            if(event.target!==element)return;
             event.preventDefault();
             if(!state.busy&&!element.querySelector('[data-hyt-submitting=true]')) state.onClose ? state.onClose() : setDialog(element,false);
         });

@@ -3,5 +3,5 @@ public sealed record DocumentAttachment(string NombreOriginal,string ClaveAlmace
 public sealed record DocumentFile(long Id,DocumentAttachment Metadata);
 public interface IDocumentFileRepository
 {
-    Task<DocumentFile?> GetAsync(DocumentKind kind,string actor,long fileId,CancellationToken ct);
+    Task<DocumentFile?> GetAsync(DocumentKind kind,string actor,long fileId,CancellationToken ct,bool download=false);
 }

@@ -8,6 +8,7 @@ public sealed class AccessService(IAccessRepository repository, IPasswordHasher<
 {
     public const string StampClaim = "hyt:stamp";
     public const string PermissionClaim = "hyt:permission";
+    public const string MandatoryPasswordClaim = "hyt:change-password";
     private static readonly AccessAccount Dummy = new("", "", "", null, "", false, null, [], []);
     private readonly string dummyHash = hasher.HashPassword(Dummy, Guid.NewGuid().ToString("N"));
 
@@ -37,6 +38,11 @@ public sealed class AccessService(IAccessRepository repository, IPasswordHasher<
             new(StampClaim, account.SecurityStamp),
             new("hyt:expires", expiresUtcTicks.ToString(System.Globalization.CultureInfo.InvariantCulture))
         };
+        if (account.MustChangePassword)
+        {
+            claims.Add(new(MandatoryPasswordClaim, "true"));
+            return new(new ClaimsIdentity(claims, "HytCookie"));
+        }
         claims.AddRange(account.Roles.Select(role => new Claim(ClaimTypes.Role, role)));
         claims.AddRange(account.Permissions.Select(permission => new Claim(PermissionClaim, permission)));
         return new(new ClaimsIdentity(claims, "HytCookie"));

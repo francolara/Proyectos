@@ -1,0 +1,12 @@
+@* Firma: FRANCO LARA - 07/11/2026 | Administración de acceso y trazabilidad HYT. *@
+@using GestionServicios.Web.ViewModels.Security
+@model System.Text.Json.JsonElement
+<section class="hyt-trace-summary" aria-label="Fechas y responsables">
+    <h2>Fechas y responsables</h2>
+    <dl>
+        <div><dt>Usuario de registro</dt><dd>@Model.Text("UsuarioRegistro")</dd></div>
+        <div><dt>Fecha de registro</dt><dd>@Model.Date("FechaRegistro")</dd></div>
+        <div><dt>Usuario de actualización</dt><dd>@Model.Text("UsuarioActualizacion", "Sin actualizaciones")</dd></div>
+        <div><dt>Fecha de actualización</dt><dd>@Model.Date("FechaActualizacion", "Sin actualizaciones")</dd></div>
+    </dl>
+</section>

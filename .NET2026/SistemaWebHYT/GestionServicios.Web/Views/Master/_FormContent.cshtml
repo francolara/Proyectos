@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 07/11/2026 | Acciones visibles según los permisos del perfil. *@
 @using GestionServicios.Web.ViewModels.Maintenance
 @using GestionServicios.Application.Maintenance
 @using System.Globalization
@@ -26,7 +27,9 @@
     var clientField=Model.Entity.Key=="clientes";
     var inactive=clientField && (field.Name=="RazonSocial" && clientType!="JURIDICA" || field.Name is "Nombres" or "Apellidos" && clientType!="NATURAL");
     var required=field.Required || clientField && !inactive && field.Name is "RazonSocial" or "Nombres" or "Apellidos";
-    var disabled = Model.ReadOnly || field.Kind is "ReadOnly" or "AutoCode" || field.Name=="MaterialId"&&Model.Input.MaterialContextId.HasValue || Model.Input.Id.HasValue && field.Name == Model.Entity.ParentField;
+    var activationLocked = field.Name == "Activo" && Model.Input.Id.HasValue &&
+        !User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, Model.Entity.Permission + ".ACTIVAR");
+    var disabled = activationLocked || Model.ReadOnly || field.Kind is "ReadOnly" or "AutoCode" || field.Name=="MaterialId"&&Model.Input.MaterialContextId.HasValue || Model.Input.Id.HasValue && field.Name == Model.Entity.ParentField;
     <div class="hyt-field @(field.Kind is "LongText" or "Ubigeo"?"hyt-field-wide":null)" data-field="@field.Name">@if (field.Kind != "Date") { <label for="field-@field.Name">@field.Label @(required ? "*" : "")</label> }
     @if (field.Kind == "Reference")
     {
@@ -54,6 +57,7 @@
     }
     else if (field.Kind == "Boolean")
     {
+        @if (activationLocked && !Model.ReadOnly) { <input type="hidden" name="Fields[@field.Name]" value="@value" /> }
         <select id="field-@field.Name" name="Fields[@field.Name]" disabled="@disabled"><option value="true" selected="@(value.Equals("true", StringComparison.OrdinalIgnoreCase))">Sí</option><option value="false" selected="@(value.Equals("false", StringComparison.OrdinalIgnoreCase))">No</option></select>
     }
     else if (field.Kind == "Date")
@@ -91,10 +95,12 @@
     @foreach (var related in MaintenanceDefinitions.All.Where(item => item.Key != "proveedor-cliente" && item.ParentField == (Model.Entity.Key switch { "clientes" => "ClienteId", "tarifarios" => "TarifarioId", "versiones-tarifario" => "VersionId", _ => "" })))
     { <a class="hyt-button-secondary" asp-action="Index" asp-route-entity="@related.Key" asp-route-parentId="@record.Id">@related.Title</a> }
     </nav>}
-    @if (Model.Entity.Key == "versiones-tarifario" && Model.ReadOnly && User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "TARIFARIOS.EDITAR"))
+    var canPublish = User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "TARIFARIOS.MODIFICAR") && record.Text("Estado") == "BORRADOR";
+    var canClone = User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "TARIFARIOS.CREAR");
+    @if (Model.Entity.Key == "versiones-tarifario" && Model.ReadOnly && (canPublish || canClone))
     {
         <section class="hyt-panel hyt-master-trace"><h2>Acciones de versión</h2>
-        @if (record.Text("Estado") == "BORRADOR")
+        @if (canPublish)
         {
             <form method="post" asp-action="Publish" asp-route-entity="@Model.Entity.Key" asp-route-id="@record.Id" data-hyt-save>
             <input type="hidden" name="compact" value="@Model.Input.Compact.ToString().ToLowerInvariant()" /><input type="hidden" name="materialId" value="@Model.Input.MaterialContextId" /><input type="hidden" name="rowVersion" value="@Model.Input.RowVersion" /><input type="hidden" name="returnUrl" value="@Model.Input.ReturnUrl" />
@@ -102,11 +108,15 @@
             <label><input type="checkbox" name="confirmed" value="true" required /> Confirmo que la versión está lista para publicar.</label>
             <p><button type="submit" class="hyt-button-primary">Publicar versión</button></p></form>
         }
+        @if (canClone)
+        {
         <form method="post" asp-action="Clone" asp-route-entity="@Model.Entity.Key" asp-route-id="@record.Id" data-hyt-save>
         <input type="hidden" name="compact" value="@Model.Input.Compact.ToString().ToLowerInvariant()" /><input type="hidden" name="materialId" value="@Model.Input.MaterialContextId" /><input type="hidden" name="rowVersion" value="@Model.Input.RowVersion" /><input type="hidden" name="returnUrl" value="@Model.Input.ReturnUrl" />
         <p>La copia crea un nuevo borrador con los mismos valores, precios y zonas. Revisa las fechas de vigencia del nuevo borrador.</p>
         <label><input type="checkbox" name="confirmed" value="true" required /> Confirmo la creación de una nueva versión.</label>
-        <p><button type="submit" class="hyt-button-secondary">Copiar a nueva versión</button></p></form></section>
+        <p><button type="submit" class="hyt-button-secondary">Copiar a nueva versión</button></p></form>
+        }
+        </section>
     }
 
 }

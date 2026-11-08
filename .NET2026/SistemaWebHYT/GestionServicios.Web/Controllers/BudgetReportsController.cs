@@ -1,3 +1,4 @@
+using GestionServicios.Web.Security;
 using System.Security.Claims;
 using System.Text;
 using GestionServicios.Application.Budgets;
@@ -15,7 +16,7 @@ namespace GestionServicios.Web.Controllers;
 public sealed class BudgetReportsController(IBudgetRepository budgets,IBudgetPrintRepository prints,BudgetPrintRenderer renderer):Controller
 {
     private string Actor=>User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-    [HttpPost("Generar")]
+    [HttpPost("Generar"), Authorize(Policy = "perm:PRESUPUESTOS.IMPRIMIR")]
     public async Task<IActionResult> Generate(long budgetId,long revisionId,string format,string? version,CancellationToken ct)
     {
         if(budgetId<=0||revisionId<=0||format is not ("ANTERIOR" or "NUEVO"))return BadRequest("Formato no válido.");
@@ -34,8 +35,9 @@ public sealed class BudgetReportsController(IBudgetRepository budgets,IBudgetPri
     [HttpGet("{id:long}")]
     public async Task<IActionResult> Document(long id,bool download=false,CancellationToken ct=default)
     {
+        if(download && !User.HasClaim(AccessService.PermissionClaim,"PRESUPUESTOS.DESCARGAR"))return Forbid();
         if(id<=0)return BadRequest();BudgetPrint? document;
-        try{document=await prints.GetAsync(Actor,id,ct);}catch(MaintenanceException error){return Conflict(error.Message);}
+        try{document=await prints.GetAsync(Actor,id,ct,download);}catch(MaintenanceException error){return Conflict(error.Message);}
         if(document is null)return NotFound();
         Response.Headers["Content-Security-Policy"]="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'";
         Response.Headers["X-Content-Type-Options"]="nosniff";

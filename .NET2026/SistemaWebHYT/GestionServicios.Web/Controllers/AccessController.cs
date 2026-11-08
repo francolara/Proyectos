@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 namespace GestionServicios.Web.Controllers;
 // Firma: FRANCO LARA - 03/11/2026 | Acceso y salida MVC con antifalsificación, cookies, Turnstile validado en servidor y auditoría.
+// Firma: FRANCO LARA - 07/11/2026 | Redirige el primer acceso al cambio de contraseña y permite cerrar la sesión restringida.
 // Firma: FRANCO LARA - 05/11/2026 | Respaldo manual validado en servidor ante falta o fallo de Turnstile, sin omitir contraseña ni límites.
 [Authorize]
 public sealed class AccessController(AccessService access, IAccessRepository repository, ITurnstileVerifier turnstile, ManualCaptchaService captcha, TimeProvider clock, ILogger<AccessController> logger) : Controller
@@ -33,6 +34,7 @@ public sealed class AccessController(AccessService access, IAccessRepository rep
                 var properties = new AuthenticationProperties { IsPersistent = false, AllowRefresh = true };
                 properties.Items["hyt:created"] = clock.GetUtcNow().UtcTicks.ToString(CultureInfo.InvariantCulture);
                 await HttpContext.SignInAsync("HytCookie", AccessService.Principal(result.Account, clock.GetUtcNow().AddHours(8).UtcTicks), properties);
+                if (result.Account.MustChangePassword) return LocalRedirect("/Cuenta/CambiarClave");
                 return LocalRedirect(Url.IsLocalUrl(model.ReturnUrl) ? model.ReturnUrl! : "/");
             }
             ModelState.AddModelError("", "No se pudo iniciar sesión. Revisa tus datos o consulta con tu administrador.");
@@ -60,9 +62,9 @@ public sealed class AccessController(AccessService access, IAccessRepository rep
         var svg=captcha.Image(HttpContext,id);
         return svg is null?NotFound():Content(svg,"image/svg+xml; charset=utf-8");
     }
-    [HttpGet("/Salir")]
+    [PasswordChangeAllowed, HttpGet("/Salir")]
     public IActionResult Logout() => View();
-    [HttpPost("/Salir"), ActionName(nameof(Logout))]
+    [PasswordChangeAllowed, HttpPost("/Salir"), ActionName(nameof(Logout))]
     public async Task<IActionResult> LogoutConfirmed(CancellationToken cancellationToken)
     {
         try

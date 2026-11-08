@@ -3,10 +3,11 @@
 -- Create date:   03/11/2026
 -- Description:   Recupera un adjunto vigente solo con permiso del documento vinculado.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 07/11/2026 | Comprueba el permiso de descarga al solicitar el adjunto como archivo.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_Seguimiento_ObtenerArchivo
-    @UsuarioId NVARCHAR(128),@Tipo NVARCHAR(20),@ArchivoId BIGINT
+    @UsuarioId NVARCHAR(128),@Tipo NVARCHAR(20),@ArchivoId BIGINT, @Descargar BIT=0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -15,6 +16,8 @@ BEGIN
         IF @Permiso IS NULL OR NOT EXISTS(SELECT 1 FROM dbo.AspNetUsers AS usuario INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId=usuario.Id
             INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId WHERE usuario.Id=@UsuarioId AND usuario.Activo=1 AND permiso.CodigoPermiso=@Permiso)
             THROW 51400,N'[HYT_PERMISO] No tiene permiso para consultar este archivo.',1;
+        IF @Descargar=1 AND dbo.fn_HYTPermiso(@UsuarioId,REPLACE(@Permiso,N'.CONSULTAR',N'.DESCARGAR'))=0
+            THROW 51700,N'[HYT_PERMISO] No tiene permiso para descargar este archivo.',1;
         SELECT archivo.ArchivoId,archivo.NombreOriginal,archivo.ClaveAlmacenamiento,archivo.TipoContenido,archivo.TamanoBytes,archivo.SHA256
         FROM dbo.ArchivoAdjunto AS archivo WHERE archivo.ArchivoId=@ArchivoId AND archivo.Retirado=0
           AND ((@Tipo=N'OC' AND EXISTS(SELECT 1 FROM dbo.OrdenCompraArchivo AS vinculo WHERE vinculo.ArchivoId=archivo.ArchivoId))

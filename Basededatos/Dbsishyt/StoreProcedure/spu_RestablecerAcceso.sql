@@ -3,6 +3,7 @@
 -- Create date:   03/11/2026
 -- Description:   Restablecimiento administrativo con hash, sello nuevo y auditoria.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 07/11/2026 | El restablecimiento administrativo exige cambio en el próximo ingreso.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_RestablecerAcceso
@@ -26,7 +27,7 @@ BEGIN
             SELECT 1 FROM dbo.AspNetUsers AS usuario
             INNER JOIN dbo.AspNetUserRoles AS asignacion ON asignacion.UserId = usuario.Id
             INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId = asignacion.RoleId
-            WHERE usuario.Id = @ActorId AND usuario.Activo = 1 AND permiso.CodigoPermiso = N'USUARIOS.EDITAR'
+            WHERE usuario.Id = @ActorId AND usuario.Activo = 1 AND permiso.CodigoPermiso = N'USUARIOS.RESTABLECER'
         )
             THROW 51107, N'Actor sin permiso para restablecer acceso.', 1;
         BEGIN TRANSACTION;
@@ -37,7 +38,7 @@ BEGIN
         IF @UsuarioId IS NULL THROW 51108, N'Usuario no encontrado.', 1;
         UPDATE dbo.AspNetUsers SET PasswordHash = @PasswordHash, SecurityStamp = @SecurityStamp,
             ConcurrencyStamp = CONVERT(NVARCHAR(36), NEWID()), AccessFailedCount = 0, LockoutEnd = NULL,
-            FechaActualizacion = SYSUTCDATETIME() WHERE Id = @UsuarioId;
+            DebeCambiarClave = 1, UsuarioActualizacion = @ActorId, FechaActualizacion = SYSUTCDATETIME() WHERE Id = @UsuarioId;
         DECLARE @Detalle NVARCHAR(MAX) = (SELECT @UsuarioId AS UsuarioAfectado, ORIGINAL_LOGIN() AS LoginDespliegue FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
         EXEC dbo.spu_RegistrarAuditoria @ActorId, @CorrelacionId, N'AspNetUsers', @UsuarioId,
             N'RESTABLECER_ACCESO', NULL, NULL, NULL, @Motivo, @Detalle;

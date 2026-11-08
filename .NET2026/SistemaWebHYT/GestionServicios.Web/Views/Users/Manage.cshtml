@@ -1,0 +1,16 @@
+@* Firma: FRANCO LARA - 07/11/2026 | Administración de acceso y trazabilidad HYT. *@
+@using GestionServicios.Web.ViewModels.Security
+@model UserActionModel
+@{ ViewData["Title"] = SecurityDisplay.Action("USUARIO_" + Model.Action); }
+<header class="hyt-page-header"><div><h1>@ViewData["Title"]</h1><p>@Model.Name · @Model.Email</p></div></header>
+<form class="hyt-panel hyt-master-form" method="post" asp-action="Manage" asp-route-id="@Model.Id" asp-route-actionCode="@Model.Action">
+    <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+    <input type="hidden" name="Version" value="@Model.Input.Version" />
+    @if (Model.Action == "RESTABLECER") { <partial name="_TemporaryPasswordInput" model="Model.Input.TemporaryPassword" /> }
+    <div class="hyt-field"><label for="reason">Motivo</label><textarea id="reason" name="Reason" rows="3" maxlength="1000" required>@Model.Input.Reason</textarea></div>
+    <div class="hyt-master-related">
+        <button type="submit" class="hyt-button-primary">@ViewData["Title"]</button>
+        <a class="hyt-button-secondary" asp-action="Detail" asp-route-id="@Model.Id">Cancelar</a>
+    </div>
+</form>
+@section Scripts { <script src="~/hyt-security.js" asp-append-version="true" defer></script> }

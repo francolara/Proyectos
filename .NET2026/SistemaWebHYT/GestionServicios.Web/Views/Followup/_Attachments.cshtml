@@ -1,3 +1,5 @@
+@* Firma: FRANCO LARA - 07/11/2026 | Acciones visibles según los permisos del perfil. *@
+@* Firma: FRANCO LARA - 06/11/2026 | Fecha de carga explícita para consulta de adjuntos en pop-up; sin retiro de archivos en modo consulta. *@
 @using System.Text.Json
 @using GestionServicios.Application.Budgets
 @using GestionServicios.Web.ViewModels.Followup
@@ -15,10 +17,13 @@
     else
     {
         <a class="hyt-button-secondary hyt-action-button" asp-controller="Followup" asp-action="FileDocument" asp-route-kind="@Model.Kind.Key" asp-route-fileId="@id" target="_blank" rel="noopener">Visualizar</a>
+        @if (User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, Model.Kind.Permission + ".DESCARGAR"))
+        {
         <a class="hyt-button-secondary hyt-action-button" asp-controller="Followup" asp-action="FileDocument" asp-route-kind="@Model.Kind.Key" asp-route-fileId="@id" asp-route-download="true">Descargar</a>
-        @if(Model.Input.Id.HasValue){<label><input type="checkbox" name="RemovedFiles" value="@id" checked="@Model.Input.RemovedFiles.Contains(id)" /> Retirar archivo</label>}
+        }
+        @if(Model.Input.Id.HasValue&&!Model.ReadOnly){<label><input type="checkbox" name="RemovedFiles" value="@id" checked="@Model.Input.RemovedFiles.Contains(id)" /> Retirar archivo</label>}
     }
-    <small>@DocumentDetailsModel.Display(attachment,"FechaRegistro") · @BudgetRecord.Text(attachment,"UsuarioRegistro")</small></li>
+    <small>Fecha de carga: @DocumentDetailsModel.Display(attachment,"FechaRegistro") · @BudgetRecord.Text(attachment,"UsuarioRegistro")</small></li>
 }
 </ul></section>
 }

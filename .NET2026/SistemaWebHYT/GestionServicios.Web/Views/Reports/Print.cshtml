@@ -1,0 +1,8 @@
+@* Firma: FRANCO LARA - 06/11/2026 | HTML autónomo horizontal de todos los resultados, logo HYT y filtros aplicados. *@
+@using GestionServicios.Web.ViewModels.Reporting
+@using GestionServicios.Application.Reporting
+@model ReportModel
+@{Layout=null;}
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>@ReportKinds.All[Model.Kind] | HYT</title><link rel="stylesheet" href="~/hyt-reports.css" asp-append-version="true" /></head><body class="hyt-report-print">
+<nav class="hyt-print-toolbar"><button type="button" onclick="window.print()">Imprimir / Guardar PDF</button><span>Reporte completo · Orientación horizontal</span></nav>
+<main class="hyt-report"><header class="hyt-report-brand"><img src="/images/logo-hyt.png" alt="HYT Servicios Generales" /><div><h1>H Y T Servicios Generales E.I.R.L.</h1><p>Reporte de gestión · @ReportKinds.All[Model.Kind]</p></div></header><partial name="_Results" model="Model" /><footer class="hyt-report-footer">HYT · Todos los resultados de los filtros indicados. Importes separados por moneda.</footer></main></body></html>

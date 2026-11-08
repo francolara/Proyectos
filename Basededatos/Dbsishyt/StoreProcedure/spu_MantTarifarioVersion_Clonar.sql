@@ -3,6 +3,7 @@
 -- Create date:   03/11/2026
 -- Description:   Copia valores y partidas a nuevo borrador con auditoría y concurrencia.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 07/11/2026 | Comprueba el permiso específico del perfil antes de realizar la acción.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_MantTarifarioVersion_Clonar
@@ -13,6 +14,8 @@ BEGIN
     SET XACT_ABORT ON;
     DECLARE @Propia BIT = 0;
     BEGIN TRY
+        IF dbo.fn_HYTPermiso(@UsuarioId,N'TARIFARIOS.CREAR') = 0
+            THROW 51700,N'[HYT_PERMISO] No tiene permiso para esta acción.',1;
         IF NOT EXISTS
         (
             SELECT 1 FROM dbo.AspNetUsers AS usuario

@@ -1,4 +1,4 @@
-// Firma: FRANCO LARA - 06/11/2026 | Consulta de tarifas genéricas con cliente pendiente; cambio de moneda automático en detalle neto.
+// Firma: FRANCO LARA - 06/11/2026 | Consulta de tarifas genéricas con cliente pendiente; cambio de moneda automático en detalle neto. Estados desde listado, nombres comerciales y edición de observados. Botón y columna documental identificados como Guía. Botones documentales con borde rojo cuando existen y acceso directo al detalle/adjuntos. Columna Revisión retirada del listado de presupuestos. OC registrada abre el mismo pop-up de edición que su listado, con retorno a presupuestos. KPI SQL por estado, tipo y pendientes; sin filtros visibles separados de cliente/tienda. Guía abre consulta compartida en popup; Ejecución abre ficha de registro/edición sin pantalla antigua de estados.
 using System.Globalization;
 using System.Security.Claims;
 using System.Text.Json;
@@ -19,7 +19,8 @@ namespace GestionServicios.Web.Controllers;
 public sealed class BudgetController(IBudgetRepository repository,TimeProvider clock):Controller
 {
     private string Actor=>User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-    private bool CanEdit=>User.HasClaim(AccessService.PermissionClaim,"PRESUPUESTOS.EDITAR");
+    private bool CanEdit => Has("PRESUPUESTOS.MODIFICAR");
+    private bool Has(string permission) => User.HasClaim(AccessService.PermissionClaim, permission);
     private static readonly TimeZoneInfo Lima=TimeZoneInfo.FindSystemTimeZoneById("America/Lima");
     private DateOnly Today=>DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.GetUtcNow(),Lima).DateTime);
     private string Back(string? url)=>Url.IsLocalUrl(url)?url!:Url.Action(nameof(Index))!;
@@ -27,26 +28,27 @@ public sealed class BudgetController(IBudgetRepository repository,TimeProvider c
     private static string Money(decimal? amount)=>amount?.ToString("N2",CultureInfo.GetCultureInfo("es-PE"))??"Precio pendiente";
 
     [HttpGet("")]
-    public async Task<IActionResult> Index(string? search,DateOnly? from,DateOnly? to,int page=1,string? client=null,string? store=null,string? state=null,CancellationToken ct=default)
+    public async Task<IActionResult> Index(string? search,DateOnly? from,DateOnly? to,int page=1,string? client=null,string? store=null,string? state=null,string? type=null,bool pendingGuide=false,bool pendingOrder=false,CancellationToken ct=default)
     {
         var first=from??Today.AddMonths(-1);var last=to??Today;
-        if(!ModelState.IsValid||(state is not (null or "BORRADOR" or "ENVIADO" or "OBSERVADO" or "APROBADO" or "RECHAZADO" or "VENCIDO" or "CANCELADO"))||client?.Length>200||store?.Length>200||state?.Length>40||page is <1 or >100000000||search?.Length>200||first>last||last==DateOnly.MaxValue)return BadRequest("Revisa los filtros.");
+        if(type is not (null or "INVITACION" or "EMERGENCIA"))return BadRequest("Tipo de atención no válido.");
+        if(!ModelState.IsValid||(state is not (null or "BORRADOR" or "ENVIADO" or "OBSERVADO" or "APROBADO" or "RECHAZADO" or "CANCELADO"))||client?.Length>200||store?.Length>200||state?.Length>40||page is <1 or >100000000||search?.Length>200||first>last||last==DateOnly.MaxValue)return BadRequest("Revisa los filtros.");
         var start=new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(first.ToDateTime(TimeOnly.MinValue),Lima));
         var end=new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(last.AddDays(1).ToDateTime(TimeOnly.MinValue),Lima));
-        var data=await repository.ListAsync(Actor,start,end,search,page,state,ct,client,store);
-        var returnUrl=Url.Action(nameof(Index),new {search,client,store,state,from=first.ToString("yyyy-MM-dd"),to=last.ToString("yyyy-MM-dd"),page})!;
+        var data=await repository.ListAsync(Actor,start,end,search,page,state,ct,client,store,type,pendingGuide,pendingOrder);
+        var returnUrl=Url.Action(nameof(Index),new {search,client,store,state,type,pendingGuide,pendingOrder,from=first.ToString("yyyy-MM-dd"),to=last.ToString("yyyy-MM-dd"),page})!;
         return View(new BudgetListModel(new GridModel
         {
             Label="Presupuestos",Controller="Budget",Page=page,TotalRecords=data.Total,
-            Headers=["Presupuesto","Revisión","Cliente / tienda","Tipo","Estado","Moneda","Total","OC cliente","Guia (Acta de conformidad)","Registro","Registrado por","Actualización","Actualizado por","Aprobación"],
-            Rows=data.Rows.Select(row=>new GridRow(row.BudgetId.ToString(),[row.Number,row.RevisionNumber.ToString(),row.ClientName+" / "+row.StoreName,row.Type,row.State,row.Currency,Money(row.Total),row.CustomerOrderNumber??"Sin OC",row.GuideNumber??"Sin guía",
-                PeruDate.Display(row.CreatedAt),row.CreatedBy,row.UpdatedAt.HasValue?PeruDate.Display(row.UpdatedAt.Value):"—",row.UpdatedBy??"—",row.ApprovedOn?.ToString("dd/MM/yyyy")??"—"],true,CanEdit&&row.State=="BORRADOR"&&!row.PurchaseOrderId.HasValue,DocumentActions(row,returnUrl))).ToArray(),
-            Query=new() { ["client"]=client??"",["store"]=store??"",["state"]=state??"",["search"]=search??"",["from"]=first.ToString("yyyy-MM-dd"),["to"]=last.ToString("yyyy-MM-dd") },RowQuery=new() { ["returnUrl"]=returnUrl }
-        },new FilterModel { Texts=[new("client","Cliente (nombre)",client??""),new("store","Tienda (nombre)",store??"")],Selects=[new("state","Estado",state??"",new[]{new FilterChoice("","Todos"),new("BORRADOR","Borrador"),new("ENVIADO","Enviado"),new("OBSERVADO","Observado"),new("APROBADO","Aprobado"),new("RECHAZADO","Rechazado"),new("VENCIDO","Vencido"),new("CANCELADO","Cancelado")})],Controller="Budget",Search=search??"",WithDates=true,From=first,To=last,Placeholder="Número, descripción, cliente o tienda" },CanEdit));
+            Headers=["Presupuesto","Cliente / tienda","Tipo","Estado","Moneda","Total","OC cliente","Guía","Aceptación"],
+            Rows=data.Rows.Select(row=>new GridRow(row.BudgetId.ToString(),[row.Number,row.ClientName+" / "+row.StoreName,row.Type,BudgetStates.Label(row.State),row.Currency,Money(row.Total),row.CustomerOrderNumber??"Sin OC",row.GuideNumber??"Sin guía",
+                row.ApprovedOn?.ToString("dd/MM/yyyy")??"—"],true,CanEdit&&(row.State is "BORRADOR" or "OBSERVADO")&&!row.PurchaseOrderId.HasValue,DocumentActions(row,returnUrl))).ToArray(),
+            Query=new() { ["type"]=type??"",["pendingGuide"]=pendingGuide.ToString().ToLowerInvariant(),["pendingOrder"]=pendingOrder.ToString().ToLowerInvariant(),["client"]=client??"",["store"]=store??"",["state"]=state??"",["search"]=search??"",["from"]=first.ToString("yyyy-MM-dd"),["to"]=last.ToString("yyyy-MM-dd") },RowQuery=new() { ["returnUrl"]=returnUrl }
+        },new FilterModel { Checks=[new("pendingGuide","Pendiente de guía",pendingGuide),new("pendingOrder","Pendiente de OC del cliente",pendingOrder)],Selects=[new("type","Tipo",type??"",[new("","Todos"),new("INVITACION","Invitación"),new("EMERGENCIA","Emergencia")]),new("state","Estado",state??"",new[]{new FilterChoice("","Todos"),new("BORRADOR","Registrado"),new("ENVIADO","Enviado"),new("OBSERVADO","Observado"),new("APROBADO","Aceptada"),new("RECHAZADO","Rechazada"),new("CANCELADO","Cancelado")})],Controller="Budget",Search=search??"",WithDates=true,From=first,To=last,Placeholder="Número, descripción, cliente o tienda" },Has("PRESUPUESTOS.CREAR"),new[]{"BORRADOR","ENVIADO","OBSERVADO","APROBADO","RECHAZADO","CANCELADO"}.Select(code=>new StateKpi(code,BudgetStates.Label(code),data.StateCounts?.GetValueOrDefault(code)??0)).ToArray()));
     }
 
     [HttpGet("Nuevo")]
-    [Authorize(Policy="perm:PRESUPUESTOS.EDITAR")]
+    [Authorize(Policy="perm:PRESUPUESTOS.CREAR")]
     public async Task<IActionResult> New(string? returnUrl,CancellationToken ct)
     {
         var input=new BudgetInputModel {ReturnUrl=Back(returnUrl)};
@@ -61,10 +63,10 @@ public sealed class BudgetController(IBudgetRepository repository,TimeProvider c
     [HttpGet("{id:long}")]
     public Task<IActionResult> Details(long id,long? revisionId,string? returnUrl,int auditPage=1,CancellationToken ct=default)=>Read(id,revisionId,returnUrl,true,false,auditPage,ct);
     [HttpGet("{id:long}/Editar")]
-    [Authorize(Policy="perm:PRESUPUESTOS.EDITAR")]
+    [Authorize(Policy="perm:PRESUPUESTOS.MODIFICAR")]
     public Task<IActionResult> Edit(long id,long? revisionId,string? returnUrl,CancellationToken ct)=>Read(id,revisionId,returnUrl,false,false,1,ct);
     [HttpGet("{id:long}/NuevaRevision")]
-    [Authorize(Policy="perm:PRESUPUESTOS.EDITAR")]
+    [Authorize(Policy="perm:PRESUPUESTOS.MODIFICAR")]
     public Task<IActionResult> NewRevision(long id,long revisionId,string? returnUrl,CancellationToken ct)=>Read(id,revisionId,returnUrl,false,true,1,ct);
     private async Task<IActionResult> Read(long id,long? revisionId,string? returnUrl,bool readOnly,bool newRevision,int auditPage,CancellationToken ct)
     {
@@ -73,7 +75,7 @@ public sealed class BudgetController(IBudgetRepository repository,TimeProvider c
         var revision=record.Revision;var state=BudgetRecord.Text(revision,"Estado");
         var latest=record.Data.GetProperty("Revisiones").EnumerateArray().First().GetProperty("RevisionId").GetInt64()==revision.GetProperty("RevisionId").GetInt64();
         var hasOrder=record.Data.GetProperty("OrdenCompraId").ValueKind!=JsonValueKind.Null;
-        if(!readOnly&&(!latest||hasOrder||newRevision&&(state is "BORRADOR" or "CANCELADO")||!newRevision&&state!="BORRADOR"))return BadRequest("Abre la última revisión disponible para esta acción.");
+        if(!readOnly&&(!latest||hasOrder||newRevision&&(state is "BORRADOR" or "CANCELADO")||!newRevision&&state is not ("BORRADOR" or "OBSERVADO")))return BadRequest("Abre la última revisión disponible para esta acción.");
         var regularize=hasOrder&&record.Text("TipoAtencion")=="EMERGENCIA"&&record.Text("EstadoOC")!="CANCELADA"&&record.Text("RevisionOC")==BudgetRecord.Text(revision,"RevisionId")&&state is "BORRADOR" or "ENVIADO";
         var input=FromRecord(record);input.ReturnUrl=Back(returnUrl);input.NewRevision=newRevision;
         var defaults=await repository.DefaultsAsync(Actor,Date(input.Draft.Revision["FechaEmision"],out var date)?date:Today,input.Draft.ClienteId,input.Draft.TiendaId,ct);
@@ -107,10 +109,10 @@ public sealed class BudgetController(IBudgetRepository repository,TimeProvider c
     }
 
     [HttpPost("Guardar")]
-    [Authorize(Policy="perm:PRESUPUESTOS.EDITAR")]
     [RequestFormLimits(ValueCountLimit=20000)]
     public async Task<IActionResult> Save(BudgetInputModel input,CancellationToken ct)
     {
+        if (!Has(input.Id.HasValue ? "PRESUPUESTOS.MODIFICAR" : "PRESUPUESTOS.CREAR")) return Forbid();
         if(input.Draft.DetalleNeto)input.Draft.RevalorizarMoneda=true;
         input.ReturnUrl=Back(input.ReturnUrl);BudgetVersion? original=null;
         try {original=input.Original();}catch(FormatException){ModelState.AddModelError("","Vuelve a abrir el registro; falta su versión original.");}
@@ -137,10 +139,10 @@ public sealed class BudgetController(IBudgetRepository repository,TimeProvider c
         return Json(await repository.TariffsAsync(Actor,clientId,emission,currency,search,page,ct,materialId,tariffLineId));
     }
     [HttpPost("Calcular")]
-    [Authorize(Policy="perm:PRESUPUESTOS.EDITAR")]
     [RequestFormLimits(ValueCountLimit=20000)]
     public async Task<IActionResult> Calculate(BudgetInputModel input,CancellationToken ct)
     {
+        if (!Has(input.Id.HasValue ? "PRESUPUESTOS.MODIFICAR" : "PRESUPUESTOS.CREAR")) return Forbid();
         if(input.Draft.Partidas.Count>500||!Date(input.Draft.Revision.GetValueOrDefault("FechaEmision"),out var date))return BadRequest();
         var defaults=await repository.DefaultsAsync(Actor,date,input.Draft.ClienteId,null,ct);
         decimal? rate=defaults.TryGetProperty("Tasa",out var tax)&&tax.ValueKind==JsonValueKind.Object?tax.GetProperty("Valor").GetDecimal():null;
@@ -172,29 +174,49 @@ public sealed class BudgetController(IBudgetRepository repository,TimeProvider c
         if(!Date(date,out var emission)||clientId<=0||storeId<=0)return BadRequest();
         return Json(await repository.DefaultsAsync(Actor,emission,clientId,storeId,ct));
     }
+    [HttpGet("{id:long}/Estado")]
+    [Authorize(Policy="perm:PRESUPUESTOS.CAMBIAR_ESTADO")]
+    public async Task<IActionResult> StateForm(long id,string? returnUrl,CancellationToken ct)
+    {
+        if(id<=0)return BadRequest();
+        var record=await repository.GetAsync(Actor,id,null,1,ct);if(record is null)return NotFound();
+        var options=BudgetStates.Next(record);if(options.Length==0)return BadRequest("El presupuesto no admite cambios de estado.");
+        var input=FromRecord(record);
+        return PartialView("_State",new BudgetStateModel(new BudgetStateInput {Id=id,RevisionId=input.RevisionId!.Value,HeaderVersion=input.HeaderVersion,RevisionVersion=input.RevisionVersion,ReturnUrl=Back(returnUrl)},record.Text("NumeroInterno"),BudgetRecord.Text(record.Revision,"Estado"),options));
+    }
     [HttpPost("Estado")]
-    [Authorize(Policy="perm:PRESUPUESTOS.EDITAR")]
+    [Authorize(Policy="perm:PRESUPUESTOS.CAMBIAR_ESTADO")]
     public async Task<IActionResult> State(BudgetStateInput input,CancellationToken ct)
     {
-        if(input.NewState is not ("ENVIADO" or "OBSERVADO" or "APROBADO" or "RECHAZADO" or "VENCIDO" or "CANCELADO"))return BadRequest("Acción no válida.");
-        if(!Date(input.EventDate,out var eventDate)||string.IsNullOrWhiteSpace(input.Responsible)||input.Responsible.Length>150||input.Reason?.Length>2000)return BadRequest("Completa fecha y responsable; revisa la observación.");
+        if(input.NewState is not ("ENVIADO" or "OBSERVADO" or "APROBADO" or "RECHAZADO" or "CANCELADO"))return BadRequest("Acción no válida.");
+        var eventDate=Today;
+        var responsible=User.Identity?.Name??Actor;
+        input.Reason=BudgetStates.NeedsReason(input.NewState)?input.Reason?.Trim():null;
+        if(input.Reason?.Length>2000||BudgetStates.NeedsReason(input.NewState)&&string.IsNullOrWhiteSpace(input.Reason))return BadRequest("Indica el motivo del cambio de estado (hasta 2000 caracteres).");
         BudgetVersion? original;
         try {original=new BudgetInputModel {Id=input.Id,RevisionId=input.RevisionId,HeaderVersion=input.HeaderVersion,RevisionVersion=input.RevisionVersion}.Original();}
         catch(FormatException){return BadRequest("Vuelve a abrir la revisión.");}
         if(original is null)return BadRequest();
-        try {await repository.ChangeStateAsync(Actor,original,input.NewState,eventDate,input.Responsible,input.Reason,ct);TempData["Notice"]="Cambio de estado registrado.";}
-        catch(MaintenanceException error){TempData["Notice"]=error.Message;}
+        try {await repository.ChangeStateAsync(Actor,original,input.NewState,eventDate,responsible,input.Reason,ct);TempData["Notice"]="Cambio de estado registrado.";}
+        catch(MaintenanceException error){if(Request.Headers["X-Requested-With"]=="XMLHttpRequest")return Conflict(error.Message);TempData["Notice"]=error.Message;}
+        if(Request.Headers["X-Requested-With"]=="XMLHttpRequest")return Json(new {redirect=Back(input.ReturnUrl)});
         return RedirectToAction(nameof(Details),new {id=input.Id,revisionId=input.RevisionId,returnUrl=Back(input.ReturnUrl)});
     }
     private IReadOnlyList<GridAction> DocumentActions(BudgetListItem row,string returnUrl)
     {
         var actions=new List<GridAction>();
-        foreach(var (kind,permission,label) in new[]{("guias","GUIAS","Guía / acta"),("oc-cliente","OC_CLIENTE","OC del cliente"),("ejecucion","EJECUCION","Ejecución")})
+        if(Has("PRESUPUESTOS.CAMBIAR_ESTADO")&&row.State!="CANCELADO"&&(!row.PurchaseOrderId.HasValue||row.Type=="EMERGENCIA"&&(row.State is "BORRADOR" or "ENVIADO")))
+            actions.Add(new("Cambiar estado",Url.Action(nameof(StateForm),new {id=row.BudgetId,returnUrl})!,true));
+        foreach(var (kind,permission,label) in new[]{("guias","GUIAS","Guía"),("oc-cliente","OC_CLIENTE","OC del cliente"),("ejecucion","EJECUCION","Ejecución")})
         {
             if(!User.HasClaim(AccessService.PermissionClaim,permission+".CONSULTAR"))continue;
-            if(User.HasClaim(AccessService.PermissionClaim,permission+".EDITAR"))
+            var documentId=kind switch{"guias"=>row.GuideId,"oc-cliente"=>row.PurchaseOrderId,"ejecucion"=>row.ExecutionId,_=>null};
+            if(documentId.HasValue&&(kind is "oc-cliente" or "ejecucion")&&User.HasClaim(AccessService.PermissionClaim,permission+".MODIFICAR"))
+                actions.Add(new(label,Url.Action("Edit","Followup",new{kind,id=documentId.Value,returnUrl,popup=true})!,true,true));
+            else if(documentId.HasValue)
+                actions.Add(new(label,Url.Action("Details","Followup",new{kind,id=documentId.Value,returnUrl,popup=true})!,true,true));
+            else if(!documentId.HasValue && Has(permission+".CREAR"))
                 actions.Add(new(label,Url.Action("Register","Followup",new{kind,parentId=row.BudgetId,returnUrl,popup=true})!,true));
-            else actions.Add(new(label,Url.Action("Context","Followup",new{kind,parentId=row.BudgetId})!));
         }
         return actions;
     }}

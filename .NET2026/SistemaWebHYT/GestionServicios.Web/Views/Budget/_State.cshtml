@@ -1,0 +1,11 @@
+@using GestionServicios.Web.ViewModels.Budgets
+@model BudgetStateModel
+@* Firma: FRANCO LARA - 06/11/2026 | Estado desde listado: motivo condicional y auditoría automática. *@
+<section data-document-title="Cambiar estado del presupuesto">
+<p><strong>Presupuesto @Model.Number</strong> · @BudgetStates.Label(Model.CurrentState)</p>
+<form method="post" asp-controller="Budget" asp-action="State" data-document-form data-budget-state-form>
+<input type="hidden" name="Id" value="@Model.Input.Id" /><input type="hidden" name="RevisionId" value="@Model.Input.RevisionId" /><input type="hidden" name="HeaderVersion" value="@Model.Input.HeaderVersion" /><input type="hidden" name="RevisionVersion" value="@Model.Input.RevisionVersion" /><input type="hidden" name="ReturnUrl" value="@Model.Input.ReturnUrl" />
+<div class="hyt-master-fields"><div class="hyt-field"><label for="budget-new-state">Nuevo estado</label><select id="budget-new-state" name="NewState" data-budget-state required>@foreach(var next in Model.Options){<option value="@next">@BudgetStates.Label(next)</option>}</select></div>
+<div class="hyt-field" data-budget-state-reason hidden><label for="budget-state-reason">Motivo *</label><textarea id="budget-state-reason" name="Reason" maxlength="2000" rows="3" disabled></textarea></div></div>
+<p data-document-error role="alert">@Model.Error</p><button class="hyt-button-primary" type="submit">Guardar estado</button>
+</form></section>

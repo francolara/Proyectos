@@ -1,0 +1,52 @@
+[
+  {
+    "case": "nuevo-una",
+    "columns": 11,
+    "rows": 27
+  },
+  {
+    "case": "anterior-una",
+    "columns": 7,
+    "rows": 20
+  },
+  {
+    "case": "nuevo-varias",
+    "columns": 11,
+    "rows": 58
+  },
+  {
+    "case": "anterior-varias",
+    "columns": 7,
+    "rows": 51
+  },
+  {
+    "case": "nuevo-vacio",
+    "columns": 11,
+    "rows": 28
+  },
+  {
+    "case": "nuevo-usd",
+    "columns": 11,
+    "rows": 27
+  },
+  {
+    "case": "nuevo-descripcion-larga",
+    "columns": 11,
+    "rows": 27
+  },
+  {
+    "case": "anterior-vacio",
+    "columns": 7,
+    "rows": 20
+  },
+  {
+    "case": "anterior-usd",
+    "columns": 7,
+    "rows": 20
+  },
+  {
+    "case": "anterior-descripcion-larga",
+    "columns": 7,
+    "rows": 20
+  }
+]

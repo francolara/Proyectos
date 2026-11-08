@@ -4,6 +4,7 @@
 -- Description:   Guarda Tienda con permisos, concurrencia, referencias y auditoría.
 -- =============================================
 -- Firma: FRANCO LARA | Create date: 05/11/2026 | Códigos automáticos inalterables y retiro de posición del maestro de materiales.
+-- Firma: FRANCO LARA | Create date: 07/11/2026 | Valida permisos específicos de alta, edición y activación del maestro.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_MantTienda_Guardar
@@ -15,6 +16,8 @@ BEGIN
     SET XACT_ABORT ON;
     DECLARE @Propia BIT = 0;
     BEGIN TRY
+        IF dbo.fn_HYTPermiso(@UsuarioId,CASE WHEN @Id IS NULL THEN N'TIENDAS.CREAR' ELSE N'TIENDAS.MODIFICAR' END) = 0
+            THROW 51700,N'[HYT_PERMISO] No tiene permiso para esta acción.',1;
         IF NOT EXISTS
         (
             SELECT 1 FROM dbo.AspNetUsers AS usuario
@@ -50,6 +53,9 @@ BEGIN
             SELECT @Anterior=(SELECT anterior.ClienteId, anterior.Codigo, anterior.Nombre, anterior.Direccion, anterior.CodigoUbigeo, anterior.CentroSAPFICO, anterior.ZonaId, anterior.Activo FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)
             FROM dbo.Tienda AS anterior WITH (UPDLOCK,HOLDLOCK)
             WHERE anterior.TiendaId=@Id AND anterior.VersionFila=@VersionOriginal;
+            IF @Id IS NOT NULL AND @Activo <> TRY_CONVERT(BIT, JSON_VALUE(@Anterior,N'$.Activo'))
+                AND dbo.fn_HYTPermiso(@UsuarioId,N'TIENDAS.ACTIVAR') = 0
+                THROW 51700,N'[HYT_PERMISO] No tiene permiso para activar o desactivar este registro.',1;
             IF @Anterior IS NULL THROW 51209,N'[HYT_CONCURRENCIA] El registro cambió o ya no existe. Vuelve a consultarlo.',1;
         END;
         IF @Id IS NOT NULL AND TRY_CONVERT(BIGINT,JSON_VALUE(@Anterior,N'$.ClienteId'))<>@ClienteId THROW 51210,N'[HYT_VALIDACION] No se puede cambiar el registro padre existente.',1;

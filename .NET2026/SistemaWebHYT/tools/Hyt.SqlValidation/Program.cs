@@ -112,7 +112,12 @@ Require("StoreProcedure/spu_RegistrarTasaIGV.sql", "EXEC dbo.spu_RegistrarAudito
 Require("Script/008_PermisosAplicacion.sql", "DENY INSERT, UPDATE, DELETE ON SCHEMA::dbo");
 Require("Script/007_ProteccionAuditoria.sql", "INSTEAD OF UPDATE, DELETE");
 var packageDirectory = Path.GetFullPath(Path.Combine(root, "../../.NET2026/SistemaWebHYT/entregables"));
-foreach (var package in new[] { (File: "ETAPA_1_HYT.sql", Hashes: "SHA256.json"), (File: "ETAPA_2_HYT.sql", Hashes: "SHA256_ETAPA_2.json"), (File: "ETAPA_3_HYT.sql", Hashes: "SHA256_ETAPA_3.json"), (File: "ETAPA_4_HYT.sql", Hashes: "SHA256_ETAPA_4.json") })
+var securityHashesPath = Path.Combine(packageDirectory, "SHA256_ADMINISTRACION.json");
+using var securityHashes = File.Exists(securityHashesPath) ? JsonDocument.Parse(File.ReadAllText(securityHashesPath)) : null;
+var updatedSecuritySources = securityHashes?.RootElement.EnumerateArray()
+    .Select(entry => entry.GetProperty("path").GetString()!)
+    .Where(path => path.Contains('/')).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
+foreach (var package in new[] { (File: "ETAPA_1_HYT.sql", Hashes: "SHA256.json"), (File: "ETAPA_2_HYT.sql", Hashes: "SHA256_ETAPA_2.json"), (File: "ETAPA_3_HYT.sql", Hashes: "SHA256_ETAPA_3.json"), (File: "ETAPA_4_HYT.sql", Hashes: "SHA256_ETAPA_4.json"), (File: "ADMINISTRACION_HYT.sql", Hashes: "SHA256_ADMINISTRACION.json") })
 {
 var bundlePath = Path.Combine(packageDirectory, package.File);
 if (!File.Exists(bundlePath)) continue;
@@ -125,6 +130,7 @@ if (!File.Exists(bundlePath)) continue;
     foreach (var entry in hashes.RootElement.EnumerateArray())
     {
         var relative = entry.GetProperty("path").GetString()!;
+        if (package.File != "ADMINISTRACION_HYT.sql" && updatedSecuritySources.Contains(relative)) continue;
         var file = relative == package.File ? bundlePath : Path.Combine(root, relative);
         var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(file))).ToLowerInvariant();
         if (hash != entry.GetProperty("sha256").GetString()) failures.Add($"Huella no coincide: {relative}");

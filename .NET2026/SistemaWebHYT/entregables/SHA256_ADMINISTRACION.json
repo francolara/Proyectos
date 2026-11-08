@@ -1,0 +1,202 @@
+[
+  {
+    "path": "Tablas/AspNetUsers.sql",
+    "sha256": "15d118f540c9969139463dd10487b2f442b9b388a93a6ae29c8fc4ec4b760986"
+  },
+  {
+    "path": "Tablas/AspNetRoles.sql",
+    "sha256": "377fba64d4762feee479b125a24e8b412ef9444acfb01f7a315dd11e92f3f924"
+  },
+  {
+    "path": "Script/031_UsuariosPerfilesAuditoria.sql",
+    "sha256": "4f07746ab133d4fc3e37ea44694ef440f8f6d67931c01c56491b78c4e405616b"
+  },
+  {
+    "path": "Funciones/fn_HYTPermiso.sql",
+    "sha256": "347d1e42c7129e54830a496d3c4b994280369aaa774963f23b1532c8c0f29d11"
+  },
+  {
+    "path": "StoreProcedure/spu_Seguridad_ProtegerAdministrador.sql",
+    "sha256": "6ae75295fed832cb19be4161cf7cb0862d9ec8fb97ffe750b5e20d6a53e09cfb"
+  },
+  {
+    "path": "StoreProcedure/spu_Seguridad_Catalogos.sql",
+    "sha256": "1d41707a9595aa06b219a4e51889cf65839043c150f178fc93fdf28f1149ad40"
+  },
+  {
+    "path": "StoreProcedure/spu_ConsultarAcceso.sql",
+    "sha256": "5f01abf6245ada342fed5bb26f3f3920b106ada5b9e78527d9b35b26226ed370"
+  },
+  {
+    "path": "StoreProcedure/spu_FinalizarAcceso.sql",
+    "sha256": "e35a962671ea6ca341ea5b85f87e91611f44fd0fad4a4c4e594a79e7f948b115"
+  },
+  {
+    "path": "StoreProcedure/spu_RestablecerAcceso.sql",
+    "sha256": "0e8cb9af48a60433fdd186891f26175e57a7d9c343f863c9c8bd0725d2e1cd7c"
+  },
+  {
+    "path": "StoreProcedure/spu_MantCliente_Guardar.sql",
+    "sha256": "d96713f7bb8dd2f30be636b42f2211aba1529a375e39099f256947a48d57df38"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTienda_Guardar.sql",
+    "sha256": "224d7a475f849e6046963dbc2245259dad1eb8a2894d45cb21a2f1f28daa57d5"
+  },
+  {
+    "path": "StoreProcedure/spu_MantContactoCliente_Guardar.sql",
+    "sha256": "235eb3664bdbaf70ae97d8b42ff252113e2b6d84584eac3e0fd6f1186fb0497e"
+  },
+  {
+    "path": "StoreProcedure/spu_MantProveedorCliente_Guardar.sql",
+    "sha256": "25b6142eb03dbf25549dc4922d7564193553186ca5b248e71094c0893af7ec47"
+  },
+  {
+    "path": "StoreProcedure/spu_MantUnidadMedida_Guardar.sql",
+    "sha256": "92e1dc2be174ad948521c7e3c69f93d60b1fb71c92de5e05fd6ba5152a24b498"
+  },
+  {
+    "path": "StoreProcedure/spu_MantZona_Guardar.sql",
+    "sha256": "8ae546fe57fc7bf02a29547177145d9cecf9cf2ae4b272d2f487aaec4ae35109"
+  },
+  {
+    "path": "StoreProcedure/spu_MantEspecialidad_Guardar.sql",
+    "sha256": "bc6957df5cef47573b92ee767e5f955d49a3406ffa786c421f06cb1aba889e93"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTipoServicio_Guardar.sql",
+    "sha256": "66783eb3209931670c2d1348b616a290f59588138fae8411b9bfc0b7898dc442"
+  },
+  {
+    "path": "StoreProcedure/spu_MantServicioMaterial_Guardar.sql",
+    "sha256": "d17e2d66315c917063d0f1453b09703c88f44e3cfba4866800ae8e6391bea349"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTarifario_Guardar.sql",
+    "sha256": "c35878b8e3a9d37a20a26523c3870220314c5bd76e002a14a516e1e84e025de6"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTarifarioVersion_Guardar.sql",
+    "sha256": "189a69541efc534f3417708c15d85946833202023db26a64d5211481d776561b"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTarifarioPartida_Guardar.sql",
+    "sha256": "b7381ac4a207f5f35fe906000360d6bb596e244afa398ee387a88b7ae1f17fc3"
+  },
+  {
+    "path": "StoreProcedure/spu_MaterialTarifa_Guardar.sql",
+    "sha256": "535de7d2897a4e52b36b7ea68d3a5544025c21e39509aea0260f76a719b113c3"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTarifarioVersion_Publicar.sql",
+    "sha256": "4fa00ec89240688c8c21338d7697e35d9f8ea3cd3b8ffde28aabd491c3af90df"
+  },
+  {
+    "path": "StoreProcedure/spu_MantTarifarioVersion_Clonar.sql",
+    "sha256": "bd5b17535f1f0167eaabd8558d0a1f67432de60458c5c6597bf1f8c2ed069441"
+  },
+  {
+    "path": "StoreProcedure/spu_Presupuesto_CambiarEstado.sql",
+    "sha256": "f40914e181a39e60dede98b521c4cb426fedb4600ae1dd3886665a8e3a97122d"
+  },
+  {
+    "path": "StoreProcedure/spu_Presupuesto_Guardar.sql",
+    "sha256": "2c00da22ccb6f76f881b40c2573014b9ee04aa33d1ee29666a04869bec0bf4c1"
+  },
+  {
+    "path": "StoreProcedure/spu_Presupuesto_ObtenerImpresion.sql",
+    "sha256": "6e1c8d3ab17ba053001769ebb6f332fd892b3d6c262e03373e19f08f0d09cb8e"
+  },
+  {
+    "path": "StoreProcedure/spu_Presupuesto_RegistrarImpresion.sql",
+    "sha256": "85a15d14efb1cb22ec57a975d17a86ac4c760d1c995e35aed9b13365c8a6ff1c"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoCONFIRMACION_CambiarEstado.sql",
+    "sha256": "b89ce04171240eec7edc759daa66db0d3fc734ff963b36489b5b53e35a4bfde5"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoCONFIRMACION_Guardar.sql",
+    "sha256": "d2a519200fcc63df16c810c6402bfa724ed3078c9069333d1f62a495b1a3d4f7"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoEJECUCION_CambiarEstado.sql",
+    "sha256": "1906492f3452d53c7a8bebc28aa266a7288143b3810c5b88997cb076b64fc93a"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoEJECUCION_Guardar.sql",
+    "sha256": "c3121143858804905f341631f30bce7210218444b07f86cdebfc277aca8b84d2"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoGUIA_CambiarEstado.sql",
+    "sha256": "391370b6e60d7661f7b72a1599c4e1eb4bd486806f447454d0940aea164bd78f"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoGUIA_Guardar.sql",
+    "sha256": "a190a5a45a6625d4a43fd74917c20c4959e3c4e5abc744db596ef6308d9a72c0"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoOC_CambiarEstado.sql",
+    "sha256": "73b6f26e66c1696844631a8409c6b0ab40c46f1138c188534d1f498255c36305"
+  },
+  {
+    "path": "StoreProcedure/spu_SeguimientoOC_Guardar.sql",
+    "sha256": "04ff4a933c979376e4fab1e153746ed2eafdb0fd746f4a8bb9899b5cdfb62ca4"
+  },
+  {
+    "path": "StoreProcedure/spu_Seguimiento_ObtenerArchivo.sql",
+    "sha256": "5af43c00f3a990d839906cea4a8515cd363738004e16fbb53f7a177884850620"
+  },
+  {
+    "path": "StoreProcedure/spu_Reporte_Listar.sql",
+    "sha256": "25c1bb93afd0d5ad5d2c23e44867486be25b34c0e2d078bb4496f0c7cd7df456"
+  },
+  {
+    "path": "StoreProcedure/spu_Usuarios_Listar.sql",
+    "sha256": "ae0a303baba0888e7ff0b9d5ff16506909d6d226d2d189c5c57130e679804aae"
+  },
+  {
+    "path": "StoreProcedure/spu_Usuarios_Obtener.sql",
+    "sha256": "985b3e30ad01ab5b50294ad2ebeeeedae80cddaae2313e02c371b10cde9b6e9e"
+  },
+  {
+    "path": "StoreProcedure/spu_Perfiles_Listar.sql",
+    "sha256": "566375d1363a5a3f2b2a58c73941eff2682d4c1bf9f751e22d73a2925838c56a"
+  },
+  {
+    "path": "StoreProcedure/spu_Perfiles_Obtener.sql",
+    "sha256": "faa40d239941a87adb8ba22a634a18bcda6ec9812954810df76b875b8f38d8ba"
+  },
+  {
+    "path": "StoreProcedure/spu_Usuarios_Guardar.sql",
+    "sha256": "01d5c92bfd3420fa92f3cc225a86ba195999668dca4f21de1cb678795da11640"
+  },
+  {
+    "path": "StoreProcedure/spu_Usuarios_Accion.sql",
+    "sha256": "5b5ac70fad38db062a8e4f1ba43e09841512856b4ec561eb69d82cc8420b9144"
+  },
+  {
+    "path": "StoreProcedure/spu_Perfiles_Guardar.sql",
+    "sha256": "522b606433b1072968adabb8e6442808a6ab37a9b4f1282c66c4f058ca018ff9"
+  },
+  {
+    "path": "StoreProcedure/spu_Usuario_CambiarClave.sql",
+    "sha256": "2db401c6b19e9365e389dec7b8ef1b2bea3224bb92490a323e5bda4cf26c98c3"
+  },
+  {
+    "path": "StoreProcedure/spu_Auditoria_Listar.sql",
+    "sha256": "18efc708c72acd1bec3fa5440fcd90b4ccc3c39443e50901819c302f76843a55"
+  },
+  {
+    "path": "StoreProcedure/spu_Auditoria_Obtener.sql",
+    "sha256": "fea534f7657e3cc103ad2d97bd1fbda02a59588b19bb8244a3d0bd03d718df86"
+  },
+  {
+    "path": "Script/032_PermisosAdministracion.sql",
+    "sha256": "44845c73813b64d572cacbd35a304d43e23a66c0824602d416dd8f4fc99e2eea"
+  },
+  {
+    "path": "ADMINISTRACION_HYT.sql",
+    "sha256": "2d284fc93f18e83e68617704148607fefc99f462c1de4a433d589adc36d2b31f"
+  }
+]

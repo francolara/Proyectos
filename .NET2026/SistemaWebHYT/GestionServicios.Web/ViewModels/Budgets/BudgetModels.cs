@@ -20,7 +20,7 @@ public sealed class BudgetInputModel
         return new(Id.Value,RevisionId.Value,"",0,header,revision);
     }
 }
-public sealed record BudgetListModel(GridModel Grid,FilterModel Filter,bool CanEdit);
+public sealed record BudgetListModel(GridModel Grid,FilterModel Filter,bool CanEdit,IReadOnlyList<StateKpi>? Kpis=null);
 public sealed record BudgetFormModel(BudgetInputModel Input,BudgetRecord? Record,JsonElement Defaults,bool ReadOnly,bool CanEdit,string ClientLabel,string StoreLabel,int AuditPage=1,bool CanChangeState=false);
 public sealed record BudgetLineModel(BudgetDraftLine Line,string Index,string? UnitPrice=null,string? Total=null);
 public sealed class BudgetStateInput

@@ -3,6 +3,7 @@
 -- Create date:   03/11/2026
 -- Description:   Define AspNetRoles para la base inicial de HYT.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 06/11/2026 | Fechas y responsables del perfil.
 USE [SistemaWebHYT];
 GO
 SET NOCOUNT ON;
@@ -13,7 +14,11 @@ BEGIN
         Id NVARCHAR(128) NOT NULL CONSTRAINT PK_AspNetRoles PRIMARY KEY,
         Name NVARCHAR(256) NULL,
         NormalizedName NVARCHAR(256) NULL,
-        ConcurrencyStamp NVARCHAR(MAX) NULL
+        ConcurrencyStamp NVARCHAR(MAX) NULL,
+        FechaRegistro DATETIME2(3) NOT NULL CONSTRAINT DF_AspNetRoles_FechaRegistro DEFAULT SYSUTCDATETIME(),
+        FechaActualizacion DATETIME2(3) NULL,
+        UsuarioRegistro NVARCHAR(128) NULL,
+        UsuarioActualizacion NVARCHAR(128) NULL
     );
 END;
 GO

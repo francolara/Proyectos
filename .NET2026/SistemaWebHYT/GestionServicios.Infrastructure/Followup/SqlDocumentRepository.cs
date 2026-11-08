@@ -24,18 +24,25 @@ public sealed class SqlDocumentRepository(SqlConnectionFactory connections):IDoc
         {throw new MaintenanceException("Un importe o texto excede su longitud permitida. Revisa los datos.");}
     }
     private static string? Text(SqlDataReader reader,int index)=>reader.IsDBNull(index)?null:reader.GetString(index);
-    public Task<DocumentPage> ListAsync(DocumentKind kind,string actor,DateTimeOffset from,DateTimeOffset until,string? search,int page,string? state,bool? confirmed,CancellationToken ct,string? client=null,string? store=null)
+    public Task<DocumentPage> ListAsync(DocumentKind kind,string actor,DateTimeOffset from,DateTimeOffset until,string? search,int page,string? state,bool? confirmed,CancellationToken ct,string? client=null,string? store=null,bool pendingConfirmation=false,bool pendingInvoice=false)
         =>Execute(kind,"Listar",actor,p=>
         {
             p.Add("@Desde",SqlDbType.DateTime2).Value=from.UtcDateTime;p.Add("@HastaExclusiva",SqlDbType.DateTime2).Value=until.UtcDateTime;
             p.Add("@Cliente",SqlDbType.NVarChar,200).Value=(object?)client??DBNull.Value;p.Add("@Tienda",SqlDbType.NVarChar,200).Value=(object?)store??DBNull.Value;
             p.Add("@Busqueda",SqlDbType.NVarChar,200).Value=(object?)search??DBNull.Value;p.Add("@Pagina",SqlDbType.Int).Value=page;
             p.Add("@Estado",SqlDbType.NVarChar,40).Value=(object?)state??DBNull.Value;p.Add("@Confirmada",SqlDbType.Bit).Value=(object?)confirmed??DBNull.Value;
+            if(kind.Code=="OC"){
+                p.Add("@PendienteConfirmacion",SqlDbType.Bit).Value=pendingConfirmation;
+                p.Add("@PendienteFacturar",SqlDbType.Bit).Value=pendingInvoice;
+            }
         },async command=>
         {
             await using var reader=await command.ExecuteReaderAsync(ct);await reader.ReadAsync(ct);
             var rows=JsonSerializer.Deserialize<JsonElement[]>(reader.IsDBNull(0)?"[]":reader.GetString(0))??[];
-            await reader.NextResultAsync(ct);await reader.ReadAsync(ct);return new DocumentPage(rows,reader.GetInt64(0),page);
+            await reader.NextResultAsync(ct);await reader.ReadAsync(ct);var total=reader.GetInt64(0);
+            var counts=new Dictionary<string,long>();
+            if(await reader.NextResultAsync(ct))while(await reader.ReadAsync(ct))counts[reader.GetString(0)]=reader.GetInt64(1);
+            return new DocumentPage(rows,total,page,counts);
         },ct);
     public Task<DocumentRecord?> GetAsync(DocumentKind kind,string actor,long? id,long? parentId,int auditPage,CancellationToken ct)
         =>Execute<DocumentRecord?>(kind,"Obtener",actor,p=>

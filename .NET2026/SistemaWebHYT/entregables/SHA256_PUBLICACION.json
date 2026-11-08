@@ -41,35 +41,35 @@
   },
   {
     "path": "GestionServicios.Application.dll",
-    "sha256": "9904b5bf94e51e27dda32a2fcd2d9b9e1977778383fe475dc2906b65df6c0251"
+    "sha256": "6012be25b92fbf1d81e28889825ec82d26f68aa9b2e3f776534d427f152e3763"
   },
   {
     "path": "GestionServicios.Application.pdb",
-    "sha256": "d92c3ef786ae22a1f4c8233b8f24df3d97cf395a1c3eb5063c9735138cf57ab6"
+    "sha256": "7f98a7de4e44d836d5cc71d5d89d5ac656e242a4d1426ddb87bc86b523e0c193"
   },
   {
     "path": "GestionServicios.Contracts.dll",
-    "sha256": "088d72b7d904a5ebf9a87766d2f28cc488010433d61b216a1fb922156f8f7cf1"
+    "sha256": "51d1e929ee17b8f1a21fec04148f8baa8ea104915fa0d4b46fc9fd14a91e399a"
   },
   {
     "path": "GestionServicios.Contracts.pdb",
-    "sha256": "8f1cdbd69ca69e9b4fc3a9ae141817574e0b05e9bd3f54f4dbb3f3bbf25c6f48"
+    "sha256": "85b9ccfbe4419650c5494ccf34e923d86bd9e6adb796ea30be1c9b7d318ea077"
   },
   {
     "path": "GestionServicios.Domain.dll",
-    "sha256": "8191c1f2dd1f3682cb084129b0b71f8f2454fcfbfbf5969624614d43f72e988a"
+    "sha256": "442786febe2d39a08e8de0981b9b585fa37de7148eb4aa39d83a42b014822165"
   },
   {
     "path": "GestionServicios.Domain.pdb",
-    "sha256": "bde244e8a0297236bbbf2c920f0f14808a46e29d71514907817fc1c3720fa2db"
+    "sha256": "7d02f329c5389dad146c7b84e923f244376f607dd3a87fc8ab735cdaf5e93cca"
   },
   {
     "path": "GestionServicios.Infrastructure.dll",
-    "sha256": "b1443679967311055a1d700981db585a99ead95fd235c62d0ceab432a65996fe"
+    "sha256": "7d8ab91605918d309ad8e32e02c5bde07bde726477b7868f1a685220eab62392"
   },
   {
     "path": "GestionServicios.Infrastructure.pdb",
-    "sha256": "f2904a5a227cfcc19d306e732fb45c78f1143149b33b954694a7b6fe0020dc46"
+    "sha256": "b494ba5c31b6bea39e6a0f596123e632f320ff8761278570a2c4acc2d4ca986c"
   },
   {
     "path": "GestionServicios.Web.deps.json",
@@ -77,15 +77,15 @@
   },
   {
     "path": "GestionServicios.Web.dll",
-    "sha256": "5afc813af7e98bc8272214b9802cb1c205414293ddff564bc27a799a8fa418af"
+    "sha256": "aa96485a027499a879018432364d00148be8cb0e7790326a65159ab658e09b4c"
   },
   {
     "path": "GestionServicios.Web.exe",
-    "sha256": "95311534b486aba1f2ac1a7298265a66dcfe3876d98e12ddac4e9728f8d3540d"
+    "sha256": "f90849b983da0a62fd78be613cef683b9d6ce99c22e1c54de8342e7466628c8f"
   },
   {
     "path": "GestionServicios.Web.pdb",
-    "sha256": "088d4d9fee1f8261c22e1b9f427edd2fc3202b67f98e0da85cb406dcdb35536f"
+    "sha256": "cd15f302e5b3a449337623485a47250f2123d7f071ce1da63c905f29430b8117"
   },
   {
     "path": "GestionServicios.Web.runtimeconfig.json",
@@ -93,7 +93,7 @@
   },
   {
     "path": "GestionServicios.Web.staticwebassets.endpoints.json",
-    "sha256": "7fa23bbbbc07969d05adfd007589f06948ae92e401072d82c4e9839a675bedf9"
+    "sha256": "21f6eb87f637dba01bd32e6e21346ff5bf7276816af69df55af4347a6fe75381"
   },
   {
     "path": "it/Microsoft.Data.SqlClient.resources.dll",
@@ -253,15 +253,15 @@
   },
   {
     "path": "wwwroot/hyt-access.js",
-    "sha256": "64be635e82e5522a9e14e3c0070fbbf2fc0470f0a62bedfe3b30970e4dd4aaf8"
+    "sha256": "be0999af8bcfa1683f582b308119b045496bf196da1564f32c97456e64b4c808"
   },
   {
     "path": "wwwroot/hyt-access.js.br",
-    "sha256": "0835a520e11e5f7cc5555c92deed7ff4523a922935ee99fc97bf974308eb338c"
+    "sha256": "951ec574412d34fc4f4c2c8233e2755a68e65b5be64f86dc270bdd84868b2577"
   },
   {
     "path": "wwwroot/hyt-access.js.gz",
-    "sha256": "a567ee6fdb2487e6daed77fc018de9b3313e39fdfc7ab8309e3ff7ebf47151c0"
+    "sha256": "c6a01648ea6e7ffdb0458b26a93d28e183b826ccf55e514cf762f24ce5ebf266"
   },
   {
     "path": "wwwroot/hyt-budget.js",
@@ -301,27 +301,27 @@
   },
   {
     "path": "wwwroot/hyt-dashboard.css",
-    "sha256": "542835a39edf87f173c1d177098e01dd27cb3a220713ed0a7a23544b49b6b01e"
+    "sha256": "69371e2ba9b5dd86a9aef238af02a21ff5616070a711267e7101e50e0a1d7126"
   },
   {
     "path": "wwwroot/hyt-dashboard.css.br",
-    "sha256": "7437d57c7bfa9c61586fbfc62ccfcd9e80de604f126b09a29fda4234ca7524c8"
+    "sha256": "716a651e8147222605f44a14cbf40f2fb627284a27ad9be164fbb0ccb254a166"
   },
   {
     "path": "wwwroot/hyt-dashboard.css.gz",
-    "sha256": "b1bf156080dbae28795ff0cfc1bb1b94832d6bdf454c3ee9cd2abeba17aa61f3"
+    "sha256": "ad99144e49a8bd6e0d6b1a9175905ce1b6148a098897533b6bfeb35d41eef803"
   },
   {
     "path": "wwwroot/hyt-dashboard.js",
-    "sha256": "f9e6f8d8d176671da7fa9ee247950a0034d6ef85e7c366911b5dddb489cb377e"
+    "sha256": "cceaa3f18775ec5e3ce1b5c882d1e1efccbc2bbc044c69bc9d82eea6d8704d7a"
   },
   {
     "path": "wwwroot/hyt-dashboard.js.br",
-    "sha256": "b0724644d66a6ea270a963c9f28f0208035c7e01adadc11c48da07e97189df43"
+    "sha256": "2b7ea7db86ba737015812b04aa4989efd7bcabb58cfe69b60f9e20c6c1747c40"
   },
   {
     "path": "wwwroot/hyt-dashboard.js.gz",
-    "sha256": "40e980d7d0228aa8f7c0fbfd8a59c35252171f7677a18df49613c8fe2c4900b3"
+    "sha256": "98ee137c4f8a5e31c763e65988a5ab2fff2361c5d01134c13c25e0c39556193a"
   },
   {
     "path": "wwwroot/hyt-dates.js",
@@ -337,27 +337,27 @@
   },
   {
     "path": "wwwroot/hyt-documents.js",
-    "sha256": "aa2b83a5409e778f8fb8e1ae592acc8f718251238ecfd1c1d6efa81a3ff5b7c7"
+    "sha256": "f0c9e3946f7a71de6e5fb8f0b79e8861ce78838c69147048930ec03810cd0082"
   },
   {
     "path": "wwwroot/hyt-documents.js.br",
-    "sha256": "804eec1a405f2ef6c75b0ceeba4dc7de1101892a416a6925e75cb6d53b9fd74e"
+    "sha256": "43078b08b171cb267dd1393b9340351256fff8dd8903f8443dc17a235356acf6"
   },
   {
     "path": "wwwroot/hyt-documents.js.gz",
-    "sha256": "ee386be22828009342f39042b9fe230e4d74376a823283b9719fa72422163ec1"
+    "sha256": "f1487b10378f28a334ec6b10cf98b7b49998fa9e2a37c356efb596ac5414d0a6"
   },
   {
     "path": "wwwroot/hyt-interface.css",
-    "sha256": "b78d0e74d6aa1e13047befa677cc219acdb1db303da3a2cbb9165727c39ad6b0"
+    "sha256": "53b3d34d95201275850fb99e7d5d3cbf7a7096edc41e669b6d6f8307aa170b04"
   },
   {
     "path": "wwwroot/hyt-interface.css.br",
-    "sha256": "cd39d784e19ce81bd30828ca7c75b5a5fdb23789c3a7afc62f429eb5e67a9bb4"
+    "sha256": "c2c29d4cb9486d16445438cf5b3e6ed7d16f264b6855b5b18f46c537834bc2c4"
   },
   {
     "path": "wwwroot/hyt-interface.css.gz",
-    "sha256": "0138b1e39cd3ae5b5e055a299cb40871cb9cff48eb0dd693b2c73d5111b4190f"
+    "sha256": "2e8220f57f63e50d40966c607e77484b94949cedbc9da3438317c8f416826402"
   },
   {
     "path": "wwwroot/hyt-loading.css",
@@ -421,39 +421,51 @@
   },
   {
     "path": "wwwroot/hyt-report.css",
-    "sha256": "f08959d8167439c4f78a97c62d5e51f18641667c86ed8f0aa58223dd4e97f954"
+    "sha256": "cb3d15920afe46cb087ccf6faa5c8e35d1255d8cb986ac9c778301ebb15f48c4"
   },
   {
     "path": "wwwroot/hyt-report.css.br",
-    "sha256": "bc8fbc97003029d299f1ad200247b19e82a1826b1e255f8fa3df3da47ebec741"
+    "sha256": "60189e09cbbb3888a3e396885d1c538ee0374735e4ac339a018e46a792e9025b"
   },
   {
     "path": "wwwroot/hyt-report.css.gz",
-    "sha256": "47c9e1c4fbb55a20b38643f4b3baf958a21999a9011cc3632be061403957abbc"
+    "sha256": "10311a9c67ba1185b9dbdda8e12d11f62857f20f6d5026201d6c86828d62e2e7"
   },
   {
     "path": "wwwroot/hyt-reports.css",
-    "sha256": "adaed008ec3fa24cec84e466e4f3880eac192f736db6dea17cb3589ded479559"
+    "sha256": "6305164960ae64cec7dc0ebc3143582903576cc2a4c8e1b3a3eb45137d73f449"
   },
   {
     "path": "wwwroot/hyt-reports.css.br",
-    "sha256": "d5f562dc3e1eebf53b740b3e95f99659cc41d108a4d530d6c4505461bc4f66e8"
+    "sha256": "6349272cc54711b01a7d771e19439e34214e8e5d818f612e65fb6ca960140fb4"
   },
   {
     "path": "wwwroot/hyt-reports.css.gz",
-    "sha256": "1fb0c463de314cbaf4b7b0df35f0dba62039f14ad0aa3a66f60921f7cf53fc0c"
+    "sha256": "b5f503432521e8b4da9699a667f3451494dc6463d52fd403e86ef31622998ec6"
   },
   {
     "path": "wwwroot/hyt-reports.js",
-    "sha256": "00874b9d23b7e8612936c1b186a67fb6928407004559348c93f025cc2d215c5b"
+    "sha256": "e2f14f8cf44aba2412eaec044f29067e6c28c9ebee91fdad9e2d52e1991a4319"
   },
   {
     "path": "wwwroot/hyt-reports.js.br",
-    "sha256": "9620a533aca0f0c0ef0ea5a130623c1e63dc48d840ad42f03040924ae46e07d7"
+    "sha256": "8c3768dc655883cc94580be706f360fa9e7e3387ea6ebd3044325b4d63ae0d5f"
   },
   {
     "path": "wwwroot/hyt-reports.js.gz",
-    "sha256": "9044b2e27e3193cecba9a03a0eb1b5387b4ed5d286a915faab8668ef59d069e0"
+    "sha256": "9b7b30127726493ad3e7ace7087b029be9986b18dbbb22513ef00c744b7f8cc4"
+  },
+  {
+    "path": "wwwroot/hyt-security.js",
+    "sha256": "e2d45387651c8640b4a52c3e36961c8361dc18362c8266d26487c6fea9b9546a"
+  },
+  {
+    "path": "wwwroot/hyt-security.js.br",
+    "sha256": "22b6e77a3959027dde21eed5408fdd72842166f13496b592c7b9d19f8628f915"
+  },
+  {
+    "path": "wwwroot/hyt-security.js.gz",
+    "sha256": "bd9e80e678587eb5cbbade3fdf8b0acb7a46515608ab3f3641df94e4b3f50d80"
   },
   {
     "path": "wwwroot/hyt-theme-switch.js",
@@ -493,15 +505,15 @@
   },
   {
     "path": "wwwroot/hyt-ui.js",
-    "sha256": "58d7e920e2a6974b87397e7b411e67c83b7f2b4f814e2de66ada49ef624011ee"
+    "sha256": "559009f974d03e7afc361e132ad18577b3cc65e49a1e2b3d13cd3b580cb8c1a5"
   },
   {
     "path": "wwwroot/hyt-ui.js.br",
-    "sha256": "8052544723738d5d6a2178a90ba38d80bdba02bbc3175c1fadd889a64862b073"
+    "sha256": "a5b6ba892e9ff86632001ab2b97c065db4382654823fc9a3deff8ac504c0b38f"
   },
   {
     "path": "wwwroot/hyt-ui.js.gz",
-    "sha256": "f8edb10347637e9162e9459de9e3e902e3c348b76847711651bbc55a590e5a35"
+    "sha256": "8d6c406248cdc11126fbc630c608683aea9e582f9dd922fa1239441eed0ef514"
   },
   {
     "path": "wwwroot/images/logo-hyt.png",

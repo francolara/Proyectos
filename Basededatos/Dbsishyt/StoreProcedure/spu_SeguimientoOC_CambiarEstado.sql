@@ -3,6 +3,8 @@
 -- Create date:   03/11/2026
 -- Description:   Cambia estado con dependencias, fecha, responsable, auditoría e idempotencia.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 06/11/2026 | Guía como documento sin estados; validaciones por existencia. Trabajo completado admite confirmación vigente como respaldo, además de ejecución terminada.
+-- Firma: FRANCO LARA | Create date: 07/11/2026 | Comprueba el permiso específico del perfil antes de realizar la acción.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_SeguimientoOC_CambiarEstado
@@ -14,6 +16,8 @@ BEGIN
     SET XACT_ABORT ON;
     DECLARE @Propia BIT=0;
     BEGIN TRY
+        IF dbo.fn_HYTPermiso(@UsuarioId,N'OC_CLIENTE.CAMBIAR_ESTADO') = 0
+            THROW 51700,N'[HYT_PERMISO] No tiene permiso para esta acción.',1;
         IF NOT EXISTS(SELECT 1 FROM dbo.AspNetUsers AS usuario INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId=usuario.Id
             INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId WHERE usuario.Id=@UsuarioId AND usuario.Activo=1 AND permiso.CodigoPermiso=N'OC_CLIENTE.EDITAR')
             THROW 51400,N'[HYT_PERMISO] No tiene permiso para cambiar este estado.',1;
@@ -49,14 +53,17 @@ BEGIN
         IF NOT((@EstadoAnterior=N'REGISTRADA' AND @NuevoEstado=N'TRABAJO_COMPLETADO') OR (@EstadoAnterior=N'REGISTRADA' AND @NuevoEstado=N'CANCELADA') OR (@EstadoAnterior=N'TRABAJO_COMPLETADO' AND @NuevoEstado=N'CERRADA_OPERATIVAMENTE') OR (@EstadoAnterior=N'TRABAJO_COMPLETADO' AND @NuevoEstado=N'REGISTRADA') OR (@EstadoAnterior=N'TRABAJO_COMPLETADO' AND @NuevoEstado=N'CANCELADA') OR (@EstadoAnterior=N'CERRADA_OPERATIVAMENTE' AND @NuevoEstado=N'TRABAJO_COMPLETADO') OR (@EstadoAnterior=N'CANCELADA' AND @NuevoEstado=N'REGISTRADA')) OR @NuevoEstado IS NULL THROW 51431,N'[HYT_VALIDACION] Transición de estado no permitida.',1;
         IF @Motivo IS NULL AND (@NuevoEstado IN(N'OBSERVADA',N'ANULADA',N'CANCELADA',N'RETIRADA',N'PENDIENTE') OR @EstadoAnterior IN(N'ANULADA',N'CANCELADA',N'ACEPTADA',N'TERMINADA',N'CERRADA_OPERATIVAMENTE') OR (@EstadoAnterior=N'TRABAJO_COMPLETADO' AND @NuevoEstado=N'REGISTRADA'))
             THROW 51432,N'[HYT_VALIDACION] Indica el motivo del cambio de estado.',1;
-        IF @NuevoEstado IN(N'TRABAJO_COMPLETADO',N'CERRADA_OPERATIVAMENTE') AND NOT EXISTS(SELECT 1 FROM dbo.Ejecucion AS ejecucion WHERE ejecucion.PresupuestoId=@PresupuestoId AND ejecucion.Estado=N'TERMINADA')
-            THROW 51433,N'[HYT_VALIDACION] Registra primero la ejecución terminada del trabajo.',1;
-        IF @NuevoEstado=N'CERRADA_OPERATIVAMENTE' AND NOT EXISTS(SELECT 1 FROM dbo.GuiaConformidad AS guia WHERE guia.PresupuestoId=@PresupuestoId AND guia.Estado=N'ACEPTADA')
-            THROW 51433,N'[HYT_VALIDACION] Para cerrar la OC se requiere la guía aceptada.',1;
+        IF @NuevoEstado=N'TRABAJO_COMPLETADO'
+            AND NOT EXISTS(SELECT 1 FROM dbo.Ejecucion AS ejecucion WHERE ejecucion.PresupuestoId=@PresupuestoId AND ejecucion.Estado=N'TERMINADA')
+            AND NOT EXISTS(SELECT 1 FROM dbo.ConfirmacionFacturacion AS confirmacion WHERE confirmacion.OrdenCompraId=@Id AND confirmacion.Vigente=1)
+            THROW 51433,N'[HYT_VALIDACION] Registra la confirmación del cliente o la ejecución terminada para completar el trabajo.',1;
+        IF @NuevoEstado=N'CERRADA_OPERATIVAMENTE' AND NOT EXISTS(SELECT 1 FROM dbo.Ejecucion AS ejecucion WHERE ejecucion.PresupuestoId=@PresupuestoId AND ejecucion.Estado=N'TERMINADA')
+            THROW 51433,N'[HYT_VALIDACION] Para cerrar la OC registra la ejecución terminada del trabajo.',1;
+        IF @NuevoEstado=N'CERRADA_OPERATIVAMENTE' AND NOT EXISTS(SELECT 1 FROM dbo.GuiaConformidad AS guia WHERE guia.PresupuestoId=@PresupuestoId)
+            THROW 51433,N'[HYT_VALIDACION] Para cerrar la OC se requiere la guía registrada.',1;
         IF @NuevoEstado=N'CANCELADA' AND (EXISTS(SELECT 1 FROM dbo.ConfirmacionFacturacion AS confirmacion WHERE confirmacion.OrdenCompraId=@Id AND confirmacion.Vigente=1)
-            OR EXISTS(SELECT 1 FROM dbo.GuiaConformidad AS guia WHERE guia.PresupuestoId=@PresupuestoId AND guia.Estado<>N'ANULADA')
             OR EXISTS(SELECT 1 FROM dbo.Ejecucion AS ejecucion WHERE ejecucion.PresupuestoId=@PresupuestoId AND ejecucion.Estado=N'EN_EJECUCION'))
-            THROW 51433,N'[HYT_VALIDACION] Retira la confirmación, anula la guía y detén la ejecución antes de cancelar la OC.',1;
+            THROW 51433,N'[HYT_VALIDACION] Retira la confirmación, detén la ejecución antes de cancelar la OC.',1;
         UPDATE dbo.OrdenCompraCliente SET Estado=@NuevoEstado,FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE OrdenCompraId=@Id;
         SELECT @Nuevo=(SELECT actual.RevisionId,actual.NumeroOCCliente,actual.FechaEmisionOC,actual.FechaRecepcionOC,actual.Importe,actual.Observacion,actual.Estado FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) FROM dbo.OrdenCompraCliente AS actual WHERE actual.OrdenCompraId=@Id;
         DECLARE @Registro NVARCHAR(100)=CONVERT(NVARCHAR(100),@Id),@Detalle NVARCHAR(MAX)=(SELECT JSON_QUERY(@Anterior) AS Anterior,JSON_QUERY(@Nuevo) AS Nuevo,@Responsable AS Responsable FOR JSON PATH,WITHOUT_ARRAY_WRAPPER);

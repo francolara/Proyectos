@@ -3,6 +3,8 @@
 -- Create date:   03/11/2026
 -- Description:   Guarda Confirmación del cliente con idempotencia, concurrencia, archivos y auditoría.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 06/11/2026 | Claves de adjuntos por carpeta y número, compatibles con cargas históricas. Confirmación vigente completa automáticamente la OC registrada con auditoría transaccional, sin degradar una OC cerrada.
+-- Firma: FRANCO LARA | Create date: 07/11/2026 | Distingue entre permisos de registro y edición del documento.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_SeguimientoCONFIRMACION_Guardar
@@ -14,6 +16,8 @@ BEGIN
     SET XACT_ABORT ON;
     DECLARE @Propia BIT=0;
     BEGIN TRY
+        IF dbo.fn_HYTPermiso(@UsuarioId,CASE WHEN @Id IS NULL THEN N'CONFIRMACIONES.CREAR' ELSE N'CONFIRMACIONES.MODIFICAR' END) = 0
+            THROW 51700,N'[HYT_PERMISO] No tiene permiso para esta acción.',1;
         IF NOT EXISTS (SELECT 1 FROM dbo.AspNetUsers AS usuario INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId=usuario.Id
             INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId
             WHERE usuario.Id=@UsuarioId AND usuario.Activo=1 AND permiso.CodigoPermiso=N'CONFIRMACIONES.EDITAR')
@@ -94,7 +98,7 @@ BEGIN
                 @Tamano BIGINT=TRY_CONVERT(BIGINT,JSON_VALUE(@ArchivoJson,N'$.TamanoBytes')),@SHA CHAR(64)=JSON_VALUE(@ArchivoJson,N'$.SHA256'),@Extension NVARCHAR(5);
             SET @Extension=CASE @TipoContenido WHEN N'application/pdf' THEN N'.pdf' WHEN N'image/png' THEN N'.png' WHEN N'image/jpeg' THEN N'.jpg' END;
             IF NULLIF(@Nombre,N'') IS NULL OR @Tamano IS NULL OR @Tamano<=0 OR @Tamano>15728640 OR @Extension IS NULL OR LEN(JSON_VALUE(@ArchivoJson,N'$.NombreOriginal'))>255
-                OR LEN(JSON_VALUE(@ArchivoJson,N'$.SHA256'))<>64 OR @SHA LIKE '%[^0-9a-fA-F]%' OR @SHA IS NULL OR @Clave IS NULL OR @Clave<>LOWER(REPLACE(CONVERT(NVARCHAR(36),@CorrelacionId),N'-',N''))+@Extension
+                OR LEN(JSON_VALUE(@ArchivoJson,N'$.SHA256'))<>64 OR @SHA LIKE '%[^0-9a-fA-F]%' OR @SHA IS NULL OR @Clave IS NULL OR (@Clave COLLATE Latin1_General_100_BIN2<>LOWER(REPLACE(CONVERT(NVARCHAR(36),@CorrelacionId),N'-',N''))+@Extension AND @Clave COLLATE Latin1_General_100_BIN2<>N'ConfirmacionCliente/'+dbo.fn_ArchivoSegmento(@NumeroConfirmacion)+N'/'+LOWER(REPLACE(CONVERT(NVARCHAR(36),@CorrelacionId),N'-',N''))+@Extension)
                 THROW 51419,N'[HYT_VALIDACION] Metadatos del adjunto no válidos.',1;
             INSERT INTO dbo.ArchivoAdjunto (NombreOriginal,ClaveAlmacenamiento,TipoContenido,TamanoBytes,SHA256,UsuarioRegistro)
             VALUES (@Nombre,@Clave,@TipoContenido,@Tamano,@SHA,@UsuarioId);
@@ -109,7 +113,20 @@ BEGIN
         DECLARE @EstadoAnterior NVARCHAR(40)=CASE WHEN @Anterior IS NULL THEN NULL ELSE @Estado END;
         EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@CorrelacionId,N'ConfirmacionFacturacion',@Registro,@Accion,@EstadoAnterior,@Estado,NULL,@Motivo,@Cambios;
         UPDATE dbo.Presupuesto SET FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE PresupuestoId=@PresupuestoId;
-        UPDATE dbo.OrdenCompraCliente SET FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE OrdenCompraId=@PadreId;
+        DECLARE @EstadoOCAnterior NVARCHAR(40);
+        SELECT @EstadoOCAnterior=oc.Estado FROM dbo.OrdenCompraCliente AS oc WHERE oc.OrdenCompraId=@PadreId;
+        UPDATE dbo.OrdenCompraCliente
+        SET Estado=CASE WHEN Estado=N'REGISTRADA' THEN N'TRABAJO_COMPLETADO' ELSE Estado END,
+            FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId
+        WHERE OrdenCompraId=@PadreId;
+        IF @EstadoOCAnterior=N'REGISTRADA'
+        BEGIN
+            DECLARE @RegistroOC NVARCHAR(100)=CONVERT(NVARCHAR(100),@PadreId),
+                @MotivoOC NVARCHAR(2000)=N'Trabajo completado automáticamente por confirmación del cliente.',
+                @CambiosOC NVARCHAR(MAX)=(SELECT @Id AS ConfirmacionId,@NumeroConfirmacion AS NumeroConfirmacion,@RepresentanteCliente AS RepresentanteCliente,
+                    JSON_QUERY(N'{"Estado":"REGISTRADA"}') AS Anterior,JSON_QUERY(N'{"Estado":"TRABAJO_COMPLETADO"}') AS Nuevo FOR JSON PATH,WITHOUT_ARRAY_WRAPPER);
+            EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@CorrelacionId,N'OrdenCompraCliente',@RegistroOC,N'CAMBIAR_ESTADO_AUTOMATICO',@EstadoOCAnterior,N'TRABAJO_COMPLETADO',@FechaConfirmacion,@MotivoOC,@CambiosOC;
+        END;
         INSERT INTO dbo.DocumentoOperacion (OperacionId,TipoOperacion,PadreId,RegistroId,ArchivoId,Huella,UsuarioId)
         VALUES (@CorrelacionId,@TipoOperacion,@PadreId,@Id,@ArchivoId,@Huella,@UsuarioId);
         COMMIT TRANSACTION;

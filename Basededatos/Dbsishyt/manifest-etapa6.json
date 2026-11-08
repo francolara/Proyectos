@@ -4,6 +4,7 @@
   "scripts": [
     "Tablas/DocumentoOperacion.sql",
     "Script/016_SeguimientoDocumental.sql",
+    "Funciones/fn_ArchivoSegmento.sql",
     "StoreProcedure/spu_SeguimientoCONFIRMACION_CambiarEstado.sql",
     "StoreProcedure/spu_SeguimientoCONFIRMACION_Guardar.sql",
     "StoreProcedure/spu_SeguimientoCONFIRMACION_Listar.sql",

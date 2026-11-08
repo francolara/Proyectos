@@ -1,24 +1,26 @@
+@* Firma: FRANCO LARA - 07/11/2026 | Acciones visibles según los permisos del perfil. *@
+@* Firma: FRANCO LARA - 06/11/2026 | Cambio de estado OC en pop-up con retorno al listado y control de concurrencia existente; Cancelar junto al botón de registro; Guía excluida de transiciones de estado. *@
 @using GestionServicios.Application.Budgets
 @using GestionServicios.Web.ViewModels.Followup
 @using GestionServicios.Web.ViewModels.Shared
 @model DocumentDetailsModel
 @* Firma: FRANCO LARA - 03/11/2026 | Acciones de estado con fecha, responsable, motivo, versiones e identificador de operación. *@
 @{
+var popup=ViewData["StatePopup"] is true;
 var current=BudgetRecord.Text(Model.Document,"EstadoDocumento");
 string[] choices=(Model.Kind.Code,current) switch{
-("GUIA","REGISTRADA")=>["ENVIADA","OBSERVADA","ACEPTADA","ANULADA"],("GUIA","ENVIADA")=>["OBSERVADA","ACEPTADA","ANULADA"],("GUIA","OBSERVADA")=>["ENVIADA","ACEPTADA","ANULADA"],("GUIA","ACEPTADA")=>["OBSERVADA","ANULADA"],("GUIA","ANULADA")=>["REGISTRADA"],
 ("OC","REGISTRADA")=>["TRABAJO_COMPLETADO","CANCELADA"],("OC","TRABAJO_COMPLETADO")=>["CERRADA_OPERATIVAMENTE","REGISTRADA","CANCELADA"],("OC","CERRADA_OPERATIVAMENTE")=>["TRABAJO_COMPLETADO"],("OC","CANCELADA")=>["REGISTRADA"],
 ("CONFIRMACION","VIGENTE")=>["RETIRADA"],
 ("EJECUCION","PENDIENTE")=>["PROGRAMADA","EN_EJECUCION","CANCELADA"],("EJECUCION","PROGRAMADA")=>["PENDIENTE","EN_EJECUCION","CANCELADA"],("EJECUCION","EN_EJECUCION")=>["TERMINADA","CANCELADA"],("EJECUCION","TERMINADA")=>["EN_EJECUCION"],("EJECUCION","CANCELADA")=>["PENDIENTE"],_=>[]};
 string Label(string value)=>value switch{"TRABAJO_COMPLETADO"=>"Trabajo completado","CERRADA_OPERATIVAMENTE"=>"Cerrada operativamente","EN_EJECUCION"=>"En ejecución",_=>System.Globalization.CultureInfo.GetCultureInfo("es-PE").TextInfo.ToTitleCase(value.ToLowerInvariant())};
 }
-@if(choices.Length>0&&User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim,Model.Kind.Permission+".EDITAR"))
+@if(choices.Length>0&&User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim,Model.Kind.Permission+".CAMBIAR_ESTADO"))
 {
-<form asp-action="ChangeState" asp-route-kind="@Model.Kind.Key" asp-route-id="@Context.Request.RouteValues["id"]" method="post" data-hyt-save class="hyt-panel hyt-master-form">
-<h2>Cambiar estado</h2><input type="hidden" name="parentId" value="@Model.Text("PadreId")" /><input type="hidden" name="parentVersion" value="@Model.Text("VersionPadre")" /><input type="hidden" name="originalVersion" value="@BudgetRecord.Text(Model.Document,"VersionFila")" /><input type="hidden" name="operationId" value="@Guid.NewGuid()" />
+<form asp-action="ChangeState" asp-route-kind="@Model.Kind.Key" asp-route-id="@Context.Request.RouteValues["id"]" asp-route-popup="@popup" method="post" data-hyt-save data-document-form data-document-kind="@Model.Kind.Code" data-document-title="@("Cambiar estado · "+Model.Kind.Title)" class="hyt-panel hyt-master-form">
+<h2>Cambiar estado</h2>@if(popup){<input type="hidden" name="returnUrl" value="@ViewData["StateReturnUrl"]" />}<input type="hidden" name="parentId" value="@Model.Text("PadreId")" /><input type="hidden" name="parentVersion" value="@Model.Text("VersionPadre")" /><input type="hidden" name="originalVersion" value="@BudgetRecord.Text(Model.Document,"VersionFila")" /><input type="hidden" name="operationId" value="@Guid.NewGuid()" />
 <div class="hyt-master-fields"><div class="hyt-field"><label for="document-state">Nuevo estado *</label><select id="document-state" name="state" required><option value="">Seleccionar estado</option>@foreach(var option in choices){<option value="@option">@Label(option)</option>}</select></div>
 <div class="hyt-field"><partial name="_DatePicker" model="@(new DatePickerModel("eventDate","Fecha del evento",Required:true))" /></div>
 <div class="hyt-field"><label for="state-responsible">Responsable / representante *</label><input id="state-responsible" name="responsible" maxlength="150" required /></div>
 <div class="hyt-field"><label for="state-reason">Motivo / observación</label><input id="state-reason" name="reason" maxlength="2000" /><small>Obligatorio al observar, anular, cancelar, retirar o reabrir.</small></div></div>
-<button type="submit" class="hyt-button-primary">Registrar cambio de estado</button></form>
+<div class="hyt-form-actions"><button type="submit" class="hyt-button-primary">Registrar cambio de estado</button>@if(popup){<button type="button" class="hyt-button-secondary" data-hyt-close>Cancelar</button>}</div></form>
 }

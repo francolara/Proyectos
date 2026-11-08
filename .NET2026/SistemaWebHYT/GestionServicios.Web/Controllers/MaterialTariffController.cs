@@ -18,13 +18,13 @@ public sealed class MaterialTariffController(IMaintenanceRepository repository):
     public async Task<IActionResult> IndexGlobal(string? search,int page=1,CancellationToken ct=default)
     {
         if(!CanRead)return Forbid();if(page<1||page>100000000||search?.Length>200)return BadRequest();
-        ViewData["Search"]=search;ViewData["CanEdit"]=CanEdit;
+        ViewData["Search"]=search;ViewData["CanEdit"]=CanEdit;ViewData["CanCreate"]=CanCreate;
         return View("Index",await repository.MaterialTariffsAsync(Actor,0,page,ct,search));
     }
     [HttpGet("/Tarifarios/Nuevo")]
     public IActionResult NewGlobal()
     {
-        if(!CanEdit)return Forbid();return View("GlobalForm",new MaterialTariffFormModel(0,"",new(),null,false));
+        if(!CanCreate)return Forbid();return View("GlobalForm",new MaterialTariffFormModel(0,"",new(),null,false));
     }
     [HttpGet("/Tarifarios/{materialId:long}/{id:long}/Editar")]
     public Task<IActionResult> EditGlobal(long materialId,long id,CancellationToken ct)=>Read(materialId,id,false,ct,true);
@@ -34,13 +34,14 @@ public sealed class MaterialTariffController(IMaintenanceRepository repository):
     public Task<IActionResult> SaveGlobal(long selectedMaterialId,MaterialTariffInput input,CancellationToken ct)=>Save(selectedMaterialId,input,ct,true);
     private string Actor=>User.FindFirstValue(ClaimTypes.NameIdentifier)!;
     private bool CanRead=>User.HasClaim(AccessService.PermissionClaim,"MATERIALES.CONSULTAR")&&User.HasClaim(AccessService.PermissionClaim,"TARIFARIOS.CONSULTAR");
-    private bool CanEdit=>CanRead&&User.HasClaim(AccessService.PermissionClaim,"TARIFARIOS.EDITAR");
+    private bool CanEdit=>CanRead&&User.HasClaim(AccessService.PermissionClaim,"TARIFARIOS.MODIFICAR");
+    private bool CanCreate=>CanRead&&User.HasClaim(AccessService.PermissionClaim,"TARIFARIOS.CREAR");
     private static bool Editable(RecordSnapshot record)=>record.Text("VersionEstado")=="BORRADOR"||record.Text("EsTarifarioMaterial").Equals("true",StringComparison.OrdinalIgnoreCase);
     private Task<RecordSnapshot?> Material(long id,CancellationToken ct)=>repository.GetAsync(MaintenanceDefinitions.Find("materiales")!,Actor,id,cancellationToken:ct);
     [HttpGet("Nuevo")]
     public async Task<IActionResult> New(long materialId,CancellationToken ct)
     {
-        if(!CanEdit)return Forbid();if(materialId<=0)return BadRequest();var material=await Material(materialId,ct);if(material is null)return NotFound();
+        if(!CanCreate)return Forbid();if(materialId<=0)return BadRequest();var material=await Material(materialId,ct);if(material is null)return NotFound();
         return View("Form",new MaterialTariffFormModel(materialId,material.Text("Descripcion"),new(),null,false));
     }
     [HttpGet("{id:long}/Editar")]
@@ -60,7 +61,7 @@ public sealed class MaterialTariffController(IMaintenanceRepository repository):
     [HttpPost("Guardar")]
     public async Task<IActionResult> Save(long materialId,MaterialTariffInput input,CancellationToken ct,bool standalone=false)
     {
-        if(!CanEdit)return Forbid();if(input.Id is <=0)return BadRequest();
+        if(input.Id.HasValue ? !CanEdit : !CanCreate)return Forbid();if(input.Id is <=0)return BadRequest();
         if(materialId<=0){if(!standalone)return BadRequest();ModelState.AddModelError("","Selecciona un material.");return View("GlobalForm",new MaterialTariffFormModel(0,"",input,null,false));}
         var material=await Material(materialId,ct);if(material is null)return NotFound();
         RecordSnapshot? record=null;byte[]? version=null;

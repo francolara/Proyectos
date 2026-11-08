@@ -1,0 +1,9 @@
+@using GestionServicios.Application.Budgets
+@using GestionServicios.Web.ViewModels.Followup
+@model System.Text.Json.JsonElement
+@* Firma: FRANCO LARA - 06/11/2026 | Consulta informativa de fecha, tipo, serie y número de comprobante externo. *@
+<section class="hyt-panel hyt-master-form" data-document-title="Comprobante registrado"><dl class="hyt-document-summary">
+<dt>Fecha comprobante</dt><dd>@DocumentDetailsModel.Display(Model,"FechaDocumento")</dd>
+<dt>Tipo</dt><dd>@(BudgetRecord.Text(Model,"CodigoTipoDocumento")=="01"?"Factura (01)":"Boleta (03)")</dd>
+<dt>Serie</dt><dd>@BudgetRecord.Text(Model,"Serie")</dd><dt>Número</dt><dd>@BudgetRecord.Text(Model,"NumeroDocumento")</dd>
+</dl><button type="button" class="hyt-button-secondary" data-hyt-close>Cerrar</button></section>

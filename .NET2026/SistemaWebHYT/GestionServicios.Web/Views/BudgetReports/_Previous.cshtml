@@ -1,10 +1,25 @@
+@* Firma: FRANCO LARA - 06/11/2026 | Formato anterior basado en Excel, siete columnas, Arial, subtítulo, firma R2 y datos internos ocultos. Resumen solo sin IGV y tienda sin código interno. Coordinador/Encargado desde contactos activos de la tienda. *@
 @using GestionServicios.Web.ViewModels.Budgets
 @model BudgetPrintModel
 @* Firma: FRANCO LARA - 03/11/2026 | Formato anterior con parciales y total de grupo sin duplicación. *@
-<section class="report-metadata"><dl><dt>Descripción</dt><dd>@Model.Text("DescripcionTrabajo")</dd><dt>N° cotización</dt><dd>@Model.Text("NumeroCotizacionCliente")</dd><dt>Fecha</dt><dd>@BudgetPrintModel.Date(Model.Text("FechaEmision"))</dd><dt>Cliente</dt><dd>@Model.Text("ClienteNombre")</dd><dt>Tienda</dt><dd>@Model.Text("TiendaNombre")</dd><dt>Coordinador / encargado</dt><dd>@Model.Text("Coordinador") / @Model.Text("Encargado")</dd><dt>Código de proveedor</dt><dd>@Model.Text("CodigoSAPProveedor")</dd></dl></section>
-<table class="report-detail report-old-table"><colgroup><col style="width:6%" /><col style="width:43%" /><col style="width:7%" /><col style="width:9%" /><col style="width:12%" /><col style="width:12%" /><col style="width:11%" /></colgroup><thead><tr><th>Ítem</th><th>Descripción</th><th>Und.</th><th>Cantidad</th><th>P. unitario @Model.PriceTax</th><th>P. parcial @Model.PriceTax</th><th>Total de grupo</th></tr></thead>
-@if(Model.Groups.Count==0){<tbody><tr><td colspan="7">El borrador todavía no contiene partidas.</td></tr></tbody>}
-@foreach(var group in Model.Groups){<tbody><tr class="report-group"><th colspan="6">@(string.IsNullOrEmpty(group.Name)?"Detalle de trabajos":group.Name)</th><td class="report-number">@BudgetPrintModel.Money(Model.GroupAmount(group))</td></tr>
-@foreach(var line in group.Lines){<tr><td>@BudgetPrintModel.Value(line,"NumeroLinea")</td><td class="report-description">@BudgetPrintModel.Value(line,"Descripcion")</td><td>@BudgetPrintModel.Value(line,"Unidad")</td><td class="report-number">@BudgetPrintModel.Money(BudgetPrintModel.Amount(line,"Cantidad"))</td><td class="report-number">@BudgetPrintModel.Money(BudgetPrintModel.Amount(line,"PrecioUnitario"))</td><td class="report-number">@BudgetPrintModel.Money(Model.LineAmount(line))</td><td></td></tr>}
+@{var lines=Model.Record.Data.GetProperty("Partidas").EnumerateArray().ToArray();var notes=Model.Text("Consideraciones");}
+<main class="report-document old-document">
+<header class="new-brand"><img src="@Model.Logo" alt="HYT Servicios Generales" /><div><h1>@Model.CompanyText("RazonSocial")</h1><strong>RUC @Model.CompanyText("Ruc")</strong></div></header>
+<p class="new-services">@Model.Subtitle</p>
+<table class="new-client"><colgroup><col style="width:13%"/><col style="width:64.5%"/><col style="width:13.2%"/><col style="width:9.3%"/></colgroup><tbody><tr><th>CLIENTE</th><td>@Model.Text("ClienteNombre")</td><th>PPTO N°</th><th>FECHA</th></tr><tr><th>DIRECCION</th><td>@Model.Text("ClienteDireccion")</td><td>@Model.Record.Text("NumeroInterno")</td><td>@BudgetPrintModel.Date(Model.Text("FechaEmision"))</td></tr></tbody></table>
+<table class="old-context"><colgroup><col style="width:18%"/><col style="width:47%"/><col style="width:16%"/><col style="width:19%"/></colgroup><tbody><tr><th>TIENDA:</th><td>@Model.Text("TiendaNombre")</td><th>N° COTIZACIÓN:</th><td>@Model.Text("NumeroCotizacionCliente")</td></tr><tr><th>Coordinador/Encargado:</th><td colspan="3" data-store-contact>@Model.Record.Text("ContactosTienda")</td></tr><tr><th>CÓDIGO DE PROVEEDOR:</th><td colspan="3">@Model.Text("CodigoSAPProveedor")</td></tr></tbody></table>
+<table class="report-detail report-old-table"><colgroup><col style="width:6%"/><col style="width:43%"/><col style="width:7%"/><col style="width:9%"/><col style="width:12%"/><col style="width:12%"/><col style="width:11%"/></colgroup><thead><tr><th>ITEM</th><th>DESCRIPCIÓN</th><th>UND</th><th>CANT</th><th>P. UNIT (@Model.Currency)</th><th>P. PARCIAL</th><th>TOTAL</th></tr></thead>
+@if(Model.Groups.Count==0){<tbody><tr><td colspan="7">El registrado todavía no contiene partidas.</td></tr></tbody>}
+@foreach(var group in Model.Groups){<tbody><tr class="old-group"><th colspan="6">@group.Name</th><td class="report-number">@Model.Symbol @BudgetPrintModel.Money(Model.NetGroupAmount(group))</td></tr>
+@foreach(var line in group.Lines){<tr><td>@BudgetPrintModel.Value(line,"NumeroLinea")</td><td class="report-description">@BudgetPrintModel.Value(line,"Descripcion")</td><td>@BudgetPrintModel.Value(line,"Unidad")</td><td class="report-number">@BudgetPrintModel.Money(BudgetPrintModel.Amount(line,"Cantidad"))</td><td class="report-number">@Model.Symbol @BudgetPrintModel.Money(Model.NetUnitPrice(line))</td><td class="report-number">@Model.Symbol @BudgetPrintModel.Money(BudgetPrintModel.Amount(line,"BaseImponible"))</td><td></td></tr>}
 </tbody>}
+@if(lines.Length<12){<tbody>@for(var i=lines.Length;i<12;i++){<tr class="old-empty-row">@for(var j=0;j<7;j++){<td>&#160;</td>}</tr>}</tbody>}
+<tbody class="old-summary"><tr class="old-net-total"><td colspan="3" class="old-summary-spacer"></td><th colspan="3">COSTO FINAL SIN IGV</th><td class="report-number">@Model.Symbol @Model.Total("Subtotal")</td></tr></tbody>
 </table>
+<section class="new-notes"><h3>Nota:</h3><p class="report-multiline">@notes</p></section>
+<section class="new-signature">
+@if(!notes.Contains("Sin otro particular",StringComparison.OrdinalIgnoreCase)){<p>Sin otro particular quedamos a su disposición.</p>}
+@if(!notes.Contains("Muy atentamente",StringComparison.OrdinalIgnoreCase)){<p>Muy atentamente,</p>}
+<strong>@(string.IsNullOrWhiteSpace(Model.Text("Firmante"))?Model.CompanyText("NombreFirmante"):Model.Text("Firmante"))</strong><p class="new-signature-role">@(string.IsNullOrWhiteSpace(Model.Text("CargoFirmante"))?Model.CompanyText("CargoFirmante"):Model.Text("CargoFirmante"))</p>
+@if(Model.Signature is not null){<img class="report-signature-image" src="@Model.Signature" alt="Firma autorizada para presupuesto" />}
+</section></main>

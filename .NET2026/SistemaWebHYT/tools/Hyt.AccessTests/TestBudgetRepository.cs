@@ -3,22 +3,28 @@ using GestionServicios.Application.Budgets;
 
 sealed class TestBudgetRepository : IBudgetRepository
 {
+    public string? LastType {get;private set;}
+    public bool PendingGuide {get;private set;}
+    public bool PendingOrder {get;private set;}
     public int Saved {get;private set;}
+    public bool RegisteredDocuments {get;set;}
     public int StateChanges {get;private set;}
+    public DateOnly LastStateDate {get;private set;}
+    public string? LastResponsible {get;private set;}
     public int RequestedPage {get;private set;}
     public DateTimeOffset From {get;private set;}
     public DateTimeOffset Until {get;private set;}
     public string? LastPayload {get;private set;}
-    public Task<BudgetPage> ListAsync(string actor,DateTimeOffset from,DateTimeOffset until,string? search,int page,string? state,CancellationToken ct,string? client=null,string? store=null)
+    public Task<BudgetPage> ListAsync(string actor,DateTimeOffset from,DateTimeOffset until,string? search,int page,string? state,CancellationToken ct,string? client=null,string? store=null,string? type=null,bool pendingGuide=false,bool pendingOrder=false)
     {
-        RequestedPage=page;From=from;Until=until;
-        return Task.FromResult(new BudgetPage([new(1,"PPTO-1","Servicio","INVITACION",1,1,1,1,"Cliente <prueba>","Tienda Centro","BORRADOR","PEN",100,18,118,null,DateTimeOffset.UtcNow,"Operador",null,null,null,null,null,null,null,0)],41,page));
+        RequestedPage=page;From=from;Until=until;LastType=type;PendingGuide=pendingGuide;PendingOrder=pendingOrder;
+        return Task.FromResult(new BudgetPage([new(1,"PPTO-1","Servicio","INVITACION",1,1,1,1,"Cliente <prueba>","Tienda Centro","BORRADOR","PEN",100,18,118,null,DateTimeOffset.UtcNow,"Operador",null,null,RegisteredDocuments?1:null,RegisteredDocuments?"OC-1":null,RegisteredDocuments?1:null,RegisteredDocuments?"GUIA-1":null,RegisteredDocuments?"REGISTRADA":null,0,RegisteredDocuments?1:null)],41,page,new Dictionary<string,long>{{"BORRADOR",41}}));
     }
     public Task<BudgetRecord?> GetAsync(string actor,long id,long? revisionId,int auditPage,CancellationToken ct)
     {
         if(id==999)return Task.FromResult<BudgetRecord?>(null);
         var revision=new Dictionary<string,object?>();foreach(var field in BudgetDraftRules.HeaderFields)revision[field.Name]=null;
-        revision["RevisionId"]=revisionId??id;revision["NumeroRevision"]=1;revision["FechaEmision"]="2026-11-03";revision["CodigoMoneda"]="PEN";revision["CodigoTipoIGV"]="SIN_IGV";revision["Estado"]=id is 2 or 56?"ENVIADO":"BORRADOR";
+        revision["RevisionId"]=revisionId??id;revision["NumeroRevision"]=1;revision["FechaEmision"]="2026-11-03";revision["CodigoMoneda"]="PEN";revision["CodigoTipoIGV"]="SIN_IGV";revision["Estado"]=id==88?"OBSERVADO":id is 2 or 56?"ENVIADO":"BORRADOR";
         revision["ClienteNombre"]="Cliente <prueba>";revision["TiendaNombre"]="Tienda Centro";revision["TasaIGVAplicada"]=0.18m;revision["FechaDesdeTasaIGV"]="2026-11-03";revision["DescripcionTrabajo"]="Servicio de prueba";revision["VersionFila"]=Convert.ToBase64String(new byte[8]);revision["FechaAprobacion"]=null;revision["Subtotal"]=100m;revision["Impuesto"]=18m;revision["Total"]=118m;
         revision["TiendaCodigo"]="T001";revision["SimboloMoneda"]="S/";revision["EmpresaSnapshotJson"]=JsonSerializer.Serialize(new {Ruc="00000000000",RazonSocial="HYT PRUEBA",Direccion="Dirección de prueba",Telefono="",Correo="",NombreFirmante="Firmante",CargoFirmante="Comercial"});
         revision["Consideraciones"]="Consideraciones de prueba.\nIncluye los trabajos descritos.";
@@ -35,13 +41,13 @@ sealed class TestBudgetRepository : IBudgetRepository
         if(id==52)
         {revision["CodigoMoneda"]="USD";revision["SimboloMoneda"]="$";revision["CodigoTipoIGV"]="CON_IGV";line["CodigoMonedaOrigen"]="USD";line["CodigoTipoIGVOrigen"]="CON_IGV";line["PrecioOrigen"]=118m;line["PrecioUnitario"]=118m;}
         if(id==54)line["Descripcion"]=string.Concat(Enumerable.Repeat("Detalle técnico de mantenimiento y reposición de componentes. ",22))+"FIN-DESCRIPCION";
-        var data=JsonSerializer.SerializeToElement(new { PresupuestoId=id,NumeroInterno="PPTO-"+id,ClienteId=1,TiendaId=1,TipoAtencion=id is 55 or 56?"EMERGENCIA":"INVITACION",Descripcion="Servicio de prueba",FechaSolicitud=(string?)null,FechaRegistro="2026-11-03T18:30:00",UsuarioRegistro="Operador",VersionFila=Convert.ToBase64String(new byte[8]),Revision=revision,Partidas=lines,Revisiones=new[]{new {RevisionId=revisionId??id,NumeroRevision=1,Estado=id is 2 or 56?"ENVIADO":"BORRADOR"}},OrdenCompraId=id is 55 or 56 or 57?(long?)1:null,EstadoOC="REGISTRADA",RevisionOC=id });
+        var data=JsonSerializer.SerializeToElement(new { PresupuestoId=id,NumeroInterno="PPTO-"+id,ClienteId=1,TiendaId=1,ContactosTienda="Contacto de tienda",TipoAtencion=id is 55 or 56?"EMERGENCIA":"INVITACION",Descripcion="Servicio de prueba",FechaSolicitud=(string?)null,FechaRegistro="2026-11-03T18:30:00",UsuarioRegistro="Operador",VersionFila=Convert.ToBase64String(new byte[8]),Revision=revision,Partidas=lines,Revisiones=new[]{new {RevisionId=revisionId??id,NumeroRevision=1,Estado=id==88?"OBSERVADO":id is 2 or 56?"ENVIADO":"BORRADOR"}},OrdenCompraId=id is 55 or 56 or 57?(long?)1:null,EstadoOC="REGISTRADA",RevisionOC=id });
         return Task.FromResult<BudgetRecord?>(new(data,[],0));
     }
     public Task<BudgetVersion> SaveAsync(string actor,string payload,BudgetVersion? original,bool newRevision,CancellationToken ct)
     {Saved++;LastPayload=payload;return Task.FromResult(new BudgetVersion(original?.BudgetId??3,3,"PPTO-3",newRevision?2:1,new byte[8],new byte[8]));}
     public Task ChangeStateAsync(string actor,BudgetVersion original,string newState,DateOnly eventDate,string responsible,string? reason,CancellationToken ct)
-    {StateChanges++;return Task.CompletedTask;}
+    {StateChanges++;LastStateDate=eventDate;LastResponsible=responsible;return Task.CompletedTask;}
     public Task<TariffChoicePage> TariffsAsync(string actor,long clientId,DateOnly date,string currency,string? search,int page,CancellationToken ct,long? materialId=null,long? tariffLineId=null)
         =>Task.FromResult(new TariffChoicePage([new(1,1,"0001-A","001-A","000SAP","Servicio", "UND","TAR1",1,"CON_IGV",currency,currency=="USD"?null:118m,null,null,"Sur, Centro")],21,page));
     public Task<JsonElement> DefaultsAsync(string actor,DateOnly date,long? clientId,long? storeId,CancellationToken ct)

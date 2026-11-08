@@ -1,0 +1,21 @@
+@* Firma: FRANCO LARA - 06/11/2026 | Referencias documentales y fecha de registro de cada relación; mismo contenido para consulta y HTML impreso. *@
+@* Firma: FRANCO LARA - 07/11/2026 | Encabezado Guía en el listado y la impresión HTML de reportes. *@
+@using GestionServicios.Application.Budgets
+@using GestionServicios.Application.Reporting
+@using GestionServicios.Web.ViewModels.Reporting
+@model ReportModel
+@{string Text(System.Text.Json.JsonElement row,string key){var value=BudgetRecord.Text(row,key);return string.IsNullOrWhiteSpace(value)?"—":value;} }
+<section class="hyt-report-summary"><h2>@ReportKinds.All[Model.Kind]</h2><p>@ReportDisplay.Filters(Model)</p><p><strong>@Model.Data.Total registros</strong> · @foreach(var amount in Model.Data.Amounts){<span>@amount.Currency @ReportingDates.Number(amount.Amount) (@amount.Count documentos) </span>}</p></section>
+<div class="hyt-panel hyt-table-wrap" tabindex="0" role="region" aria-label="Expediente y referencias"><table class="hyt-table hyt-report-table"><thead><tr><th>Presupuesto</th><th>Cliente / tienda</th><th>Tipo</th><th>Estado</th><th>Importe</th><th>OC cliente</th><th>Guía</th><th>Ejecución</th><th>Confirmación del cliente</th><th>Facturado / comprobante</th></tr></thead><tbody>
+@foreach(var row in Model.Data.Rows){
+<tr><td><strong>@Text(row,"PresupuestoNumero")</strong><small>Registro: @ReportDisplay.Date(row,"PresupuestoRegistro")</small>@if(Model.Kind=="OC_CLIENTE"){<small>Estado: @ReportDisplay.State(Text(row,"EstadoPresupuesto"),true)</small>}</td>
+<td>@Text(row,"ClienteNombre")<small>@Text(row,"TiendaNombre")</small></td><td>@(Text(row,"TipoAtencion")=="INVITACION"?"Invitación":Text(row,"TipoAtencion")=="EMERGENCIA"?"Emergencia":"—")</td>
+<td>@ReportDisplay.State(Text(row,"Estado"),Model.Kind=="PRESUPUESTO")</td><td class="hyt-report-money">@Text(row,"CodigoMoneda")<br />@ReportingDates.Number(row.TryGetProperty("Total",out var total)&&total.ValueKind==System.Text.Json.JsonValueKind.Number?total.GetDecimal():null)</td>
+<td>@Text(row,"NumeroCliente")<small>@(Text(row,"OCInterno")=="—"?"":"OC-"+Text(row,"OCInterno"))</small><small>Registro: @ReportDisplay.Date(row,"OCRegistro")</small><small>@ReportDisplay.State(Text(row,"EstadoOC"))</small></td>
+<td>@Text(row,"Guia")<small>@Text(row,"TipoGuia")</small><small>Registro: @ReportDisplay.Date(row,"GuiaRegistro")</small><small>Fecha: @ReportDisplay.BusinessDate(row,"GuiaFecha")</small></td>
+<td>@(Text(row,"EjecucionId")=="—"?"—":"EJE-"+Text(row,"EjecucionId"))<small>Registro: @ReportDisplay.Date(row,"EjecucionRegistro")</small><small>Inicio: @ReportDisplay.BusinessDate(row,"EjecucionInicio")</small><small>Término: @ReportDisplay.BusinessDate(row,"EjecucionTermino")</small></td>
+<td>@Text(row,"Confirmacion")<small>Registro: @ReportDisplay.Date(row,"ConfirmacionRegistro")</small><small>Fecha: @ReportDisplay.BusinessDate(row,"ConfirmacionFecha")</small></td>
+<td>@(Text(row,"NumeroComprobante")=="—"?"—":"Sí · "+(Text(row,"TipoComprobante")=="01"?"Factura":"Boleta"))<strong>@(Text(row,"NumeroComprobante")=="—"?"":Text(row,"Serie")+"-"+Text(row,"NumeroComprobante"))</strong><small>Registro: @ReportDisplay.Date(row,"FacturadoRegistro")</small><small>Fecha: @ReportDisplay.BusinessDate(row,"ComprobanteFecha")</small></td></tr>
+}
+@if(Model.Data.Rows.Count==0){<tr><td colspan="10">Sin registros para los filtros seleccionados.</td></tr>}
+</tbody></table></div>

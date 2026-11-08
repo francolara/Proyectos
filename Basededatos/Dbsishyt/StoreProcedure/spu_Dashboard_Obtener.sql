@@ -8,7 +8,7 @@
 -- Create date:   05/11/2026
 -- Description:   Filtros comerciales, primeros eventos, resultados vacíos y pendientes históricos paginados.
 -- =============================================
--- Firma: FRANCO LARA | Create date: 06/11/2026 | Numeración visible del presupuesto por año/mes de registro en Lima y correlativo mensual.
+-- Firma: FRANCO LARA | Create date: 06/11/2026 | Numeración visible del presupuesto por año/mes de registro en Lima y correlativo mensual. Guía sin flujo de estados. OC con trabajo completado acredita término para indicadores de facturación. Panel operativo por estados actuales y pendientes de OC, guía, confirmación y facturación. Curvas de Confirmación del cliente y Facturado por registro vigente; elimina cálculo de primeros eventos históricos.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_Dashboard_Obtener
@@ -38,7 +38,7 @@ BEGIN
         DECLARE @VerPendientes BIT=0;
         IF @VerPresupuesto=1 AND @VerOC=1 AND EXISTS(SELECT 1 FROM dbo.AspNetUserRoles AS rol INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId WHERE rol.UserId=@UsuarioId AND permiso.CodigoPermiso=N'GUIAS.CONSULTAR') SET @VerPendientes=1;
         SELECT p.PresupuestoId AS Id,p.NumeroPresupuesto AS Numero,p.FechaRegistro,p.TipoAtencion,revision.ClienteNombre,revision.TiendaNombre,
-            CONVERT(BIT,CASE WHEN oc.OrdenCompraId IS NULL THEN 1 ELSE 0 END) AS SinOC,CONVERT(BIT,CASE WHEN guia.GuiaId IS NULL OR guia.Estado=N'ANULADA' THEN 1 ELSE 0 END) AS SinGuia,
+            CONVERT(BIT,CASE WHEN oc.OrdenCompraId IS NULL THEN 1 ELSE 0 END) AS SinOC,CONVERT(BIT,CASE WHEN guia.GuiaId IS NULL THEN 1 ELSE 0 END) AS SinGuia,
             CONVERT(BIT,CASE WHEN p.TipoAtencion=N'EMERGENCIA' AND revision.Estado<>N'APROBADO' THEN 1 ELSE 0 END) AS EmergenciaPorRegularizar,
             DATEDIFF(DAY,CONVERT(DATE,DATEADD(HOUR,-5,p.FechaRegistro)),CONVERT(DATE,DATEADD(HOUR,-5,SYSUTCDATETIME()))) AS DiasPendiente
         INTO #Pendientes FROM dbo.Presupuesto AS p
@@ -47,14 +47,14 @@ BEGIN
         LEFT JOIN dbo.GuiaConformidad AS guia ON guia.PresupuestoId=p.PresupuestoId
         WHERE @VerPendientes=1 AND revision.Estado<>N'CANCELADO' AND p.FechaRegistro<@HastaExclusiva
             AND (@Cliente IS NULL OR revision.ClienteNombre LIKE N'%'+@Cliente+N'%') AND (@Tienda IS NULL OR revision.TiendaNombre LIKE N'%'+@Tienda+N'%')
-            AND (oc.OrdenCompraId IS NULL OR guia.GuiaId IS NULL OR guia.Estado=N'ANULADA' OR (p.TipoAtencion=N'EMERGENCIA' AND revision.Estado<>N'APROBADO'));
-        SELECT evento.OrdenCompraId,MIN(evento.FechaRegistro) AS FechaRegistro,evento.Tipo
-        INTO #Eventos FROM
-            (SELECT confirmacion.OrdenCompraId,confirmacion.FechaRegistro,N'CONFIRMACION' AS Tipo FROM dbo.ConfirmacionFacturacion AS confirmacion
-             UNION ALL SELECT referencia.OrdenCompraId,referencia.FechaRegistro,N'MARCADO' FROM dbo.ReferenciaComprobanteExterno AS referencia) AS evento
-        INNER JOIN dbo.OrdenCompraCliente AS oc ON oc.OrdenCompraId=evento.OrdenCompraId INNER JOIN dbo.PresupuestoRevision AS revision ON revision.RevisionId=oc.RevisionId
-        WHERE @VerOC=1 AND (@Cliente IS NULL OR revision.ClienteNombre LIKE N'%'+@Cliente+N'%') AND (@Tienda IS NULL OR revision.TiendaNombre LIKE N'%'+@Tienda+N'%')
-        GROUP BY evento.OrdenCompraId,evento.Tipo;
+            AND (oc.OrdenCompraId IS NULL OR guia.GuiaId IS NULL OR (p.TipoAtencion=N'EMERGENCIA' AND revision.Estado<>N'APROBADO'));
+        SELECT evento.FechaRegistro,evento.Tipo INTO #Eventos
+        FROM (SELECT confirmacion.OrdenCompraId,confirmacion.FechaRegistro,N'CONFIRMACION' AS Tipo FROM dbo.ConfirmacionFacturacion AS confirmacion WHERE confirmacion.Vigente=1
+            UNION ALL SELECT referencia.OrdenCompraId,referencia.FechaRegistro,N'FACTURADO' FROM dbo.ReferenciaComprobanteExterno AS referencia WHERE referencia.Vigente=1) AS evento
+        INNER JOIN dbo.OrdenCompraCliente AS oc ON oc.OrdenCompraId=evento.OrdenCompraId
+        INNER JOIN dbo.PresupuestoRevision AS revision ON revision.RevisionId=oc.RevisionId
+        WHERE @VerOC=1 AND oc.Estado<>N'CANCELADA' AND evento.FechaRegistro>=@Desde AND evento.FechaRegistro<@HastaExclusiva
+            AND (@Cliente IS NULL OR revision.ClienteNombre LIKE N'%'+@Cliente+N'%') AND (@Tienda IS NULL OR revision.TiendaNombre LIKE N'%'+@Tienda+N'%');
         SELECT (SELECT @VerPresupuesto AS VerPresupuestos,@VerOC AS VerOC,@VerPendientes AS VerPendientes,SYSUTCDATETIME() AS ActualizadoUTC,@Desde AS DesdeUTC,@HastaExclusiva AS HastaExclusivaUTC,
             (SELECT COUNT_BIG(1) FROM #Pendientes) AS TotalPendientes,
             (SELECT COUNT_BIG(1) FROM #Pendientes AS pendiente WHERE pendiente.FechaRegistro>=@Desde) AS PendientesPeriodo,
@@ -63,16 +63,19 @@ BEGIN
             JSON_QUERY(COALESCE((SELECT orden.Estado,COUNT_BIG(1) AS Cantidad FROM #Ordenes AS orden GROUP BY orden.Estado FOR JSON PATH),N'[]')) AS EstadosOC,
             (SELECT COUNT_BIG(1) FROM #Presupuestos) AS Presupuestos,
             (SELECT COUNT_BIG(1) FROM #Ordenes) AS Ordenes,
+            (SELECT COUNT_BIG(1) FROM #Presupuestos AS presupuesto WHERE NOT EXISTS(SELECT 1 FROM dbo.OrdenCompraCliente AS oc WHERE oc.PresupuestoId=presupuesto.PresupuestoId)) AS PresupuestosSinOC,
+            (SELECT COUNT_BIG(1) FROM #Presupuestos AS presupuesto WHERE NOT EXISTS(SELECT 1 FROM dbo.GuiaConformidad AS guia WHERE guia.PresupuestoId=presupuesto.PresupuestoId)) AS PresupuestosSinGuia,
+            (SELECT COUNT_BIG(1) FROM #Ordenes AS orden WHERE orden.Estado<>N'CANCELADA' AND orden.ReferenciaId IS NULL) AS PendientesFacturar,
             (SELECT COUNT_BIG(1) FROM #Ordenes AS orden WHERE orden.Estado<>N'CANCELADA' AND orden.ConfirmacionId IS NULL) AS SinConfirmar,
             (SELECT COUNT_BIG(1) FROM #Ordenes AS orden WHERE orden.Estado<>N'CANCELADA' AND orden.ConfirmacionId IS NOT NULL AND orden.ReferenciaId IS NULL) AS ConfirmadasSinMarcar,
-            (SELECT COUNT_BIG(1) FROM #Ordenes AS orden WHERE orden.Estado<>N'CANCELADA' AND orden.ReferenciaId IS NULL AND orden.ConfirmacionId IS NOT NULL AND orden.EstadoEjecucion=N'TERMINADA' AND orden.EstadoGuia=N'ACEPTADA') AS ListasParaMarcar,
+            (SELECT COUNT_BIG(1) FROM #Ordenes AS orden WHERE orden.Estado<>N'CANCELADA' AND orden.ReferenciaId IS NULL AND orden.ConfirmacionId IS NOT NULL AND (orden.Estado IN(N'TRABAJO_COMPLETADO',N'CERRADA_OPERATIVAMENTE') OR orden.EstadoEjecucion=N'TERMINADA') AND orden.GuiaId IS NOT NULL) AS ListasParaMarcar,
             (SELECT COUNT_BIG(1) FROM #Ordenes AS orden WHERE orden.Estado<>N'CANCELADA' AND orden.ReferenciaId IS NOT NULL) AS Facturadas,
             JSON_QUERY(COALESCE((SELECT presupuesto.CodigoMoneda,SUM(presupuesto.Total) AS Importe,COUNT_BIG(1) AS Cantidad,SUM(CONVERT(BIGINT,CASE WHEN presupuesto.Total IS NULL THEN 1 ELSE 0 END)) AS PreciosPendientes FROM #Presupuestos AS presupuesto WHERE presupuesto.Estado<>N'CANCELADO' GROUP BY presupuesto.CodigoMoneda FOR JSON PATH,INCLUDE_NULL_VALUES),N'[]')) AS ImportesPresupuesto,
             JSON_QUERY(COALESCE((SELECT orden.CodigoMoneda,SUM(orden.Total) AS Importe,COUNT_BIG(1) AS Cantidad FROM #Ordenes AS orden WHERE orden.Estado<>N'CANCELADA' GROUP BY orden.CodigoMoneda FOR JSON PATH,INCLUDE_NULL_VALUES),N'[]')) AS ImportesOC,
             JSON_QUERY(COALESCE((SELECT movimiento.Fecha,SUM(movimiento.Presupuestos) AS Presupuestos,SUM(movimiento.Ordenes) AS Ordenes,SUM(movimiento.Confirmaciones) AS Confirmaciones,SUM(movimiento.Marcados) AS Marcados FROM
                 (SELECT CONVERT(DATE,DATEADD(HOUR,-5,presupuesto.FechaRegistro)) AS Fecha,CONVERT(BIGINT,1) AS Presupuestos,CONVERT(BIGINT,0) AS Ordenes,CONVERT(BIGINT,0) AS Confirmaciones,CONVERT(BIGINT,0) AS Marcados FROM #Presupuestos AS presupuesto
                  UNION ALL SELECT CONVERT(DATE,DATEADD(HOUR,-5,orden.FechaRegistro)),CONVERT(BIGINT,0),CONVERT(BIGINT,1),CONVERT(BIGINT,0),CONVERT(BIGINT,0) FROM #Ordenes AS orden
-                 UNION ALL SELECT CONVERT(DATE,DATEADD(HOUR,-5,evento.FechaRegistro)),CONVERT(BIGINT,0),CONVERT(BIGINT,0),CONVERT(BIGINT,CASE WHEN evento.Tipo=N'CONFIRMACION' THEN 1 ELSE 0 END),CONVERT(BIGINT,CASE WHEN evento.Tipo=N'MARCADO' THEN 1 ELSE 0 END) FROM #Eventos AS evento WHERE evento.FechaRegistro>=@Desde AND evento.FechaRegistro<@HastaExclusiva) AS movimiento
+                 UNION ALL SELECT CONVERT(DATE,DATEADD(HOUR,-5,evento.FechaRegistro)),CONVERT(BIGINT,0),CONVERT(BIGINT,0),CONVERT(BIGINT,CASE WHEN evento.Tipo=N'CONFIRMACION' THEN 1 ELSE 0 END),CONVERT(BIGINT,CASE WHEN evento.Tipo=N'FACTURADO' THEN 1 ELSE 0 END) FROM #Eventos AS evento) AS movimiento
                 GROUP BY movimiento.Fecha ORDER BY movimiento.Fecha FOR JSON PATH),N'[]')) AS Movimientos
             FOR JSON PATH,WITHOUT_ARRAY_WRAPPER) AS Datos;
         DROP TABLE #Presupuestos;DROP TABLE #Ordenes;DROP TABLE #Pendientes;DROP TABLE #Eventos;

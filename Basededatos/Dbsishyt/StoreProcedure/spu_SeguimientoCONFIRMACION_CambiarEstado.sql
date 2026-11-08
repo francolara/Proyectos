@@ -3,6 +3,7 @@
 -- Create date:   03/11/2026
 -- Description:   Cambia estado con dependencias, fecha, responsable, auditoría e idempotencia.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 07/11/2026 | Comprueba el permiso específico del perfil antes de realizar la acción.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_SeguimientoCONFIRMACION_CambiarEstado
@@ -14,6 +15,8 @@ BEGIN
     SET XACT_ABORT ON;
     DECLARE @Propia BIT=0;
     BEGIN TRY
+        IF dbo.fn_HYTPermiso(@UsuarioId,N'CONFIRMACIONES.MODIFICAR') = 0
+            THROW 51700,N'[HYT_PERMISO] No tiene permiso para esta acción.',1;
         IF NOT EXISTS(SELECT 1 FROM dbo.AspNetUsers AS usuario INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId=usuario.Id
             INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId WHERE usuario.Id=@UsuarioId AND usuario.Activo=1 AND permiso.CodigoPermiso=N'CONFIRMACIONES.EDITAR')
             THROW 51400,N'[HYT_PERMISO] No tiene permiso para cambiar este estado.',1;

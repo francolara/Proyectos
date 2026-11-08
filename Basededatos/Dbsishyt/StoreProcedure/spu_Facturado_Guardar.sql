@@ -3,6 +3,7 @@
 -- Create date:   03/11/2026
 -- Description:   Marcado Facturado externo con permisos y trazabilidad.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 06/11/2026 | Guía como documento sin estados; validaciones por existencia. Trabajo completado de OC acredita término sin exigir ejecución separada; confirmación vigente obligatoria.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_Facturado_Guardar
@@ -42,8 +43,8 @@ BEGIN
         DECLARE @ConfirmacionId BIGINT,@Anterior NVARCHAR(MAX),@Nuevo NVARCHAR(MAX),@EstadoAnterior NVARCHAR(30);
         SELECT @ConfirmacionId=confirmacion.ConfirmacionId FROM dbo.ConfirmacionFacturacion AS confirmacion WITH(UPDLOCK,HOLDLOCK) WHERE confirmacion.OrdenCompraId=@OrdenCompraId AND confirmacion.Vigente=1;
         IF @Retirar=0 AND @ConfirmacionId IS NULL THROW 51506,N'[HYT_VALIDACION] Registra primero la confirmación del cliente de esta OC.',1;
-        IF @Retirar=0 AND (NOT EXISTS(SELECT 1 FROM dbo.GuiaConformidad AS guia WHERE guia.PresupuestoId=@PresupuestoId AND guia.Estado=N'ACEPTADA') OR NOT EXISTS(SELECT 1 FROM dbo.Ejecucion AS ejecucion WHERE ejecucion.PresupuestoId=@PresupuestoId AND ejecucion.Estado=N'TERMINADA'))
-            THROW 51506,N'[HYT_VALIDACION] Completa el trabajo y registra la guía aceptada antes de marcar Facturado.',1;
+        IF @Retirar=0 AND (NOT EXISTS(SELECT 1 FROM dbo.GuiaConformidad AS guia WHERE guia.PresupuestoId=@PresupuestoId) OR (NOT EXISTS(SELECT 1 FROM dbo.OrdenCompraCliente AS oc WHERE oc.OrdenCompraId=@OrdenCompraId AND oc.Estado IN(N'TRABAJO_COMPLETADO',N'CERRADA_OPERATIVAMENTE')) AND NOT EXISTS(SELECT 1 FROM dbo.Ejecucion AS ejecucion WHERE ejecucion.PresupuestoId=@PresupuestoId AND ejecucion.Estado=N'TERMINADA')))
+            THROW 51506,N'[HYT_VALIDACION] Para marcar Facturado la OC debe tener trabajo completado (o ejecución terminada) y una guía registrada.',1;
         IF @ReferenciaId IS NULL AND EXISTS(SELECT 1 FROM dbo.ReferenciaComprobanteExterno AS referencia WITH(UPDLOCK,HOLDLOCK) WHERE referencia.OrdenCompraId=@OrdenCompraId AND referencia.Vigente=1)
             THROW 51507,N'[HYT_VALIDACION] La OC ya está marcada. Abre su referencia para corregirla.',1;
         IF @ReferenciaId IS NOT NULL

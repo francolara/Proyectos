@@ -1,0 +1,74 @@
+@* Firma: FRANCO LARA - 07/11/2026 | Administración de acceso y trazabilidad HYT. *@
+@using GestionServicios.Web.ViewModels.Security
+@using GestionServicios.Web.Security
+@model UserFormModel
+@{
+    var id = Model.Record?.Text("Id");
+    var editing = id is not null;
+    var canActivate = User.HasClaim(AccessService.PermissionClaim, "USUARIOS.ACTIVAR");
+    ViewData["Title"] = Model.ReadOnly ? "Usuario" : editing ? "Editar usuario" : "Nuevo usuario";
+}
+<header class="hyt-page-header">
+    <div><h1>@ViewData["Title"]</h1><p>@(Model.ReadOnly ? Model.Input.Email : "Completa los datos y selecciona un perfil de acceso.")</p></div>
+    <a class="hyt-button-secondary" asp-action="Index">Volver al listado</a>
+</header>
+@if (TempData["SecurityNotice"] is string notice) { <p class="hyt-panel hyt-master-trace" role="status">@notice</p> }
+<form method="post" asp-action="@(editing ? "Update" : "Create")" asp-route-id="@id" class="hyt-panel hyt-master-form">
+    <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+    <input type="hidden" name="Version" value="@Model.Input.Version" />
+    <div class="hyt-master-fields">
+        <div class="hyt-field"><label for="names">Nombres</label><input id="names" name="Names" value="@Model.Input.Names" required maxlength="150" readonly="@Model.ReadOnly" /></div>
+        <div class="hyt-field"><label for="surnames">Apellidos</label><input id="surnames" name="Surnames" value="@Model.Input.Surnames" required maxlength="150" readonly="@Model.ReadOnly" /></div>
+        <div class="hyt-field"><label for="email">Correo de inicio de sesión</label><input id="email" name="Email" value="@Model.Input.Email" type="email" required maxlength="256" readonly="@Model.ReadOnly" /></div>
+        <div class="hyt-field"><label for="role">Perfil de acceso</label>
+        @if (Model.ReadOnly)
+        { <input id="role" value="@Model.Record?.Text("Perfil")" readonly /> }
+        else
+        {
+            <select id="role" name="RoleId" required><option value="">Selecciona un perfil</option>
+            @foreach (var role in Model.Roles) { <option value="@role.Text("Id")" selected="@(Model.Input.RoleId == role.Text("Id"))">@role.Text("Name")</option> }
+            </select>
+        }
+        </div>
+        <div class="hyt-field"><label for="active">Estado de la cuenta</label>
+        @if (!editing && !Model.ReadOnly)
+        { <select id="active" name="Active"><option value="true" selected="@Model.Input.Active">Activo</option><option value="false" selected="@(!Model.Input.Active)">Inactivo</option></select> }
+        else
+        { <input id="active" value="@(Model.Input.Active ? "Activo" : "Inactivo")" readonly /><input type="hidden" name="Active" value="@Model.Input.Active.ToString()" /> }
+        </div>
+        @if (!editing)
+        { <partial name="_TemporaryPasswordInput" model="Model.Input.TemporaryPassword" /> }
+    </div>
+    <div class="hyt-master-related">
+    @if (!Model.ReadOnly)
+    {
+        <button class="hyt-button-primary" type="submit">Guardar usuario</button>
+        <a class="hyt-button-secondary" asp-action="@(editing ? "Detail" : "Index")" asp-route-id="@id">Cancelar</a>
+    }
+    else if (User.HasClaim(AccessService.PermissionClaim, "USUARIOS.MODIFICAR"))
+    { <a class="hyt-button-primary" asp-action="Edit" asp-route-id="@id">Editar usuario</a> }
+    </div>
+</form>
+@if (Model.Record is { } row && Model.ReadOnly)
+{
+    var locked = DateTimeOffset.TryParse(row.Text("LockoutEnd"), out var until) && until > DateTimeOffset.UtcNow;
+    <section class="hyt-panel hyt-master-trace">
+        <h2>Acceso a HYT</h2>
+        <p>Último ingreso: @row.Date("UltimoIngreso", "Sin ingresos")</p>
+        <p>Último cambio de contraseña: @row.Date("FechaCambioClave", "Sin cambios registrados")</p>
+        @if (row.Flag("DebeCambiarClave")) { <p>Pendiente de cambiar contraseña temporal.</p> }
+        @if (locked) { <p>Bloqueado por intentos hasta @row.Date("LockoutEnd").</p> }
+        <div class="hyt-master-related">
+            @if (canActivate)
+            { <a class="hyt-button-secondary" asp-action="Manage" asp-route-id="@id" asp-route-actionCode="@(Model.Input.Active ? "DESACTIVAR" : "ACTIVAR")">@(Model.Input.Active ? "Desactivar" : "Activar") usuario</a> }
+            @if (User.HasClaim(AccessService.PermissionClaim, "USUARIOS.RESTABLECER"))
+            { <a class="hyt-button-secondary" asp-action="Manage" asp-route-id="@id" asp-route-actionCode="RESTABLECER">Restablecer contraseña</a> }
+            @if (locked && User.HasClaim(AccessService.PermissionClaim, "USUARIOS.DESBLOQUEAR"))
+            { <a class="hyt-button-secondary" asp-action="Manage" asp-route-id="@id" asp-route-actionCode="DESBLOQUEAR">Desbloquear acceso</a> }
+            @if (User.HasClaim(AccessService.PermissionClaim, "USUARIOS.SESIONES"))
+            { <a class="hyt-button-secondary" asp-action="Manage" asp-route-id="@id" asp-route-actionCode="CERRAR_SESIONES">Cerrar sesiones</a> }
+        </div>
+    </section>
+}
+@if (Model.Record is { } record) { <partial name="_SecurityTrace" model="record" /> }
+@section Scripts { <script src="~/hyt-security.js" asp-append-version="true" defer></script> }

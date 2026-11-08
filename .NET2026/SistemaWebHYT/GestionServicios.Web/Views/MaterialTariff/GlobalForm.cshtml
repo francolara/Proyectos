@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 07/11/2026 | Campo de estado según permisos. *@
 @model GestionServicios.Web.ViewModels.Maintenance.MaterialTariffFormModel
 @{ViewData["Title"]=Model.ReadOnly?"Ver tarifario":Model.Input.Id.HasValue?"Editar tarifario":"Agregar tarifario";var input=Model.Input;}
 @* Firma: FRANCO LARA - 05/11/2026 | Registro unificado de tarifarios con selección de material y trazabilidad propia. *@
@@ -9,7 +10,10 @@
 @if(!Model.ReadOnly&&!input.Id.HasValue){<button type="button" class="hyt-button-secondary" data-open-lookup>Buscar</button><button type="button" class="hyt-button-secondary" data-clear-reference>Limpiar</button>}</div></div>
 <fieldset disabled="@Model.ReadOnly" class="hyt-budget-fieldset"><div class="hyt-master-fields">
 <div class="hyt-field"><label for="tariff-tax">Tipo de IGV *</label><select id="tariff-tax" name="TaxCode" required><option value="SIN_IGV" selected="@(input.TaxCode=="SIN_IGV")">SIN IGV</option><option value="CON_IGV" selected="@(input.TaxCode=="CON_IGV")">CON IGV</option></select></div>
-<div class="hyt-field"><label for="tariff-state">Estado *</label><select id="tariff-state" name="Active"><option value="true" selected="@input.Active">Activo</option><option value="false" selected="@(!input.Active)">Inactivo</option></select></div>
+<div class="hyt-field"><label for="tariff-state">Estado *</label>@if (input.Id.HasValue && !User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim,"TARIFARIOS.ACTIVAR"))
+{ <input id="tariff-state" value="@(input.Active ? "Activo" : "Inactivo")" readonly /><input type="hidden" name="Active" value="@input.Active.ToString()" /> }
+else
+{ <select id="tariff-state" name="Active"><option value="true" selected="@input.Active">Activo</option><option value="false" selected="@(!input.Active)">Inactivo</option></select> }</div>
 <div class="hyt-field"><label for="tariff-pen">Precio en soles (S/)</label><input id="tariff-pen" name="PricePEN" value="@input.PricePEN" inputmode="decimal" maxlength="16"/><small>Ingresa un precio en soles o dólares. Hasta dos decimales.</small></div>
 <div class="hyt-field"><label for="tariff-usd">Precio en dólares ($)</label><input id="tariff-usd" name="PriceUSD" value="@input.PriceUSD" inputmode="decimal" maxlength="16"/><small>Opcional. Hasta dos decimales.</small></div>
 </div></fieldset>

@@ -1,0 +1,8 @@
+@* Firma: FRANCO LARA - 07/11/2026 | Administración de acceso y trazabilidad HYT. *@
+@using GestionServicios.Web.Security
+<nav class="hyt-master-related" aria-label="Administración de acceso">
+    @if (User.HasClaim(AccessService.PermissionClaim, "USUARIOS.CONSULTAR"))
+    { <a class="hyt-button-secondary" asp-controller="Users" asp-action="Index">Usuarios</a> }
+    @if (User.HasClaim(AccessService.PermissionClaim, "PERFILES.CONSULTAR"))
+    { <a class="hyt-button-secondary" asp-controller="Profiles" asp-action="Index">Perfiles de acceso</a> }
+</nav>

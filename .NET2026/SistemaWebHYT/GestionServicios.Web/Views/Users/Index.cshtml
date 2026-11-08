@@ -1,0 +1,45 @@
+@* Firma: FRANCO LARA - 07/11/2026 | Administración de acceso y trazabilidad HYT. *@
+@using GestionServicios.Web.ViewModels.Security
+@using GestionServicios.Web.Security
+@model UserListModel
+@{ ViewData["Title"] = "Usuarios y permisos"; ViewData["Wide"] = true; }
+<header class="hyt-page-header">
+    <div><h1>Usuarios y permisos</h1><p>Administra las cuentas y sus perfiles de acceso.</p></div>
+    @if (User.HasClaim(AccessService.PermissionClaim, "USUARIOS.CREAR"))
+    { <a class="hyt-button-primary" asp-action="New">Nuevo usuario</a> }
+</header>
+<partial name="_SecurityNav" />
+<form method="get" class="hyt-filters" asp-action="Index">
+    <div class="hyt-field"><label for="search">Buscar por nombre, correo o perfil</label><input id="search" name="search" value="@Model.Search" type="search" maxlength="200" /></div>
+    <div class="hyt-field"><label for="active">Estado</label><select id="active" name="active"><option value="">Todos</option><option value="true" selected="@(Model.Active == true)">Activo</option><option value="false" selected="@(Model.Active == false)">Inactivo</option></select></div>
+    <div class="hyt-field"><label for="situation">Situación del acceso</label><select id="situation" name="situation">
+        <option value="">Todas</option><option value="DISPONIBLE" selected="@(Model.Situation == "DISPONIBLE")">Disponible</option>
+        <option value="TEMPORAL" selected="@(Model.Situation == "TEMPORAL")">Pendiente de cambiar contraseña</option>
+        <option value="BLOQUEADO" selected="@(Model.Situation == "BLOQUEADO")">Bloqueado por intentos</option>
+    </select></div>
+    <button class="hyt-button-primary" type="submit">Consultar</button><a class="hyt-button-secondary" asp-action="Index">Restablecer</a>
+</form>
+<div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Usuarios">
+<table class="hyt-table"><thead><tr><th>Usuario</th><th>Correo</th><th>Perfil</th><th>Estado</th><th>Situación del acceso</th><th>Último ingreso</th><th class="hyt-actions-column">Acciones</th></tr></thead><tbody>
+@if (Model.Data.Rows.Count == 0) { <tr><td colspan="7">No se encontraron usuarios con los filtros seleccionados.</td></tr> }
+@foreach (var row in Model.Data.Rows)
+{
+    var id = row.Text("Id");
+    var situation = row.Text("Situacion") switch
+    {
+        "TEMPORAL" => "Pendiente de cambiar contraseña",
+        "BLOQUEADO" => "Bloqueado por intentos",
+        _ => "Disponible"
+    };
+    <tr><td>@SecurityDisplay.Name(row)</td><td>@row.Text("Email")</td><td>@row.Text("Perfil")</td>
+        <td>@(row.Flag("Activo") ? "Activo" : "Inactivo")</td><td>@situation</td><td>@row.Date("UltimoIngreso", "Sin ingresos")</td>
+        <td class="hyt-actions-column"><div class="hyt-grid-actions">
+            <a class="hyt-button-secondary" asp-action="Detail" asp-route-id="@id">Ver</a>
+            @if (User.HasClaim(AccessService.PermissionClaim, "USUARIOS.MODIFICAR"))
+            { <a class="hyt-button-secondary" asp-action="Edit" asp-route-id="@id">Editar</a> }
+        </div></td>
+    </tr>
+}
+</tbody></table>
+<partial name="_SecurityPagination" model="Model.Data" />
+</div>

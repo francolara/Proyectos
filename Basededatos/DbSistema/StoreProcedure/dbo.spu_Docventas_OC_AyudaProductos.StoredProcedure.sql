@@ -3,6 +3,10 @@
 -- Create date:   17/10/2026
 -- Description:   Lista productos para la ayuda propia de ordenes de compra.
 -- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   06/11/2026
+-- Description:   Busca fragmentos separados por % o * en cualquier orden.
+-- =============================================
 CREATE OR ALTER PROCEDURE dbo.spu_Docventas_OC_AyudaProductos
     @IdEmpresa CHAR(2),
     @IdSucursal VARCHAR(8),
@@ -20,6 +24,12 @@ BEGIN
     SET NOCOUNT ON;
 
     BEGIN TRY
+        DECLARE @Fragmentos TABLE (Fragmento VARCHAR(300));
+        INSERT INTO @Fragmentos (Fragmento)
+        SELECT LTRIM(RTRIM(value))
+        FROM STRING_SPLIT(REPLACE(ISNULL(@Busqueda, ''), '*', '%'), '%')
+        WHERE LTRIM(RTRIM(value)) <> '';
+
         IF @IdTipoProducto = '06002'
         BEGIN
             SELECT
@@ -47,10 +57,12 @@ BEGIN
             WHERE P.IdEmpresa = @IdEmpresa
               AND P.IdTipoProducto = @IdTipoProducto
               AND (
-                    @Busqueda = ''
-                    OR P.GlsProducto LIKE '%' + @Busqueda + '%'
-                    OR P.CodigoRapido LIKE '%' + @Busqueda + '%'
-                    OR P.IdFabricante LIKE '%' + @Busqueda + '%'
+                    NOT EXISTS (
+                    SELECT 1 FROM @Fragmentos AS F
+                    WHERE ISNULL(P.GlsProducto, '') NOT LIKE '%' + F.Fragmento + '%'
+                      AND ISNULL(P.CodigoRapido, '') NOT LIKE '%' + F.Fragmento + '%'
+                      AND ISNULL(P.IdFabricante, '') NOT LIKE '%' + F.Fragmento + '%'
+                )
                   )
               AND (@IdNivel = '' OR P.IdNivel = @IdNivel)
             ORDER BY P.GlsProducto, P.IdProducto;
@@ -104,10 +116,12 @@ BEGIN
         WHERE P.IdEmpresa = @IdEmpresa
           AND P.IdTipoProducto = @IdTipoProducto
           AND (
-                @Busqueda = ''
-                OR P.GlsProducto LIKE '%' + @Busqueda + '%'
-                OR P.CodigoRapido LIKE '%' + @Busqueda + '%'
-                OR P.IdFabricante LIKE '%' + @Busqueda + '%'
+                NOT EXISTS (
+                    SELECT 1 FROM @Fragmentos AS F
+                    WHERE ISNULL(P.GlsProducto, '') NOT LIKE '%' + F.Fragmento + '%'
+                      AND ISNULL(P.CodigoRapido, '') NOT LIKE '%' + F.Fragmento + '%'
+                      AND ISNULL(P.IdFabricante, '') NOT LIKE '%' + F.Fragmento + '%'
+                )
               )
           AND (@IdNivel = '' OR P.IdNivel = @IdNivel)
           AND (

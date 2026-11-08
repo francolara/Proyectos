@@ -4,7 +4,7 @@ using GestionServicios.Application.Budgets;
 using GestionServicios.Application.Followup;
 using GestionServicios.Web.ViewModels.Shared;
 namespace GestionServicios.Web.ViewModels.Followup;
-public sealed record DocumentListModel(DocumentKind Kind,GridModel Grid,FilterModel Filter);
+public sealed record DocumentListModel(DocumentKind Kind,GridModel Grid,FilterModel Filter,IReadOnlyList<StateKpi>? Kpis=null);
 public sealed record DocumentDetailsModel(DocumentKind Kind,DocumentRecord Record,int AuditPage)
 {
     public string Text(string name)=>BudgetRecord.Text(Record.Data,name);
@@ -20,7 +20,7 @@ public sealed record DocumentDetailsModel(DocumentKind Kind,DocumentRecord Recor
     public IReadOnlyList<(string Name,string Label)> Fields=>Kind.Code switch
     {
         "OC"=>[("NumeroRegistroInterno","Registro interno"),("NumeroOCCliente","OC del cliente"),("FechaEmisionOC","Emisión"),("FechaRecepcionOC","Recepción"),("CodigoMoneda","Moneda"),("Importe","Importe"),("Observacion","Observación")],
-        "GUIA"=>[("NumeroActa","Número de guía / acta"),("FechaActa","Fecha de guía"),("FechaAceptacion","Aceptación"),("RepresentanteCliente","Representante del cliente"),("Observacion","Observación")],
+        "GUIA"=>[("NumeroActa","Número de guía"),("FechaActa","Fecha de guía"),("FechaAceptacion","Aceptación"),("RepresentanteCliente","Representante del cliente"),("Observacion","Observación")],
         "CONFIRMACION"=>[("NumeroConfirmacion","Número de confirmación"),("FechaConfirmacion","Fecha de confirmación"),("RepresentanteCliente","Representante del cliente"),("Observacion","Observación")],
         _=>[("Responsable","Responsable"),("FechaProgramada","Programación"),("FechaInicioReal","Inicio real"),("FechaTerminoReal","Término real"),("Descripcion","Trabajo realizado")]
     };
@@ -38,4 +38,4 @@ public sealed class DocumentInputModel
     public string? MotivoCambio {get;set;}
     public string? ReturnUrl {get;set;}
 }
-public sealed record DocumentFormModel(DocumentKind Kind,DocumentInputModel Input,DocumentRecord Record,bool Popup=false);
+public sealed record DocumentFormModel(DocumentKind Kind,DocumentInputModel Input,DocumentRecord Record,bool Popup=false,bool ReadOnly=false);

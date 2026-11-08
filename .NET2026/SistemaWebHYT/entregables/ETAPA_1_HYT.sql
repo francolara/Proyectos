@@ -6,7 +6,7 @@
 -- Revisar LEEME_DESPLIEGUE.md. Este archivo no se ejecuta automaticamente.
 -- Preparado para una base nueva SistemaWebHYT, no para migrar otros esquemas.
 -- Firma: FRANCO LARA | Create date: 05/11/2026 | Código SAP opcional en el maestro de clientes.
--- Firma: FRANCO LARA | Create date: 06/11/2026 | Nombres completos del tipo de servicio en presupuesto y ubigeo de HYT.
+-- Firma: FRANCO LARA | Create date: 06/11/2026 | Nombres completos del tipo de servicio en presupuesto y ubigeo de HYT. Guía como documento sin estados. Facturado admite OC completada con guía y confirmación vigente.
 
 -- Fuente: Script/001_CrearBaseDatos.sql
 USE [master];
@@ -332,6 +332,8 @@ BEGIN
         Correo NVARCHAR(256) NULL,
         NombreFirmante NVARCHAR(150) NULL,
         CargoFirmante NVARCHAR(150) NULL,
+        FirmaPresupuestoJson NVARCHAR(2000) NULL,
+        SubtituloCotizacion NVARCHAR(2000) NULL CONSTRAINT DF_ConfiguracionHYT_Subtitulo DEFAULT(N'GASFITERÍA, EBANISTERÍA, ELECTRICIDAD, PINTURA LÁTEX Y LAQUEADOS, TRABAJOS EN DRYWALL, FALSOS CIELOS,  CARPINTERÍA METÁLICA, REMODELACIONES, DEMOLICIONES Y ABASTECIMIENTO DE COMBUSTIBLE / R.P.C: 991346699 E-mail: hytserviciosg@gmail.com - rene_torres35@hotmail.com'),
         CONSTRAINT CK_ConfiguracionHYT_Unica CHECK (Id = 1),
         FechaRegistro DATETIME2(3) NOT NULL CONSTRAINT DF_ConfiguracionHYT_Registro DEFAULT SYSUTCDATETIME(),
         UsuarioRegistro NVARCHAR(128) NOT NULL,
@@ -1850,14 +1852,16 @@ BEGIN
         (
             confirmacion.Vigente = 0 OR oc.Estado = N'CANCELADA'
             OR NOT EXISTS (SELECT 1 FROM dbo.GuiaConformidad AS guia WITH (UPDLOCK, HOLDLOCK)
-                WHERE guia.PresupuestoId = oc.PresupuestoId AND guia.Estado = N'ACEPTADA')
-            OR NOT EXISTS (SELECT 1 FROM dbo.Ejecucion AS ejecucion WITH (UPDLOCK, HOLDLOCK)
-                WHERE ejecucion.PresupuestoId = oc.PresupuestoId AND ejecucion.Estado = N'TERMINADA')
-            OR EXISTS (SELECT 1 FROM dbo.Ejecucion AS pendiente WITH (UPDLOCK, HOLDLOCK)
-                WHERE pendiente.PresupuestoId = oc.PresupuestoId AND pendiente.Estado NOT IN (N'TERMINADA', N'CANCELADA'))
+                WHERE guia.PresupuestoId = oc.PresupuestoId)
+            OR confirmacion.OrdenCompraId <> oc.OrdenCompraId
+            OR (oc.Estado NOT IN (N'TRABAJO_COMPLETADO', N'CERRADA_OPERATIVAMENTE') AND
+                (NOT EXISTS (SELECT 1 FROM dbo.Ejecucion AS ejecucion WITH (UPDLOCK, HOLDLOCK)
+                    WHERE ejecucion.PresupuestoId = oc.PresupuestoId AND ejecucion.Estado = N'TERMINADA')
+                OR EXISTS (SELECT 1 FROM dbo.Ejecucion AS pendiente WITH (UPDLOCK, HOLDLOCK)
+                    WHERE pendiente.PresupuestoId = oc.PresupuestoId AND pendiente.Estado NOT IN (N'TERMINADA', N'CANCELADA'))))
         )
     )
-        THROW 51013, N'El marcado Facturado requiere OC valida, trabajo terminado, guia aceptada y confirmacion vigente.', 1;
+        THROW 51013, N'El marcado Facturado requiere OC valida, trabajo terminado, guia registrada y confirmacion vigente.', 1;
 END;
 GO
 CREATE OR ALTER TRIGGER dbo.tr_Confirmacion_ProtegerFacturado

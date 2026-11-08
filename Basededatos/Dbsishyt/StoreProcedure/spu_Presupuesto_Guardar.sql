@@ -4,7 +4,8 @@
 -- Description:   Guarda borrador o nueva revisión con snapshots, cálculo a dos decimales, concurrencia y auditoría.
 -- =============================================
 -- Firma: FRANCO LARA | Create date: 05/11/2026 | Ubigeo, consideraciones y detalle neto editable con referencia tarifaria del material validada.
--- Firma: FRANCO LARA | Create date: 06/11/2026 | Numeración visible del presupuesto por año/mes de registro en Lima y correlativo mensual y nombre completo del tipo de servicio.
+-- Firma: FRANCO LARA | Create date: 06/11/2026 | Numeración visible del presupuesto por año/mes de registro en Lima y correlativo mensual y nombre completo del tipo de servicio. Edición directa de OBSERVADO conservando su estado y auditoría. Posición desde código interno del material y centro FICO desde tienda.
+-- Firma: FRANCO LARA | Create date: 07/11/2026 | Valida por separado el registro y la edición del presupuesto.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_Presupuesto_Guardar
@@ -17,6 +18,8 @@ BEGIN
     SET XACT_ABORT ON;
     DECLARE @Propia BIT=0;
     BEGIN TRY
+        IF dbo.fn_HYTPermiso(@UsuarioId,CASE WHEN @PresupuestoId IS NULL THEN N'PRESUPUESTOS.CREAR' ELSE N'PRESUPUESTOS.MODIFICAR' END) = 0
+            THROW 51700,N'[HYT_PERMISO] No tiene permiso para esta acción.',1;
         IF @@TRANCOUNT<>0 THROW 51302,N'[HYT_VALIDACION] La operación administra su transacción.',1;
         IF NOT EXISTS (SELECT 1 FROM dbo.AspNetUsers AS usuario
             INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId=usuario.Id
@@ -75,8 +78,8 @@ BEGIN
             IF @Estado IS NULL THROW 51309,N'[HYT_CONCURRENCIA] La revisión cambió o no pertenece al presupuesto.',1;
             IF EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS oc WITH (HOLDLOCK) WHERE oc.PresupuestoId=@PresupuestoId)
                 THROW 51310,N'[HYT_VALIDACION] El presupuesto vinculado a una OC no admite cambios ni nuevas revisiones.',1;
-            IF @Estado=N'CANCELADO' OR (@NuevaRevision=0 AND @Estado<>N'BORRADOR') OR (@NuevaRevision=1 AND @Estado=N'BORRADOR')
-                THROW 51310,N'[HYT_VALIDACION] Edita solo el borrador; para una revisión enviada crea una nueva revisión.',1;
+            IF @Estado=N'CANCELADO' OR (@NuevaRevision=0 AND @Estado NOT IN (N'BORRADOR',N'OBSERVADO')) OR (@NuevaRevision=1 AND @Estado=N'BORRADOR')
+                THROW 51310,N'[HYT_VALIDACION] Edita solo el registrado u observado; para una revisión enviada crea una nueva revisión.',1;
             IF EXISTS (SELECT 1 FROM dbo.PresupuestoRevision AS r WHERE r.PresupuestoId=@PresupuestoId AND r.NumeroRevision>(SELECT origen.NumeroRevision FROM dbo.PresupuestoRevision AS origen WHERE origen.RevisionId=@RevisionId))
                 THROW 51310,N'[HYT_VALIDACION] Abre la revisión más reciente del presupuesto.',1;
             IF (@ClienteAnterior<>@ClienteId OR @TiendaAnterior<>@TiendaId OR @TipoAnterior<>@Tipo)
@@ -157,8 +160,9 @@ BEGIN
             THROW 51317,N'[HYT_VALIDACION] Completa descripción, unidad, moneda, tratamiento IGV y motivo de precio manual.',1;
         IF EXISTS (SELECT 1 FROM #Lineas AS linea WHERE linea.OrigenPrecio=N'MANUAL' AND linea.MaterialId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM dbo.ServicioMaterial AS material WHERE material.MaterialId=linea.MaterialId))
             THROW 51317,N'[HYT_VALIDACION] El material indicado no existe.',1;
-        UPDATE linea SET CentroSAPFICO=COALESCE(NULLIF(LTRIM(RTRIM(linea.CentroSAPFICO)),N''),tienda.CentroSAPFICO)
-        FROM #Lineas AS linea CROSS JOIN dbo.Tienda AS tienda WHERE tienda.TiendaId=@TiendaId;
+        UPDATE linea SET CentroSAPFICO=tienda.CentroSAPFICO,Posicion=COALESCE(material.CodigoInterno,linea.CodigoInterno),CodigoInterno=COALESCE(material.CodigoInterno,linea.CodigoInterno)
+        FROM #Lineas AS linea CROSS JOIN dbo.Tienda AS tienda
+        LEFT JOIN dbo.ServicioMaterial AS material ON material.MaterialId=linea.MaterialId WHERE tienda.TiendaId=@TiendaId;
         IF EXISTS (SELECT 1 FROM #Lineas AS linea WHERE linea.OrigenPrecio=N'MANUAL' AND linea.PartidaTarifarioId IS NOT NULL AND NOT EXISTS
             (SELECT 1 FROM dbo.TarifarioPartida AS referencia INNER JOIN dbo.TarifarioVersion AS version ON version.VersionId=referencia.VersionId
              INNER JOIN dbo.Tarifario AS cabecera ON cabecera.TarifarioId=version.TarifarioId
@@ -229,7 +233,8 @@ BEGIN
         SET @Cambios=(SELECT @RevisionOrigen AS RevisionOrigen,JSON_QUERY(@AnteriorRevision) AS Anterior,JSON_QUERY(@AnteriorPartidas) AS PartidasAnteriores,JSON_QUERY(@Posterior) AS Nuevo,JSON_QUERY(@PartidasNuevas) AS PartidasNuevas FOR JSON PATH,WITHOUT_ARRAY_WRAPPER);
         SET @Registro=CONVERT(NVARCHAR(100),@RevisionId);
         SET @Accion=CASE WHEN @EsNuevo=1 THEN N'CREAR' WHEN @NuevaRevision=1 THEN N'NUEVA_REVISION' ELSE N'ACTUALIZAR' END;
-        EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@CorrelacionId,N'PresupuestoRevision',@Registro,@Accion,@Estado,N'BORRADOR',NULL,NULL,@Cambios;
+        DECLARE @EstadoGuardado NVARCHAR(20)=CASE WHEN @EsNuevo=1 OR @NuevaRevision=1 THEN N'BORRADOR' ELSE @Estado END;
+        EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@CorrelacionId,N'PresupuestoRevision',@Registro,@Accion,@Estado,@EstadoGuardado,NULL,NULL,@Cambios;
         SET @Registro=CONVERT(NVARCHAR(100),@PresupuestoId);
         SET @Cambios=(SELECT JSON_QUERY(@Anterior) AS Anterior,@ClienteId AS ClienteId,@TiendaId AS TiendaId,@Tipo AS TipoAtencion,@Descripcion AS Descripcion,@FechaSolicitud AS FechaSolicitud,@RevisionId AS RevisionId FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES);
         EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@CorrelacionId,N'Presupuesto',@Registro,@Accion,NULL,NULL,NULL,NULL,@Cambios;

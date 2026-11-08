@@ -3,6 +3,12 @@
 -- Create date:   03/11/2026
 -- Description:   Guarda Orden de Compra - Cliente con idempotencia, concurrencia, archivos y auditoría.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   06/11/2026
+-- Description:   Aceptación automática auditada al crear OC, atómica con el documento; elimina aprobación previa; adjuntos por carpeta y número de documento.
+-- =============================================
+-- Firma: FRANCO LARA | Create date: 07/11/2026 | Distingue entre permisos de registro y edición del documento.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_SeguimientoOC_Guardar
@@ -14,6 +20,8 @@ BEGIN
     SET XACT_ABORT ON;
     DECLARE @Propia BIT=0;
     BEGIN TRY
+        IF dbo.fn_HYTPermiso(@UsuarioId,CASE WHEN @Id IS NULL THEN N'OC_CLIENTE.CREAR' ELSE N'OC_CLIENTE.MODIFICAR' END) = 0
+            THROW 51700,N'[HYT_PERMISO] No tiene permiso para esta acción.',1;
         IF NOT EXISTS (SELECT 1 FROM dbo.AspNetUsers AS usuario INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId=usuario.Id
             INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId
             WHERE usuario.Id=@UsuarioId AND usuario.Activo=1 AND permiso.CodigoPermiso=N'OC_CLIENTE.EDITAR')
@@ -76,8 +84,8 @@ BEGIN
         IF @Id IS NULL AND EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS documento WITH (UPDLOCK,HOLDLOCK) WHERE documento.PresupuestoId=@PadreId) THROW 51413,N'[HYT_VALIDACION] Ya existe este registro. Ábrelo para consultar o modificar.',1;
         DECLARE @EstadoRevision NVARCHAR(20),@TotalRevision DECIMAL(19,2);
         SELECT @EstadoRevision=r.Estado,@TotalRevision=r.Total,@Moneda=r.CodigoMoneda FROM dbo.PresupuestoRevision AS r WITH (HOLDLOCK) WHERE r.PresupuestoId=@PresupuestoId AND r.RevisionId=@RevisionId;
-        IF @EstadoRevision IS NULL OR @TotalRevision IS NULL OR (@TipoAtencion=N'INVITACION' AND @EstadoRevision<>N'APROBADO') OR (@TipoAtencion=N'EMERGENCIA' AND @EstadoRevision NOT IN (N'BORRADOR',N'ENVIADO',N'APROBADO'))
-            THROW 51414,N'[HYT_VALIDACION] Invitación requiere revisión aprobada. Emergencia admite revisión completa sin aprobación previa.',1;
+        IF @EstadoRevision IS NULL OR @TotalRevision IS NULL OR @EstadoRevision NOT IN (N'BORRADOR',N'ENVIADO',N'OBSERVADO',N'APROBADO')
+            THROW 51414,N'[HYT_VALIDACION] El presupuesto debe estar vigente y tener sus importes completos para registrar la OC.',1;
         IF @Estado=N'CANCELADA' THROW 51415,N'[HYT_VALIDACION] Reactiva la OC antes de editarla.',1;
         IF @Id IS NOT NULL AND (@Estado=N'CERRADA_OPERATIVAMENTE' OR EXISTS (SELECT 1 FROM dbo.ConfirmacionFacturacion AS confirmacion WHERE confirmacion.OrdenCompraId=@Id AND confirmacion.Vigente=1))
             AND (@RevisionId<>TRY_CONVERT(BIGINT,JSON_VALUE(@Anterior,N'$.RevisionId')) OR @NumeroOCCliente<>JSON_VALUE(@Anterior,N'$.NumeroOCCliente')
@@ -112,7 +120,7 @@ BEGIN
                 @Tamano BIGINT=TRY_CONVERT(BIGINT,JSON_VALUE(@ArchivoJson,N'$.TamanoBytes')),@SHA CHAR(64)=JSON_VALUE(@ArchivoJson,N'$.SHA256'),@Extension NVARCHAR(5);
             SET @Extension=CASE @TipoContenido WHEN N'application/pdf' THEN N'.pdf' WHEN N'image/png' THEN N'.png' WHEN N'image/jpeg' THEN N'.jpg' END;
             IF NULLIF(@Nombre,N'') IS NULL OR @Tamano IS NULL OR @Tamano<=0 OR @Tamano>15728640 OR @Extension IS NULL OR LEN(JSON_VALUE(@ArchivoJson,N'$.NombreOriginal'))>255
-                OR LEN(JSON_VALUE(@ArchivoJson,N'$.SHA256'))<>64 OR @SHA LIKE '%[^0-9a-fA-F]%' OR @SHA IS NULL OR @Clave IS NULL OR @Clave<>LOWER(REPLACE(CONVERT(NVARCHAR(36),@CorrelacionId),N'-',N''))+@Extension
+                OR LEN(JSON_VALUE(@ArchivoJson,N'$.SHA256'))<>64 OR @SHA LIKE '%[^0-9a-fA-F]%' OR @SHA IS NULL OR @Clave IS NULL OR (@Clave COLLATE Latin1_General_100_BIN2<>LOWER(REPLACE(CONVERT(NVARCHAR(36),@CorrelacionId),N'-',N''))+@Extension AND @Clave COLLATE Latin1_General_100_BIN2<>N'OCCliente/'+dbo.fn_ArchivoSegmento(@NumeroOCCliente)+N'/'+LOWER(REPLACE(CONVERT(NVARCHAR(36),@CorrelacionId),N'-',N''))+@Extension)
                 THROW 51419,N'[HYT_VALIDACION] Metadatos del adjunto no válidos.',1;
             INSERT INTO dbo.ArchivoAdjunto (NombreOriginal,ClaveAlmacenamiento,TipoContenido,TamanoBytes,SHA256,UsuarioRegistro)
             VALUES (@Nombre,@Clave,@TipoContenido,@Tamano,@SHA,@UsuarioId);
@@ -126,6 +134,18 @@ BEGIN
             @Registro NVARCHAR(100)=CONVERT(NVARCHAR(100),@Id),@Accion NVARCHAR(60)=CASE WHEN @Anterior IS NULL THEN N'CREAR' ELSE N'ACTUALIZAR' END;
         DECLARE @EstadoAnterior NVARCHAR(40)=CASE WHEN @Anterior IS NULL THEN NULL ELSE @Estado END;
         EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@CorrelacionId,N'OrdenCompraCliente',@Registro,@Accion,@EstadoAnterior,@Estado,NULL,@Motivo,@Cambios;
+        IF @Anterior IS NULL AND @EstadoRevision<>N'APROBADO'
+        BEGIN
+            DECLARE @FechaAceptacionAutomatica DATE=CONVERT(DATE,DATEADD(HOUR,-5,SYSUTCDATETIME()));
+            UPDATE dbo.PresupuestoRevision SET Estado=N'APROBADO',FechaAprobacion=@FechaAceptacionAutomatica,
+                FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE RevisionId=@RevisionId;
+            DECLARE @RegistroRevision NVARCHAR(100)=CONVERT(NVARCHAR(100),@RevisionId),
+                @MotivoAceptacion NVARCHAR(1000)=N'Aceptación automática por registro de OC.',
+                @DetalleAceptacion NVARCHAR(MAX)=(SELECT @EstadoRevision AS EstadoAnterior,N'APROBADO' AS EstadoNuevo,
+                    @FechaAceptacionAutomatica AS FechaEvento,N'OC' AS TipoDocumento,@Id AS DocumentoId FOR JSON PATH,WITHOUT_ARRAY_WRAPPER);
+            EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@CorrelacionId,N'PresupuestoRevision',@RegistroRevision,N'CAMBIAR_ESTADO',
+                @EstadoRevision,N'APROBADO',NULL,@MotivoAceptacion,@DetalleAceptacion;
+        END;
         UPDATE dbo.Presupuesto SET FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE PresupuestoId=@PresupuestoId;
         INSERT INTO dbo.DocumentoOperacion (OperacionId,TipoOperacion,PadreId,RegistroId,ArchivoId,Huella,UsuarioId)
         VALUES (@CorrelacionId,@TipoOperacion,@PadreId,@Id,@ArchivoId,@Huella,@UsuarioId);

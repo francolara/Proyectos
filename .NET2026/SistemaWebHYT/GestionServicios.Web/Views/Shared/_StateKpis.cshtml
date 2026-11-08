@@ -1,0 +1,6 @@
+@using GestionServicios.Web.ViewModels.Shared
+@model IReadOnlyList<StateKpi>
+@* Firma: FRANCO LARA - 06/11/2026 | Indicadores compactos por estado calculados en SQL, valores centrados y borde superior rojo HYT. *@
+<section class="hyt-state-kpis" style="--hyt-kpi-count:@Model.Count" aria-label="Totales por estado de la búsqueda, fechas y pendientes">
+@foreach(var item in Model){<article data-kpi-state="@item.Code"><h2>@item.Label</h2><strong>@item.Count.ToString("N0",System.Globalization.CultureInfo.GetCultureInfo("es-PE"))</strong></article>}
+</section>

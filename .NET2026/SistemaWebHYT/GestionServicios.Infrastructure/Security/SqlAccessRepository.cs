@@ -28,13 +28,14 @@ public sealed class SqlAccessRepository(SqlConnectionFactory connections) : IAcc
         var stamp = reader.GetString(4);
         var active = reader.GetBoolean(5);
         var lockout = reader.IsDBNull(6) ? (DateTimeOffset?)null : reader.GetFieldValue<DateTimeOffset>(6);
+        var mustChangePassword = reader.GetBoolean(7);
         var roles = new List<string>();
         var permissions = new List<string>();
         await reader.NextResultAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken)) roles.Add(reader.GetString(0));
         await reader.NextResultAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken)) permissions.Add(reader.GetString(0));
-        return new(userId, userName, displayName, hash, stamp, active, lockout, roles, permissions);
+        return new(userId, userName, displayName, hash, stamp, active, lockout, roles, permissions, mustChangePassword);
     }
 
     public async Task<bool> CompleteAttemptAsync(string id, string expectedStamp, bool passwordValid,

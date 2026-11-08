@@ -13,7 +13,7 @@
   },
   {
     "case": "nuevo-varias",
-    "pages": 10,
+    "pages": 4,
     "a4": true,
     "text_complete": true
   },
@@ -37,7 +37,7 @@
   },
   {
     "case": "nuevo-descripcion-larga",
-    "pages": 3,
+    "pages": 1,
     "a4": true,
     "text_complete": true
   }

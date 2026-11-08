@@ -1,0 +1,12 @@
+@using GestionServicios.Web.ViewModels.Followup
+@using GestionServicios.Web.ViewModels.Shared
+@using GestionServicios.Application.Budgets
+@model DocumentDetailsModel
+@* Firma: FRANCO LARA - 06/11/2026 | Adjuntos en consulta, fecha de carga y descarga privada sin edición; confirmación y Guía incluyen fecha, datos y responsables en la misma consulta. *@
+<section class="hyt-panel hyt-master-form" data-document-title="@(Model.Kind.Code is "CONFIRMACION" or "GUIA"?Model.Kind.Title:"Adjuntos · "+Model.Kind.Title)">
+@if(Model.Kind.Code is "CONFIRMACION" or "GUIA"){
+<dl class="hyt-document-summary">@foreach(var field in Model.Fields){<dt>@field.Label</dt><dd>@DocumentDetailsModel.Display(Model.Document,field.Name)</dd>}<dt>Estado</dt><dd>@BudgetRecord.Text(Model.Document,"EstadoDocumento")</dd></dl>
+<partial name="_TraceSummary" model="@(TraceSummary.From(key=>BudgetRecord.Text(Model.Document,key)))" />
+}
+@if(Model.Record.Data.TryGetProperty("Adjuntos",out var files)&&files.ValueKind==System.Text.Json.JsonValueKind.Array&&files.GetArrayLength()>0){<partial name="_Attachments" model="@(new DocumentFormModel(Model.Kind,new DocumentInputModel(),Model.Record))" />}else{<p>No hay adjuntos registrados.</p>}
+<button type="button" class="hyt-button-secondary" data-hyt-close>Cerrar</button></section>

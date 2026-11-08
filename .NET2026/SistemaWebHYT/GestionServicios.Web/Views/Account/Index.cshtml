@@ -1,0 +1,45 @@
+@model GestionServicios.Web.Controllers.ChangePasswordInput
+@using GestionServicios.Web.Security
+@* Firma: FRANCO LARA - 07/11/2026 | Formulario de cambio de contraseña propio en una columna con controles de visibilidad. *@
+@{
+    var mandatory = User.HasClaim(AccessService.MandatoryPasswordClaim, "true");
+    ViewData["Title"] = mandatory ? "Cambia tu contraseña" : "Cambiar contraseña";
+}
+<header class="hyt-page-header">
+    <div><h1>@ViewData["Title"]</h1>
+    <p>@(mandatory ? "Reemplaza la contraseña temporal para entrar a HYT." : "Usa tu contraseña actual para confirmar el cambio.")</p></div>
+</header>
+<form method="post" asp-controller="Account" asp-action="Index" class="hyt-panel hyt-master-form">
+    <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+    <div class="hyt-master-fields hyt-password-fields">
+        @if (!mandatory)
+        {
+            <div class="hyt-field">
+                <label for="CurrentPassword">Contraseña actual</label>
+                <div class="hyt-password-control">
+                    <input id="CurrentPassword" name="CurrentPassword" type="password" required maxlength="128" autocomplete="current-password" />
+                    <partial name="_PasswordToggle" model="@("CurrentPassword")" />
+                </div>
+            </div>
+        }
+        <div class="hyt-field">
+            <label for="NewPassword">Nueva contraseña</label>
+            <div class="hyt-password-control">
+                <input id="NewPassword" name="NewPassword" type="password" required minlength="12" maxlength="128" autocomplete="new-password" aria-describedby="password-rule" />
+                <partial name="_PasswordToggle" model="@("NewPassword")" />
+            </div>
+            <small id="password-rule">Usa al menos 12 caracteres.</small>
+        </div>
+        <div class="hyt-field">
+            <label for="ConfirmPassword">Confirmar nueva contraseña</label>
+            <div class="hyt-password-control">
+                <input id="ConfirmPassword" name="ConfirmPassword" type="password" required maxlength="128" autocomplete="new-password" />
+                <partial name="_PasswordToggle" model="@("ConfirmPassword")" />
+            </div>
+        </div>
+    </div>
+    <div class="hyt-master-related">
+        <button class="hyt-button-primary" type="submit">Guardar contraseña</button>
+        @if (!mandatory) { <a class="hyt-button-secondary" href="/">Cancelar</a> }
+    </div>
+</form>

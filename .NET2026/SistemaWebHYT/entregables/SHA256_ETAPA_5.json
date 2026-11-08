@@ -21,7 +21,7 @@
   },
   {
     "path": "StoreProcedure/spu_Presupuesto_CambiarEstado.sql",
-    "sha256": "f8e4317dd09a87dde0e3409b420af92db539296cd3fc17566a37347199125f0e"
+    "sha256": "6b1776f65c231069f0202923d032da032a185d6365ee924a11e1cfa4f65bf3ec"
   },
   {
     "path": "StoreProcedure/spu_Presupuesto_DatosIniciales.sql",
@@ -29,11 +29,11 @@
   },
   {
     "path": "StoreProcedure/spu_Presupuesto_Guardar.sql",
-    "sha256": "fc0b8408a9b07dea48b79b72c0319ec1dba12297825aca84a8b576989fd27582"
+    "sha256": "b56ed4ad08dd73c2ca3f41e58e0d1675eef6eb8d7b2a8c4f40519bc8bd3a7e5d"
   },
   {
     "path": "StoreProcedure/spu_Presupuesto_Listar.sql",
-    "sha256": "cc8908d58c4b37f104001c6bdbfc9565904802491bcafde44d7168473ab9cbf0"
+    "sha256": "1bb2ed634b371d88af5fa162612b72a10aaf53450777690f176c00b0dc262a5d"
   },
   {
     "path": "StoreProcedure/spu_Presupuesto_ListarImpresiones.sql",
@@ -41,7 +41,7 @@
   },
   {
     "path": "StoreProcedure/spu_Presupuesto_Obtener.sql",
-    "sha256": "838cc74b8907a47f34fd9cbe6b465c39d8d6fb6aafccd8b59a2fe18e8b0a48a9"
+    "sha256": "d6d74e8602a5113480c05497c2a02dcf8b0347688b88d194607452660af9f11a"
   },
   {
     "path": "StoreProcedure/spu_Presupuesto_ObtenerImpresion.sql",
@@ -53,18 +53,14 @@
   },
   {
     "path": "StoreProcedure/spu_ConfiguracionHYT_Guardar.sql",
-    "sha256": "6172fccaa65b4357f5391ecb9a13f03f1275b60891b00c43fcfc162e9c9a3565"
+    "sha256": "e55f79e39407af0a1afef8949e56ea9867c17a8ba6ed88d98cdfd3c08c0f7103"
   },
   {
     "path": "StoreProcedure/spu_ConfiguracionHYT_Obtener.sql",
-    "sha256": "26a6a17405a0de36d13ad39ab4da8f26655afab01da4abed1b48d905a923e1a8"
+    "sha256": "ae11a65653de58205ef40820f7987b0eb9401a0a392c51d3af0ec07bebbc334f"
   },
   {
     "path": "Script/015_PermisosEtapa5.sql",
     "sha256": "bcfe4f9d30b3c583566fafd581a728710880b081045aeca321810f8510a47c48"
-  },
-  {
-    "path": "ETAPA_5_HYT.sql",
-    "sha256": "2ab0c18456a290f45d4d597b110ed3088295dabaeeffa876777a6742c49f2a82"
   }
 ]

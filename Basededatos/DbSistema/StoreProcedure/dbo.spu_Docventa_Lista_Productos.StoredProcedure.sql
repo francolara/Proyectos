@@ -3,6 +3,11 @@
 -- Create date:   16/10/2026
 -- Description:   Lista productos para la ayuda de ventas, con stock y separación por sucursal y almacén.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   06/11/2026
+-- Description:   Busca fragmentos separados por % o * en cualquier orden.
+-- =============================================
 CREATE OR ALTER PROCEDURE dbo.spu_Docventa_Lista_Productos
     @IdEmpresa CHAR(2),
     @IdLista CHAR(8),
@@ -16,11 +21,11 @@ BEGIN
     SET NOCOUNT ON;
 
     BEGIN TRY
-        DECLARE @TextoBusqueda VARCHAR(300) = LTRIM(RTRIM(ISNULL(@Busqueda, '')));
-        DECLARE @PatronBusqueda VARCHAR(302);
-
-        SET @TextoBusqueda = REPLACE(@TextoBusqueda, '%', '');
-        SET @PatronBusqueda = '%' + @TextoBusqueda + '%';
+        DECLARE @Fragmentos TABLE (Fragmento VARCHAR(300));
+        INSERT INTO @Fragmentos (Fragmento)
+        SELECT LTRIM(RTRIM(value))
+        FROM STRING_SPLIT(REPLACE(ISNULL(@Busqueda, ''), '*', '%'), '%')
+        WHERE LTRIM(RTRIM(value)) <> '';
 
         IF @IdTipoProducto <> '06002'
         BEGIN
@@ -106,11 +111,13 @@ BEGIN
               )
               AND
               (
-                  @TextoBusqueda = ''
-                  OR P.IdProducto LIKE @PatronBusqueda
-                  OR P.GlsProducto LIKE @PatronBusqueda
-                  OR P.CodigoRapido LIKE @PatronBusqueda
-                  OR P.IdFabricante LIKE @PatronBusqueda
+                  NOT EXISTS (
+                    SELECT 1 FROM @Fragmentos AS F
+                    WHERE ISNULL(P.IdProducto, '') NOT LIKE '%' + F.Fragmento + '%'
+                      AND ISNULL(P.GlsProducto, '') NOT LIKE '%' + F.Fragmento + '%'
+                      AND ISNULL(P.CodigoRapido, '') NOT LIKE '%' + F.Fragmento + '%'
+                      AND ISNULL(P.IdFabricante, '') NOT LIKE '%' + F.Fragmento + '%'
+                )
               )
             ORDER BY P.IdProducto;
         END
@@ -141,11 +148,13 @@ BEGIN
               AND (@IdNivel = '' OR P.IdNivel = @IdNivel)
               AND
               (
-                  @TextoBusqueda = ''
-                  OR P.IdProducto LIKE @PatronBusqueda
-                  OR P.GlsProducto LIKE @PatronBusqueda
-                  OR P.CodigoRapido LIKE @PatronBusqueda
-                  OR P.IdFabricante LIKE @PatronBusqueda
+                  NOT EXISTS (
+                    SELECT 1 FROM @Fragmentos AS F
+                    WHERE ISNULL(P.IdProducto, '') NOT LIKE '%' + F.Fragmento + '%'
+                      AND ISNULL(P.GlsProducto, '') NOT LIKE '%' + F.Fragmento + '%'
+                      AND ISNULL(P.CodigoRapido, '') NOT LIKE '%' + F.Fragmento + '%'
+                      AND ISNULL(P.IdFabricante, '') NOT LIKE '%' + F.Fragmento + '%'
+                )
               )
             ORDER BY P.IdProducto;
         END

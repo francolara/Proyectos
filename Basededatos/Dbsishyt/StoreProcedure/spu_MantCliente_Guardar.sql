@@ -4,6 +4,7 @@
 -- Description:   Guarda Cliente con permisos, concurrencia, referencias y auditoría.
 -- =============================================
 -- Firma: FRANCO LARA | Create date: 05/11/2026 | Código automático, identidad según persona y número obligatorio; tipo de documento oculto sin validación, conservando el histórico y Código SAP/enlaces múltiples auditados por cliente.
+-- Firma: FRANCO LARA | Create date: 07/11/2026 | Valida permisos específicos de alta, edición y activación del maestro.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_MantCliente_Guardar
@@ -15,6 +16,8 @@ BEGIN
     SET XACT_ABORT ON;
     DECLARE @Propia BIT = 0;
     BEGIN TRY
+        IF dbo.fn_HYTPermiso(@UsuarioId,CASE WHEN @Id IS NULL THEN N'CLIENTES.CREAR' ELSE N'CLIENTES.MODIFICAR' END) = 0
+            THROW 51700,N'[HYT_PERMISO] No tiene permiso para esta acción.',1;
         IF NOT EXISTS
         (
             SELECT 1 FROM dbo.AspNetUsers AS usuario
@@ -56,6 +59,9 @@ BEGIN
             SELECT @Anterior=(SELECT anterior.Codigo, anterior.CodigoSAP, anterior.TipoEntidad, anterior.TipoIdentificacion, anterior.NumeroIdentificacion, anterior.RazonSocial, anterior.Nombres, anterior.Apellidos, anterior.DireccionFiscal, anterior.CodigoUbigeo, anterior.UrlCargaDocumentos, anterior.Activo, JSON_QUERY(COALESCE((SELECT enlace.Id,enlace.Descripcion,enlace.Url,enlace.Orden,enlace.FechaRegistro,enlace.UsuarioRegistro,enlace.FechaActualizacion,enlace.UsuarioActualizacion FROM dbo.ClienteEnlaceDocumento AS enlace WHERE enlace.ClienteId=anterior.ClienteId ORDER BY enlace.Orden,enlace.Id FOR JSON PATH,INCLUDE_NULL_VALUES),N'[]')) AS Enlaces FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)
             FROM dbo.Cliente AS anterior WITH (UPDLOCK,HOLDLOCK)
             WHERE anterior.ClienteId=@Id AND anterior.VersionFila=@VersionOriginal;
+            IF @Id IS NOT NULL AND @Activo <> TRY_CONVERT(BIT, JSON_VALUE(@Anterior,N'$.Activo'))
+                AND dbo.fn_HYTPermiso(@UsuarioId,N'CLIENTES.ACTIVAR') = 0
+                THROW 51700,N'[HYT_PERMISO] No tiene permiso para activar o desactivar este registro.',1;
             IF @Anterior IS NULL THROW 51209,N'[HYT_CONCURRENCIA] El registro cambió o ya no existe. Vuelve a consultarlo.',1;
         END;
         IF @TipoEntidad NOT IN (N'JURIDICA',N'NATURAL') THROW 51213,N'[HYT_VALIDACION] Tipo de entidad no válido.',1;

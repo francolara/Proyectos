@@ -4,7 +4,7 @@
 -- Description:   Datos únicos HYT y auditoría paginada para configuración corporativa.
 -- =============================================
 -- Firma: FRANCO LARA | Create date: 05/11/2026 | Ubigeo en direcciones y consideraciones predeterminadas por presupuesto.
--- Firma: FRANCO LARA | Create date: 06/11/2026 | Consulta y guardado de ubigeo HYT con concurrencia y auditoría.
+-- Firma: FRANCO LARA | Create date: 06/11/2026 | Ubigeo HYT y metadatos de firma; lectura corporativa para impresiones autorizadas. Subtítulo de cotización editable con auditoría.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_ConfiguracionHYT_Obtener
@@ -16,9 +16,11 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM dbo.AspNetUsers AS usuario INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId=usuario.Id
             INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId
             WHERE usuario.Id=@UsuarioId AND usuario.Activo=1 AND permiso.CodigoPermiso=N'CONFIGURACION.CONSULTAR')
-            THROW 51300,N'[HYT_PERMISO] No tiene permiso para consultar la configuración.',1;
+            IF NOT (EXISTS(SELECT 1 FROM dbo.AspNetUsers AS u INNER JOIN dbo.AspNetUserRoles AS r ON r.UserId=u.Id INNER JOIN dbo.RolPermiso AS p ON p.RoleId=r.RoleId WHERE u.Id=@UsuarioId AND u.Activo=1 AND p.CodigoPermiso=N'PRESUPUESTOS.CONSULTAR')
+                AND EXISTS(SELECT 1 FROM dbo.AspNetUsers AS u INNER JOIN dbo.AspNetUserRoles AS r ON r.UserId=u.Id INNER JOIN dbo.RolPermiso AS p ON p.RoleId=r.RoleId WHERE u.Id=@UsuarioId AND u.Activo=1 AND p.CodigoPermiso=N'REPORTES.CONSULTAR'))
+                THROW 51300,N'[HYT_PERMISO] No tiene permiso para consultar la configuración.',1;
         IF @Pagina<1 OR @Pagina>100000000 THROW 51301,N'[HYT_VALIDACION] Página no válida.',1;
-        SELECT (SELECT empresa.Id,empresa.Ruc,empresa.RazonSocial,empresa.Direccion,empresa.CodigoUbigeo,empresa.Telefono,empresa.Correo,empresa.NombreFirmante,empresa.CargoFirmante,empresa.ConsideracionesPresupuesto,
+        SELECT (SELECT empresa.Id,empresa.Ruc,empresa.RazonSocial,empresa.Direccion,empresa.CodigoUbigeo,empresa.Telefono,empresa.Correo,empresa.NombreFirmante,empresa.CargoFirmante,empresa.SubtituloCotizacion,empresa.ConsideracionesPresupuesto,empresa.FirmaPresupuestoJson,
             empresa.FechaRegistro,creador.Nombres AS UsuarioRegistro,empresa.FechaActualizacion,editor.Nombres AS UsuarioActualizacion,empresa.VersionFila
             FROM dbo.ConfiguracionHYT AS empresa INNER JOIN dbo.AspNetUsers AS creador ON creador.Id=empresa.UsuarioRegistro
             LEFT JOIN dbo.AspNetUsers AS editor ON editor.Id=empresa.UsuarioActualizacion WHERE empresa.Id=1

@@ -7,9 +7,12 @@ public sealed record DatePickerModel(string Name, string Label, DateOnly? Value 
 }
 public sealed record FilterChoice(string Value,string Label);
 public sealed record FilterSelect(string Name,string Label,string Value,IReadOnlyList<FilterChoice> Choices);
+public sealed record FilterCheck(string Name,string Label,bool Checked);
+public sealed record StateKpi(string Code,string Label,long Count);
 public sealed record FilterText(string Name,string Label,string Value);
 public sealed class FilterModel
 {
+    public IReadOnlyList<FilterCheck> Checks {get;init;}=[];
     public IReadOnlyList<FilterText> Texts {get;init;}=[];
     public IReadOnlyList<FilterSelect> Selects {get;init;}=[];
     public string Search { get; init; } = "";
@@ -25,8 +28,9 @@ public sealed class FilterModel
         return new() { Controller = controller, WithDates = true, From = today.AddMonths(-1), To = today };
     }
 }
-public sealed record GridAction(string Label,string Url,bool Popup=false);
-public sealed record GridRow(string Id, IReadOnlyList<string> Cells, bool CanView = true, bool CanEdit = false,IReadOnlyList<GridAction>? Actions=null);
+public sealed record GridAction(string Label,string Url,bool Popup=false,bool HasRecord=false);
+public sealed record GridCellAction(string Url,bool DoubleClick=false,string? Label=null,bool Navigate=false);
+public sealed record GridRow(string Id, IReadOnlyList<string> Cells, bool CanView = true, bool CanEdit = false,IReadOnlyList<GridAction>? Actions=null,IReadOnlyDictionary<int,GridCellAction>? CellActions=null);
 public sealed class GridModel
 {
     public string Label { get; init; } = "Resultados";

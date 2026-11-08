@@ -1,3 +1,4 @@
+// Firma: FRANCO LARA - 06/11/2026 | Claves R2 organizadas por carpeta de registro, manteniendo idempotencia e integridad.
 using System.Net;
 using System.Text.RegularExpressions;
 using Amazon.Runtime;
@@ -54,9 +55,9 @@ public sealed class CloudflareR2ObjectClient(IOptions<CloudflareR2Settings> opti
 }
 public sealed class R2DocumentFileStore(IR2ObjectClient objects):IDocumentFileStore
 {
-    public async Task<DocumentAttachment> SaveAsync(IFormFile upload,DocumentKind kind,Guid operation,CancellationToken ct)
+    public async Task<DocumentAttachment> SaveAsync(IFormFile upload,DocumentKind kind,Guid operation,CancellationToken ct,string? folder=null)
     {
-        var validated=await DocumentUploadRules.ValidateAsync(upload,kind,operation,ct);
+        var validated=await DocumentUploadRules.ValidateAsync(upload,kind,operation,ct,folder);
         if(!await objects.PutIfAbsentAsync(validated.Metadata,validated.Bytes,ct))
         {
             var prior=await objects.GetAsync(validated.Metadata.ClaveAlmacenamiento,ct);

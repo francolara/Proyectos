@@ -3,6 +3,7 @@
 -- Create date:   03/11/2026
 -- Description:   Consulta privada de identidad, roles y permisos para acceso web.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 06/11/2026 | Nombre completo y obligación de cambio de clave, sin exigir confirmación de correo.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_ConsultarAcceso
@@ -19,8 +20,8 @@ BEGIN
         WHERE (@UsuarioId IS NOT NULL AND usuario.Id = @UsuarioId)
             OR (@NombreNormalizado IS NOT NULL AND usuario.NormalizedUserName = @NombreNormalizado);
 
-        SELECT usuario.Id, usuario.UserName, usuario.Nombres, usuario.PasswordHash,
-            COALESCE(usuario.SecurityStamp, N'') AS SecurityStamp, usuario.Activo, usuario.LockoutEnd
+        SELECT usuario.Id, usuario.UserName, LTRIM(RTRIM(usuario.Nombres+N' '+usuario.Apellidos)) AS Nombres, usuario.PasswordHash,
+            COALESCE(usuario.SecurityStamp, N'') AS SecurityStamp, usuario.Activo, usuario.LockoutEnd,usuario.DebeCambiarClave
         FROM dbo.AspNetUsers AS usuario WHERE usuario.Id = @Id;
         SELECT rol.Name FROM dbo.AspNetUserRoles AS asignacion
         INNER JOIN dbo.AspNetRoles AS rol ON rol.Id = asignacion.RoleId

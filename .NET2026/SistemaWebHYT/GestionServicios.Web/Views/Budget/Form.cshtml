@@ -1,4 +1,5 @@
-@* Firma: FRANCO LARA - 06/11/2026 | Número visible del presupuesto en tarjeta con borde superior rojo. Columnas de SAP y U.M; elimina confirmación de moneda. *@
+@* Firma: FRANCO LARA - 07/11/2026 | Acciones visibles según los permisos del perfil. *@
+@* Firma: FRANCO LARA - 06/11/2026 | Estados comerciales y edición directa de observado; retira revisiones y cambio de estado de consulta/edición, disponible solo desde listado.  Número visible del presupuesto en tarjeta con borde superior rojo. Columnas de SAP y U.M; elimina confirmación de moneda. Impresión de ambos formatos en subtarjeta del encabezado, sin acceso a impresiones conservadas. *@
 @using GestionServicios.Application.Budgets
 @using GestionServicios.Web.ViewModels.Budgets
 @using System.Globalization
@@ -17,7 +18,16 @@
     }
     var dateParsed=DateOnly.TryParseExact(Header("FechaEmision"),"yyyy-MM-dd",CultureInfo.InvariantCulture,DateTimeStyles.None,out var initialDate)?initialDate:(DateOnly?)null;
 }
-<header class="hyt-page-header"><div><h1>@(record is null?"Nuevo presupuesto":"Presupuesto")</h1><p>@(input.NewRevision?"Nueva revisión a partir de la anterior":record is null?"Borrador":("Revisión "+BudgetRecord.Text(record.Revision,"NumeroRevision")+" · "+state))</p></div><div class="hyt-master-heading-actions"><a class="hyt-button-secondary" href="@input.ReturnUrl">Volver al listado</a><div class="hyt-internal-code"><span>Número de presupuesto</span><output id="budget-record-number">@(record?.Text("NumeroInterno")??"Se asigna al guardar")</output></div></div></header>
+<header class="hyt-page-header hyt-budget-header"><div><h1>@(record is null?"Nuevo presupuesto":"Presupuesto")</h1><p>@(input.NewRevision?"Nueva revisión a partir de la anterior":record is null?"Registrado":("Revisión "+BudgetRecord.Text(record.Revision,"NumeroRevision")+" · "+BudgetStates.Label(state)))</p></div><div class="hyt-master-heading-actions"><a class="hyt-button-secondary" href="@input.ReturnUrl">Volver al listado</a><div class="hyt-internal-code"><span>Número de presupuesto</span><output id="budget-record-number">@(record?.Text("NumeroInterno")??"Se asigna al guardar")</output></div></div>
+@if(record is not null&&!input.NewRevision&&User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim,"REPORTES.CONSULTAR") && User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim,"PRESUPUESTOS.IMPRIMIR"))
+{
+<section class="hyt-budget-print-card" aria-labelledby="budget-print-heading"><h2 id="budget-print-heading">Impresión del presupuesto</h2>
+<form method="post" asp-controller="BudgetReports" asp-action="Generate" target="_blank" class="hyt-budget-print-actions">
+<input type="hidden" name="budgetId" value="@input.Id" /><input type="hidden" name="revisionId" value="@input.RevisionId" /><input type="hidden" name="version" value="@input.RevisionVersion" />
+<button type="submit" name="format" value="NUEVO" class="hyt-button-primary">Imprimir formato nuevo</button><button type="submit" name="format" value="ANTERIOR" class="hyt-button-secondary">Imprimir formato anterior</button>
+</form></section>
+}
+</header>
 @if(TempData["Notice"] is string notice){<p role="status">@notice</p>}
 <form method="post" asp-action="Save" class="hyt-panel hyt-master-form" data-budget-form data-hyt-save data-tax-rate="@(rate?.ToString(CultureInfo.InvariantCulture)??"")" data-read-only="@Model.ReadOnly.ToString().ToLowerInvariant()" data-original-currency="@(record is null?"":BudgetRecord.Text(record.Revision,"CodigoMoneda"))">
 <input type="hidden" name="Draft.DetalleNeto" value="true"/><input type="hidden" name="Id" value="@input.Id" /><input type="hidden" name="RevisionId" value="@input.RevisionId" /><input type="hidden" name="HeaderVersion" value="@input.HeaderVersion" /><input type="hidden" name="RevisionVersion" value="@input.RevisionVersion" /><input type="hidden" name="NewRevision" value="@input.NewRevision.ToString().ToLowerInvariant()" /><input type="hidden" name="ReturnUrl" value="@input.ReturnUrl" />
@@ -68,28 +78,12 @@
 <section class="hyt-budget-totals" aria-label="Resumen de importes"><p data-calculation-status role="status">@(Model.ReadOnly?"Importes guardados en el servidor.":"Previsualización de los importes del detalle.")</p><dl><dt>Base imponible</dt><dd data-budget-net>@(record is not null?BudgetRecord.Text(record.Revision,"Subtotal"):"—")</dd><dt>IGV</dt><dd data-budget-tax>@(record is not null?BudgetRecord.Text(record.Revision,"Impuesto"):"—")</dd><dt>Total</dt><dd data-budget-total>@(record is not null?BudgetRecord.Text(record.Revision,"Total"):"—")</dd></dl></section>
 <div class="hyt-field"><label for="budget-Consideraciones">Consideraciones</label><textarea id="budget-Consideraciones" name="Draft.Revision[Consideraciones]" rows="6" maxlength="20000">@Header("Consideraciones")</textarea></div>
 @foreach(var hidden in new[]{"Coordinador","Encargado","Firmante","CargoFirmante"}){<input type="hidden" name="Draft.Revision[@hidden]" value="@Header(hidden)"/>}
-@if(!Model.ReadOnly){<button type="submit" class="hyt-button-primary">Guardar borrador</button>}
+@if(!Model.ReadOnly){<button type="submit" class="hyt-button-primary">Guardar presupuesto</button>}
 </fieldset></form>
-@if(Model.ReadOnly&&Model.CanEdit&&state=="BORRADOR"){<p><a class="hyt-button-primary" asp-action="Edit" asp-route-id="@input.Id" asp-route-revisionId="@input.RevisionId" asp-route-returnUrl="@input.ReturnUrl">Editar borrador</a></p>}
-@if(Model.ReadOnly&&Model.CanEdit&&state is not ("BORRADOR" or "CANCELADO")){<p><a class="hyt-button-secondary" asp-action="NewRevision" asp-route-id="@input.Id" asp-route-revisionId="@input.RevisionId" asp-route-returnUrl="@input.ReturnUrl">Crear nueva revisión</a></p>}
+@if(Model.ReadOnly&&Model.CanEdit&&state is "BORRADOR" or "OBSERVADO"){<p><a class="hyt-button-primary" asp-action="Edit" asp-route-id="@input.Id" asp-route-revisionId="@input.RevisionId" asp-route-returnUrl="@input.ReturnUrl">Editar presupuesto</a></p>}
 @if(record is not null)
 {
-@if(Model.ReadOnly&&User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim,"REPORTES.CONSULTAR"))
-{
-<section class="hyt-panel hyt-master-trace"><h2>Impresión del presupuesto</h2><form method="post" asp-controller="BudgetReports" asp-action="Generate" target="_blank"><input type="hidden" name="budgetId" value="@input.Id" /><input type="hidden" name="revisionId" value="@input.RevisionId" /><input type="hidden" name="version" value="@input.RevisionVersion" /><div class="hyt-master-related"><button type="submit" name="format" value="NUEVO" class="hyt-button-primary">Generar formato nuevo</button><button type="submit" name="format" value="ANTERIOR" class="hyt-button-secondary">Generar formato anterior</button><a class="hyt-button-secondary" asp-controller="BudgetReports" asp-action="Index" asp-route-budgetId="@input.Id" asp-route-revisionId="@input.RevisionId">Consultar impresiones conservadas</a></div></form></section>
-}
 <partial name="_TraceSummary" model="@(TraceSummary.From(record.Text))" />
-<section class="hyt-panel hyt-master-trace"><h2>Revisiones del presupuesto</h2>
-@if(record.Revision.GetProperty("FechaAprobacion").ValueKind!=JsonValueKind.Null){<p>Aprobación: @DateOnly.Parse(BudgetRecord.Text(record.Revision,"FechaAprobacion"),CultureInfo.InvariantCulture).ToString("dd/MM/yyyy")</p>}
-<nav class="hyt-master-related" aria-label="Revisiones del presupuesto">@foreach(var revision in record.Data.GetProperty("Revisiones").EnumerateArray()){<a class="hyt-button-secondary hyt-action-button" asp-action="Details" asp-route-id="@input.Id" asp-route-revisionId="@revision.GetProperty("RevisionId").GetInt64()" asp-route-returnUrl="@input.ReturnUrl">Revisión @BudgetRecord.Text(revision,"NumeroRevision") · @BudgetRecord.Text(revision,"Estado")</a>}</nav></section>
-@if(Model.ReadOnly&&Model.CanChangeState&&state!="CANCELADO")
-{
-<section class="hyt-panel hyt-master-trace"><h2>Registrar cambio de estado</h2><form method="post" asp-action="State" data-hyt-save>
-<input type="hidden" name="Id" value="@input.Id" /><input type="hidden" name="RevisionId" value="@input.RevisionId" /><input type="hidden" name="HeaderVersion" value="@input.HeaderVersion" /><input type="hidden" name="RevisionVersion" value="@input.RevisionVersion" /><input type="hidden" name="ReturnUrl" value="@input.ReturnUrl" />
-<div class="hyt-master-fields"><div class="hyt-field"><label for="budget-new-state">Acción</label><select id="budget-new-state" name="NewState">@foreach(var next in record.Data.GetProperty("OrdenCompraId").ValueKind!=JsonValueKind.Null?(state=="BORRADOR"?new[]{"ENVIADO"}:new[]{"APROBADO"}):state=="BORRADOR"?new[]{"ENVIADO","CANCELADO"}:state=="ENVIADO"?new[]{"OBSERVADO","APROBADO","RECHAZADO","VENCIDO","CANCELADO"}:new[]{"CANCELADO"}){<option value="@next">@next</option>}</select></div>
-<div class="hyt-field"><partial name="_DatePicker" model="@(new DatePickerModel("EventDate","Fecha del evento",Required:true))" /></div><div class="hyt-field"><label for="budget-responsible">Responsable / representante *</label><input id="budget-responsible" name="Responsible" maxlength="150" required /></div><div class="hyt-field"><label for="budget-state-reason">Motivo u observación</label><textarea id="budget-state-reason" name="Reason" maxlength="2000" rows="3"></textarea></div></div><button class="hyt-button-primary" type="submit">Registrar acción</button></form></section>
-}
-
 }
 <template id="budget-line-template"><partial name="_Line" model="@(new BudgetLineModel(new BudgetDraftLine{Cantidad=""},"__index__"))" /></template>
 <dialog id="budget-lookup" class="hyt-modal" aria-labelledby="budget-lookup-title"><header class="hyt-modal-header"><h2 id="budget-lookup-title">Seleccionar registro</h2><button type="button" class="hyt-modal-close" data-budget-close aria-label="Cerrar ayuda">×</button></header><div class="hyt-modal-body"><form data-budget-search class="hyt-filters"><label>Buscar por código o descripción<input name="search" maxlength="200" type="search" /></label><button class="hyt-button-secondary">Buscar</button></form><p data-budget-lookup-status role="status"></p><div class="hyt-table-wrap"><table class="hyt-table"><thead data-budget-lookup-head></thead><tbody data-budget-lookup-body></tbody></table></div><footer class="hyt-pagination"><button type="button" class="hyt-button-secondary" data-budget-prev>Anterior</button><span data-budget-page></span><button type="button" class="hyt-button-secondary" data-budget-next>Siguiente</button></footer></div><footer class="hyt-modal-footer"><button type="button" class="hyt-button-secondary" data-budget-close>Cerrar</button></footer></dialog>

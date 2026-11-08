@@ -42,20 +42,26 @@ public sealed class SqlBudgetRepository(SqlConnectionFactory connections) : IBud
         p.Add("@VersionOriginal",SqlDbType.Binary,8).Value=(object?)version?.RevisionVersion??DBNull.Value;
         p.Add("@VersionPresupuesto",SqlDbType.Binary,8).Value=(object?)version?.HeaderVersion??DBNull.Value;
     }
-    public Task<BudgetPage> ListAsync(string actor,DateTimeOffset from,DateTimeOffset until,string? search,int page,string? state,CancellationToken ct,string? client=null,string? store=null)
+    public Task<BudgetPage> ListAsync(string actor,DateTimeOffset from,DateTimeOffset until,string? search,int page,string? state,CancellationToken ct,string? client=null,string? store=null,string? type=null,bool pendingGuide=false,bool pendingOrder=false)
         => Execute("dbo.spu_Presupuesto_Listar",actor,p=>
         {
             p.Add("@Desde",SqlDbType.DateTime2).Value=from.UtcDateTime;p.Add("@HastaExclusiva",SqlDbType.DateTime2).Value=until.UtcDateTime;
             p.Add("@Cliente",SqlDbType.NVarChar,200).Value=(object?)client??DBNull.Value;p.Add("@Tienda",SqlDbType.NVarChar,200).Value=(object?)store??DBNull.Value;
             p.Add("@Busqueda",SqlDbType.NVarChar,200).Value=(object?)search??DBNull.Value;p.Add("@Pagina",SqlDbType.Int).Value=page;
             p.Add("@Estado",SqlDbType.NVarChar,20).Value=(object?)state??DBNull.Value;
+            p.Add("@TipoAtencion",SqlDbType.NVarChar,20).Value=(object?)type??DBNull.Value;
+            p.Add("@PendienteGuia",SqlDbType.Bit).Value=pendingGuide;
+            p.Add("@PendienteOC",SqlDbType.Bit).Value=pendingOrder;
         },async command=>
         {
             await using var reader=await command.ExecuteReaderAsync(ct);var rows=new List<BudgetListItem>();
             while(await reader.ReadAsync(ct)) rows.Add(new(reader.GetInt64(0),reader.GetString(1),reader.GetString(2),reader.GetString(3),reader.GetInt64(4),reader.GetInt64(5),reader.GetInt64(6),reader.GetInt32(7),
                 reader.GetString(8),reader.GetString(9),reader.GetString(10),reader.GetString(11),Money(reader,12),Money(reader,13),Money(reader,14),reader.IsDBNull(15)?null:DateOnly.FromDateTime(reader.GetDateTime(15)),
-                Timestamp(reader,16),reader.GetString(17),reader.IsDBNull(18)?null:Timestamp(reader,18),Text(reader,19),Id(reader,20),Text(reader,21),Id(reader,22),Text(reader,23),Text(reader,24),reader.GetInt64(25)));
-            await reader.NextResultAsync(ct);await reader.ReadAsync(ct);return new BudgetPage(rows,reader.GetInt64(0),page);
+                Timestamp(reader,16),reader.GetString(17),reader.IsDBNull(18)?null:Timestamp(reader,18),Text(reader,19),Id(reader,20),Text(reader,21),Id(reader,22),Text(reader,23),Text(reader,24),reader.GetInt64(25),Id(reader,26)));
+            await reader.NextResultAsync(ct);await reader.ReadAsync(ct);var total=reader.GetInt64(0);
+            var counts=new Dictionary<string,long>();
+            if(await reader.NextResultAsync(ct))while(await reader.ReadAsync(ct))counts[reader.GetString(0)]=reader.GetInt64(1);
+            return new BudgetPage(rows,total,page,counts);
         },ct);
     public Task<BudgetRecord?> GetAsync(string actor,long id,long? revisionId,int auditPage,CancellationToken ct)
         => Execute<BudgetRecord?>("dbo.spu_Presupuesto_Obtener",actor,p=>

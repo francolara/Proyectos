@@ -1,6 +1,8 @@
+@* Firma: FRANCO LARA - 06/11/2026 | Guía comparte consulta y edición con enlaces del expediente, sin estados. *@
 @using GestionServicios.Web.ViewModels.Followup
 @model DocumentFormModel
 @* Firma: FRANCO LARA - 03/11/2026 | Ficha documental MVC con campos compartidos y versiones de concurrencia. *@
 @{ViewData["Title"]=Model.Kind.Title;}
 <header class="hyt-page-header"><div><h1>@Model.Kind.Title</h1><p>@Model.Record.Data.GetProperty("PresupuestoNumero").GetString()</p></div></header>
+@if(Model.Kind.Code=="GUIA"){<partial name="_Related" model="@(new DocumentDetailsModel(Model.Kind,Model.Record,1))" />}
 <partial name="_Form" model="Model" />

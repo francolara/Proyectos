@@ -1,0 +1,44 @@
+@* Firma: FRANCO LARA - 07/11/2026 | Consulta de auditoría HYT con módulos agrupados y acciones según el módulo. *@
+@using GestionServicios.Web.ViewModels.Security
+@using GestionServicios.Web.ViewModels.Shared
+@model AuditListModel
+@{
+    ViewData["Title"] = "Auditoría";
+    ViewData["Wide"] = true;
+    var modules = Model.Result.Options.Select(row => row.Text("Entidad")).Append(Model.Entity ?? "")
+        .Where(code => code.Length > 0).Distinct().OrderBy(SecurityDisplay.Module);
+    var actions = Model.Result.Options.GroupBy(row => row.Text("Accion"))
+        .ToDictionary(group => group.Key, group => string.Join(",", group.Select(row => row.Text("Entidad")).Distinct()));
+    if (Model.Action is { } selectedAction) actions.TryAdd(selectedAction, Model.Entity ?? "");
+}
+<header class="hyt-page-header"><div><h1>Auditoría</h1><p>Consulta quién hizo cada cambio y cuándo se registró.</p></div></header>
+<div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+<form method="get" asp-action="Index" class="hyt-filters">
+    <div class="hyt-field"><label for="audit-search">Buscar registro o referencia</label><input type="search" id="audit-search" name="search" value="@Model.Search" maxlength="200" /></div>
+    <partial name="_DatePicker" model="@(new DatePickerModel("From", "Desde", Model.From))" />
+    <partial name="_DatePicker" model="@(new DatePickerModel("To", "Hasta", Model.To))" />
+    <div class="hyt-field"><label for="audit-actor">Usuario responsable</label><input type="search" id="audit-actor" name="actor" value="@Model.Actor" maxlength="128" /></div>
+    <div class="hyt-field"><label for="audit-entity">Módulo</label><select id="audit-entity" name="entity"><option value="">Todos</option>
+        @foreach (var module in modules) { <option value="@module" selected="@(Model.Entity == module)">@SecurityDisplay.Module(module)</option> }
+    </select></div>
+    <div class="hyt-field"><label for="audit-action">Acción</label><select id="audit-action" name="eventAction"><option value="">Todas</option>
+        @foreach (var action in actions.OrderBy(item => SecurityDisplay.Action(item.Key)))
+        {
+            <option value="@action.Key" data-audit-modules="@action.Value" selected="@(Model.Action == action.Key)">@SecurityDisplay.Action(action.Key)</option>
+        }
+    </select></div>
+    <button class="hyt-button-primary" type="submit">Consultar</button><a class="hyt-button-secondary" asp-action="Index">Restablecer</a>
+</form>
+<div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Eventos de auditoría">
+<table class="hyt-table"><thead><tr><th>Fecha y hora</th><th>Usuario</th><th>Módulo</th><th>Acción</th><th>Referencia</th><th class="hyt-actions-column">Acciones</th></tr></thead><tbody>
+@if (Model.Result.Data.Rows.Count == 0) { <tr><td colspan="6">No se encontraron eventos con los filtros seleccionados.</td></tr> }
+@foreach (var row in Model.Result.Data.Rows)
+{
+    <tr><td>@row.Date("FechaRegistro")</td><td>@row.Text("Usuario")</td><td>@SecurityDisplay.Module(row.Text("Entidad"))</td>
+    <td>@SecurityDisplay.Action(row.Text("Accion"))</td><td>@row.Text("Referencia")</td>
+    <td class="hyt-actions-column"><div class="hyt-grid-actions"><a class="hyt-button-secondary" data-document-open asp-action="Detail" asp-route-id="@row.Text("EventoId")">Ver detalle</a></div></td></tr>
+}
+</tbody></table>
+<partial name="_SecurityPagination" model="Model.Result.Data" />
+</div>
+@section Scripts { <script src="~/hyt-security.js" asp-append-version="true" defer></script> }

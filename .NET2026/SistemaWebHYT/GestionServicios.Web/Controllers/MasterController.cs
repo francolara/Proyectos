@@ -42,11 +42,11 @@ public sealed class MasterController(IMaintenanceRepository repository, ILogger<
         var query = new Dictionary<string, string> { ["entity"] = entity, ["search"] = search ?? "" };
         if (parentId.HasValue) query["parentId"] = parentId.Value.ToString();
         var returnUrl = Url.Action(nameof(Index), new { entity, search, page, parentId })!;
-        var canEdit = Allowed(definition, "EDITAR");
+        var canEdit = Allowed(definition, "MODIFICAR");
         var showClient = entity is "tiendas" or "contactos";
         return View(new MaintenanceListModel
         {
-            Entity = definition, Search = search ?? "", ParentId = parentId, CanEdit = canEdit,
+            Entity = definition, Search = search ?? "", ParentId = parentId, CanEdit = Allowed(definition, "CREAR"),
             Grid = new GridModel
             {
                 Label = definition.Title, Controller = "Master", Query = query, RowQuery = new() { ["entity"] = entity, ["returnUrl"] = returnUrl },
@@ -65,7 +65,7 @@ public sealed class MasterController(IMaintenanceRepository repository, ILogger<
         if(compact&&materialId.HasValue&&entity is "partidas-tarifario" or "tarifarios" or "versiones-tarifario")return RedirectToAction("New","MaterialTariff",new{materialId});
         var definition = MaintenanceDefinitions.Find(entity);
         if (definition is null) return NotFound();
-        if (!Allowed(definition, "EDITAR") || !Allowed(definition, "CONSULTAR")) return Forbid();
+        if (!Allowed(definition, "CREAR") || !Allowed(definition, "CONSULTAR")) return Forbid();
         if (parentId <= 0) return BadRequest();
         var input = new MaintenanceEditInput { Compact=compact,MaterialContextId=materialId,ReturnUrl = Back(returnUrl, entity) };
         foreach (var field in definition.Fields) input.Fields[field.Name] = field.Default;
@@ -92,7 +92,7 @@ public sealed class MasterController(IMaintenanceRepository repository, ILogger<
         if(compact&&materialId.HasValue&&entity is "tarifarios" or "versiones-tarifario")return RedirectToAction("New","MaterialTariff",new{materialId});
         var definition = MaintenanceDefinitions.Find(entity);
         if (definition is null) return NotFound();
-        if (!Allowed(definition, "CONSULTAR") || !readOnly && !Allowed(definition, "EDITAR")) return Forbid();
+        if (!Allowed(definition, "CONSULTAR") || !readOnly && !Allowed(definition, "MODIFICAR")) return Forbid();
         if (id <= 0 || !ValidPage(auditPage)) return BadRequest();
         var record = await repository.GetAsync(definition, Actor, id, auditPage, ct);
         if (record is null) return NotFound();
@@ -121,9 +121,9 @@ public sealed class MasterController(IMaintenanceRepository repository, ILogger<
         }
         var catalogs = await repository.CatalogsAsync(Actor, ct);
         var prices=entity.Key=="materiales"&&record is not null&&User.HasClaim(AccessService.PermissionClaim,"TARIFARIOS.CONSULTAR")
-            ?new MaterialTariffsModel(record.Id,record.Text("Descripcion"),await repository.MaterialTariffsAsync(Actor,record.Id,1,ct),User.HasClaim(AccessService.PermissionClaim,"TARIFARIOS.EDITAR")):null;
+            ?new MaterialTariffsModel(record.Id,record.Text("Descripcion"),await repository.MaterialTariffsAsync(Actor,record.Id,1,ct),User.HasClaim(AccessService.PermissionClaim,"TARIFARIOS.MODIFICAR")):null;
         return View(input.Compact?"CompactForm":"Form", new MaintenanceFormModel { Entity = entity, Input = input, Record = record, Catalogs = catalogs,
-            MaterialContextLabel=material is null?null:material.Text("CodigoInterno")+" · "+material.Text("Descripcion"),MaterialTariffs=prices,ReadOnly = readOnly, CanEdit = Allowed(entity, "EDITAR") && (record is null || !Frozen(entity, record)), AuditPage = auditPage, Error = error });
+            MaterialContextLabel=material is null?null:material.Text("CodigoInterno")+" · "+material.Text("Descripcion"),MaterialTariffs=prices,ReadOnly = readOnly, CanEdit = Allowed(entity, "MODIFICAR") && (record is null || !Frozen(entity, record)), AuditPage = auditPage, Error = error });
     }
 
     [HttpPost("Guardar")]
@@ -131,7 +131,7 @@ public sealed class MasterController(IMaintenanceRepository repository, ILogger<
     {
         var definition = MaintenanceDefinitions.Find(entity);
         if (definition is null) return NotFound();
-        if (!Allowed(definition, "EDITAR") || !Allowed(definition, "CONSULTAR")) return Forbid();
+        if (!Allowed(definition, input.Id.HasValue ? "MODIFICAR" : "CREAR") || !Allowed(definition, "CONSULTAR")) return Forbid();
         input.ReturnUrl = Back(input.ReturnUrl, entity);
         RecordSnapshot? record = null;
         if (input.Id.HasValue)
@@ -176,7 +176,7 @@ public sealed class MasterController(IMaintenanceRepository repository, ILogger<
         if(!User.HasClaim(AccessService.PermissionClaim,"MATERIALES.CONSULTAR")||!User.HasClaim(AccessService.PermissionClaim,"TARIFARIOS.CONSULTAR"))return Forbid();
         var material=await repository.GetAsync(MaintenanceDefinitions.Find("materiales")!,Actor,id,cancellationToken:ct);
         if(material is null)return NotFound();
-        return PartialView("_MaterialTariffs",new MaterialTariffsModel(id,material.Text("Descripcion"),await repository.MaterialTariffsAsync(Actor,id,page,ct),User.HasClaim(AccessService.PermissionClaim,"TARIFARIOS.EDITAR")));
+        return PartialView("_MaterialTariffs",new MaterialTariffsModel(id,material.Text("Descripcion"),await repository.MaterialTariffsAsync(Actor,id,page,ct),User.HasClaim(AccessService.PermissionClaim,"TARIFARIOS.MODIFICAR")));
     }
     [HttpGet("Ayuda")]
     public async Task<IActionResult> Lookup(string entity, string? search, int page = 1, long? parentId = null, CancellationToken ct = default)
@@ -216,7 +216,7 @@ public sealed class MasterController(IMaintenanceRepository repository, ILogger<
     {
         var definition = MaintenanceDefinitions.Find(entity);
         if (definition is null || entity != "versiones-tarifario") return NotFound();
-        if (!Allowed(definition, "EDITAR") || !Allowed(definition, "CONSULTAR")) return Forbid();
+        if (!Allowed(definition, clone ? "CREAR" : "MODIFICAR") || !Allowed(definition, "CONSULTAR")) return Forbid();
         byte[]? version = null;
         try { version = Convert.FromBase64String(rowVersion ?? ""); } catch (FormatException) { }
         if (id <= 0 || version?.Length != 8 || !confirmed) return BadRequest("Confirma la operación desde la ficha de la versión.");

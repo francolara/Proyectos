@@ -3,6 +3,7 @@
 -- Create date:   05/11/2026
 -- Description:   Guarda tarifas unificadas con IGV, al menos un precio PEN/USD, estado, concurrencia y auditoría propia.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 07/11/2026 | Separa permisos de alta, edición y activación de tarifas.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_MaterialTarifa_Guardar
@@ -15,6 +16,8 @@ BEGIN
     SET XACT_ABORT ON;
     DECLARE @Propia BIT=0;
     BEGIN TRY
+        IF dbo.fn_HYTPermiso(@UsuarioId,CASE WHEN @Id IS NULL THEN N'TARIFARIOS.CREAR' ELSE N'TARIFARIOS.MODIFICAR' END) = 0
+            THROW 51700,N'[HYT_PERMISO] No tiene permiso para esta acción.',1;
         IF @@TRANCOUNT<>0 THROW 51202,N'[HYT_VALIDACION] La operación administra su transacción.',1;
         IF EXISTS(SELECT permiso.Codigo FROM (VALUES(N'MATERIALES.CONSULTAR'),(N'TARIFARIOS.CONSULTAR'),(N'TARIFARIOS.EDITAR')) AS permiso(Codigo)
             WHERE NOT EXISTS(SELECT 1 FROM dbo.AspNetUsers AS usuario INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId=usuario.Id
@@ -38,6 +41,9 @@ BEGIN
             WHERE precio.PartidaId=@Id AND precio.MaterialId=@MaterialId AND precio.VersionFila=@VersionOriginal
               AND (tarifa.EsTarifarioMaterial=1 OR version.Estado=N'BORRADOR');
             IF @Anterior IS NULL THROW 51209,N'[HYT_CONCURRENCIA] El tarifario cambió o no permite edición. Vuelve a consultarlo.',1;
+            IF @Id IS NOT NULL AND @Activo <> TRY_CONVERT(BIT, JSON_VALUE(@Anterior,N'$.Activo'))
+                AND dbo.fn_HYTPermiso(@UsuarioId,N'TARIFARIOS.ACTIVAR') = 0
+                THROW 51700,N'[HYT_PERMISO] No tiene permiso para activar o desactivar este registro.',1;
             UPDATE dbo.TarifarioPartida SET CodigoTipoIGV=@CodigoTipoIGV,PrecioPEN=@PrecioPEN,PrecioUSD=@PrecioUSD,Activo=@Activo,
                 FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE PartidaId=@Id;
         END

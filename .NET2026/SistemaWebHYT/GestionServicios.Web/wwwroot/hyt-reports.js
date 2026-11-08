@@ -1,5 +1,5 @@
-// Firma: FRANCO LARA - 03/11/2026 | Impresión de vista HTML del reporte.
-document.querySelector('[data-report-print]')?.addEventListener('click',()=>window.print());
-
-// Firma: FRANCO LARA - 05/11/2026 | El filtro de seguimiento solo se aplica a reportes de OC.
-(()=>{const kind=document.querySelector("#report-kind"),situation=document.querySelector("#report-situation");if(!kind||!situation)return;const update=()=>{situation.disabled=kind.value==="GANADOS";if(situation.disabled)situation.value="";};kind.addEventListener("change",update);update();})();
+// Firma: FRANCO LARA - 03/11/2026 | Impresión de reporte HTML.
+// Firma: FRANCO LARA - 05/11/2026 | Actualiza filtros de reporte.
+// Firma: FRANCO LARA - 06/11/2026 | Cambiar fuente limpia estado dependiente y vuelve a consultar; conserva búsqueda y fechas.
+const reportKind=document.querySelector('#report-kind');
+reportKind?.addEventListener('change',()=>{const form=reportKind.form;form.querySelector('[name=state]').value='';for(const name of ['pendingOrder','pendingConfirmation','pendingInvoice']){const input=form.querySelector(`[name=${name}]`);if(input)input.checked=false;}form.requestSubmit();});

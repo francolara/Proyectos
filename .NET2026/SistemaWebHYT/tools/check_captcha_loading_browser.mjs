@@ -87,7 +87,7 @@ try {
     await send('Fetch.enable',{patterns:[{urlPattern:'*challenges.cloudflare.com/*',requestStage:'Request'},{urlPattern:'*/Acceso/Captcha/*',requestStage:'Request'}]});
     await navigate('/Acceso');
     await evaluate(`document.querySelector('#UserName').value=${JSON.stringify(fixture.user)};document.querySelector('#Password').value=${JSON.stringify(fixture.password)}`);
-    await click('[data-captcha-switch]');await wait("document.querySelector('#UseManualCaptcha').value==='true'");await wait(visible);await wait("document.querySelector('[data-captcha-image]').naturalWidth===260");await wait(idle);
+    await evaluate('hytTurnstileFallback()');await wait("document.querySelector('#UseManualCaptcha').value==='true'");await wait(visible);await wait("document.querySelector('[data-captcha-image]').naturalWidth===260");await wait(idle);
     if(!await evaluate(`document.querySelector('#UserName').value===${JSON.stringify(fixture.user)} && document.querySelector('#Password').value===${JSON.stringify(fixture.password)}`))throw new Error('Elegir respaldo pierde credenciales escritas.');
     await navigate('/Acceso');await wait("document.querySelector('#UseManualCaptcha').value==='False'");
     await evaluate("window.qaSlowEnd=hytLoading.begin('Esperando verificación de prueba…')");

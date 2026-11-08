@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 07/11/2026 | Acciones visibles según los permisos del perfil. *@
 @* Firma: FRANCO LARA - 06/11/2026 | Botones Ver y Editar con ancho uniforme. *@
 @using System.Text.Json
 @using System.Globalization
@@ -6,7 +7,7 @@
 @* Firma: FRANCO LARA - 05/11/2026 | Listado unificado de precios registrados desde materiales o desde Tarifarios, con búsqueda SQL y veinte filas. *@
 @{string Text(JsonElement row,string key)=>row.TryGetProperty(key,out var value)&&value.ValueKind!=JsonValueKind.Null?value.ToString():"—";string Money(JsonElement row,string key)=>row.GetProperty(key).ValueKind==JsonValueKind.Null?"Sin precio":row.GetProperty(key).GetDecimal().ToString("N2",CultureInfo.GetCultureInfo("es-PE"));string Date(JsonElement row,string key)=>row.GetProperty(key).ValueKind==JsonValueKind.Null?"Sin actualizaciones":PeruDate.Display(new DateTimeOffset(DateTime.SpecifyKind(row.GetProperty(key).GetDateTime(),DateTimeKind.Utc)));}
 
-<header class="hyt-page-header"><div><h1>Tarifarios</h1><p>Precios de materiales y servicios.</p></div>@if(canEdit){<a class="hyt-button-primary" asp-action="NewGlobal">Nuevo registro</a>}</header>
+<header class="hyt-page-header"><div><h1>Tarifarios</h1><p>Precios de materiales y servicios.</p></div>@if(ViewData["CanCreate"] is true){<a class="hyt-button-primary" asp-action="NewGlobal">Nuevo registro</a>}</header>
 <form method="get" class="hyt-filters" asp-action="IndexGlobal"><div class="hyt-field"><label for="tariff-search">Buscar por código, descripción o SAP del material</label><input id="tariff-search" type="search" name="search" value="@search" maxlength="200"/></div><button class="hyt-button-primary">Buscar</button><a class="hyt-button-secondary" asp-action="IndexGlobal">Limpiar</a></form>
 <div class="hyt-table-wrap"><table class="hyt-table"><thead><tr><th>Código del material</th><th>Material / servicio</th><th>Tipo de IGV</th><th>Precio en soles</th><th>Precio en dólares</th><th>Estado</th><th>Registro</th><th>Registrado por</th><th>Actualización</th><th>Actualizado por</th><th>Acciones</th></tr></thead><tbody>
 @foreach(var row in Model.Rows){var mid=row.GetProperty("MaterialId").GetInt64();var id=row.GetProperty("Id").GetInt64();

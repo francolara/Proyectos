@@ -1,3 +1,4 @@
+// Firma: FRANCO LARA - 06/11/2026 | Consulta informativa del comprobante externo en pop-up sin edición.
 using System.Security.Claims;
 using System.Text.Json;
 using GestionServicios.Application.Billing;
@@ -33,6 +34,18 @@ public sealed class InvoiceMarkController(IInvoiceMarkRepository repository):Con
                 input.Date=DateOnly.Parse(BudgetRecord.Text(reference,"FechaDocumento")[..10],System.Globalization.CultureInfo.InvariantCulture);input.Type=BudgetRecord.Text(reference,"CodigoTipoDocumento");input.Series=BudgetRecord.Text(reference,"Serie");input.Number=BudgetRecord.Text(reference,"NumeroDocumento");
             }
             return Form(new(input,record,CanEdit,popup,page));
+        }
+        catch(MaintenanceException error){return Conflict(error.Message);}
+    }
+    [HttpGet("Consulta")]
+    public async Task<IActionResult> Summary(long orderId,CancellationToken ct=default)
+    {
+        if(orderId<=0)return BadRequest();
+        try
+        {
+            var data=await repository.GetAsync(Actor,orderId,1,ct);
+            if(data is null||!data.Value.TryGetProperty("Referencia",out var reference)||reference.ValueKind!=JsonValueKind.Object)return NotFound();
+            return PartialView("_Summary",reference);
         }
         catch(MaintenanceException error){return Conflict(error.Message);}
     }

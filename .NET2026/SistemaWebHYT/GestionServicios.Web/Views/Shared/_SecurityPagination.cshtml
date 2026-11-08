@@ -1,0 +1,15 @@
+@* Firma: FRANCO LARA - 07/11/2026 | Administración de acceso y trazabilidad HYT. *@
+@model GestionServicios.Application.Security.SecurityPage
+@{
+    string Link(int page) => Context.Request.Path + QueryString.Create(
+        Context.Request.Query.Where(q => !string.Equals(q.Key, "page", StringComparison.OrdinalIgnoreCase))
+        .SelectMany(q => q.Value.Select(value => new KeyValuePair<string, string?>(q.Key, value)))
+        .Append(new("page", page.ToString())));
+}
+<footer class="hyt-pagination">
+    <span>@Model.Total registros · Página @(Model.Total == 0 ? 0 : Model.Page) · 20 por página</span>
+    <nav aria-label="Paginación">
+        @if (Model.Page > 1) { <a class="hyt-button-secondary" href="@Link(Model.Page - 1)">Anterior</a> }
+        @if ((long)Model.Page * 20 < Model.Total) { <a class="hyt-button-secondary" href="@Link(Model.Page + 1)">Siguiente</a> }
+    </nav>
+</footer>

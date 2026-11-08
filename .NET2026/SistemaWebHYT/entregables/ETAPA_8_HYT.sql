@@ -4,7 +4,7 @@
 -- Description:   Paquete incremental HYT etapa 8; aplicar después de etapa 7.
 -- =============================================
 -- Las fuentes individuales están aplicadas en la base local de desarrollo.
--- Firma: FRANCO LARA | Create date: 06/11/2026 | Numeración mensual de presupuesto en consultas, reportes e impresiones; preserva claves internas.
+-- Firma: FRANCO LARA | Create date: 06/11/2026 | Numeración mensual de presupuesto en consultas, reportes e impresiones; preserva claves internas. Guía como documento sin estados. Facturado admite OC completada con guía y confirmación vigente. Reportes integrales y dashboard alineados al flujo vigente. Confirmación del cliente y Facturado por registros vigentes.
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   05/11/2026
@@ -41,7 +41,7 @@ BEGIN
         DECLARE @VerPendientes BIT=0;
         IF @VerPresupuesto=1 AND @VerOC=1 AND EXISTS(SELECT 1 FROM dbo.AspNetUserRoles AS rol INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId WHERE rol.UserId=@UsuarioId AND permiso.CodigoPermiso=N'GUIAS.CONSULTAR') SET @VerPendientes=1;
         SELECT p.PresupuestoId AS Id,p.NumeroPresupuesto AS Numero,p.FechaRegistro,p.TipoAtencion,revision.ClienteNombre,revision.TiendaNombre,
-            CONVERT(BIT,CASE WHEN oc.OrdenCompraId IS NULL THEN 1 ELSE 0 END) AS SinOC,CONVERT(BIT,CASE WHEN guia.GuiaId IS NULL OR guia.Estado=N'ANULADA' THEN 1 ELSE 0 END) AS SinGuia,
+            CONVERT(BIT,CASE WHEN oc.OrdenCompraId IS NULL THEN 1 ELSE 0 END) AS SinOC,CONVERT(BIT,CASE WHEN guia.GuiaId IS NULL THEN 1 ELSE 0 END) AS SinGuia,
             CONVERT(BIT,CASE WHEN p.TipoAtencion=N'EMERGENCIA' AND revision.Estado<>N'APROBADO' THEN 1 ELSE 0 END) AS EmergenciaPorRegularizar,
             DATEDIFF(DAY,CONVERT(DATE,DATEADD(HOUR,-5,p.FechaRegistro)),CONVERT(DATE,DATEADD(HOUR,-5,SYSUTCDATETIME()))) AS DiasPendiente
         INTO #Pendientes FROM dbo.Presupuesto AS p
@@ -50,14 +50,14 @@ BEGIN
         LEFT JOIN dbo.GuiaConformidad AS guia ON guia.PresupuestoId=p.PresupuestoId
         WHERE @VerPendientes=1 AND revision.Estado<>N'CANCELADO' AND p.FechaRegistro<@HastaExclusiva
             AND (@Cliente IS NULL OR revision.ClienteNombre LIKE N'%'+@Cliente+N'%') AND (@Tienda IS NULL OR revision.TiendaNombre LIKE N'%'+@Tienda+N'%')
-            AND (oc.OrdenCompraId IS NULL OR guia.GuiaId IS NULL OR guia.Estado=N'ANULADA' OR (p.TipoAtencion=N'EMERGENCIA' AND revision.Estado<>N'APROBADO'));
-        SELECT evento.OrdenCompraId,MIN(evento.FechaRegistro) AS FechaRegistro,evento.Tipo
-        INTO #Eventos FROM
-            (SELECT confirmacion.OrdenCompraId,confirmacion.FechaRegistro,N'CONFIRMACION' AS Tipo FROM dbo.ConfirmacionFacturacion AS confirmacion
-             UNION ALL SELECT referencia.OrdenCompraId,referencia.FechaRegistro,N'MARCADO' FROM dbo.ReferenciaComprobanteExterno AS referencia) AS evento
-        INNER JOIN dbo.OrdenCompraCliente AS oc ON oc.OrdenCompraId=evento.OrdenCompraId INNER JOIN dbo.PresupuestoRevision AS revision ON revision.RevisionId=oc.RevisionId
-        WHERE @VerOC=1 AND (@Cliente IS NULL OR revision.ClienteNombre LIKE N'%'+@Cliente+N'%') AND (@Tienda IS NULL OR revision.TiendaNombre LIKE N'%'+@Tienda+N'%')
-        GROUP BY evento.OrdenCompraId,evento.Tipo;
+            AND (oc.OrdenCompraId IS NULL OR guia.GuiaId IS NULL OR (p.TipoAtencion=N'EMERGENCIA' AND revision.Estado<>N'APROBADO'));
+        SELECT evento.FechaRegistro,evento.Tipo INTO #Eventos
+        FROM (SELECT confirmacion.OrdenCompraId,confirmacion.FechaRegistro,N'CONFIRMACION' AS Tipo FROM dbo.ConfirmacionFacturacion AS confirmacion WHERE confirmacion.Vigente=1
+            UNION ALL SELECT referencia.OrdenCompraId,referencia.FechaRegistro,N'FACTURADO' FROM dbo.ReferenciaComprobanteExterno AS referencia WHERE referencia.Vigente=1) AS evento
+        INNER JOIN dbo.OrdenCompraCliente AS oc ON oc.OrdenCompraId=evento.OrdenCompraId
+        INNER JOIN dbo.PresupuestoRevision AS revision ON revision.RevisionId=oc.RevisionId
+        WHERE @VerOC=1 AND oc.Estado<>N'CANCELADA' AND evento.FechaRegistro>=@Desde AND evento.FechaRegistro<@HastaExclusiva
+            AND (@Cliente IS NULL OR revision.ClienteNombre LIKE N'%'+@Cliente+N'%') AND (@Tienda IS NULL OR revision.TiendaNombre LIKE N'%'+@Tienda+N'%');
         SELECT (SELECT @VerPresupuesto AS VerPresupuestos,@VerOC AS VerOC,@VerPendientes AS VerPendientes,SYSUTCDATETIME() AS ActualizadoUTC,@Desde AS DesdeUTC,@HastaExclusiva AS HastaExclusivaUTC,
             (SELECT COUNT_BIG(1) FROM #Pendientes) AS TotalPendientes,
             (SELECT COUNT_BIG(1) FROM #Pendientes AS pendiente WHERE pendiente.FechaRegistro>=@Desde) AS PendientesPeriodo,
@@ -66,16 +66,19 @@ BEGIN
             JSON_QUERY(COALESCE((SELECT orden.Estado,COUNT_BIG(1) AS Cantidad FROM #Ordenes AS orden GROUP BY orden.Estado FOR JSON PATH),N'[]')) AS EstadosOC,
             (SELECT COUNT_BIG(1) FROM #Presupuestos) AS Presupuestos,
             (SELECT COUNT_BIG(1) FROM #Ordenes) AS Ordenes,
+            (SELECT COUNT_BIG(1) FROM #Presupuestos AS presupuesto WHERE NOT EXISTS(SELECT 1 FROM dbo.OrdenCompraCliente AS oc WHERE oc.PresupuestoId=presupuesto.PresupuestoId)) AS PresupuestosSinOC,
+            (SELECT COUNT_BIG(1) FROM #Presupuestos AS presupuesto WHERE NOT EXISTS(SELECT 1 FROM dbo.GuiaConformidad AS guia WHERE guia.PresupuestoId=presupuesto.PresupuestoId)) AS PresupuestosSinGuia,
+            (SELECT COUNT_BIG(1) FROM #Ordenes AS orden WHERE orden.Estado<>N'CANCELADA' AND orden.ReferenciaId IS NULL) AS PendientesFacturar,
             (SELECT COUNT_BIG(1) FROM #Ordenes AS orden WHERE orden.Estado<>N'CANCELADA' AND orden.ConfirmacionId IS NULL) AS SinConfirmar,
             (SELECT COUNT_BIG(1) FROM #Ordenes AS orden WHERE orden.Estado<>N'CANCELADA' AND orden.ConfirmacionId IS NOT NULL AND orden.ReferenciaId IS NULL) AS ConfirmadasSinMarcar,
-            (SELECT COUNT_BIG(1) FROM #Ordenes AS orden WHERE orden.Estado<>N'CANCELADA' AND orden.ReferenciaId IS NULL AND orden.ConfirmacionId IS NOT NULL AND orden.EstadoEjecucion=N'TERMINADA' AND orden.EstadoGuia=N'ACEPTADA') AS ListasParaMarcar,
+            (SELECT COUNT_BIG(1) FROM #Ordenes AS orden WHERE orden.Estado<>N'CANCELADA' AND orden.ReferenciaId IS NULL AND orden.ConfirmacionId IS NOT NULL AND (orden.Estado IN(N'TRABAJO_COMPLETADO',N'CERRADA_OPERATIVAMENTE') OR orden.EstadoEjecucion=N'TERMINADA') AND orden.GuiaId IS NOT NULL) AS ListasParaMarcar,
             (SELECT COUNT_BIG(1) FROM #Ordenes AS orden WHERE orden.Estado<>N'CANCELADA' AND orden.ReferenciaId IS NOT NULL) AS Facturadas,
             JSON_QUERY(COALESCE((SELECT presupuesto.CodigoMoneda,SUM(presupuesto.Total) AS Importe,COUNT_BIG(1) AS Cantidad,SUM(CONVERT(BIGINT,CASE WHEN presupuesto.Total IS NULL THEN 1 ELSE 0 END)) AS PreciosPendientes FROM #Presupuestos AS presupuesto WHERE presupuesto.Estado<>N'CANCELADO' GROUP BY presupuesto.CodigoMoneda FOR JSON PATH,INCLUDE_NULL_VALUES),N'[]')) AS ImportesPresupuesto,
             JSON_QUERY(COALESCE((SELECT orden.CodigoMoneda,SUM(orden.Total) AS Importe,COUNT_BIG(1) AS Cantidad FROM #Ordenes AS orden WHERE orden.Estado<>N'CANCELADA' GROUP BY orden.CodigoMoneda FOR JSON PATH,INCLUDE_NULL_VALUES),N'[]')) AS ImportesOC,
             JSON_QUERY(COALESCE((SELECT movimiento.Fecha,SUM(movimiento.Presupuestos) AS Presupuestos,SUM(movimiento.Ordenes) AS Ordenes,SUM(movimiento.Confirmaciones) AS Confirmaciones,SUM(movimiento.Marcados) AS Marcados FROM
                 (SELECT CONVERT(DATE,DATEADD(HOUR,-5,presupuesto.FechaRegistro)) AS Fecha,CONVERT(BIGINT,1) AS Presupuestos,CONVERT(BIGINT,0) AS Ordenes,CONVERT(BIGINT,0) AS Confirmaciones,CONVERT(BIGINT,0) AS Marcados FROM #Presupuestos AS presupuesto
                  UNION ALL SELECT CONVERT(DATE,DATEADD(HOUR,-5,orden.FechaRegistro)),CONVERT(BIGINT,0),CONVERT(BIGINT,1),CONVERT(BIGINT,0),CONVERT(BIGINT,0) FROM #Ordenes AS orden
-                 UNION ALL SELECT CONVERT(DATE,DATEADD(HOUR,-5,evento.FechaRegistro)),CONVERT(BIGINT,0),CONVERT(BIGINT,0),CONVERT(BIGINT,CASE WHEN evento.Tipo=N'CONFIRMACION' THEN 1 ELSE 0 END),CONVERT(BIGINT,CASE WHEN evento.Tipo=N'MARCADO' THEN 1 ELSE 0 END) FROM #Eventos AS evento WHERE evento.FechaRegistro>=@Desde AND evento.FechaRegistro<@HastaExclusiva) AS movimiento
+                 UNION ALL SELECT CONVERT(DATE,DATEADD(HOUR,-5,evento.FechaRegistro)),CONVERT(BIGINT,0),CONVERT(BIGINT,0),CONVERT(BIGINT,CASE WHEN evento.Tipo=N'CONFIRMACION' THEN 1 ELSE 0 END),CONVERT(BIGINT,CASE WHEN evento.Tipo=N'FACTURADO' THEN 1 ELSE 0 END) FROM #Eventos AS evento) AS movimiento
                 GROUP BY movimiento.Fecha ORDER BY movimiento.Fecha FOR JSON PATH),N'[]')) AS Movimientos
             FOR JSON PATH,WITHOUT_ARRAY_WRAPPER) AS Datos;
         DROP TABLE #Presupuestos;DROP TABLE #Ordenes;DROP TABLE #Pendientes;DROP TABLE #Eventos;
@@ -93,47 +96,91 @@ GO
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_Reporte_Listar
-    @UsuarioId NVARCHAR(128),@Reporte NVARCHAR(40),@Desde DATETIME2(3),@HastaExclusiva DATETIME2(3),@Pagina INT=1,@Cliente NVARCHAR(200)=NULL,@Tienda NVARCHAR(200)=NULL,@Situacion NVARCHAR(30)=NULL
+    @UsuarioId NVARCHAR(128),@Reporte NVARCHAR(40),@Desde DATETIME2(3),@HastaExclusiva DATETIME2(3),@Pagina INT=1,
+    @Cliente NVARCHAR(200)=NULL,@Tienda NVARCHAR(200)=NULL,@Situacion NVARCHAR(30)=NULL,
+    @Estado NVARCHAR(40)=NULL,@TipoAtencion NVARCHAR(20)=NULL,@Busqueda NVARCHAR(200)=NULL,
+    @PendienteGuia BIT=0,@PendienteOC BIT=0,@PendienteConfirmacion BIT=0,@PendienteFacturar BIT=0,@Exportar BIT=0
 AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
+        DECLARE @VerPresupuesto BIT=0,@VerOC BIT=0,@VerGuia BIT=0,@VerConfirmacion BIT=0,@VerFactura BIT=0,@VerEjecucion BIT=0;
         IF NOT EXISTS(SELECT 1 FROM dbo.AspNetUsers AS usuario INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId=usuario.Id INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId WHERE usuario.Id=@UsuarioId AND usuario.Activo=1 AND permiso.CodigoPermiso=N'REPORTES.CONSULTAR')
-            THROW 51600,N'[HYT_PERMISO] No tiene permiso para consultar indicadores o reportes.',1;
-        IF @Desde IS NULL OR @HastaExclusiva IS NULL OR @HastaExclusiva<=@Desde THROW 51601,N'[HYT_VALIDACION] Revisa el rango de fechas.',1;
-        DECLARE @VerPresupuesto BIT=0,@VerOC BIT=0;
-        SELECT @VerPresupuesto=MAX(CASE WHEN permiso.CodigoPermiso=N'PRESUPUESTOS.CONSULTAR' THEN 1 ELSE 0 END),@VerOC=MAX(CASE WHEN permiso.CodigoPermiso=N'OC_CLIENTE.CONSULTAR' THEN 1 ELSE 0 END)
+            THROW 51600,N'[HYT_PERMISO] No tiene permiso para consultar reportes.',1;
+        SELECT @VerPresupuesto=MAX(CASE WHEN permiso.CodigoPermiso=N'PRESUPUESTOS.CONSULTAR' THEN 1 ELSE 0 END),
+            @VerOC=MAX(CASE WHEN permiso.CodigoPermiso=N'OC_CLIENTE.CONSULTAR' THEN 1 ELSE 0 END),
+            @VerGuia=MAX(CASE WHEN permiso.CodigoPermiso=N'GUIAS.CONSULTAR' THEN 1 ELSE 0 END),
+            @VerConfirmacion=MAX(CASE WHEN permiso.CodigoPermiso=N'CONFIRMACIONES.CONSULTAR' THEN 1 ELSE 0 END),
+            @VerFactura=MAX(CASE WHEN permiso.CodigoPermiso=N'FACTURADO.CONSULTAR' THEN 1 ELSE 0 END),
+            @VerEjecucion=MAX(CASE WHEN permiso.CodigoPermiso=N'EJECUCION.CONSULTAR' THEN 1 ELSE 0 END)
         FROM dbo.AspNetUserRoles AS rol INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId WHERE rol.UserId=@UsuarioId;
-        SELECT p.PresupuestoId,p.NumeroPresupuesto AS NumeroInterno,p.FechaRegistro,p.TipoAtencion,revision.RevisionId,revision.NumeroRevision,revision.ClienteNombre,revision.TiendaNombre,revision.Estado,revision.CodigoMoneda,revision.Total
-        INTO #Presupuestos FROM dbo.Presupuesto AS p CROSS APPLY(SELECT TOP(1) r.RevisionId,r.NumeroRevision,r.ClienteNombre,r.TiendaNombre,r.Estado,r.CodigoMoneda,r.Total FROM dbo.PresupuestoRevision AS r WHERE r.PresupuestoId=p.PresupuestoId ORDER BY r.NumeroRevision DESC) AS revision
-        WHERE @VerPresupuesto=1 AND p.FechaRegistro>=@Desde AND p.FechaRegistro<@HastaExclusiva AND (@Cliente IS NULL OR revision.ClienteNombre LIKE N'%'+@Cliente+N'%') AND (@Tienda IS NULL OR revision.TiendaNombre LIKE N'%'+@Tienda+N'%');
-        SELECT oc.OrdenCompraId,oc.PresupuestoId,oc.NumeroRegistroInterno,oc.NumeroOCCliente,oc.FechaRegistro,oc.Estado,revision.CodigoMoneda,revision.Total,revision.ClienteNombre,revision.TiendaNombre,p.NumeroPresupuesto AS PresupuestoNumero,
-            guia.GuiaId,guia.NumeroActa,guia.Estado AS EstadoGuia,ejecucion.Estado AS EstadoEjecucion,confirmacion.ConfirmacionId,referencia.ReferenciaId
-        INTO #Ordenes FROM dbo.OrdenCompraCliente AS oc INNER JOIN dbo.Presupuesto AS p ON p.PresupuestoId=oc.PresupuestoId INNER JOIN dbo.PresupuestoRevision AS revision ON revision.RevisionId=oc.RevisionId
-        LEFT JOIN dbo.GuiaConformidad AS guia ON guia.PresupuestoId=oc.PresupuestoId
-        LEFT JOIN dbo.Ejecucion AS ejecucion ON ejecucion.PresupuestoId=oc.PresupuestoId
+        DECLARE @Legado NVARCHAR(40)=@Reporte;
+        SET @Reporte=CASE WHEN @Reporte=N'GANADOS' THEN N'PRESUPUESTO' WHEN @Reporte IN(N'OC_COMPLETADAS',N'OC_CON_ACTA',N'OC_PENDIENTES_FACTURA') THEN N'OC_CLIENTE' ELSE @Reporte END;
+        IF @Reporte IS NULL OR @Reporte NOT IN(N'PRESUPUESTO',N'OC_CLIENTE') OR @Pagina<1 OR @Pagina>100000000 OR @Desde IS NULL OR @HastaExclusiva IS NULL OR @Desde>=@HastaExclusiva
+            THROW 51601,N'[HYT_VALIDACION] Revisa reporte, fechas y página.',1;
+        IF (@Reporte=N'PRESUPUESTO' AND @VerPresupuesto=0) OR (@Reporte=N'OC_CLIENTE' AND @VerOC=0)
+            OR (@PendienteGuia=1 AND @VerGuia=0) OR (@PendienteOC=1 AND @VerOC=0) OR (@PendienteConfirmacion=1 AND @VerConfirmacion=0) OR (@PendienteFacturar=1 AND @VerFactura=0)
+            THROW 51600,N'[HYT_PERMISO] No tiene permiso para los documentos del reporte.',1;
+        IF @TipoAtencion IS NOT NULL AND @TipoAtencion NOT IN(N'INVITACION',N'EMERGENCIA') THROW 51601,N'[HYT_VALIDACION] Tipo de atención no válido.',1;
+        IF @Estado IS NOT NULL AND ((@Reporte=N'PRESUPUESTO' AND @Estado NOT IN(N'BORRADOR',N'ENVIADO',N'OBSERVADO',N'APROBADO',N'RECHAZADO',N'CANCELADO')) OR (@Reporte=N'OC_CLIENTE' AND @Estado NOT IN(N'REGISTRADA',N'TRABAJO_COMPLETADO',N'CERRADA_OPERATIVAMENTE',N'CANCELADA'))) THROW 51601,N'[HYT_VALIDACION] Estado no válido para el reporte.',1;
+        IF @Reporte=N'PRESUPUESTO' AND @Situacion IS NOT NULL THROW 51601,N'[HYT_VALIDACION] El seguimiento corresponde a OC.',1;
+        IF @Situacion IS NOT NULL AND @Situacion NOT IN(N'SIN_CONFIRMAR',N'CONFIRMADAS',N'LISTAS',N'FACTURADAS') THROW 51601,N'[HYT_VALIDACION] Situación no válida.',1;
+        SET @Busqueda=NULLIF(LTRIM(RTRIM(@Busqueda)),N'');
+        DECLARE @Patron NVARCHAR(410)=N'%'+REPLACE(REPLACE(REPLACE(REPLACE(@Busqueda,N'~',N'~~'),N'%',N'~%'),N'_',N'~_'),N'[',N'~[')+N'%';
+        SELECT CASE WHEN @Reporte=N'PRESUPUESTO' THEN p.PresupuestoId ELSE oc.OrdenCompraId END AS Id,
+            CASE WHEN @Reporte=N'PRESUPUESTO' THEN p.NumeroPresupuesto ELSE CONVERT(NVARCHAR(100),oc.NumeroRegistroInterno) END AS Numero,
+            p.NumeroPresupuesto AS PresupuestoNumero,p.FechaRegistro AS PresupuestoRegistro,p.TipoAtencion,
+            actual.ClienteNombre,actual.TiendaNombre,actual.Estado AS EstadoPresupuesto,
+            CASE WHEN @Reporte=N'PRESUPUESTO' THEN actual.Estado ELSE oc.Estado END AS Estado,
+            CASE WHEN @Reporte=N'PRESUPUESTO' THEN p.FechaRegistro ELSE oc.FechaRegistro END AS FechaRegistro,
+            CASE WHEN @Reporte=N'PRESUPUESTO' THEN actual.CodigoMoneda ELSE fuente.CodigoMoneda END AS CodigoMoneda,
+            CASE WHEN @Reporte=N'PRESUPUESTO' THEN actual.Total ELSE COALESCE(oc.Importe,fuente.Total) END AS Total,
+            CASE WHEN @VerOC=1 THEN oc.NumeroRegistroInterno END AS OCInterno,CASE WHEN @VerOC=1 THEN oc.NumeroOCCliente END AS NumeroCliente,CASE WHEN @VerOC=1 THEN oc.FechaRegistro END AS OCRegistro,
+            CASE WHEN @VerOC=1 THEN oc.Estado END AS EstadoOC,
+            CASE WHEN @VerGuia=1 THEN guia.NumeroActa END AS Guia,CASE WHEN @VerGuia=1 AND guia.GuiaId IS NOT NULL THEN N'Guía' END AS TipoGuia,
+            CASE WHEN @VerGuia=1 THEN guia.FechaRegistro END AS GuiaRegistro,CASE WHEN @VerGuia=1 THEN guia.FechaActa END AS GuiaFecha,
+            CASE WHEN @VerEjecucion=1 THEN ejecucion.EjecucionId END AS EjecucionId,CASE WHEN @VerEjecucion=1 THEN ejecucion.FechaRegistro END AS EjecucionRegistro,
+            CASE WHEN @VerEjecucion=1 THEN ejecucion.FechaInicioReal END AS EjecucionInicio,CASE WHEN @VerEjecucion=1 THEN ejecucion.FechaTerminoReal END AS EjecucionTermino,
+            CASE WHEN @VerConfirmacion=1 THEN confirmacion.NumeroConfirmacion END AS Confirmacion,CASE WHEN @VerConfirmacion=1 THEN confirmacion.FechaRegistro END AS ConfirmacionRegistro,
+            CASE WHEN @VerConfirmacion=1 THEN confirmacion.FechaConfirmacion END AS ConfirmacionFecha,
+            CASE WHEN @VerFactura=1 THEN referencia.CodigoTipoDocumento END AS TipoComprobante,CASE WHEN @VerFactura=1 THEN referencia.Serie END AS Serie,
+            CASE WHEN @VerFactura=1 THEN referencia.NumeroDocumento END AS NumeroComprobante,CASE WHEN @VerFactura=1 THEN referencia.FechaRegistro END AS FacturadoRegistro,
+            CASE WHEN @VerFactura=1 THEN referencia.FechaDocumento END AS ComprobanteFecha,
+            CONVERT(BIT,CASE WHEN @VerFactura=1 AND referencia.ReferenciaId IS NOT NULL THEN 1 ELSE 0 END) AS Facturado,
+            CASE WHEN referencia.ReferenciaId IS NOT NULL THEN N'FACTURADA' WHEN confirmacion.ConfirmacionId IS NULL THEN N'SIN CONFIRMAR'
+                 WHEN oc.Estado NOT IN(N'TRABAJO_COMPLETADO',N'CERRADA_OPERATIVAMENTE') AND (ejecucion.Estado IS NULL OR ejecucion.Estado<>N'TERMINADA') THEN N'TRABAJO PENDIENTE'
+                 WHEN guia.GuiaId IS NULL THEN N'GUÍA PENDIENTE' ELSE N'LISTA PARA MARCAR' END AS Situacion
+        INTO #Reporte
+        FROM dbo.Presupuesto AS p
+        CROSS APPLY(SELECT TOP(1) r.RevisionId,r.ClienteNombre,r.TiendaNombre,r.Estado,r.CodigoMoneda,r.Total FROM dbo.PresupuestoRevision AS r WHERE r.PresupuestoId=p.PresupuestoId ORDER BY r.NumeroRevision DESC) AS actual
+        LEFT JOIN dbo.OrdenCompraCliente AS oc ON oc.PresupuestoId=p.PresupuestoId
+        LEFT JOIN dbo.PresupuestoRevision AS fuente ON fuente.RevisionId=oc.RevisionId
+        LEFT JOIN dbo.GuiaConformidad AS guia ON guia.PresupuestoId=p.PresupuestoId
+        LEFT JOIN dbo.Ejecucion AS ejecucion ON ejecucion.PresupuestoId=p.PresupuestoId
         LEFT JOIN dbo.ConfirmacionFacturacion AS confirmacion ON confirmacion.OrdenCompraId=oc.OrdenCompraId AND confirmacion.Vigente=1
         LEFT JOIN dbo.ReferenciaComprobanteExterno AS referencia ON referencia.OrdenCompraId=oc.OrdenCompraId AND referencia.Vigente=1
-        WHERE @VerOC=1 AND oc.FechaRegistro>=@Desde AND oc.FechaRegistro<@HastaExclusiva AND (@Cliente IS NULL OR revision.ClienteNombre LIKE N'%'+@Cliente+N'%') AND (@Tienda IS NULL OR revision.TiendaNombre LIKE N'%'+@Tienda+N'%');
-        IF @Reporte IS NULL OR @Reporte NOT IN(N'GANADOS',N'OC_COMPLETADAS',N'OC_CON_ACTA',N'OC_PENDIENTES_FACTURA') OR @Pagina<1 OR @Pagina>100000000 THROW 51601,N'[HYT_VALIDACION] Reporte o página no válido.',1;
-        IF (@Reporte=N'GANADOS' AND @VerPresupuesto=0) OR (@Reporte<>N'GANADOS' AND @VerOC=0) THROW 51600,N'[HYT_PERMISO] No tiene permiso para los documentos del reporte.',1;
-        SELECT p.PresupuestoId AS Id,p.NumeroPresupuesto AS Numero,CONVERT(NVARCHAR(100),NULL) AS NumeroCliente,p.FechaRegistro,revision.ClienteNombre,revision.TiendaNombre,revision.CodigoMoneda,revision.Total,revision.Estado,CONVERT(NVARCHAR(100),NULL) AS Guia,CONVERT(NVARCHAR(100),NULL) AS Situacion
-        INTO #Reporte FROM dbo.Presupuesto AS p CROSS APPLY(SELECT TOP(1) r.ClienteNombre,r.TiendaNombre,r.CodigoMoneda,r.Total,r.Estado FROM dbo.PresupuestoRevision AS r WHERE r.PresupuestoId=p.PresupuestoId AND r.Estado=N'APROBADO' ORDER BY r.NumeroRevision DESC) AS revision
-        WHERE @Reporte=N'GANADOS' AND @VerPresupuesto=1 AND p.FechaRegistro>=@Desde AND p.FechaRegistro<@HastaExclusiva
-            AND (@Cliente IS NULL OR revision.ClienteNombre LIKE N'%'+@Cliente+N'%') AND (@Tienda IS NULL OR revision.TiendaNombre LIKE N'%'+@Tienda+N'%')
-            AND NOT EXISTS(SELECT 1 FROM #Presupuestos AS actual WHERE actual.PresupuestoId=p.PresupuestoId AND actual.Estado=N'CANCELADO');
-        INSERT INTO #Reporte(Id,Numero,NumeroCliente,FechaRegistro,ClienteNombre,TiendaNombre,CodigoMoneda,Total,Estado,Guia,Situacion)
-        SELECT orden.OrdenCompraId,orden.NumeroRegistroInterno,orden.NumeroOCCliente,orden.FechaRegistro,orden.ClienteNombre,orden.TiendaNombre,orden.CodigoMoneda,orden.Total,orden.Estado,orden.NumeroActa,
-            CASE WHEN orden.ReferenciaId IS NOT NULL THEN N'FACTURADA' WHEN orden.ConfirmacionId IS NULL THEN N'SIN CONFIRMAR' WHEN orden.EstadoEjecucion<>N'TERMINADA' OR orden.EstadoEjecucion IS NULL THEN N'TRABAJO PENDIENTE' WHEN orden.EstadoGuia<>N'ACEPTADA' OR orden.EstadoGuia IS NULL THEN N'GUÍA PENDIENTE' ELSE N'LISTA PARA MARCAR' END
-        FROM #Ordenes AS orden WHERE orden.Estado<>N'CANCELADA' AND ((@Reporte=N'OC_COMPLETADAS' AND orden.EstadoEjecucion=N'TERMINADA') OR (@Reporte=N'OC_CON_ACTA' AND orden.GuiaId IS NOT NULL AND orden.EstadoGuia<>N'ANULADA') OR (@Reporte=N'OC_PENDIENTES_FACTURA' AND orden.ReferenciaId IS NULL));
-        IF @Reporte=N'GANADOS' AND @Situacion IS NOT NULL THROW 51601,N'[HYT_VALIDACION] El seguimiento corresponde a reportes OC.',1;
-        IF @Situacion IS NOT NULL AND @Situacion NOT IN(N'SIN_CONFIRMAR',N'CONFIRMADAS',N'LISTAS',N'FACTURADAS') THROW 51601,N'[HYT_VALIDACION] Situación no válida.',1;
+        WHERE ((@Reporte=N'PRESUPUESTO' AND p.FechaRegistro>=@Desde AND p.FechaRegistro<@HastaExclusiva) OR (@Reporte=N'OC_CLIENTE' AND oc.FechaRegistro>=@Desde AND oc.FechaRegistro<@HastaExclusiva))
+            AND (@Estado IS NULL OR (@Reporte=N'PRESUPUESTO' AND actual.Estado=@Estado) OR (@Reporte=N'OC_CLIENTE' AND oc.Estado=@Estado))
+            AND (@TipoAtencion IS NULL OR p.TipoAtencion=@TipoAtencion)
+            AND (@Cliente IS NULL OR actual.ClienteNombre LIKE N'%'+@Cliente+N'%') AND (@Tienda IS NULL OR actual.TiendaNombre LIKE N'%'+@Tienda+N'%')
+            AND (@Busqueda IS NULL OR p.NumeroPresupuesto LIKE @Patron ESCAPE N'~' OR actual.ClienteNombre LIKE @Patron ESCAPE N'~' OR actual.TiendaNombre LIKE @Patron ESCAPE N'~' OR (@VerOC=1 AND oc.NumeroOCCliente LIKE @Patron ESCAPE N'~') OR (@VerGuia=1 AND guia.NumeroActa LIKE @Patron ESCAPE N'~') OR (@VerConfirmacion=1 AND confirmacion.NumeroConfirmacion LIKE @Patron ESCAPE N'~'))
+            AND (@PendienteGuia=0 OR guia.GuiaId IS NULL) AND (@PendienteOC=0 OR oc.OrdenCompraId IS NULL)
+            AND (@PendienteConfirmacion=0 OR (confirmacion.ConfirmacionId IS NULL AND oc.Estado<>N'CANCELADA')) AND (@PendienteFacturar=0 OR (referencia.ReferenciaId IS NULL AND oc.Estado<>N'CANCELADA'))
+            AND (@Legado<>N'GANADOS' OR actual.Estado=N'APROBADO')
+            AND (@Legado<>N'OC_COMPLETADAS' OR (oc.Estado<>N'CANCELADA' AND (oc.Estado IN(N'TRABAJO_COMPLETADO',N'CERRADA_OPERATIVAMENTE') OR ejecucion.Estado=N'TERMINADA')))
+            AND (@Legado<>N'OC_CON_ACTA' OR (oc.Estado<>N'CANCELADA' AND guia.GuiaId IS NOT NULL))
+            AND (@Legado<>N'OC_PENDIENTES_FACTURA' OR (oc.Estado<>N'CANCELADA' AND referencia.ReferenciaId IS NULL));
         DELETE reporte FROM #Reporte AS reporte WHERE @Situacion IS NOT NULL AND NOT
             ((@Situacion=N'SIN_CONFIRMAR' AND reporte.Situacion=N'SIN CONFIRMAR') OR (@Situacion=N'CONFIRMADAS' AND reporte.Situacion IN(N'TRABAJO PENDIENTE',N'GUÍA PENDIENTE',N'LISTA PARA MARCAR')) OR (@Situacion=N'LISTAS' AND reporte.Situacion=N'LISTA PARA MARCAR') OR (@Situacion=N'FACTURADAS' AND reporte.Situacion=N'FACTURADA'));
-        SELECT COALESCE((SELECT reporte.Id,reporte.Numero,reporte.NumeroCliente,reporte.FechaRegistro,reporte.ClienteNombre,reporte.TiendaNombre,reporte.CodigoMoneda,reporte.Total,reporte.Estado,reporte.Guia,reporte.Situacion FROM #Reporte AS reporte ORDER BY reporte.FechaRegistro DESC,reporte.Id DESC OFFSET (CONVERT(BIGINT,@Pagina)-1)*20 ROWS FETCH NEXT 20 ROWS ONLY FOR JSON PATH,INCLUDE_NULL_VALUES),N'[]') AS Filas;
+        SELECT COALESCE((SELECT reporte.Id,reporte.Numero,reporte.PresupuestoNumero,reporte.PresupuestoRegistro,reporte.TipoAtencion,reporte.ClienteNombre,reporte.TiendaNombre,reporte.EstadoPresupuesto,reporte.Estado,reporte.FechaRegistro,reporte.CodigoMoneda,reporte.Total,
+            reporte.OCInterno,reporte.NumeroCliente,reporte.OCRegistro,reporte.EstadoOC,reporte.Guia,reporte.TipoGuia,reporte.GuiaRegistro,reporte.GuiaFecha,
+            reporte.EjecucionId,reporte.EjecucionRegistro,reporte.EjecucionInicio,reporte.EjecucionTermino,reporte.Confirmacion,reporte.ConfirmacionRegistro,reporte.ConfirmacionFecha,
+            reporte.TipoComprobante,reporte.Serie,reporte.NumeroComprobante,reporte.FacturadoRegistro,reporte.ComprobanteFecha,reporte.Facturado,
+            CASE WHEN @VerFactura=1 AND @VerConfirmacion=1 THEN reporte.Situacion END AS Situacion
+        FROM #Reporte AS reporte ORDER BY reporte.FechaRegistro DESC,reporte.Id DESC OFFSET (CASE WHEN @Exportar=1 THEN 0 ELSE (CONVERT(BIGINT,@Pagina)-1)*20 END) ROWS FETCH NEXT (CASE WHEN @Exportar=1 THEN 2147483647 ELSE 20 END) ROWS ONLY FOR JSON PATH,INCLUDE_NULL_VALUES),N'[]') AS Filas;
         SELECT COUNT_BIG(1) AS Total FROM #Reporte;
         SELECT reporte.CodigoMoneda,SUM(reporte.Total) AS Importe,COUNT_BIG(1) AS Cantidad FROM #Reporte AS reporte GROUP BY reporte.CodigoMoneda ORDER BY reporte.CodigoMoneda;
-        DROP TABLE #Reporte;DROP TABLE #Presupuestos;DROP TABLE #Ordenes;
+        DROP TABLE #Reporte;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000),@ErrorSeverity INT,@ErrorState INT;

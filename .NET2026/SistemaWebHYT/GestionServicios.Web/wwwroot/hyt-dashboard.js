@@ -1,15 +1,17 @@
+// Firma: FRANCO LARA - 06/11/2026 | Nombres comerciales de estados del presupuesto/OC y navegación por fuente independiente. Curvas con nombres legibles Confirmación del cliente y Facturado sobre registros vigentes.
 // Firma: FRANCO LARA - 03/11/2026 | Gráficos SVG HYT con curvas sin sobrepasar valores, detalle por teclado y agrupación acotada.
 // Firma: FRANCO LARA - 05/11/2026 | Agrupación día/semana/mes, eventos diferenciados y navegación por intervalo con espera compartida y gráficos legibles en ambos temas.
 (()=>{
 const source=document.querySelector('#hyt-dashboard-data');if(!source)return;
 const model=JSON.parse(source.textContent),data=model.data,ns='http://www.w3.org/2000/svg';
+const stateLabel=state=>({BORRADOR:'Registrado',ENVIADO:'Enviado',OBSERVADO:'Observado',APROBADO:'Aceptada',RECHAZADO:'Rechazada',CANCELADO:'Cancelado',REGISTRADA:'Registrada',TRABAJO_COMPLETADO:'Completado',CERRADA_OPERATIVAMENTE:'Cerrada operativamente',CANCELADA:'Cancelada'}[state]??state);
 const colors=['#c91620','var(--hyt-chart-ink)' ,'var(--hyt-chart-muted)' ];
 const value=n=>Number.isFinite(Number(n))?Math.max(0,Number(n)):0;
 function node(tag,attrs={},text){const element=document.createElementNS(ns,tag);for(const [key,val] of Object.entries(attrs))element.setAttribute(key,String(val));if(text!==undefined)element.textContent=text;return element;}
 function title(element,text){element.append(node('title',{},text));return element;}
 const day=iso=>Date.parse(iso+'T00:00:00Z'),date=ms=>new Intl.DateTimeFormat('es-PE',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'UTC'}).format(ms);
 const from=day(model.from),until=day(model.to),days=Math.round((until-from)/86400000)+1;
-const series=['Presupuestos','Ordenes','Confirmaciones','Marcados'],seriesLabels={Presupuestos:'Presupuestos',Ordenes:'OC',Confirmaciones:'Primera confirmación',Marcados:'Primer marcado'};
+const series=['Presupuestos','Ordenes','Confirmaciones','Marcados'],seriesLabels={Presupuestos:'Presupuestos',Ordenes:'OC del cliente',Confirmaciones:'Confirmación del cliente',Marcados:'Facturado'};
 let buckets=[],step=1,grouping='day';
 function regroup(){
  grouping=document.querySelector('[data-chart-group]')?.value||'day';buckets=[];
@@ -50,13 +52,15 @@ buckets.forEach((bucket,index)=>{const option=document.createElement('option');o
 }
 document.querySelector('[data-chart-group]')?.addEventListener('change',()=>{regroup();renderTrend();const link=document.querySelector('[data-chart-link]');if(link)link.hidden=true;});
 selector?.addEventListener('change',()=>read(Number(selector.value)));document.querySelectorAll('[data-chart-series]').forEach(input=>input.addEventListener('change',renderTrend));renderTrend();
-const states=document.querySelector('[data-chart=states]'),rows=data.VerPresupuestos?data.EstadosPresupuesto:data.EstadosOC;
+for(const states of document.querySelectorAll('[data-state-source]')){
+const isBudget=states.dataset.stateSource==='PRESUPUESTO',rows=isBudget?data.EstadosPresupuesto:data.EstadosOC;
 if(states){states.replaceChildren();if(!rows.length){states.style.display='none';const empty=document.createElement('p');empty.textContent='Sin documentos para distribuir por estado.';states.after(empty);}else{
 const maximum=Math.max(1,...rows.map(row=>value(row.Cantidad))),left=40,width=700,bottom=220;
 for(let tick=0;tick<=4;tick++){const position=bottom-tick*48;states.append(node('line',{x1:left,x2:750,y1:position,y2:position,stroke:'var(--hyt-border)'}));}
-rows.forEach((row,index)=>{const slot=width/rows.length,x=left+slot*index+slot*.2,height=value(row.Cantidad)/maximum*180,label=row.Estado.toLowerCase().replaceAll('_',' '),text=label+': '+row.Cantidad;const bar=title(node('rect',{x,y:bottom-height,width:slot*.6,height,rx:3,fill:colors[0],tabindex:0,role:'link','aria-label':text+' · Abrir listado'}),text);const open=()=>{const url=new URL(data.VerPresupuestos?'/Presupuestos':'/Seguimiento/oc-cliente',location.origin);url.searchParams.set('from',model.from);url.searchParams.set('to',model.to);url.searchParams.set('state',row.Estado);if(model.client)url.searchParams.set('client',model.client);if(model.store)url.searchParams.set('store',model.store);globalThis.hytLoading?.navigation();location.assign(url.pathname+url.search);};bar.addEventListener('click',open);bar.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}});states.append(bar);states.append(node('text',{x:x+slot*.3,y:bottom-height-10,'text-anchor':'middle'},row.Cantidad));states.append(title(node('text',{x:x+slot*.3,y:244,'text-anchor':'middle',transform:`rotate(-18 ${x+slot*.3} 244)`},label),label));});
+rows.forEach((row,index)=>{const slot=width/rows.length,x=left+slot*index+slot*.2,height=value(row.Cantidad)/maximum*180,label=stateLabel(row.Estado),text=label+': '+row.Cantidad;const bar=title(node('rect',{x,y:bottom-height,width:slot*.6,height,rx:3,fill:colors[0],tabindex:0,role:'link','aria-label':text+' · Abrir listado'}),text);const open=()=>{const url=new URL(isBudget?'/Presupuestos':'/Seguimiento/oc-cliente',location.origin);url.searchParams.set('from',model.from);url.searchParams.set('to',model.to);url.searchParams.set('state',row.Estado);if(model.client)url.searchParams.set('client',model.client);if(model.store)url.searchParams.set('store',model.store);globalThis.hytLoading?.navigation();location.assign(url.pathname+url.search);};bar.addEventListener('click',open);bar.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}});states.append(bar);states.append(node('text',{x:x+slot*.3,y:bottom-height-10,'text-anchor':'middle'},row.Cantidad));states.append(title(node('text',{x:x+slot*.3,y:244,'text-anchor':'middle',transform:`rotate(-18 ${x+slot*.3} 244)`},label),label));});
 }}
-if(states&&rows.length){const legend=document.createElement('ul');legend.className='hyt-states-legend';for(const row of rows){const item=document.createElement('li');item.textContent=row.Estado.toLowerCase().replaceAll('_',' ')+' · '+value(row.Cantidad).toLocaleString('es-PE');legend.append(item);}states.after(legend);}
+if(states&&rows.length){const legend=document.createElement('ul');legend.className='hyt-states-legend';for(const row of rows){const item=document.createElement('li');item.textContent=stateLabel(row.Estado)+' · '+value(row.Cantidad).toLocaleString('es-PE');legend.append(item);}states.after(legend);}
+}
 const donut=document.querySelector('[data-chart=donut]'),legend=document.querySelector('[data-donut-legend]');
 if(donut){const categories=[{label:'Sin confirmar',count:value(data.SinConfirmar),color:colors[2]},{label:'Confirmadas sin marcar',count:value(data.ConfirmadasSinMarcar),color:colors[1]},{label:'Facturadas',count:value(data.Facturadas),color:colors[0]}],total=categories.reduce((sum,item)=>sum+item.count,0),circumference=2*Math.PI*84;let offset=0;
 donut.append(node('circle',{cx:180,cy:125,r:84,fill:'none',stroke:'var(--hyt-border)','stroke-width':28}));

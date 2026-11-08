@@ -1,15 +1,5 @@
 // Firma: FRANCO LARA - 06/11/2026 | Respaldo manual automático solo por error o falta de carga; respeta Turnstile interactivo y su recuperación.
-document.querySelectorAll("[data-hyt-password-toggle]").forEach(button => {
-    button.addEventListener("click", () => {
-        const input = document.getElementById(button.getAttribute("aria-controls"));
-        if (!input) return;
-        const visible = input.type === "password";
-        input.type = visible ? "text" : "password";
-        button.textContent = visible ? "Ocultar" : "Mostrar";
-        button.setAttribute("aria-pressed", String(visible));
-        button.setAttribute("aria-label", visible ? "Ocultar contraseña" : "Mostrar contraseña");
-    });
-});
+// Firma: FRANCO LARA - 07/11/2026 | La visibilidad de contraseña se gestiona en el control compartido.
 const errors = document.querySelector(".validation-summary-errors");
 if (errors) errors.focus();
 

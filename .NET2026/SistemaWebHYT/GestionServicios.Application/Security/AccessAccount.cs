@@ -3,7 +3,7 @@ namespace GestionServicios.Application.Security;
 public sealed record AccessAccount(
     string Id, string UserName, string DisplayName, string? PasswordHash,
     string SecurityStamp, bool Active, DateTimeOffset? LockoutEnd,
-    IReadOnlyList<string> Roles, IReadOnlyList<string> Permissions);
+    IReadOnlyList<string> Roles, IReadOnlyList<string> Permissions, bool MustChangePassword = false);
 
 public sealed record AccessResult(bool Succeeded, AccessAccount? Account);
 

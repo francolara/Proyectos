@@ -25,8 +25,8 @@ public sealed class SqlBudgetPrintRepository(SqlConnectionFactory connections):I
             p.Add("@CorrelacionId",SqlDbType.UniqueIdentifier).Value=Guid.NewGuid();p.Add("@RevisionId",SqlDbType.BigInt).Value=revisionId;p.Add("@VersionOriginal",SqlDbType.Binary,8).Value=expectedVersion;
             p.Add("@Formato",SqlDbType.NVarChar,10).Value=format;p.Add("@VersionFormato",SqlDbType.NVarChar,20).Value=templateVersion;p.Add("@ContenidoHTML",SqlDbType.NVarChar,-1).Value=html;
         },async command=>Convert.ToInt64(await command.ExecuteScalarAsync(ct)),ct);
-    public Task<BudgetPrint?> GetAsync(string actor,long printId,CancellationToken ct)
-        =>Execute<BudgetPrint?>("dbo.spu_Presupuesto_ObtenerImpresion",actor,p=>p.Add("@ImpresionId",SqlDbType.BigInt).Value=printId,async command=>
+    public Task<BudgetPrint?> GetAsync(string actor,long printId,CancellationToken ct,bool download=false)
+        =>Execute<BudgetPrint?>("dbo.spu_Presupuesto_ObtenerImpresion",actor,p=>{p.Add("@ImpresionId",SqlDbType.BigInt).Value=printId;p.Add("@Descargar",SqlDbType.Bit).Value=download;},async command=>
         {
             await using var reader=await command.ExecuteReaderAsync(ct);if(!await reader.ReadAsync(ct)||reader.IsDBNull(7))return null;
             var html=reader.GetString(7);var hash=reader.GetString(8);var actual=Convert.ToHexString(SHA256.HashData(Encoding.Unicode.GetBytes(html)));

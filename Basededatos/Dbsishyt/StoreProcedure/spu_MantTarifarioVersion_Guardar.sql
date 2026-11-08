@@ -3,6 +3,7 @@
 -- Create date:   03/11/2026
 -- Description:   Guarda TarifarioVersion con permisos, concurrencia, referencias y auditoría.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 07/11/2026 | Valida permisos específicos de alta, edición y activación del maestro.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_MantTarifarioVersion_Guardar
@@ -14,6 +15,8 @@ BEGIN
     SET XACT_ABORT ON;
     DECLARE @Propia BIT = 0;
     BEGIN TRY
+        IF dbo.fn_HYTPermiso(@UsuarioId,CASE WHEN @Id IS NULL THEN N'TARIFARIOS.CREAR' ELSE N'TARIFARIOS.MODIFICAR' END) = 0
+            THROW 51700,N'[HYT_PERMISO] No tiene permiso para esta acción.',1;
         IF NOT EXISTS
         (
             SELECT 1 FROM dbo.AspNetUsers AS usuario

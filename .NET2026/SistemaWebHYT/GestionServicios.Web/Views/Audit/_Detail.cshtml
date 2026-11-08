@@ -1,0 +1,25 @@
+@* Firma: FRANCO LARA - 07/11/2026 | Perfiles y consulta de auditoría HYT. *@
+@using GestionServicios.Web.ViewModels.Security
+@model System.Text.Json.JsonElement
+@{
+    var changes = AuditChanges.From(Model);
+}
+<section data-document-title="Detalle de auditoría" class="hyt-panel hyt-master-trace">
+    <h2>@SecurityDisplay.Action(Model.Text("Accion"))</h2>
+    <p>@SecurityDisplay.Module(Model.Text("Entidad")) · @Model.Text("Referencia")</p>
+    <p><strong>Responsable:</strong> @Model.Text("Usuario")</p>
+    <p><strong>Fecha de registro:</strong> @Model.Date("FechaRegistro")</p>
+    @if (Model.Text("FechaEvento", "") is { Length: > 0 })
+    { <p><strong>Fecha del evento:</strong> @Model.Date("FechaEvento")</p> }
+    @if (Model.Text("Motivo", "") is { Length: > 0 } reason) { <p><strong>Motivo:</strong> @reason</p> }
+    @if (Model.Text("EstadoAnterior", "").Length > 0 || Model.Text("EstadoNuevo", "").Length > 0)
+    { <p><strong>Estado:</strong> @SecurityDisplay.Humanize(Model.Text("EstadoAnterior")) → @SecurityDisplay.Humanize(Model.Text("EstadoNuevo"))</p> }
+    @if (changes.Count > 0)
+    {
+        <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Campos modificados">
+        <table class="hyt-table"><thead><tr><th>Campo</th><th>Antes</th><th>Después</th></tr></thead><tbody>
+        @foreach (var change in changes) { <tr><th scope="row">@change.Field</th><td>@change.Before</td><td>@change.After</td></tr> }
+        </tbody></table></div>
+    }
+    else { <p>Este evento no tiene un detalle de campos registrados.</p> }
+</section>

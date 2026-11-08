@@ -3,6 +3,7 @@
 -- Create date:   03/11/2026
 -- Description:   Guarda Ejecución del trabajo con idempotencia, concurrencia, archivos y auditoría.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 07/11/2026 | Distingue entre permisos de registro y edición del documento.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_SeguimientoEJECUCION_Guardar
@@ -14,6 +15,8 @@ BEGIN
     SET XACT_ABORT ON;
     DECLARE @Propia BIT=0;
     BEGIN TRY
+        IF dbo.fn_HYTPermiso(@UsuarioId,CASE WHEN @Id IS NULL THEN N'EJECUCION.CREAR' ELSE N'EJECUCION.MODIFICAR' END) = 0
+            THROW 51700,N'[HYT_PERMISO] No tiene permiso para esta acción.',1;
         IF NOT EXISTS (SELECT 1 FROM dbo.AspNetUsers AS usuario INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId=usuario.Id
             INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId
             WHERE usuario.Id=@UsuarioId AND usuario.Activo=1 AND permiso.CodigoPermiso=N'EJECUCION.EDITAR')

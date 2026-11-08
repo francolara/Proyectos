@@ -18,9 +18,22 @@ if (args.Contains("--browser-host"))
 {
     var browserRepository = new TestAccessRepository { LookupDelay=args.Contains("--browser-captcha")?900:0 };
     browserRepository.Account = browserRepository.Account with { Permissions = MaintenanceDefinitions.All.SelectMany(entity => new[] { entity.Permission + ".CONSULTAR", entity.Permission + ".EDITAR" }).Concat(["CONFIGURACION.CONSULTAR","CONFIGURACION.EDITAR","PRESUPUESTOS.CONSULTAR","PRESUPUESTOS.EDITAR","REPORTES.CONSULTAR","OC_CLIENTE.CONSULTAR","GUIAS.CONSULTAR","CONFIRMACIONES.CONSULTAR","EJECUCION.CONSULTAR","OC_CLIENTE.EDITAR","GUIAS.EDITAR","CONFIRMACIONES.EDITAR","EJECUCION.EDITAR","FACTURADO.CONSULTAR","FACTURADO.EDITAR"]).Distinct().ToArray() };
+    if (args.Contains("--browser-administration"))
+        browserRepository.Account = browserRepository.Account with
+        {
+            Permissions = browserRepository.Account.Permissions.Concat(["USUARIOS.CONSULTAR", "USUARIOS.CREAR",
+                "USUARIOS.MODIFICAR", "USUARIOS.RESTABLECER", "PERFILES.CONSULTAR", "PERFILES.EDITAR", "AUDITORIA.CONSULTAR"]).ToArray(),
+            MustChangePassword = args.Contains("--browser-temporary-password")
+        };
     using var browserFactory = new HytFactory(browserRepository,args.Contains("--browser-captcha"),args.Contains("--browser-captcha")?"":"sitekey-prueba");
     browserFactory.UseKestrel(5198);
     using var browserClient = browserFactory.CreateClient();
+    if(args.Contains("--browser-budget-documents")){browserFactory.Budgets.RegisteredDocuments=true;browserFactory.Documents.RichList=true;}
+    if(args.Contains("--browser-oc-details"))
+    {
+        browserFactory.Documents.RichList=true;
+        await browserFactory.InvoiceMarks.SaveAsync("browser-test",new(1,new byte[8],Guid.NewGuid(),new DateOnly(2026,11,3),"01","F001","000012A",null,null,false,null),CancellationToken.None);
+    }
     var fixturePath = Path.Combine(Path.GetTempPath(), "hyt-maintenance-browser-fixture.json");
     await File.WriteAllTextAsync(fixturePath, System.Text.Json.JsonSerializer.Serialize(new { url = "http://localhost:5198", user = "operador", password = browserRepository.Password }));
     Console.WriteLine("Host de prueba MVC local preparado, sin SQL. Pulsa Enter para cerrar.");
@@ -162,6 +175,87 @@ var viewHtml = await client.GetStringAsync("/__tests/parts/view");
 Check(viewHtml.Contains("<fieldset disabled") && !viewHtml.Contains("type=\"submit\""), "Ficha MVC de consulta no ofrece guardar ni editar campos");
 var modalHtml = await client.GetStringAsync("/__tests/parts/modal");
 Check(modalHtml.Contains("<dialog") && modalHtml.Contains("data-hyt-close"), "Ayuda MVC usa popup común accesible");
+var securityRepository = new TestAccessRepository();
+using var securityFactory = new HytFactory(securityRepository);
+using var securityClient = securityFactory.CreateClient(new WebApplicationFactoryClientOptions
+{
+    BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false
+});
+async Task<string> SecurityToken(string path)
+{
+    var html = await securityClient.GetStringAsync(path);
+    var input = Regex.Match(html, "<input[^>]*name=\"__RequestVerificationToken\"[^>]*>").Value;
+    return WebUtility.HtmlDecode(Regex.Match(input, "value=\"([^\"]+)\"").Groups[1].Value);
+}
+securityRepository.Account = securityRepository.Account with
+{
+    MustChangePassword = true, SecurityStamp = Guid.NewGuid().ToString("N"), Permissions = ["CLIENTES.CONSULTAR", "CLIENTES.CREAR"]
+};
+var temporary = await securityClient.PostAsync("/Acceso", new FormUrlEncodedContent(new Dictionary<string, string>
+{
+    ["__RequestVerificationToken"] = await SecurityToken("/Acceso"), ["UserName"] = "operador",
+    ["Password"] = securityRepository.Password, ["ReturnUrl"] = "/Maestros/clientes"
+}));
+Check(temporary.Headers.Location?.OriginalString == "/Cuenta/CambiarClave", "Contraseña temporal ignora retorno a módulo y exige cambio");
+using (var navigation = new HttpRequestMessage(HttpMethod.Get, "/Maestros/clientes"))
+{
+    navigation.Headers.Accept.ParseAdd("text/html");
+    Check((await securityClient.SendAsync(navigation)).Headers.Location?.OriginalString == "/Cuenta/CambiarClave",
+        "Navegación directa queda restringida al cambio de contraseña");
+}
+Check((await securityClient.GetAsync("/Seguimiento/guias/Archivos/1?download=true")).StatusCode == HttpStatusCode.Forbidden,
+    "Sesión temporal no puede obtener adjuntos por URL directa");
+Check((await securityClient.PostAsync("/Maestros/clientes/Guardar", new FormUrlEncodedContent([]))).StatusCode == HttpStatusCode.Forbidden,
+    "Sesión temporal no ejecuta operaciones de negocio");
+Check((await securityClient.GetAsync("/hyt-theme.css")).StatusCode == HttpStatusCode.OK, "El formulario usa estilos públicos de HYT");
+var passwordPage = await securityClient.GetStringAsync("/Cuenta/CambiarClave");
+Check(!passwordPage.Contains("name=\"CurrentPassword\"") && passwordPage.Contains("name=\"NewPassword\""),
+    "Primer ingreso solicita contraseña nueva y confirmación");
+async Task<HttpResponseMessage> ChangePassword(string next, string? current = null, string? confirm = null) =>
+    await securityClient.PostAsync("/Cuenta/CambiarClave", new FormUrlEncodedContent(new Dictionary<string, string>
+    {
+        ["__RequestVerificationToken"] = await SecurityToken("/Cuenta/CambiarClave"), ["NewPassword"] = next,
+        ["ConfirmPassword"] = confirm ?? next, ["CurrentPassword"] = current ?? ""
+    }));
+Check((await ChangePassword(securityRepository.Password)).StatusCode == HttpStatusCode.OK && securityRepository.Account.MustChangePassword,
+    "No se puede reutilizar la contraseña temporal");
+var newPassword = Guid.NewGuid().ToString("N");
+Check((await ChangePassword(newPassword, confirm: "diferente")).StatusCode == HttpStatusCode.OK && securityRepository.Account.MustChangePassword,
+    "La confirmación debe coincidir");
+Check((await ChangePassword(newPassword)).Headers.Location?.OriginalString == "/" && !securityRepository.Account.MustChangePassword,
+    "Cambio obligatorio renueva la sesión y libera el acceso");
+var createOnly = await securityClient.GetAsync("/Maestros/clientes/Nuevo");
+var editDenied = await securityClient.GetAsync("/Maestros/clientes/1/Editar");
+Check(createOnly.StatusCode == HttpStatusCode.OK &&
+    (editDenied.StatusCode == HttpStatusCode.Forbidden || editDenied.Headers.Location?.OriginalString.Contains("/Denegado", StringComparison.Ordinal) == true),
+    "Permiso para crear muestra el formulario nuevo e impide editar");
+Check((await ChangePassword(Guid.NewGuid().ToString("N"), "incorrecta")).StatusCode == HttpStatusCode.OK,
+    "Cambio voluntario requiere la contraseña actual correcta");
+Check((await ChangePassword(Guid.NewGuid().ToString("N"), newPassword)).Headers.Location?.OriginalString == "/",
+    "Usuario de consulta puede cambiar su propia contraseña");
+securityRepository.Account = securityRepository.Account with { Permissions = ["USUARIOS.CONSULTAR", "USUARIOS.CREAR", "USUARIOS.MODIFICAR", "PERFILES.CONSULTAR", "PERFILES.EDITAR", "AUDITORIA.CONSULTAR"] };
+Check((await securityClient.GetAsync("/modulo/usuarios")).Headers.Location?.OriginalString == "/Administracion/Usuarios",
+    "Menú de administración abre el listado de usuarios");
+var userForm = WebUtility.HtmlDecode(await securityClient.GetStringAsync("/Administracion/Usuarios/Nuevo"));
+Check(userForm.Contains("Contraseña temporal") && userForm.Contains("Perfil de acceso") && userForm.Contains("data-security-copy"),
+    "Alta muestra datos y controles de contraseña temporal");
+var roleForm = WebUtility.HtmlDecode(await securityClient.GetStringAsync("/Administracion/Perfiles/consulta/Duplicar"));
+Check(roleForm.Contains("Copia de Consulta") && roleForm.Contains("data-security-module") && roleForm.Contains("Guardar perfil"),
+    "Duplicación abre un nuevo perfil con casillas de permisos");
+var auditRepository = (TestSecurityAdministration)securityFactory.Services.GetRequiredService<ISecurityAdministrationRepository>();
+var auditFilters = await securityClient.GetStringAsync("/Administracion/Auditoria?entity=Presupuesto&eventAction=GENERAR_IMPRESION");
+Check(auditRepository.LastAuditFilter == ("Presupuesto", "GENERAR_IMPRESION") &&
+    Regex.IsMatch(auditFilters, "<option value=\"GENERAR_IMPRESION\"[^>]* selected") &&
+    !auditFilters.Contains("value=\"Index\""), "Auditoría conserva la acción elegida sin confundirla con la ruta MVC");
+await securityClient.GetStringAsync("/Administracion/Auditoria?entity=PresupuestoRevision&action=CAMBIAR_ESTADO");
+Check(auditRepository.LastAuditFilter == ("Presupuesto", "CAMBIAR_ESTADO"), "Auditoría conserva enlaces anteriores");
+using (var auditRequest = new HttpRequestMessage(HttpMethod.Get, "/Administracion/Auditoria/1"))
+{
+    auditRequest.Headers.Add("X-Requested-With", "XMLHttpRequest");
+    var audit = WebUtility.HtmlDecode(await (await securityClient.SendAsync(auditRequest)).Content.ReadAsStringAsync());
+    Check(audit.Contains("Detalle de auditoría") && audit.Contains("Ana") && audit.Contains("María") &&
+        !audit.Contains("secreto-fixture") && !audit.Contains("PasswordHash"), "Popup de auditoría muestra diferencias sin datos sensibles");
+}
 Console.WriteLine("Pruebas MVC de acceso y parciales completadas sin SQL Server.");
 
 using var maintenanceFactory = new HytFactory(repository);
@@ -236,7 +330,7 @@ var draftBudgetFields=new Dictionary<string,string>{["__RequestVerificationToken
 var savedBudget=await maintenanceClient.PostAsync("/Presupuestos/Guardar",new FormUrlEncodedContent(draftBudgetFields));
 Check(savedBudget.StatusCode==HttpStatusCode.Redirect&&maintenanceFactory.Budgets.Saved==1&&!savedBudget.Headers.Location!.OriginalString.Contains("externo.example")&&maintenanceFactory.Budgets.LastPayload!.Contains("EMERGENCIA")&&maintenanceFactory.Budgets.LastPayload.Contains("\"RevalorizarMoneda\":true"),"Borrador de emergencia se guarda por repositorio y rechaza retorno externo");
 var readBudget=await maintenanceClient.GetStringAsync("/Presupuestos/1");
-Check(readBudget.Contains("<fieldset disabled")&&!readBudget.Contains("Guardar borrador")&&readBudget.Contains("Revisión 1"),"Consulta de presupuesto no permite editar campos");
+Check(readBudget.Contains("<fieldset disabled")&&!readBudget.Contains("Guardar borrador")&&readBudget.Contains("budget-record-number"),"Consulta de presupuesto no permite editar campos");
 Check((await maintenanceClient.GetAsync("/Presupuestos/999")).StatusCode==HttpStatusCode.NotFound,"Presupuesto inexistente responde 404");
 Check((await maintenanceClient.GetAsync("/Presupuestos/2/Editar")).StatusCode==HttpStatusCode.BadRequest,"No se abre edición de una revisión enviada");
 Check(WebUtility.HtmlDecode(await maintenanceClient.GetStringAsync("/Presupuestos/2/NuevaRevision?revisionId=2")).Contains("Nueva revisión a partir"),"Corrección de revisión enviada abre nueva revisión");
@@ -248,6 +342,23 @@ var previewData=System.Text.Json.JsonDocument.Parse(await previewBudget.Content.
 Check(previewBudget.StatusCode==HttpStatusCode.OK&&previewData.RootElement.GetProperty("totals").GetProperty("total").GetDecimal()==23.60m,"Previsualización calcula en servidor con dos decimales");
 var stateBudget=await maintenanceClient.PostAsync("/Presupuestos/Estado",new FormUrlEncodedContent(new Dictionary<string,string>{["__RequestVerificationToken"]=budgetToken,["Id"]="1",["RevisionId"]="1",["HeaderVersion"]=Convert.ToBase64String(new byte[8]),["RevisionVersion"]=Convert.ToBase64String(new byte[8]),["NewState"]="ENVIADO",["EventDate"]="2026-11-03",["Responsible"]="Responsable"}));
 Check(stateBudget.StatusCode==HttpStatusCode.Redirect&&maintenanceFactory.Budgets.StateChanges==1,"Acción de presupuesto envía responsable, fecha y versiones al repositorio");
+var budgetEditor=await maintenanceClient.GetStringAsync("/Presupuestos/1/Editar");
+Check(new[]{readBudget,budgetEditor}.All(html=>!html.Contains("Revisiones del presupuesto")&&!html.Contains("Registrar cambio de estado")&&!html.Contains("data-budget-state-form")&&!html.Contains("Crear nueva revisión")),"Consulta y edición sin apartados de revisiones ni cambio de estado");
+var statesList=await maintenanceClient.GetStringAsync("/Presupuestos");
+Check(statesList.Contains("Registrado")&&statesList.Contains("Aceptada")&&statesList.Contains("Rechazada")&&!statesList.Contains("Vencido")&&statesList.Contains("Cambiar estado")&&!statesList.Contains(">Registrado por<")&&!statesList.Contains(">Actualizado por<")&&!statesList.Contains(">Registro<")&&!statesList.Contains(">Actualización<"),"Listado usa estados comerciales, acción de estado y retira columnas de auditoría");
+var statePopup=await maintenanceClient.GetStringAsync("/Presupuestos/2/Estado");
+Check(statePopup.Contains("data-document-form")&&statePopup.Contains("Aceptada")&&!statePopup.Contains("EventDate")&&!statePopup.Contains("Responsible")&&!statePopup.Contains("VENCIDO")&&statePopup.Contains("__RequestVerificationToken"),"Popup de estado conserva CSRF y versiones sin pedir fecha ni representante");
+Check((await maintenanceClient.GetAsync("/Presupuestos/88/Editar")).StatusCode==HttpStatusCode.OK,"Presupuesto observado admite edición directa");
+var automaticStateFields=new Dictionary<string,string>{["__RequestVerificationToken"]=budgetToken,["Id"]="1",["RevisionId"]="1",["HeaderVersion"]=Convert.ToBase64String(new byte[8]),["RevisionVersion"]=Convert.ToBase64String(new byte[8]),["NewState"]="ENVIADO"};
+var autoState=await maintenanceClient.PostAsync("/Presupuestos/Estado",new FormUrlEncodedContent(automaticStateFields));
+Check(autoState.StatusCode==HttpStatusCode.Redirect&&maintenanceFactory.Budgets.StateChanges==2&&maintenanceFactory.Budgets.LastStateDate!=default&&!string.IsNullOrWhiteSpace(maintenanceFactory.Budgets.LastResponsible),"Fecha y responsable se asignan desde servidor y sesión sin campos del cliente");
+foreach(var reasonState in new[]{"OBSERVADO","RECHAZADO","CANCELADO"})
+{
+    automaticStateFields["NewState"]=reasonState;
+    Check((await maintenanceClient.PostAsync("/Presupuestos/Estado",new FormUrlEncodedContent(automaticStateFields))).StatusCode==HttpStatusCode.BadRequest,"Estado "+reasonState+" exige motivo en servidor");
+}
+automaticStateFields["NewState"]="VENCIDO";
+Check((await maintenanceClient.PostAsync("/Presupuestos/Estado",new FormUrlEncodedContent(automaticStateFields))).StatusCode==HttpStatusCode.BadRequest,"Vencido no se puede asignar por petición manual");
 repository.Account = repository.Account with { Permissions = ["PRESUPUESTOS.CONSULTAR"] };
 Check((await maintenanceClient.GetAsync("/Presupuestos/Nuevo")).StatusCode==HttpStatusCode.Redirect,"Consulta de presupuestos no concede permiso de crear");
 repository.Account=repository.Account with {Permissions=["CONFIGURACION.CONSULTAR","CONFIGURACION.EDITAR","PRESUPUESTOS.CONSULTAR","REPORTES.CONSULTAR"]};
@@ -257,22 +368,51 @@ var badCompany=await maintenanceClient.PostAsync("/Configuracion/HYT/Guardar",ne
 Check(badCompany.StatusCode==HttpStatusCode.OK&&maintenanceFactory.Company.Saves==0,"Configuración exige RUC de once dígitos");
 var goodCompany=await maintenanceClient.PostAsync("/Configuracion/HYT/Guardar",new FormUrlEncodedContent(new Dictionary<string,string>{["__RequestVerificationToken"]=await MaintenanceToken("/Configuracion/HYT"),["Id"]="1",["RowVersion"]=Convert.ToBase64String(new byte[8]),["Fields[Ruc]"]="00000000000",["Fields[RazonSocial]"]="HYT PRUEBA"}));
 Check(goodCompany.StatusCode==HttpStatusCode.Redirect&&maintenanceFactory.Company.Saves==1,"Configuración guarda por repositorio con versión original");
+Check(companyHtml.Contains("Subir firma para presupuesto")&&companyHtml.Contains("multipart/form-data"),"Configuración permite subir firma JPG/PNG");
+var signatureBytes=Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6mGsAAAAASUVORK5CYII=");
+async Task<HttpResponseMessage> UploadSignatureForTest(byte[] bytes,string filename)
+{
+    var token=await MaintenanceToken("/Configuracion/HYT");
+    using var body=new MultipartFormDataContent();body.Add(new StringContent(token),"__RequestVerificationToken");body.Add(new StringContent(Convert.ToBase64String(new byte[8])),"rowVersion");body.Add(new ByteArrayContent(bytes),"signature",filename);
+    return await maintenanceClient.PostAsync("/Configuracion/HYT/Firma",body);
+}
+await UploadSignatureForTest("<svg/>"u8.ToArray(),"firma.svg");
+Check(maintenanceFactory.Company.SignatureJson is null,"Firma rechaza SVG y conserva configuración previa");
+await UploadSignatureForTest(signatureBytes,"firma.png");
+Check(maintenanceFactory.Company.SignatureJson is not null,"Firma PNG válida guarda metadatos privados por repositorio");
+var signatureResponse=await maintenanceClient.GetAsync("/Configuracion/HYT/Firma");
+Check(signatureResponse.StatusCode==HttpStatusCode.OK&&signatureResponse.Content.Headers.ContentType?.MediaType=="image/png"&&(await signatureResponse.Content.ReadAsByteArrayAsync()).SequenceEqual(signatureBytes),"Vista autorizada recupera firma con integridad");
+Check(companyHtml.Contains("Fields[SubtituloCotizacion]"),"Configuración ofrece subtítulo de cotización editable");
+repository.Account=repository.Account with {Permissions=repository.Account.Permissions.Concat(new[]{"PRESUPUESTOS.EDITAR"}).ToArray()};
+var printHeadingView=await maintenanceClient.GetStringAsync("/Presupuestos/1");
+var printHeadingEdit=await maintenanceClient.GetStringAsync("/Presupuestos/1/Editar");
+foreach(var savedView in new[]{printHeadingView,printHeadingEdit})
+{
+    var heading=Regex.Match(savedView,@"<header class=""hyt-page-header hyt-budget-header""[\s\S]*?</header>").Value;
+    Check(heading.Contains("hyt-budget-print-card")&&heading.Contains("value=\"NUEVO\"")&&heading.Contains("value=\"ANTERIOR\"")&&heading.Contains("__RequestVerificationToken")&&!savedView.Contains("Consultar impresiones conservadas"),"Consulta y edición guardadas muestran ambos formatos dentro del título sin enlace histórico");
+}
+Check(!(await maintenanceClient.GetStringAsync("/Presupuestos/Nuevo")).Contains("hyt-budget-print-card"),"Presupuesto sin guardar no muestra opciones de impresión");
 var printToken=await MaintenanceToken("/Presupuestos/1");
 foreach(var format in new[]{"NUEVO","ANTERIOR"})
 {
     var generated=await maintenanceClient.PostAsync("/Presupuestos/Impresiones/Generar",new FormUrlEncodedContent(new Dictionary<string,string>{["__RequestVerificationToken"]=printToken,["budgetId"]="1",["revisionId"]="1",["version"]=Convert.ToBase64String(new byte[8]),["format"]=format}));
     Check(generated.StatusCode==HttpStatusCode.Redirect,"Generación HTML autorizada: "+format);
     var document=await maintenanceClient.GetAsync(generated.Headers.Location);var html=WebUtility.HtmlDecode(await document.Content.ReadAsStringAsync());
-    Check(document.StatusCode==HttpStatusCode.OK&&html.StartsWith("<!DOCTYPE html>",StringComparison.OrdinalIgnoreCase)&&html.Contains("data:image/png;base64,")&&html.Contains("118.00")&&document.Headers.GetValues("Content-Security-Policy").Single().Contains("script-src 'none'"),"Reporte autónomo conserva logo, importes y política sin scripts: "+format);
-    Check(format=="NUEVO"?html.Contains("Centro SAP FICO")&&html.Contains("000SAP"):html.Contains("Total de grupo")&&html.Contains("Costo final sin IGV"),"Columnas del formato "+format);
+    Check(document.StatusCode==HttpStatusCode.OK&&html.StartsWith("<!DOCTYPE html>",StringComparison.OrdinalIgnoreCase)&&html.Contains("data:image/png;base64,")&&html.Contains(format=="NUEVO"?"118.00":"100.00")&&document.Headers.GetValues("Content-Security-Policy").Single().Contains("script-src 'none'"),"Reporte autónomo conserva logo, importes y política sin scripts: "+format);
+    Check(html.Contains("Firma autorizada para presupuesto")&&html.Contains(Convert.ToBase64String(signatureBytes)),"Impresión conserva firma embebida desde almacenamiento: "+format);
+    Check(html.Contains(GestionServicios.Application.Maintenance.CompanySettings.DefaultSubtitle),"Impresión muestra subtítulo completo desde configuración: "+format);
+    Check(format=="NUEVO"?html.Contains("CENTRO SAP FICO")&&html.Contains("000SAP"):html.Contains("P. PARCIAL")&&html.Contains("COSTO FINAL SIN IGV"),"Columnas del formato "+format);
+    if(format=="ANTERIOR")Check(html.Contains("Coordinador/Encargado:")&&html.Contains("Contacto de tienda"),"Formato anterior muestra contacto de tienda bajo Tienda");
+    if(format=="ANTERIOR")Check(!html.Contains("class=\"report-status\"")&&!html.Contains("Coordinador / encargado")&&!html.Contains("Generado ")&&!html.Contains("Los precios unitarios"),"Formato anterior omite estado, responsables internos, generación y notas automáticas");
     Check(!(await document.Content.ReadAsStringAsync()).Contains("Cliente <prueba>"),"Reporte codifica datos de cliente: "+format);
 }
-Check(maintenanceFactory.Prints.Count==2&&(await maintenanceClient.GetStringAsync("/Presupuestos/Impresiones?budgetId=1&revisionId=1")).Contains("HYT-2026.1"),"Historial conserva ambas generaciones y versión del formato");
+Check(maintenanceFactory.Prints.Count==2&&(await maintenanceClient.GetStringAsync("/Presupuestos/Impresiones?budgetId=1&revisionId=1")).Contains("HYT-2026.10"),"Historial conserva ambas generaciones y versión del formato");
 Check((await maintenanceClient.GetAsync("/Presupuestos/Impresiones/1?download=true")).Content.Headers.ContentDisposition?.DispositionType=="attachment","Impresión conservada permite descarga HTML");
 var zeroPrint=await maintenanceClient.PostAsync("/Presupuestos/Impresiones/Generar",new FormUrlEncodedContent(new Dictionary<string,string>{["__RequestVerificationToken"]=printToken,["budgetId"]="51",["revisionId"]="51",["version"]=Convert.ToBase64String(new byte[8]),["format"]="NUEVO"}));
 Check(zeroPrint.StatusCode==HttpStatusCode.Redirect&&WebUtility.HtmlDecode(await maintenanceClient.GetStringAsync(zeroPrint.Headers.Location)).Contains("todavía no contiene partidas"),"Borrador sin partidas se identifica en la impresión");
 repository.Account=repository.Account with {Permissions=["PRESUPUESTOS.CONSULTAR"]};
 Check((await maintenanceClient.GetAsync("/Presupuestos/Impresiones/1")).StatusCode==HttpStatusCode.Redirect,"Sin permiso de reportes no se entrega el HTML conservado");
+Check(!(await maintenanceClient.GetStringAsync("/Presupuestos/1")).Contains("hyt-budget-print-card"),"Sin permiso de reportes no se ofrecen botones de impresión");
 repository.Account = repository.Account with { Permissions = ["CLIENTES.CONSULTAR"] };
 Check((await maintenanceClient.GetAsync("/Maestros/clientes/Nuevo")).StatusCode == HttpStatusCode.Redirect, "Sin permiso de edición no abre formulario nuevo");
 
@@ -305,12 +445,28 @@ guideFields.Remove("__RequestVerificationToken");
 Check((await maintenanceClient.PostAsync("/Seguimiento/guias/Guardar",new FormUrlEncodedContent(guideFields))).StatusCode==HttpStatusCode.BadRequest,"Guardado documental sin antifalsificación se rechaza");
 var editDocument=await maintenanceClient.GetStringAsync("/Seguimiento/oc-cliente/1/Editar");
 Check(editDocument.Contains("MotivoCambio")&&editDocument.Contains("OriginalVersion")&&editDocument.Contains("OC-000A/01"),"Edición OC carga número externo, motivo y versión original");
+var ocInformative=WebUtility.HtmlDecode(await maintenanceClient.GetStringAsync("/Seguimiento/oc-cliente/Registro?parentId=77&popup=true"));
+Check(ocInformative.Contains("hyt-document-context")&&ocInformative.Contains("hyt-internal-code")&&ocInformative.Contains("Número de presupuesto")&&ocInformative.Contains("PPTO-1")&&ocInformative.Contains("Estado del presupuesto")&&ocInformative.Contains("Aceptada")&&!ocInformative.Contains("<select")&&!ocInformative.Contains("Revisión del presupuesto"),"OC popup muestra número en tarjeta y estado informativo sin selector de revisión");
+var ocAutomaticFields=new Dictionary<string,string>{["__RequestVerificationToken"]=await MaintenanceToken("/Seguimiento/oc-cliente/Registro?parentId=77"),["ParentId"]="77",["ParentVersion"]=Convert.ToBase64String(new byte[8]),["OperationId"]=Guid.NewGuid().ToString(),["Fields[RevisionId]"]="999",["Fields[NumeroOCCliente]"]="OC-AUTO",["Fields[FechaEmisionOC]"]="2026-11-06",["Fields[FechaRecepcionOC]"]="2026-11-06"};
+var ocAutomatic=await maintenanceClient.PostAsync("/Seguimiento/oc-cliente/Guardar?popup=true",new FormUrlEncodedContent(ocAutomaticFields));
+Check(ocAutomatic.StatusCode==HttpStatusCode.OK&&System.Text.Json.JsonDocument.Parse(maintenanceFactory.Documents.LastPayload!).RootElement.GetProperty("RevisionId").GetInt64()==1,"OC usa revisión asociada por servidor y no permite cambiarla mediante campo oculto manipulado");
+var ocStatePopup=WebUtility.HtmlDecode(await maintenanceClient.GetStringAsync("/Seguimiento/oc-cliente/1/CambiarEstado?returnUrl=%2FSeguimiento%2Foc-cliente"));
+Check(ocStatePopup.Contains("Fechas y responsables")&&ocStatePopup.Contains("Registrar cambio de estado")&&ocStatePopup.Contains("name=\"originalVersion\"")&&!ocStatePopup.Contains("<!DOCTYPE html>"),"Estado OC abre partial con trazabilidad, versiones y formulario de transición");
 var ownValidation=GestionServicios.Application.Followup.DocumentFields.Validate(GestionServicios.Application.Followup.DocumentKind.Resolve("oc-cliente"),new Dictionary<string,string?>{["RevisionId"]="1",["NumeroOCCliente"]="000A",["FechaEmisionOC"]="2026-11-03",["FechaRecepcionOC"]="2026-11-03",["Importe"]="1.001"},null,false);
 Check(ownValidation.Issues.Any(issue=>issue.Field=="Importe"),"Captura OC rechaza más de dos decimales sin redondear silenciosamente");
 var popupList=await maintenanceClient.GetStringAsync("/Seguimiento/oc-cliente");
+Check(!popupList.Contains("hyt-action-registered"),"OC sin confirmación ni marcado conserva botones sin borde de registro");
 Check(popupList.Contains("data-document-open")&&WebUtility.HtmlDecode(popupList).Contains("/Seguimiento/confirmaciones/Registro?"),"Listado OC ofrece confirmación del cliente mediante popup");
 var budgetWithGuide=await maintenanceClient.GetStringAsync("/Presupuestos");
 Check(budgetWithGuide.Contains("data-document-open")&&WebUtility.HtmlDecode(budgetWithGuide).Contains("/Seguimiento/guias/Registro?"),"Listado presupuesto ofrece guía mediante popup");
+var registeredDocumentPermissions=repository.Account.Permissions;
+repository.Account=repository.Account with{Permissions=registeredDocumentPermissions.Concat(["EJECUCION.CONSULTAR"]).ToArray()};
+maintenanceFactory.Budgets.RegisteredDocuments=true;
+var registeredDocuments=WebUtility.HtmlDecode(await maintenanceClient.GetStringAsync("/Presupuestos"));
+Check(Regex.Matches(registeredDocuments,"hyt-action-registered").Count==3&&registeredDocuments.Contains("/Seguimiento/guias/1")&&registeredDocuments.Contains("/Seguimiento/oc-cliente/1")&&registeredDocuments.Contains("/Seguimiento/ejecucion/1"),"Presupuesto resalta tres documentos registrados y enlaza fichas con detalle y adjuntos");
+Check(registeredDocuments.Contains("/Seguimiento/oc-cliente/1/Editar?")&&registeredDocuments.Contains("popup=True",StringComparison.OrdinalIgnoreCase),"OC registrada desde presupuesto reutiliza edición popup y conserva señal de registro");
+maintenanceFactory.Budgets.RegisteredDocuments=false;
+repository.Account=repository.Account with{Permissions=registeredDocumentPermissions};
 repository.Account=repository.Account with {Permissions=["GUIAS.CONSULTAR"]};
 Check((await maintenanceClient.GetAsync("/Seguimiento/guias/Registro?parentId=77")).StatusCode==HttpStatusCode.Redirect,"Consulta de guías no concede permiso para registrar");
 var storageRoot=Path.Combine(Path.GetTempPath(),"hyt-file-tests-"+Guid.NewGuid().ToString("N"));
@@ -362,18 +518,17 @@ repository.Account=repository.Account with {Permissions=["CLIENTES.CONSULTAR"]};
 Check((await maintenanceClient.GetAsync("/Seguimiento/guias/Archivos/100")).StatusCode==HttpStatusCode.Redirect,"Archivo privado no se abre sin permiso del documento");
 repository.Account=repository.Account with {Permissions=["GUIAS.CONSULTAR","GUIAS.EDITAR"]};
 var statePage=await maintenanceClient.GetStringAsync("/Seguimiento/guias/1");
-Check(statePage.Contains("Registrar cambio de estado")&&statePage.Contains("name=\"eventDate\"")&&statePage.Contains("ACEPTADA"),"Ficha guía expone estados permitidos con fecha y responsable");
+Check(!statePage.Contains("Registrar cambio de estado")&&!statePage.Contains("name=\"eventDate\"")&&!statePage.Contains("Guardar registro")&&statePage.Contains("<fieldset")&&statePage.Contains("NumeroActa"),"Consulta guía usa mismo formulario bloqueado sin flujo de estados");
 var stateFields=new Dictionary<string,string>{["__RequestVerificationToken"]=await MaintenanceToken("/Seguimiento/guias/1"),["parentId"]="1",["parentVersion"]=Convert.ToBase64String(new byte[8]),["originalVersion"]=Convert.ToBase64String(new byte[8]),["operationId"]=Guid.NewGuid().ToString(),["state"]="ACEPTADA",["eventDate"]="2026-11-04",["responsible"]="Representante del cliente"};
-var guideAcceptance=await maintenanceClient.PostAsync("/Seguimiento/guias/1/Estado",new FormUrlEncodedContent(stateFields));
-Check(guideAcceptance.StatusCode==HttpStatusCode.Redirect&&maintenanceFactory.Documents.StateChanges==1,"Acción MVC registra aceptación mediante repositorio de estados");
-stateFields["eventDate"]="";
-Check((await maintenanceClient.PostAsync("/Seguimiento/guias/1/Estado",new FormUrlEncodedContent(stateFields))).StatusCode==HttpStatusCode.BadRequest&&maintenanceFactory.Documents.StateChanges==1,"Cambio de estado documental exige fecha válida");
+Check((await maintenanceClient.PostAsync("/Seguimiento/guias/1/Estado",new FormUrlEncodedContent(stateFields))).StatusCode==HttpStatusCode.BadRequest&&maintenanceFactory.Documents.StateChanges==0,"Guía rechaza cambios de estado incluso con permiso de edición");
 repository.Account=repository.Account with {Permissions=["GUIAS.CONSULTAR"]};
 Check((await maintenanceClient.PostAsync("/Seguimiento/guias/1/Estado",new FormUrlEncodedContent(stateFields))).StatusCode==HttpStatusCode.Redirect,"Consulta documental no concede cambios de estado");
 repository.Account=repository.Account with {Permissions=["PRESUPUESTOS.CONSULTAR","PRESUPUESTOS.EDITAR","OC_CLIENTE.CONSULTAR"]};
-var emergencyWithOrder=await maintenanceClient.GetStringAsync("/Presupuestos/55");
-Check(emergencyWithOrder.Contains("name=\"NewState\"")&&emergencyWithOrder.Contains("value=\"ENVIADO\"")&&!emergencyWithOrder.Contains("value=\"CANCELADO\"")&&!emergencyWithOrder.Contains("Editar borrador"),"Emergencia con OC permite enviar sin editar ni cancelar su presupuesto");
-var emergencySent=await maintenanceClient.GetStringAsync("/Presupuestos/56");
+var emergencyDetails=await maintenanceClient.GetStringAsync("/Presupuestos/55");
+Check(!emergencyDetails.Contains("name=\"NewState\"")&&!emergencyDetails.Contains("Revisiones del presupuesto")&&!emergencyDetails.Contains("Registrar cambio de estado"),"Consulta presupuesto oculta revisiones y reserva estado al listado");
+var emergencyWithOrder=await maintenanceClient.GetStringAsync("/Presupuestos/55/Estado");
+Check(emergencyWithOrder.Contains("name=\"NewState\"")&&emergencyWithOrder.Contains("value=\"ENVIADO\"")&&!emergencyWithOrder.Contains("value=\"CANCELADO\"")&&!emergencyWithOrder.Contains("Editar borrador"),"Popup del listado permite regularizar emergencia sin editar ni cancelar presupuesto");
+var emergencySent=await maintenanceClient.GetStringAsync("/Presupuestos/56/Estado");
 Check(emergencySent.Contains("value=\"APROBADO\"")&&!emergencySent.Contains("value=\"RECHAZADO\""),"Regularización enviada con OC ofrece solo aprobación");
 Check(!(await maintenanceClient.GetStringAsync("/Presupuestos/57")).Contains("name=\"NewState\""),"Invitación con OC no ofrece regularización de emergencia");
 var confirmedList=await maintenanceClient.GetStringAsync("/Seguimiento/oc-cliente?confirmed=true");
@@ -407,6 +562,21 @@ Check(rejectedR2&&fakeR2.Files.Count==1,"R2 no reemplaza un archivo existente co
 fakeR2.Files[r2Metadata.ClaveAlmacenamiento][0]=0;
 var corruptR2=false;try{await r2Store.ReadAsync(r2Metadata,CancellationToken.None);}catch(MaintenanceException){corruptR2=true;}
 Check(corruptR2,"R2 rechaza contenido alterado antes de entregarlo al usuario");
+foreach(var code in new[]{"OC","GUIA","CONFIRMACION","PRESUPUESTO"})
+{
+    var scopedKind=new GestionServicios.Application.Followup.DocumentKind("test",code,"Test","TEST");
+    var scopedFolder=GestionServicios.Web.Services.DocumentUploadRules.Folder(code,"DOC 001/A");
+    var scopedOperation=Guid.NewGuid();
+    var scoped=await r2Store.SaveAsync(R2Upload(r2Bytes),scopedKind,scopedOperation,CancellationToken.None,scopedFolder);
+    await r2Store.SaveAsync(R2Upload(r2Bytes),scopedKind,scopedOperation,CancellationToken.None,scopedFolder);
+    Check(scoped.ClaveAlmacenamiento==scopedFolder+"/"+scopedOperation.ToString("N")+".pdf"&&(await r2Store.ReadAsync(scoped,CancellationToken.None))!.SequenceEqual(r2Bytes),"R2 organiza carpeta por número y conserva reintento/lectura: "+code);
+}
+foreach(var invalid in new[]{"../"+r2Operation.ToString("N")+".pdf","OCCliente/../"+r2Operation.ToString("N")+".pdf","Guia/A/B/"+r2Operation.ToString("N")+".pdf",r2Operation.ToString("N")+".pdf\n"})
+{
+    var rejectedPath=false;try{GestionServicios.Web.Services.DocumentUploadRules.Reference(invalid);}catch(MaintenanceException){rejectedPath=true;}
+    Check(rejectedPath,"Referencia de archivo rechaza ruta fuera de estructura permitida");
+}
+Check(GestionServicios.Web.Services.DocumentUploadRules.Folder("FIRMA","")=="ConfigHYT/Firma","Firma usa carpeta exclusiva ConfigHYT/Firma");
 Check(new GestionServicios.Web.Services.CloudflareR2Settings().BucketName=="hyt-documentos","Nombre predeterminado de bucket HYT coincide con el entorno de ejemplo");
 await MaintenanceRevisionChecks.Run(Check);
 await CaptchaChecks.Run(Check);
@@ -435,8 +605,12 @@ Check(guideWithEvidence.Contains("/Seguimiento/oc-cliente/1")&&guideWithEvidence
 var contextRead=await maintenanceClient.GetAsync("/Seguimiento/ejecucion/Expediente?parentId=1");
 Check(contextRead.StatusCode==HttpStatusCode.Redirect&&contextRead.Headers.Location!.ToString().Contains("/Seguimiento/ejecucion/1"),"Consulta del expediente permite abrir ejecución sin permiso de editar");
 Check((await maintenanceClient.GetAsync("/Seguimiento/ejecucion/Expediente?parentId=77")).StatusCode==HttpStatusCode.NotFound,"Documento aún no registrado no abre una ficha vacía");
+var guidePopupRead=await maintenanceClient.GetStringAsync("/Seguimiento/guias/1?popup=true&returnUrl=/Presupuestos");
+Check(!guidePopupRead.Contains("<!DOCTYPE html>")&&guidePopupRead.Contains("Editar registro")&&!guidePopupRead.Contains("Guardar registro")&&guidePopupRead.Contains("disabled=\"disabled\""),"Guía consulta en popup permite abrir edición y mantiene campos bloqueados");
+var executionPopupRead=await maintenanceClient.GetStringAsync("/Seguimiento/ejecucion/1?popup=true");
+Check(executionPopupRead.Contains("data-document-kind=\"EJECUCION\"")&&!executionPopupRead.Contains("Cambiar estado")&&!executionPopupRead.Contains("name=\"state\""),"Consulta ejecución reutiliza ficha de registro sin cambio de estado");
 var guideEditNavigation=await maintenanceClient.GetStringAsync("/Seguimiento/guias/1/Editar?popup=true");
-Check(guideEditNavigation.Contains("Ver registro y estados")&&guideEditNavigation.Contains("/Seguimiento/guias/1"),"Popup permite acceder a ficha completa y acciones de estado");
+Check(!guideEditNavigation.Contains("Ver registro y estados")&&guideEditNavigation.Contains("Guardar registro")&&guideEditNavigation.Contains("Cancelar"),"Edición documental conserva guardar/cancelar sin enlace a registro y estados");
 repository.Account=repository.Account with {Permissions=["OC_CLIENTE.CONSULTAR","FACTURADO.CONSULTAR","FACTURADO.EDITAR"]};
 var markForm=await maintenanceClient.GetStringAsync("/OCCliente/1/Facturado?popup=true");
 Check(markForm.Contains("name=\"Series\"")&&markForm.Contains("Boleta (03)")&&!markForm.Contains("<!DOCTYPE html>"),"Facturado abre captura popup con tipos 01/03");
@@ -446,8 +620,19 @@ Check(marked.StatusCode==HttpStatusCode.OK&&maintenanceFactory.InvoiceMarks.Save
 markFields["Number"]="";
 Check((int)(await maintenanceClient.PostAsync("/OCCliente/1/Facturado?popup=true",new FormUrlEncodedContent(markFields))).StatusCode==422&&maintenanceFactory.InvoiceMarks.Saves==1,"Facturado incompleto no llega al repositorio");
 Check((await maintenanceClient.GetStringAsync("/Seguimiento/oc-cliente")).Contains("/OCCliente/1/Facturado"),"OC ofrece botón Facturado según permiso");
+maintenanceFactory.Documents.RichList=true;
+var compactOc=WebUtility.HtmlDecode(await maintenanceClient.GetStringAsync("/Seguimiento/oc-cliente"));
+Check(!compactOc.Contains("<th scope=\"col\">Facturado</th>")&&compactOc.Contains("hyt-action-registered")&&!compactOc.Contains("<th scope=\"col\">Adjuntos de guía</th>")&&compactOc.Contains("<th scope=\"col\">Guía</th>"),"OC sin columna Facturado resalta el botón cuando existe comprobante vigente");
+maintenanceFactory.InvoiceMarks.HasConfirmation=false;
+var noConfirmationInvoice=await maintenanceClient.GetStringAsync("/OCCliente/2/Facturado?popup=true");
+Check(noConfirmationInvoice.Contains("Registra primero la confirmación del cliente")&&noConfirmationInvoice.Contains("disabled=\"disabled\"")&&!noConfirmationInvoice.Contains("Guardar referencia"),"Formulario Facturado bloqueado sin confirmación vigente de cliente");
+maintenanceFactory.InvoiceMarks.HasConfirmation=true;
+var receiptSummary=await maintenanceClient.GetStringAsync("/OCCliente/1/Facturado/Consulta");
+Check(receiptSummary.Contains("F001")&&receiptSummary.Contains("000012A")&&!receiptSummary.Contains("<form"),"Consulta de comprobante presenta datos sin edición");
 repository.Account=repository.Account with {Permissions=["OC_CLIENTE.CONSULTAR","FACTURADO.CONSULTAR"]};
 Check((await maintenanceClient.PostAsync("/OCCliente/1/Facturado",new FormUrlEncodedContent(markFields))).StatusCode==HttpStatusCode.Redirect,"Consulta de Facturado no concede edición");
+Check((await maintenanceClient.GetAsync("/Seguimiento/guias/1/Adjuntos")).StatusCode==HttpStatusCode.Redirect,"Adjuntos de guía exigen su permiso de consulta");
+
 repository.Account=repository.Account with {Permissions=["REPORTES.CONSULTAR","PRESUPUESTOS.CONSULTAR","OC_CLIENTE.CONSULTAR"]};
 foreach(var reportKind in GestionServicios.Application.Reporting.ReportKinds.All.Keys)
 {
@@ -456,17 +641,40 @@ foreach(var reportKind in GestionServicios.Application.Reporting.ReportKinds.All
 }
 Check((await maintenanceClient.GetAsync("/Reportes?kind=INEXISTENTE")).StatusCode==HttpStatusCode.BadRequest,"Catálogo de reportes rechaza tipos arbitrarios");
 repository.Account=repository.Account with {Permissions=["REPORTES.CONSULTAR"]};
-Check((await maintenanceClient.GetAsync("/Reportes?kind=GANADOS")).StatusCode==HttpStatusCode.Redirect,"Reporte exige además permiso del documento fuente");
+Check((await maintenanceClient.GetAsync("/Reportes?kind=PRESUPUESTO")).StatusCode==HttpStatusCode.Redirect,"Reporte exige además permiso del documento fuente");
 repository.Account=repository.Account with {Permissions=["REPORTES.CONSULTAR","PRESUPUESTOS.CONSULTAR","OC_CLIENTE.CONSULTAR"]};
 var dashboardHtml=await maintenanceClient.GetStringAsync("/");
+Check(Regex.IsMatch(dashboardHtml,@"href=""/Reportes(?:\?[^""]*)?""[^>]*>Consultar reportes</a>")&&!Regex.IsMatch(dashboardHtml,@"href=""/Reportes/Imprimir[^""]*""[^>]*>Consultar reportes</a>"),"Acceso Consultar reportes del dashboard genera ruta de filtros, no impresión");
+var reportsNavigation=await maintenanceClient.GetAsync("/modulo/reportes");
+Check(reportsNavigation.StatusCode==HttpStatusCode.Redirect&&reportsNavigation.Headers.Location?.OriginalString=="/Reportes","Menú Reportes redirige a consulta y nunca a impresión");
 Check(dashboardHtml.Contains("Resumen de gestión")&&dashboardHtml.Contains("hyt-dashboard-data")&&dashboardHtml.Contains("36,000.00")&&dashboardHtml.Contains("USD")&&dashboardHtml.Contains("PEN"),"Inicio conecta indicadores y separa importes por moneda");
 Check(dashboardHtml.Contains("data-chart=\"trend\"")&&dashboardHtml.Contains("data-chart=\"states\"")&&dashboardHtml.Contains("data-chart=\"donut\"")&&dashboardHtml.Contains("Consultar cifras de los gráficos"),"Dashboard ofrece curvas, columnas, dona y detalle accesible");
 Check((await maintenanceClient.GetAsync("/?from=2026-11-10&to=2026-11-01")).StatusCode==HttpStatusCode.BadRequest,"Dashboard rechaza rango de fechas invertido");
-Check(dashboardHtml.Contains("data-chart-group")&&dashboardHtml.Contains("data-chart-series=\"Confirmaciones\"")&&dashboardHtml.Contains("data-chart-series=\"Marcados\"")&&dashboardHtml.Contains("Expedientes por completar"),"Panel expone agrupación, eventos y bandeja histórica");
+Check(dashboardHtml.Contains("data-chart-group")&&dashboardHtml.Contains("data-chart-series=\"Confirmaciones\"")&&dashboardHtml.Contains("data-chart-series=\"Marcados\"")&&!dashboardHtml.Contains("Primera confirmación")&&!dashboardHtml.Contains("Primer marcado")&&dashboardHtml.Contains("Expedientes por completar"),"Panel muestra Confirmación del cliente y Facturado sin denominaciones de primeros eventos");
 Check((await maintenanceClient.GetAsync("/?queuePage=0")).StatusCode==HttpStatusCode.BadRequest&&(await maintenanceClient.GetAsync("/?client="+new string('x',201))).StatusCode==HttpStatusCode.BadRequest,"Dashboard valida página y longitud de filtros comerciales");
 var observedBudgetHtml=await maintenanceClient.GetStringAsync("/Presupuestos?state=OBSERVADO");
-Check(observedBudgetHtml.Contains("value=\"OBSERVADO\" selected")&&observedBudgetHtml.Contains("Rechazado")&&observedBudgetHtml.Contains("Vencido"),"Filtro presupuesto conserva todos los estados válidos del dashboard");
+Check(observedBudgetHtml.Contains("value=\"OBSERVADO\" selected")&&observedBudgetHtml.Contains("Rechazada")&&!observedBudgetHtml.Contains("Vencido"),"Filtro presupuesto conserva todos los estados válidos del dashboard");
 Check((await maintenanceClient.GetAsync("/Presupuestos?state=NO_EXISTE")).StatusCode==HttpStatusCode.BadRequest&&(await maintenanceClient.GetAsync("/Presupuestos?from=no-fecha")).StatusCode==HttpStatusCode.BadRequest,"Listado presupuesto rechaza estado inexistente y fecha inválida");
+repository.Account=repository.Account with {Permissions=["PRESUPUESTOS.CONSULTAR","OC_CLIENTE.CONSULTAR","GUIAS.CONSULTAR","FACTURADO.CONSULTAR"]};
+var kpiBudget=await maintenanceClient.GetStringAsync("/Presupuestos?page=2&type=EMERGENCIA&pendingGuide=true&pendingOrder=true");
+Check(Regex.Matches(kpiBudget,"data-kpi-state=").Count==6&&kpiBudget.Contains(">41</strong>")&&!kpiBudget.Contains("Cliente (nombre)")&&!kpiBudget.Contains("Tienda (nombre)"),"KPI presupuesto incluye seis estados y total completo sin filtros comerciales separados");
+Check(maintenanceFactory.Budgets.LastType=="EMERGENCIA"&&maintenanceFactory.Budgets.PendingGuide&&maintenanceFactory.Budgets.PendingOrder&&kpiBudget.Contains("pendingGuide=true")&&kpiBudget.Contains("pendingOrder=true"),"Filtros presupuesto llegan al repositorio y persisten al paginar");
+Check((await maintenanceClient.GetAsync("/Presupuestos?type=OTRO")).StatusCode==HttpStatusCode.BadRequest&&(await maintenanceClient.GetAsync("/Presupuestos?pendingGuide=incorrecto")).StatusCode==HttpStatusCode.BadRequest,"Presupuesto rechaza tipo y check inválidos");
+var kpiOrder=await maintenanceClient.GetStringAsync("/Seguimiento/oc-cliente?page=2&pendingConfirmation=true&pendingInvoice=true");
+Check(Regex.Matches(kpiOrder,"data-kpi-state=").Count==4&&kpiOrder.Contains(">41</strong>")&&maintenanceFactory.Documents.PendingConfirmation&&maintenanceFactory.Documents.PendingInvoice&&!kpiOrder.Contains("Cliente (nombre)")&&!kpiOrder.Contains("Tienda (nombre)"),"OC muestra cuatro KPI y aplica checks de confirmación y facturación");
+var kpiGuide=await maintenanceClient.GetStringAsync("/Seguimiento/guias");
+Check(!kpiGuide.Contains("Cliente (nombre)")&&!kpiGuide.Contains("Tienda (nombre)")&&kpiGuide.Contains("/Seguimiento/guias/1/Adjuntos"),"Guía simplifica filtros y permite abrir adjuntos desde listado");
+repository.Account=repository.Account with {Permissions=["OC_CLIENTE.CONSULTAR"]};
+Check(!(await maintenanceClient.GetStringAsync("/Seguimiento/oc-cliente")).Contains("name=\"pendingInvoice\"")&&(await maintenanceClient.GetAsync("/Seguimiento/oc-cliente?pendingInvoice=true")).StatusCode==HttpStatusCode.Redirect,"Pendientes de facturar respeta permisos de consulta");
+repository.Account=repository.Account with {Permissions=["REPORTES.CONSULTAR","PRESUPUESTOS.CONSULTAR","OC_CLIENTE.CONSULTAR","GUIAS.CONSULTAR","CONFIRMACIONES.CONSULTAR","FACTURADO.CONSULTAR"]};
+var integralReport=await maintenanceClient.GetStringAsync("/Reportes?kind=PRESUPUESTO&state=APROBADO&type=EMERGENCIA&pendingGuide=true&pendingOrder=true&search=Cliente&page=2");
+Check(!integralReport.Contains("Cliente (nombre)")&&!integralReport.Contains("Tienda (nombre)")&&!integralReport.Contains("Seguimiento de OC")&&integralReport.Contains("name=\"state\"")&&integralReport.Contains("CONF-001")&&integralReport.Contains("F001-000012A")&&integralReport.Contains("Registro:"),"Reporte integral elimina filtros antiguos e incluye referencias y registro de relaciones");
+Check(maintenanceFactory.Reporting.Filters is {State:"APROBADO",Type:"EMERGENCIA",PendingGuide:true,PendingOrder:true,Search:"Cliente"}&&integralReport.Contains("page=3")&&integralReport.Contains("pendingOrder=true"),"Filtros y pendientes de reporte se conservan en repositorio y paginación");
+var integralPrint=await maintenanceClient.GetStringAsync("/Reportes/Imprimir?kind=OC_CLIENTE&state=TRABAJO_COMPLETADO&pendingInvoice=true");
+Check(maintenanceFactory.Reporting.Filters?.Export==true&&Regex.Matches(integralPrint,"<tr>").Count==42&&integralPrint.Contains("/images/logo-hyt.png")&&!integralPrint.Contains("hyt-sidebar")&&integralPrint.Contains("Pendiente de facturar")&&integralPrint.Contains("Completado"),"HTML completo imprime más de 20 filas con logo, estado y filtros aplicados");
+Check((await maintenanceClient.GetAsync("/Reportes?kind=OC_CLIENTE&state=APROBADO")).StatusCode==HttpStatusCode.BadRequest&&(await maintenanceClient.GetAsync("/Reportes?kind=PRESUPUESTO&type=OTRO")).StatusCode==HttpStatusCode.BadRequest,"Reporte valida estados de cada fuente y tipo de atención");
+repository.Account=repository.Account with {Permissions=["REPORTES.CONSULTAR","OC_CLIENTE.CONSULTAR"]};
+Check((await maintenanceClient.GetAsync("/Reportes/Imprimir?kind=OC_CLIENTE&pendingInvoice=true")).StatusCode==HttpStatusCode.Redirect,"Impresión respeta permisos de facturación pendiente");
 var dashboardCalls=maintenanceFactory.Reporting.DashboardCalls;
 repository.Account=repository.Account with {Permissions=["CLIENTES.CONSULTAR"]};
 Check(!(await maintenanceClient.GetStringAsync("/")).Contains("hyt-dashboard-data")&&maintenanceFactory.Reporting.DashboardCalls==dashboardCalls,"Perfil sin reportes no consulta ni recibe indicadores");
@@ -520,6 +728,8 @@ sealed class HytFactory(TestAccessRepository repository,bool turnstileEnabled=fa
             services.AddHttpClient<GestionServicios.Web.Security.ITurnstileVerifier,GestionServicios.Web.Security.CloudflareTurnstileVerifier>().ConfigurePrimaryHttpMessageHandler(()=>Turnstile);
             services.AddControllersWithViews().AddApplicationPart(typeof(UiFixtureController).Assembly);
             services.RemoveAll<IAccessRepository>(); services.AddSingleton<IAccessRepository>(repository);
+            services.RemoveAll<ISecurityAdministrationRepository>();
+            services.AddSingleton<ISecurityAdministrationRepository>(new TestSecurityAdministration(repository));
             services.RemoveAll<IMaintenanceRepository>(); services.AddSingleton<IMaintenanceRepository>(Maintenance);
             services.RemoveAll<ITaxRateRepository>(); services.AddSingleton<ITaxRateRepository>(TaxRates);
             services.RemoveAll<GestionServicios.Web.Services.IDocumentFileStore>();services.AddScoped<GestionServicios.Web.Services.IDocumentFileStore,GestionServicios.Web.Services.PrivateDocumentFileStore>();
@@ -538,7 +748,33 @@ sealed class HytFactory(TestAccessRepository repository,bool turnstileEnabled=fa
 sealed class TestAccessRepository : IAccessRepository
 {
     public string Password { get; } = Guid.NewGuid().ToString("N") + "aA1!";
-    public AccessAccount Account { get; set; }
+    private AccessAccount account = null!;
+    public AccessAccount Account
+    {
+        get => account;
+        set
+        {
+            var permissions = value.Permissions.ToHashSet(StringComparer.Ordinal);
+            foreach (var module in new[] { "CLIENTES", "TIENDAS", "MATERIALES", "UNIDADES", "ZONAS", "TARIFARIOS",
+                "PRESUPUESTOS", "OC_CLIENTE", "GUIAS", "CONFIRMACIONES", "EJECUCION" })
+            {
+                if (permissions.Contains(module + ".EDITAR"))
+                {
+                    permissions.Add(module + ".CREAR");
+                    permissions.Add(module + ".MODIFICAR");
+                    permissions.Add(module + ".ACTIVAR");
+                    permissions.Add(module + ".CAMBIAR_ESTADO");
+                }
+                if (permissions.Contains(module + ".CONSULTAR")) permissions.Add(module + ".DESCARGAR");
+            }
+            if (permissions.Contains("REPORTES.CONSULTAR"))
+            {
+                permissions.Add("REPORTES.IMPRIMIR");
+                if (permissions.Contains("PRESUPUESTOS.CONSULTAR")) permissions.Add("PRESUPUESTOS.IMPRIMIR");
+            }
+            account = value with { Permissions = permissions.ToArray() };
+        }
+    }
     public int NameLookups {get;private set;}
     public int Failures { get; private set; }
     public int Logouts { get; private set; }

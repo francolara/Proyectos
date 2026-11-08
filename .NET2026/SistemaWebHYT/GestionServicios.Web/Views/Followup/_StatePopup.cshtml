@@ -1,0 +1,10 @@
+@using GestionServicios.Web.ViewModels.Followup
+@using GestionServicios.Web.ViewModels.Shared
+@using GestionServicios.Application.Budgets
+@model DocumentDetailsModel
+@* Firma: FRANCO LARA - 06/11/2026 | Pop-up de estado OC con fechas y responsables de su registro; Cancelar se muestra junto a Registrar en el formulario. *@
+<section data-document-title="Cambiar estado · OC del cliente">
+<header class="hyt-document-context"><p>OC del cliente: <strong>@BudgetRecord.Text(Model.Document,"NumeroOCCliente")</strong><br />Estado actual: <strong>@BudgetRecord.Text(Model.Document,"EstadoDocumento").Replace('_',' ')</strong></p><div class="hyt-internal-code"><span>Número de presupuesto</span><output>@Model.Text("PresupuestoNumero")</output></div></header>
+<partial name="_State" model="Model" />
+<partial name="_TraceSummary" model="@(TraceSummary.From(key=>BudgetRecord.Text(Model.Document,key)))" />
+</section>

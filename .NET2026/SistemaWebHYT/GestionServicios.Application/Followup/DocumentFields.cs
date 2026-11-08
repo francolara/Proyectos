@@ -8,7 +8,7 @@ public static class DocumentFields
     public static IReadOnlyList<DocumentField> For(DocumentKind kind)=>kind.Code switch
     {
         "OC"=>[new("RevisionId","Revisión del presupuesto","Revision",true),new("NumeroOCCliente","N° OC del cliente",Required:true),new("FechaEmisionOC","Fecha de emisión OC","Date",true),new("FechaRecepcionOC","Fecha de recepción OC","Date",true),new("Importe","Importe de la OC","Money"),new("Observacion","Observación","LongText",Maximum:2000)],
-        "GUIA"=>[new("FechaActa","Fecha de la guía","Date",true),new("NumeroActa","N° guía / acta",Required:true),new("Observacion","Observación","LongText",Maximum:2000)],
+        "GUIA"=>[new("FechaActa","Fecha de la guía","Date",true),new("NumeroActa","N° guía",Required:true),new("Observacion","Observación","LongText",Maximum:2000)],
         "CONFIRMACION"=>[new("FechaConfirmacion","Fecha de confirmación","Date",true),new("NumeroConfirmacion","N° confirmación",Required:true),new("RepresentanteCliente","Representante del cliente",Maximum:150),new("Observacion","Observación","LongText",Maximum:2000)],
         "EJECUCION"=>[new("Responsable","Responsable del trabajo",Maximum:150),new("FechaProgramada","Fecha programada","Date"),new("FechaInicioReal","Fecha de inicio real","Date"),new("FechaTerminoReal","Fecha de término real","Date"),new("Descripcion","Descripción del trabajo realizado","LongText",Maximum:2000)],
         _=>throw new ArgumentException("Tipo documental no válido.")

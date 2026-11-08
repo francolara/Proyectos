@@ -4,7 +4,7 @@
 -- Description:   Paquete incremental HYT etapa 5; aplicar después de etapa 4.
 -- =============================================
 -- Las fuentes individuales están aplicadas en la base local de desarrollo.
--- Firma: FRANCO LARA | Create date: 06/11/2026 | Numeración mensual de presupuesto en consultas, reportes e impresiones; preserva claves internas.
+-- Firma: FRANCO LARA | Create date: 06/11/2026 | Numeración mensual de presupuesto en consultas, reportes e impresiones; preserva claves internas. Listado incluye EjecucionId para botones documentales registrados. Guía como documento sin estados. KPI por estado y filtros de pendientes en listados con paginación SQL.
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   05/11/2026
@@ -24,7 +24,6 @@ BEGIN
     );
 END;
 GO
-
 
 -- Fuente: Script/026_NumeroPresupuestoMensual.sql
 USE [SistemaWebHYT];
@@ -60,14 +59,12 @@ BEGIN CATCH
 END CATCH;
 GO
 
-
 -- Fuente: Script/027_NombreTipoServicioPresupuesto.sql
 USE [SistemaWebHYT];
 GO
 SET NOCOUNT ON;
 IF COL_LENGTH(N'dbo.PresupuestoPartida',N'TipoServicio') IS NOT NULL ALTER TABLE dbo.PresupuestoPartida ALTER COLUMN TipoServicio NVARCHAR(150) NULL;
 GO
-
 
 -- Fuente: Script/014_PresupuestosDocumentos.sql
 USE [SistemaWebHYT];
@@ -109,7 +106,6 @@ IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name=N'CK_Partida_DosDe
 IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name=N'CK_GuiaPartida_DosDecimales')
     ALTER TABLE dbo.GuiaPartida WITH CHECK ADD CONSTRAINT CK_GuiaPartida_DosDecimales CHECK (Cantidad=ROUND(Cantidad,2));
 GO
-
 
 -- Fuente: StoreProcedure/spu_Presupuesto_AyudaTarifario.sql
 USE [SistemaWebHYT];
@@ -159,7 +155,6 @@ BEGIN
 END;
 GO
 
-
 -- Fuente: StoreProcedure/spu_Presupuesto_CambiarEstado.sql
 USE [SistemaWebHYT];
 GO
@@ -181,7 +176,7 @@ BEGIN
             THROW 51300,N'[HYT_PERMISO] No tiene permiso para cambiar el estado.',1;
         IF @FechaEvento IS NULL OR NULLIF(LTRIM(RTRIM(@Responsable)),N'') IS NULL OR @NuevoEstado IS NULL
             THROW 51318,N'[HYT_VALIDACION] Indica fecha y responsable de la acción.',1;
-        IF @NuevoEstado IN (N'OBSERVADO',N'RECHAZADO',N'CANCELADO',N'VENCIDO') AND NULLIF(LTRIM(RTRIM(@Motivo)),N'') IS NULL
+        IF @NuevoEstado IN (N'OBSERVADO',N'RECHAZADO',N'CANCELADO') AND NULLIF(LTRIM(RTRIM(@Motivo)),N'') IS NULL
             THROW 51318,N'[HYT_VALIDACION] Indica el motivo del cambio de estado.',1;
         BEGIN TRANSACTION;
         SET @Propia=1;
@@ -194,17 +189,15 @@ BEGIN
         IF @Estado IS NULL THROW 51309,N'[HYT_CONCURRENCIA] La revisión cambió o no pertenece al presupuesto.',1;
         IF EXISTS (SELECT 1 FROM dbo.PresupuestoRevision AS r WHERE r.PresupuestoId=@PresupuestoId AND r.NumeroRevision>(SELECT origen.NumeroRevision FROM dbo.PresupuestoRevision AS origen WHERE origen.RevisionId=@RevisionId))
             THROW 51319,N'[HYT_VALIDACION] Solo se cambia el estado de la última revisión.',1;
-        IF NOT ((@Estado=N'BORRADOR' AND @NuevoEstado IN (N'ENVIADO',N'CANCELADO'))
-            OR (@Estado=N'ENVIADO' AND @NuevoEstado IN (N'OBSERVADO',N'APROBADO',N'RECHAZADO',N'VENCIDO',N'CANCELADO'))
-            OR (@Estado IN (N'OBSERVADO',N'RECHAZADO',N'VENCIDO',N'APROBADO') AND @NuevoEstado=N'CANCELADO'))
+        IF NOT ((@Estado IN (N'BORRADOR',N'OBSERVADO') AND @NuevoEstado IN (N'ENVIADO',N'CANCELADO'))
+            OR (@Estado=N'ENVIADO' AND @NuevoEstado IN (N'OBSERVADO',N'APROBADO',N'RECHAZADO',N'CANCELADO'))
+            OR (@Estado IN (N'RECHAZADO',N'VENCIDO',N'APROBADO') AND @NuevoEstado=N'CANCELADO'))
             THROW 51319,N'[HYT_VALIDACION] La transición no está permitida. Para corregir contenido crea otra revisión.',1;
         IF EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS oc WITH (HOLDLOCK) WHERE oc.PresupuestoId=@PresupuestoId)
             AND NOT EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS oc INNER JOIN dbo.Presupuesto AS p ON p.PresupuestoId=oc.PresupuestoId
                 WHERE oc.PresupuestoId=@PresupuestoId AND oc.RevisionId=@RevisionId AND oc.Estado<>N'CANCELADA' AND p.TipoAtencion=N'EMERGENCIA'
                 AND ((@Estado=N'BORRADOR' AND @NuevoEstado=N'ENVIADO') OR (@Estado=N'ENVIADO' AND @NuevoEstado=N'APROBADO')))
             THROW 51320,N'[HYT_VALIDACION] La revisión vinculada a una OC no permite este cambio.',1;
-        IF @NuevoEstado=N'CANCELADO' AND EXISTS (SELECT 1 FROM dbo.GuiaConformidad AS guia WITH (HOLDLOCK) WHERE guia.PresupuestoId=@PresupuestoId AND guia.Estado<>N'ANULADA')
-            THROW 51320,N'[HYT_VALIDACION] No se puede cancelar mientras exista una guía vigente.',1;
         IF @NuevoEstado=N'ENVIADO'
         BEGIN
             IF @Total IS NULL OR NOT EXISTS (SELECT 1 FROM dbo.PresupuestoPartida AS linea WHERE linea.RevisionId=@RevisionId)
@@ -232,7 +225,6 @@ BEGIN
     END CATCH
 END;
 GO
-
 
 -- Fuente: StoreProcedure/spu_Presupuesto_DatosIniciales.sql
 USE [SistemaWebHYT];
@@ -272,7 +264,6 @@ BEGIN
     END CATCH
 END;
 GO
-
 
 -- Fuente: StoreProcedure/spu_Presupuesto_Guardar.sql
 USE [SistemaWebHYT];
@@ -345,8 +336,8 @@ BEGIN
             IF @Estado IS NULL THROW 51309,N'[HYT_CONCURRENCIA] La revisión cambió o no pertenece al presupuesto.',1;
             IF EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS oc WITH (HOLDLOCK) WHERE oc.PresupuestoId=@PresupuestoId)
                 THROW 51310,N'[HYT_VALIDACION] El presupuesto vinculado a una OC no admite cambios ni nuevas revisiones.',1;
-            IF @Estado=N'CANCELADO' OR (@NuevaRevision=0 AND @Estado<>N'BORRADOR') OR (@NuevaRevision=1 AND @Estado=N'BORRADOR')
-                THROW 51310,N'[HYT_VALIDACION] Edita solo el borrador; para una revisión enviada crea una nueva revisión.',1;
+            IF @Estado=N'CANCELADO' OR (@NuevaRevision=0 AND @Estado NOT IN (N'BORRADOR',N'OBSERVADO')) OR (@NuevaRevision=1 AND @Estado=N'BORRADOR')
+                THROW 51310,N'[HYT_VALIDACION] Edita solo el registrado u observado; para una revisión enviada crea una nueva revisión.',1;
             IF EXISTS (SELECT 1 FROM dbo.PresupuestoRevision AS r WHERE r.PresupuestoId=@PresupuestoId AND r.NumeroRevision>(SELECT origen.NumeroRevision FROM dbo.PresupuestoRevision AS origen WHERE origen.RevisionId=@RevisionId))
                 THROW 51310,N'[HYT_VALIDACION] Abre la revisión más reciente del presupuesto.',1;
             IF (@ClienteAnterior<>@ClienteId OR @TiendaAnterior<>@TiendaId OR @TipoAnterior<>@Tipo)
@@ -427,8 +418,9 @@ BEGIN
             THROW 51317,N'[HYT_VALIDACION] Completa descripción, unidad, moneda, tratamiento IGV y motivo de precio manual.',1;
         IF EXISTS (SELECT 1 FROM #Lineas AS linea WHERE linea.OrigenPrecio=N'MANUAL' AND linea.MaterialId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM dbo.ServicioMaterial AS material WHERE material.MaterialId=linea.MaterialId))
             THROW 51317,N'[HYT_VALIDACION] El material indicado no existe.',1;
-        UPDATE linea SET CentroSAPFICO=COALESCE(NULLIF(LTRIM(RTRIM(linea.CentroSAPFICO)),N''),tienda.CentroSAPFICO)
-        FROM #Lineas AS linea CROSS JOIN dbo.Tienda AS tienda WHERE tienda.TiendaId=@TiendaId;
+        UPDATE linea SET CentroSAPFICO=tienda.CentroSAPFICO,Posicion=COALESCE(material.CodigoInterno,linea.CodigoInterno),CodigoInterno=COALESCE(material.CodigoInterno,linea.CodigoInterno)
+        FROM #Lineas AS linea CROSS JOIN dbo.Tienda AS tienda
+        LEFT JOIN dbo.ServicioMaterial AS material ON material.MaterialId=linea.MaterialId WHERE tienda.TiendaId=@TiendaId;
         IF EXISTS (SELECT 1 FROM #Lineas AS linea WHERE linea.OrigenPrecio=N'MANUAL' AND linea.PartidaTarifarioId IS NOT NULL AND NOT EXISTS
             (SELECT 1 FROM dbo.TarifarioPartida AS referencia INNER JOIN dbo.TarifarioVersion AS version ON version.VersionId=referencia.VersionId
              INNER JOIN dbo.Tarifario AS cabecera ON cabecera.TarifarioId=version.TarifarioId
@@ -499,7 +491,8 @@ BEGIN
         SET @Cambios=(SELECT @RevisionOrigen AS RevisionOrigen,JSON_QUERY(@AnteriorRevision) AS Anterior,JSON_QUERY(@AnteriorPartidas) AS PartidasAnteriores,JSON_QUERY(@Posterior) AS Nuevo,JSON_QUERY(@PartidasNuevas) AS PartidasNuevas FOR JSON PATH,WITHOUT_ARRAY_WRAPPER);
         SET @Registro=CONVERT(NVARCHAR(100),@RevisionId);
         SET @Accion=CASE WHEN @EsNuevo=1 THEN N'CREAR' WHEN @NuevaRevision=1 THEN N'NUEVA_REVISION' ELSE N'ACTUALIZAR' END;
-        EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@CorrelacionId,N'PresupuestoRevision',@Registro,@Accion,@Estado,N'BORRADOR',NULL,NULL,@Cambios;
+        DECLARE @EstadoGuardado NVARCHAR(20)=CASE WHEN @EsNuevo=1 OR @NuevaRevision=1 THEN N'BORRADOR' ELSE @Estado END;
+        EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@CorrelacionId,N'PresupuestoRevision',@Registro,@Accion,@Estado,@EstadoGuardado,NULL,NULL,@Cambios;
         SET @Registro=CONVERT(NVARCHAR(100),@PresupuestoId);
         SET @Cambios=(SELECT JSON_QUERY(@Anterior) AS Anterior,@ClienteId AS ClienteId,@TiendaId AS TiendaId,@Tipo AS TipoAtencion,@Descripcion AS Descripcion,@FechaSolicitud AS FechaSolicitud,@RevisionId AS RevisionId FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES);
         EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@CorrelacionId,N'Presupuesto',@Registro,@Accion,NULL,NULL,NULL,NULL,@Cambios;
@@ -518,13 +511,12 @@ BEGIN
 END;
 GO
 
-
 -- Fuente: StoreProcedure/spu_Presupuesto_Listar.sql
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_Presupuesto_Listar
     @UsuarioId NVARCHAR(128),@Desde DATETIME2(3),@HastaExclusiva DATETIME2(3),
-    @Pagina INT=1,@Busqueda NVARCHAR(200)=NULL,@Estado NVARCHAR(20)=NULL,@Cliente NVARCHAR(200)=NULL,@Tienda NVARCHAR(200)=NULL
+    @Pagina INT=1,@Busqueda NVARCHAR(200)=NULL,@Estado NVARCHAR(20)=NULL,@Cliente NVARCHAR(200)=NULL,@Tienda NVARCHAR(200)=NULL,@TipoAtencion NVARCHAR(20)=NULL,@PendienteGuia BIT=0,@PendienteOC BIT=0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -536,13 +528,14 @@ BEGIN
             THROW 51300,N'[HYT_PERMISO] No tiene permiso para esta operación.',1;
         IF @Pagina<1 OR @Pagina>100000000 OR @Desde IS NULL OR @HastaExclusiva IS NULL OR @HastaExclusiva<=@Desde
             THROW 51301,N'[HYT_VALIDACION] Revisa página y rango de fechas.',1;
+        IF @TipoAtencion IS NOT NULL AND @TipoAtencion NOT IN(N'INVITACION',N'EMERGENCIA') THROW 51301,N'[HYT_VALIDACION] Tipo de atención no válido.',1;
         SET @Busqueda=NULLIF(LTRIM(RTRIM(@Busqueda)),N'');
         DECLARE @Patron NVARCHAR(410)=N'%' + REPLACE(REPLACE(REPLACE(REPLACE(@Busqueda,N'~',N'~~'),N'%',N'~%'),N'_',N'~_'),N'[',N'~[') + N'%';
         SELECT p.PresupuestoId,p.NumeroPresupuesto AS NumeroInterno,p.Descripcion,p.TipoAtencion,p.ClienteId,p.TiendaId,
             revision.RevisionId,revision.NumeroRevision,revision.ClienteNombre,revision.TiendaNombre,revision.Estado,
             revision.CodigoMoneda,revision.Subtotal,revision.Impuesto,revision.Total,revision.FechaAprobacion,
             p.FechaRegistro,creador.Nombres AS UsuarioRegistro,p.FechaActualizacion,editor.Nombres AS UsuarioActualizacion,
-            oc.OrdenCompraId,oc.NumeroOCCliente,oc.Estado AS EstadoOC,oc.RevisionId AS RevisionOC,guia.GuiaId,guia.NumeroActa,guia.Estado AS EstadoGuia,
+            oc.OrdenCompraId,oc.NumeroOCCliente,oc.Estado AS EstadoOC,oc.RevisionId AS RevisionOC,guia.GuiaId,guia.NumeroActa,guia.Estado AS EstadoGuia,ejecucion.EjecucionId,
             (SELECT COUNT_BIG(1) FROM dbo.GuiaArchivo AS vinculo INNER JOIN dbo.ArchivoAdjunto AS archivo ON archivo.ArchivoId=vinculo.ArchivoId AND archivo.Retirado=0 WHERE vinculo.GuiaId=guia.GuiaId) AS AdjuntosGuia
         INTO #Pagina FROM dbo.Presupuesto AS p
         OUTER APPLY (SELECT TOP (1) r.RevisionId,r.NumeroRevision,r.ClienteNombre,r.TiendaNombre,r.Estado,r.CodigoMoneda,r.Subtotal,r.Impuesto,r.Total,r.FechaAprobacion,r.FechaActualizacion,r.UsuarioActualizacion
@@ -551,14 +544,16 @@ BEGIN
         LEFT JOIN dbo.AspNetUsers AS editor ON editor.Id=p.UsuarioActualizacion
         LEFT JOIN dbo.OrdenCompraCliente AS oc ON oc.PresupuestoId=p.PresupuestoId
         LEFT JOIN dbo.GuiaConformidad AS guia ON guia.PresupuestoId=p.PresupuestoId
-        WHERE p.FechaRegistro>=@Desde AND p.FechaRegistro<@HastaExclusiva AND (@Estado IS NULL OR revision.Estado=@Estado)
+        LEFT JOIN dbo.Ejecucion AS ejecucion ON ejecucion.PresupuestoId=p.PresupuestoId
+        WHERE p.FechaRegistro>=@Desde AND p.FechaRegistro<@HastaExclusiva AND (@TipoAtencion IS NULL OR p.TipoAtencion=@TipoAtencion) AND (@PendienteGuia=0 OR guia.GuiaId IS NULL) AND (@PendienteOC=0 OR oc.OrdenCompraId IS NULL)
           AND (@Cliente IS NULL OR revision.ClienteNombre LIKE N'%'+@Cliente+N'%') AND (@Tienda IS NULL OR revision.TiendaNombre LIKE N'%'+@Tienda+N'%')
             AND (@Busqueda IS NULL OR p.NumeroPresupuesto LIKE @Patron ESCAPE N'~' OR p.Descripcion LIKE @Patron ESCAPE N'~' OR revision.ClienteNombre LIKE @Patron ESCAPE N'~' OR revision.TiendaNombre LIKE @Patron ESCAPE N'~');
         SELECT pagina.PresupuestoId,pagina.NumeroInterno,pagina.Descripcion,pagina.TipoAtencion,pagina.ClienteId,pagina.TiendaId,
             pagina.RevisionId,pagina.NumeroRevision,pagina.ClienteNombre,pagina.TiendaNombre,pagina.Estado,pagina.CodigoMoneda,pagina.Subtotal,pagina.Impuesto,pagina.Total,pagina.FechaAprobacion,
-            pagina.FechaRegistro,pagina.UsuarioRegistro,pagina.FechaActualizacion,pagina.UsuarioActualizacion,pagina.OrdenCompraId,pagina.NumeroOCCliente,pagina.GuiaId,pagina.NumeroActa,pagina.EstadoGuia,pagina.AdjuntosGuia
-        FROM #Pagina AS pagina ORDER BY pagina.FechaRegistro DESC,pagina.PresupuestoId DESC OFFSET (CONVERT(BIGINT,@Pagina)-1)*20 ROWS FETCH NEXT 20 ROWS ONLY;
-        SELECT COUNT_BIG(1) AS Total FROM #Pagina AS pagina;
+            pagina.FechaRegistro,pagina.UsuarioRegistro,pagina.FechaActualizacion,pagina.UsuarioActualizacion,pagina.OrdenCompraId,pagina.NumeroOCCliente,pagina.GuiaId,pagina.NumeroActa,pagina.EstadoGuia,pagina.AdjuntosGuia,pagina.EjecucionId
+        FROM #Pagina AS pagina WHERE (@Estado IS NULL OR pagina.Estado=@Estado) ORDER BY pagina.FechaRegistro DESC,pagina.PresupuestoId DESC OFFSET (CONVERT(BIGINT,@Pagina)-1)*20 ROWS FETCH NEXT 20 ROWS ONLY;
+        SELECT COUNT_BIG(1) AS Total FROM #Pagina AS pagina WHERE (@Estado IS NULL OR pagina.Estado=@Estado);
+        SELECT pagina.Estado,COUNT_BIG(1) AS Cantidad FROM #Pagina AS pagina GROUP BY pagina.Estado;
         DROP TABLE #Pagina;
     END TRY
     BEGIN CATCH
@@ -569,7 +564,6 @@ BEGIN
     END CATCH
 END;
 GO
-
 
 -- Fuente: StoreProcedure/spu_Presupuesto_ListarImpresiones.sql
 USE [SistemaWebHYT];
@@ -598,7 +592,6 @@ BEGIN
     END CATCH
 END;
 GO
-
 
 -- Fuente: StoreProcedure/spu_Presupuesto_Obtener.sql
 USE [SistemaWebHYT];
@@ -631,15 +624,21 @@ BEGIN
            OR EXISTS(SELECT 1 FROM dbo.GuiaArchivo AS vinculo INNER JOIN @Referencias AS referencia ON referencia.Entidad=N'GuiaConformidad' AND referencia.RegistroId=CONVERT(NVARCHAR(100),vinculo.GuiaId) WHERE vinculo.ArchivoId=archivo.ArchivoId)
            OR EXISTS(SELECT 1 FROM dbo.ConfirmacionArchivo AS vinculo INNER JOIN @Referencias AS referencia ON referencia.Entidad=N'ConfirmacionFacturacion' AND referencia.RegistroId=CONVERT(NVARCHAR(100),vinculo.ConfirmacionId) WHERE vinculo.ArchivoId=archivo.ArchivoId);
         SELECT (SELECT p.PresupuestoId,p.NumeroPresupuesto AS NumeroInterno,p.ClienteId,p.TiendaId,p.TipoAtencion,p.Descripcion,p.FechaSolicitud,p.FechaRegistro,p.FechaActualizacion,p.VersionFila,
-            creador.Nombres AS UsuarioRegistro,editor.Nombres AS UsuarioActualizacion,
+            creador.Nombres AS UsuarioRegistro,editor.Nombres AS UsuarioActualizacion,contactosTienda.Nombres AS ContactosTienda,
             JSON_QUERY((SELECT revision.RevisionId, revision.PresupuestoId, revision.NumeroRevision, revision.FechaEmision, revision.NumeroCotizacionCliente, revision.ClienteNombre, revision.ClienteDocumento, revision.ClienteDireccion, revision.TiendaNombre, revision.TiendaDireccion, revision.FechaEjecucion, revision.Trimestre, revision.VigenciaTexto, revision.CodigoSAPProveedor, revision.ContratoMarco, revision.Especialidad, revision.Coordinador, revision.Encargado, revision.Consideraciones, revision.Firmante, revision.CargoFirmante, revision.CodigoMoneda, revision.CodigoTipoIGV, revision.FechaDesdeTasaIGV, revision.TasaIGVAplicada, revision.Estado, revision.Subtotal, revision.Impuesto, revision.Total, revision.FechaRegistro, revision.UsuarioRegistro, revision.FechaActualizacion, revision.UsuarioActualizacion, revision.VersionFila, revision.ZonaTexto, revision.EmpresaSnapshotJson, revision.PoliticaCalculo, revision.FechaAprobacion, revision.DescripcionTrabajo, revision.SimboloMoneda, revision.TiendaCodigo FROM dbo.PresupuestoRevision AS revision WHERE revision.RevisionId=@RevisionId AND revision.PresupuestoId=p.PresupuestoId FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)) AS Revision,
-            JSON_QUERY((SELECT partida.PartidaId, partida.NumeroLinea, partida.Grupo, partida.MaterialId, partida.PartidaTarifarioId, partida.Posicion, partida.CodigoInterno, partida.CodigoMaterialSAP, partida.CentroSAPFICO, partida.NumeroNecesidad, partida.TipoServicio, partida.Descripcion, partida.Unidad, partida.Cantidad, partida.PrecioOrigen, partida.CodigoMonedaOrigen, partida.CodigoTipoIGVOrigen, partida.PrecioUnitario, partida.BaseImponible, partida.Impuesto, partida.Total, partida.ZonasTexto, partida.OrigenPrecio, partida.MotivoPrecioManual FROM dbo.PresupuestoPartida AS partida WHERE partida.RevisionId=@RevisionId ORDER BY partida.NumeroLinea FOR JSON PATH,INCLUDE_NULL_VALUES)) AS Partidas,
+            JSON_QUERY((SELECT partida.PartidaId, partida.NumeroLinea, partida.Grupo, partida.MaterialId, partida.PartidaTarifarioId, partida.Posicion, partida.CodigoInterno, partida.CodigoMaterialSAP, COALESCE(NULLIF(LTRIM(RTRIM(partida.CentroSAPFICO)),N''),tienda.CentroSAPFICO) AS CentroSAPFICO, partida.NumeroNecesidad, partida.TipoServicio, partida.Descripcion, partida.Unidad, partida.Cantidad, partida.PrecioOrigen, partida.CodigoMonedaOrigen, partida.CodigoTipoIGVOrigen, partida.PrecioUnitario, partida.BaseImponible, partida.Impuesto, partida.Total, partida.ZonasTexto, partida.OrigenPrecio, partida.MotivoPrecioManual FROM dbo.PresupuestoPartida AS partida WHERE partida.RevisionId=@RevisionId ORDER BY partida.NumeroLinea FOR JSON PATH,INCLUDE_NULL_VALUES)) AS Partidas,
             JSON_QUERY((SELECT r.RevisionId,r.NumeroRevision,r.Estado,r.FechaEmision,r.CodigoMoneda,r.Total FROM dbo.PresupuestoRevision AS r WHERE r.PresupuestoId=p.PresupuestoId ORDER BY r.NumeroRevision DESC FOR JSON PATH,INCLUDE_NULL_VALUES)) AS Revisiones,
             oc.OrdenCompraId,oc.NumeroRegistroInterno AS NumeroInternoOC,oc.NumeroOCCliente,oc.Estado AS EstadoOC,oc.RevisionId AS RevisionOC,guia.GuiaId,guia.NumeroActa,guia.Estado AS EstadoGuia
-        FROM dbo.Presupuesto AS p INNER JOIN dbo.AspNetUsers AS creador ON creador.Id=p.UsuarioRegistro
+        FROM dbo.Presupuesto AS p INNER JOIN dbo.Tienda AS tienda ON tienda.TiendaId=p.TiendaId
+        INNER JOIN dbo.AspNetUsers AS creador ON creador.Id=p.UsuarioRegistro
         LEFT JOIN dbo.AspNetUsers AS editor ON editor.Id=p.UsuarioActualizacion
         LEFT JOIN dbo.OrdenCompraCliente AS oc ON oc.PresupuestoId=p.PresupuestoId
         LEFT JOIN dbo.GuiaConformidad AS guia ON guia.PresupuestoId=p.PresupuestoId
+        OUTER APPLY (
+            SELECT STRING_AGG(CONVERT(NVARCHAR(MAX),NULLIF(LTRIM(RTRIM(contacto.Nombre)),N'')),N' / ') WITHIN GROUP(ORDER BY contacto.ContactoId) AS Nombres
+            FROM dbo.ContactoCliente AS contacto
+            WHERE contacto.ClienteId=p.ClienteId AND contacto.TiendaId=p.TiendaId AND contacto.Activo=1
+        ) AS contactosTienda
         WHERE p.PresupuestoId=@Id AND EXISTS (SELECT 1 FROM dbo.PresupuestoRevision AS r WHERE r.RevisionId=@RevisionId AND r.PresupuestoId=@Id)
         FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) AS Datos;
         SELECT evento.EventoId,evento.Accion,evento.EstadoAnterior,evento.EstadoNuevo,evento.FechaRegistro,evento.FechaEvento,usuario.Nombres AS Usuario,evento.Motivo,evento.CambiosJson,evento.Entidad
@@ -656,7 +655,6 @@ BEGIN
     END CATCH
 END;
 GO
-
 
 -- Fuente: StoreProcedure/spu_Presupuesto_ObtenerImpresion.sql
 USE [SistemaWebHYT];
@@ -683,7 +681,6 @@ BEGIN
     END CATCH
 END;
 GO
-
 
 -- Fuente: StoreProcedure/spu_Presupuesto_RegistrarImpresion.sql
 USE [SistemaWebHYT];
@@ -728,7 +725,6 @@ BEGIN
 END;
 GO
 
-
 -- Fuente: StoreProcedure/spu_ConfiguracionHYT_Guardar.sql
 USE [SistemaWebHYT];
 GO
@@ -749,7 +745,7 @@ BEGIN
         DECLARE @Ruc NVARCHAR(20)=JSON_VALUE(@Datos,N'$.Ruc'),@Razon NVARCHAR(200)=NULLIF(LTRIM(RTRIM(JSON_VALUE(@Datos,N'$.RazonSocial'))),N'');
         IF @Ruc IS NULL OR LEN(@Ruc)<>11 OR @Ruc LIKE N'%[^0-9]%' OR @Razon IS NULL
             THROW 51305,N'[HYT_VALIDACION] Completa RUC de once dígitos y razón social.',1;
-        IF EXISTS (SELECT 1 FROM OPENJSON(@Datos) AS campo INNER JOIN (VALUES (N'Ruc',11),(N'RazonSocial',200),(N'Direccion',300),(N'CodigoUbigeo',6),(N'Telefono',50),(N'Correo',256),(N'NombreFirmante',150),(N'CargoFirmante',150),(N'ConsideracionesPresupuesto',20000)) AS limite(Nombre,Largo)
+        IF EXISTS (SELECT 1 FROM OPENJSON(@Datos) AS campo INNER JOIN (VALUES (N'Ruc',11),(N'RazonSocial',200),(N'Direccion',300),(N'CodigoUbigeo',6),(N'Telefono',50),(N'Correo',256),(N'NombreFirmante',150),(N'CargoFirmante',150),(N'ConsideracionesPresupuesto',20000),(N'SubtituloCotizacion',2000)) AS limite(Nombre,Largo)
             ON limite.Nombre=campo.[key] COLLATE DATABASE_DEFAULT WHERE LEN(campo.value)>limite.Largo)
             THROW 51306,N'[HYT_VALIDACION] Un campo supera su longitud permitida.',1;
         DECLARE @CodigoUbigeo CHAR(6)=NULLIF(LTRIM(RTRIM(JSON_VALUE(@Datos,N'$.CodigoUbigeo'))),N'');
@@ -757,16 +753,16 @@ BEGIN
         BEGIN TRANSACTION;
         SET @Propia=1;
         DECLARE @Anterior NVARCHAR(MAX),@Nuevo NVARCHAR(MAX),@Existe BIT=0;
-        SELECT @Existe=1,@Anterior=(SELECT empresa.Ruc,empresa.RazonSocial,empresa.Direccion,empresa.CodigoUbigeo,empresa.Telefono,empresa.Correo,empresa.NombreFirmante,empresa.CargoFirmante,empresa.ConsideracionesPresupuesto FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)
+        SELECT @Existe=1,@Anterior=(SELECT empresa.Ruc,empresa.RazonSocial,empresa.Direccion,empresa.CodigoUbigeo,empresa.Telefono,empresa.Correo,empresa.NombreFirmante,empresa.CargoFirmante,empresa.SubtituloCotizacion,empresa.ConsideracionesPresupuesto FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)
         FROM dbo.ConfiguracionHYT AS empresa WITH (UPDLOCK,HOLDLOCK) WHERE empresa.Id=1;
         IF @Existe=1 AND NOT EXISTS (SELECT 1 FROM dbo.ConfiguracionHYT AS empresa WHERE empresa.Id=1 AND empresa.VersionFila=@VersionOriginal)
             THROW 51309,N'[HYT_CONCURRENCIA] La configuración cambió. Vuelve a consultarla.',1;
         IF @Existe=0 AND @VersionOriginal IS NOT NULL THROW 51309,N'[HYT_CONCURRENCIA] La configuración ya no existe. Vuelve a consultarla.',1;
         IF @Existe=0 INSERT INTO dbo.ConfiguracionHYT (Id,Ruc,RazonSocial,UsuarioRegistro) VALUES (1,@Ruc,@Razon,@UsuarioId);
-        UPDATE dbo.ConfiguracionHYT SET Ruc=@Ruc,RazonSocial=@Razon,Direccion=JSON_VALUE(@Datos,N'$.Direccion'),CodigoUbigeo=@CodigoUbigeo,Telefono=JSON_VALUE(@Datos,N'$.Telefono'),Correo=JSON_VALUE(@Datos,N'$.Correo'),
+        UPDATE dbo.ConfiguracionHYT SET SubtituloCotizacion=CASE WHEN EXISTS(SELECT 1 FROM OPENJSON(@Datos) AS campo WHERE campo.[key]=N'SubtituloCotizacion') THEN JSON_VALUE(@Datos,N'$.SubtituloCotizacion') ELSE SubtituloCotizacion END,Ruc=@Ruc,RazonSocial=@Razon,Direccion=JSON_VALUE(@Datos,N'$.Direccion'),CodigoUbigeo=@CodigoUbigeo,Telefono=JSON_VALUE(@Datos,N'$.Telefono'),Correo=JSON_VALUE(@Datos,N'$.Correo'),
             NombreFirmante=JSON_VALUE(@Datos,N'$.NombreFirmante'),CargoFirmante=JSON_VALUE(@Datos,N'$.CargoFirmante'),ConsideracionesPresupuesto=(SELECT dato.value FROM OPENJSON(@Datos) AS dato WHERE dato.[key]=N'ConsideracionesPresupuesto'),
             FechaActualizacion=CASE WHEN @Existe=1 THEN SYSUTCDATETIME() ELSE NULL END,UsuarioActualizacion=CASE WHEN @Existe=1 THEN @UsuarioId ELSE NULL END WHERE Id=1;
-        SELECT @Nuevo=(SELECT empresa.Ruc,empresa.RazonSocial,empresa.Direccion,empresa.CodigoUbigeo,empresa.Telefono,empresa.Correo,empresa.NombreFirmante,empresa.CargoFirmante,empresa.ConsideracionesPresupuesto FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) FROM dbo.ConfiguracionHYT AS empresa WHERE empresa.Id=1;
+        SELECT @Nuevo=(SELECT empresa.Ruc,empresa.RazonSocial,empresa.Direccion,empresa.CodigoUbigeo,empresa.Telefono,empresa.Correo,empresa.NombreFirmante,empresa.CargoFirmante,empresa.SubtituloCotizacion,empresa.ConsideracionesPresupuesto FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) FROM dbo.ConfiguracionHYT AS empresa WHERE empresa.Id=1;
         DECLARE @Cambios NVARCHAR(MAX)=(SELECT JSON_QUERY(@Anterior) AS Anterior,JSON_QUERY(@Nuevo) AS Nuevo FOR JSON PATH,WITHOUT_ARRAY_WRAPPER),@Accion NVARCHAR(60)=CASE WHEN @Existe=0 THEN N'CREAR' ELSE N'ACTUALIZAR' END;
         EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@CorrelacionId,N'ConfiguracionHYT',N'1',@Accion,NULL,NULL,NULL,NULL,@Cambios;
         COMMIT TRANSACTION;
@@ -780,7 +776,6 @@ BEGIN
 END;
 GO
 
-
 -- Fuente: StoreProcedure/spu_ConfiguracionHYT_Obtener.sql
 USE [SistemaWebHYT];
 GO
@@ -793,9 +788,11 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM dbo.AspNetUsers AS usuario INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId=usuario.Id
             INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId
             WHERE usuario.Id=@UsuarioId AND usuario.Activo=1 AND permiso.CodigoPermiso=N'CONFIGURACION.CONSULTAR')
-            THROW 51300,N'[HYT_PERMISO] No tiene permiso para consultar la configuración.',1;
+            IF NOT (EXISTS(SELECT 1 FROM dbo.AspNetUsers AS u INNER JOIN dbo.AspNetUserRoles AS r ON r.UserId=u.Id INNER JOIN dbo.RolPermiso AS p ON p.RoleId=r.RoleId WHERE u.Id=@UsuarioId AND u.Activo=1 AND p.CodigoPermiso=N'PRESUPUESTOS.CONSULTAR')
+                AND EXISTS(SELECT 1 FROM dbo.AspNetUsers AS u INNER JOIN dbo.AspNetUserRoles AS r ON r.UserId=u.Id INNER JOIN dbo.RolPermiso AS p ON p.RoleId=r.RoleId WHERE u.Id=@UsuarioId AND u.Activo=1 AND p.CodigoPermiso=N'REPORTES.CONSULTAR'))
+                THROW 51300,N'[HYT_PERMISO] No tiene permiso para consultar la configuración.',1;
         IF @Pagina<1 OR @Pagina>100000000 THROW 51301,N'[HYT_VALIDACION] Página no válida.',1;
-        SELECT (SELECT empresa.Id,empresa.Ruc,empresa.RazonSocial,empresa.Direccion,empresa.CodigoUbigeo,empresa.Telefono,empresa.Correo,empresa.NombreFirmante,empresa.CargoFirmante,empresa.ConsideracionesPresupuesto,
+        SELECT (SELECT empresa.Id,empresa.Ruc,empresa.RazonSocial,empresa.Direccion,empresa.CodigoUbigeo,empresa.Telefono,empresa.Correo,empresa.NombreFirmante,empresa.CargoFirmante,empresa.SubtituloCotizacion,empresa.ConsideracionesPresupuesto,empresa.FirmaPresupuestoJson,
             empresa.FechaRegistro,creador.Nombres AS UsuarioRegistro,empresa.FechaActualizacion,editor.Nombres AS UsuarioActualizacion,empresa.VersionFila
             FROM dbo.ConfiguracionHYT AS empresa INNER JOIN dbo.AspNetUsers AS creador ON creador.Id=empresa.UsuarioRegistro
             LEFT JOIN dbo.AspNetUsers AS editor ON editor.Id=empresa.UsuarioActualizacion WHERE empresa.Id=1
@@ -813,7 +810,6 @@ BEGIN
     END CATCH
 END;
 GO
-
 
 -- Fuente: Script/015_PermisosEtapa5.sql
 USE [SistemaWebHYT];

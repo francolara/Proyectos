@@ -1,4 +1,4 @@
-@* Firma: FRANCO LARA - 06/11/2026 | Configuración HYT con departamento, provincia y distrito después de dirección. *@
+@* Firma: FRANCO LARA - 06/11/2026 | Configuración HYT con ubigeo, tarjeta de configuración de presupuesto con subtítulo, firmante, cargo y consideraciones y firma JPG/PNG en Cloudflare con tarjeta y cabecera compactas. *@
 @using GestionServicios.Web.ViewModels.Maintenance
 @using GestionServicios.Application.Maintenance
 @model CompanyModel
@@ -9,13 +9,24 @@
 @if(TempData["Notice"] is string notice){<p role="status">@notice</p>}
 <form asp-action="Save" method="post" class="hyt-panel hyt-master-form" data-hyt-save><div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
 <input name="Id" type="hidden" value="@Model.Input.Id" /><input name="RowVersion" type="hidden" value="@Model.Input.RowVersion" />
-<fieldset disabled="@(!Model.CanEdit)" class="hyt-budget-fieldset"><legend>Identificación y datos de contacto</legend><div class="hyt-master-fields">
-@foreach(var field in CompanySettings.Definition.Fields){<div class="hyt-field @(field.Kind is "LongText" or "Ubigeo"?"hyt-field-wide":null)"><label for="@("company-"+field.Name)">@field.Label @(field.Required?"*":"")</label>@if(field.Kind=="Ubigeo"){
+<fieldset disabled="@(!Model.CanEdit)" class="hyt-budget-fieldset"><legend class="hyt-sr-only">Datos de HYT</legend>
+@foreach(var budgetSection in new[]{false,true})
+{
+    var budgetFields=new[]{"SubtituloCotizacion","NombreFirmante","CargoFirmante","ConsideracionesPresupuesto"};
+<section class="@(budgetSection?"hyt-panel hyt-company-budget-settings":null)" aria-labelledby="@(budgetSection?"company-budget-heading":"company-contact-heading")">
+<h2 id="@(budgetSection?"company-budget-heading":"company-contact-heading")">@(budgetSection?"Configuración de presupuesto":"Identificación y datos de contacto")</h2><div class="hyt-master-fields">
+@foreach(var field in CompanySettings.Definition.Fields.Where(field=>budgetFields.Contains(field.Name)==budgetSection)){<div class="hyt-field @(field.Kind is "LongText" or "Ubigeo"?"hyt-field-wide":null)"><label for="@("company-"+field.Name)">@field.Label @(field.Required?"*":"")</label>@if(field.Kind=="Ubigeo"){
 <div data-ubigeo data-value="@Model.Input.Fields.GetValueOrDefault("CodigoUbigeo")"><div class="hyt-master-fields">
 @foreach(var level in new[]{("Departments","Departamento"),("Provinces","Provincia"),("Districts","Distrito")}){<div class="hyt-field"><label for="company-@level.Item1">@level.Item2</label><select id="company-@level.Item1" data-ubigeo-level="@level.Item1" name="@(level.Item1=="Districts"?"Fields[CodigoUbigeo]":null)"><option value="">Selecciona</option>@foreach(var option in Model.Catalogs.GetValueOrDefault(level.Item1)??[]){<option value="@option.Code">@option.Label</option>}</select></div>}
 </div></div>
 }else if(field.Kind=="LongText"){<textarea id="@("company-"+field.Name)" name="Fields[@field.Name]" rows="6" maxlength="@field.MaxLength">@Model.Input.Fields.GetValueOrDefault(field.Name)</textarea>}else{<input id="@("company-"+field.Name)" name="Fields[@field.Name]" value="@Model.Input.Fields.GetValueOrDefault(field.Name)" maxlength="@field.MaxLength" required="@field.Required" type="@(field.Kind=="Email"?"email":"text")" />}</div>}
-</div>@if(Model.CanEdit){<button type="submit" class="hyt-button-primary">Guardar datos de HYT</button>}</fieldset></form>
+</div></section>
+}
+@if(Model.CanEdit){<button type="submit" class="hyt-button-primary">Guardar datos de HYT</button>}</fieldset></form>
+<section class="hyt-panel hyt-company-signature" aria-labelledby="company-signature-heading"><header class="hyt-signature-heading"><h2 id="company-signature-heading">Subir firma para presupuesto</h2></header>
+@if(!string.IsNullOrWhiteSpace(Model.Record?.Text("FirmaPresupuestoJson"))){<img src="@Url.Action("Signature")" alt="Firma para presupuesto" class="hyt-signature-preview" />}
+@if(Model.CanEdit){<form method="post" asp-action="UploadSignature" enctype="multipart/form-data" class="hyt-signature-form" data-hyt-save><input type="hidden" name="rowVersion" value="@Model.Input.RowVersion" /><div class="hyt-field"><label for="budget-signature">Firma en JPG o PNG</label><input id="budget-signature" type="file" name="signature" accept="image/png,image/jpeg,.png,.jpg,.jpeg" required /></div><p>Hasta 2 MB. La firma se utilizará en las nuevas impresiones.</p><button type="submit" class="hyt-button-primary">Subir firma para presupuesto</button></form>}
+</section>
 @if(Model.Record is not null){<partial name="_TraceSummary" model="@(TraceSummary.From(Model.Record.Text))" />}
 
 @section Scripts{<script src="~/hyt-ubigeo.js" asp-append-version="true" defer></script>}

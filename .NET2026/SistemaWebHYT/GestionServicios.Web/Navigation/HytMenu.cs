@@ -17,7 +17,7 @@ public static class HytMenu
         new("tarifarios", "Tarifarios", "Comercial", "TARIFARIOS.CONSULTAR"),
         new("presupuestos", "Presupuestos", "Comercial", "PRESUPUESTOS.CONSULTAR"),
         new("oc-cliente", "Orden de Compra - Cliente", "Seguimiento", "OC_CLIENTE.CONSULTAR"),
-        new("guias", "Guia (Acta de conformidad)", "Seguimiento", "GUIAS.CONSULTAR"),
+        new("guias", "Guía", "Seguimiento", "GUIAS.CONSULTAR"),
         new("reportes", "Reportes", "Consultas", "REPORTES.CONSULTAR"),
         new("usuarios", "Usuarios y permisos", "Administración", "USUARIOS.CONSULTAR"),
         new("configuracion", "Configuración HYT", "Administración", "CONFIGURACION.CONSULTAR"),

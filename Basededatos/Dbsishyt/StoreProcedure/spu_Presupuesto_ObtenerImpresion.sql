@@ -3,14 +3,17 @@
 -- Create date:   03/11/2026
 -- Description:   Recupera HTML histórico conservado con permiso de presupuesto e impresión.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 07/11/2026 | Valida permiso de descarga de la impresión.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_Presupuesto_ObtenerImpresion
-    @UsuarioId NVARCHAR(128),@ImpresionId BIGINT
+    @UsuarioId NVARCHAR(128),@ImpresionId BIGINT,@Descargar BIT=0
 AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
+        IF @Descargar=1 AND dbo.fn_HYTPermiso(@UsuarioId,N'PRESUPUESTOS.DESCARGAR')=0
+            THROW 51700,N'[HYT_PERMISO] No tiene permiso para descargar el presupuesto.',1;
         IF (SELECT COUNT(DISTINCT permiso.CodigoPermiso) FROM dbo.AspNetUsers AS usuario INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId=usuario.Id
             INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId
             WHERE usuario.Id=@UsuarioId AND usuario.Activo=1 AND permiso.CodigoPermiso IN (N'PRESUPUESTOS.CONSULTAR',N'REPORTES.CONSULTAR'))<>2

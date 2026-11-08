@@ -9,7 +9,7 @@ sealed class TestPrintRepository:IBudgetPrintRepository
     {
         var id=(long)documents.Count+1;documents[id]=new(id,revisionId,revisionId,format,templateVersion,DateTimeOffset.UtcNow,"Operador",html,Convert.ToHexString(SHA256.HashData(Encoding.Unicode.GetBytes(html))));return Task.FromResult(id);
     }
-    public Task<BudgetPrint?> GetAsync(string actor,long printId,CancellationToken ct)=>Task.FromResult(documents.GetValueOrDefault(printId));
+    public Task<BudgetPrint?> GetAsync(string actor,long printId,CancellationToken ct,bool download=false)=>Task.FromResult(documents.GetValueOrDefault(printId));
     public Task<BudgetPrintPage> ListAsync(string actor,long revisionId,int page,CancellationToken ct)
     {
         var rows=documents.Values.Where(row=>row.RevisionId==revisionId).OrderByDescending(row=>row.Id).ToArray();

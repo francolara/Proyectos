@@ -3,7 +3,7 @@
 -- Create date:   03/11/2026
 -- Description:   Recupera revisión y partidas históricas, revisiones y auditoría del expediente paginada y filtrada por permisos.
 -- =============================================
--- Firma: FRANCO LARA | Create date: 06/11/2026 | Numeración visible del presupuesto por año/mes de registro en Lima y correlativo mensual.
+-- Firma: FRANCO LARA | Create date: 06/11/2026 | Numeración visible por año/mes de registro en Lima y correlativo mensual. Centro SAP FICO desde tienda cuando falta en partidas anteriores. Contactos activos de la tienda para impresión anterior.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_Presupuesto_Obtener
@@ -34,15 +34,21 @@ BEGIN
            OR EXISTS(SELECT 1 FROM dbo.GuiaArchivo AS vinculo INNER JOIN @Referencias AS referencia ON referencia.Entidad=N'GuiaConformidad' AND referencia.RegistroId=CONVERT(NVARCHAR(100),vinculo.GuiaId) WHERE vinculo.ArchivoId=archivo.ArchivoId)
            OR EXISTS(SELECT 1 FROM dbo.ConfirmacionArchivo AS vinculo INNER JOIN @Referencias AS referencia ON referencia.Entidad=N'ConfirmacionFacturacion' AND referencia.RegistroId=CONVERT(NVARCHAR(100),vinculo.ConfirmacionId) WHERE vinculo.ArchivoId=archivo.ArchivoId);
         SELECT (SELECT p.PresupuestoId,p.NumeroPresupuesto AS NumeroInterno,p.ClienteId,p.TiendaId,p.TipoAtencion,p.Descripcion,p.FechaSolicitud,p.FechaRegistro,p.FechaActualizacion,p.VersionFila,
-            creador.Nombres AS UsuarioRegistro,editor.Nombres AS UsuarioActualizacion,
+            creador.Nombres AS UsuarioRegistro,editor.Nombres AS UsuarioActualizacion,contactosTienda.Nombres AS ContactosTienda,
             JSON_QUERY((SELECT revision.RevisionId, revision.PresupuestoId, revision.NumeroRevision, revision.FechaEmision, revision.NumeroCotizacionCliente, revision.ClienteNombre, revision.ClienteDocumento, revision.ClienteDireccion, revision.TiendaNombre, revision.TiendaDireccion, revision.FechaEjecucion, revision.Trimestre, revision.VigenciaTexto, revision.CodigoSAPProveedor, revision.ContratoMarco, revision.Especialidad, revision.Coordinador, revision.Encargado, revision.Consideraciones, revision.Firmante, revision.CargoFirmante, revision.CodigoMoneda, revision.CodigoTipoIGV, revision.FechaDesdeTasaIGV, revision.TasaIGVAplicada, revision.Estado, revision.Subtotal, revision.Impuesto, revision.Total, revision.FechaRegistro, revision.UsuarioRegistro, revision.FechaActualizacion, revision.UsuarioActualizacion, revision.VersionFila, revision.ZonaTexto, revision.EmpresaSnapshotJson, revision.PoliticaCalculo, revision.FechaAprobacion, revision.DescripcionTrabajo, revision.SimboloMoneda, revision.TiendaCodigo FROM dbo.PresupuestoRevision AS revision WHERE revision.RevisionId=@RevisionId AND revision.PresupuestoId=p.PresupuestoId FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)) AS Revision,
-            JSON_QUERY((SELECT partida.PartidaId, partida.NumeroLinea, partida.Grupo, partida.MaterialId, partida.PartidaTarifarioId, partida.Posicion, partida.CodigoInterno, partida.CodigoMaterialSAP, partida.CentroSAPFICO, partida.NumeroNecesidad, partida.TipoServicio, partida.Descripcion, partida.Unidad, partida.Cantidad, partida.PrecioOrigen, partida.CodigoMonedaOrigen, partida.CodigoTipoIGVOrigen, partida.PrecioUnitario, partida.BaseImponible, partida.Impuesto, partida.Total, partida.ZonasTexto, partida.OrigenPrecio, partida.MotivoPrecioManual FROM dbo.PresupuestoPartida AS partida WHERE partida.RevisionId=@RevisionId ORDER BY partida.NumeroLinea FOR JSON PATH,INCLUDE_NULL_VALUES)) AS Partidas,
+            JSON_QUERY((SELECT partida.PartidaId, partida.NumeroLinea, partida.Grupo, partida.MaterialId, partida.PartidaTarifarioId, partida.Posicion, partida.CodigoInterno, partida.CodigoMaterialSAP, COALESCE(NULLIF(LTRIM(RTRIM(partida.CentroSAPFICO)),N''),tienda.CentroSAPFICO) AS CentroSAPFICO, partida.NumeroNecesidad, partida.TipoServicio, partida.Descripcion, partida.Unidad, partida.Cantidad, partida.PrecioOrigen, partida.CodigoMonedaOrigen, partida.CodigoTipoIGVOrigen, partida.PrecioUnitario, partida.BaseImponible, partida.Impuesto, partida.Total, partida.ZonasTexto, partida.OrigenPrecio, partida.MotivoPrecioManual FROM dbo.PresupuestoPartida AS partida WHERE partida.RevisionId=@RevisionId ORDER BY partida.NumeroLinea FOR JSON PATH,INCLUDE_NULL_VALUES)) AS Partidas,
             JSON_QUERY((SELECT r.RevisionId,r.NumeroRevision,r.Estado,r.FechaEmision,r.CodigoMoneda,r.Total FROM dbo.PresupuestoRevision AS r WHERE r.PresupuestoId=p.PresupuestoId ORDER BY r.NumeroRevision DESC FOR JSON PATH,INCLUDE_NULL_VALUES)) AS Revisiones,
             oc.OrdenCompraId,oc.NumeroRegistroInterno AS NumeroInternoOC,oc.NumeroOCCliente,oc.Estado AS EstadoOC,oc.RevisionId AS RevisionOC,guia.GuiaId,guia.NumeroActa,guia.Estado AS EstadoGuia
-        FROM dbo.Presupuesto AS p INNER JOIN dbo.AspNetUsers AS creador ON creador.Id=p.UsuarioRegistro
+        FROM dbo.Presupuesto AS p INNER JOIN dbo.Tienda AS tienda ON tienda.TiendaId=p.TiendaId
+        INNER JOIN dbo.AspNetUsers AS creador ON creador.Id=p.UsuarioRegistro
         LEFT JOIN dbo.AspNetUsers AS editor ON editor.Id=p.UsuarioActualizacion
         LEFT JOIN dbo.OrdenCompraCliente AS oc ON oc.PresupuestoId=p.PresupuestoId
         LEFT JOIN dbo.GuiaConformidad AS guia ON guia.PresupuestoId=p.PresupuestoId
+        OUTER APPLY (
+            SELECT STRING_AGG(CONVERT(NVARCHAR(MAX),NULLIF(LTRIM(RTRIM(contacto.Nombre)),N'')),N' / ') WITHIN GROUP(ORDER BY contacto.ContactoId) AS Nombres
+            FROM dbo.ContactoCliente AS contacto
+            WHERE contacto.ClienteId=p.ClienteId AND contacto.TiendaId=p.TiendaId AND contacto.Activo=1
+        ) AS contactosTienda
         WHERE p.PresupuestoId=@Id AND EXISTS (SELECT 1 FROM dbo.PresupuestoRevision AS r WHERE r.RevisionId=@RevisionId AND r.PresupuestoId=@Id)
         FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) AS Datos;
         SELECT evento.EventoId,evento.Accion,evento.EstadoAnterior,evento.EstadoNuevo,evento.FechaRegistro,evento.FechaEvento,usuario.Nombres AS Usuario,evento.Motivo,evento.CambiosJson,evento.Entidad

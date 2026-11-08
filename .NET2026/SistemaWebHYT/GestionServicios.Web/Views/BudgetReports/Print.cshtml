@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 06/11/2026 | Estados comerciales; nuevo formato fiel al PDF sin metadatos internos y firma desde R2. Subtítulo centrado desde configuración HYT. Ambos formatos sin metadatos internos ni despedidas duplicadas. *@
 @using GestionServicios.Web.ViewModels.Budgets
 @model BudgetPrintModel
 @* Firma: FRANCO LARA - 03/11/2026 | Documento HTML autónomo con ambas variantes y datos históricos. *@
@@ -5,13 +6,5 @@
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>@Model.Record.Text("NumeroInterno") · @Model.Text("ClienteNombre")</title><style>@Html.Raw(Model.Css)</style></head>
 <body class="@(Model.Format=="NUEVO"?"report-new":"report-old")"><aside class="report-screen-note">Documento conservado de la revisión @Model.Text("NumeroRevision"). Para imprimir o guardar como PDF utiliza la impresión del navegador (Ctrl+P).</aside>
-<main class="report-document"><header class="report-brand"><img src="@Model.Logo" alt="HYT Servicios Generales" /><div><h1>@Model.CompanyText("RazonSocial")</h1><p>RUC @Model.CompanyText("Ruc")</p>@if(!string.IsNullOrEmpty(Model.CompanyText("Direccion"))){<p>@Model.CompanyText("Direccion")</p>}<p>@Model.CompanyText("Telefono") @Model.CompanyText("Correo")</p></div></header>
-<p class="report-services">GASFITERÍA, EBANISTERÍA, ELECTRICIDAD, PINTURA LÁTEX Y LAQUEADOS, TRABAJOS EN DRYWALL, FALSOS CIELOS, CARPINTERÍA METÁLICA, REMODELACIONES, DEMOLICIONES Y ABASTECIMIENTO</p>
-<div class="report-identification"><h2>Presupuesto @Model.Record.Text("NumeroInterno")</h2><span>Revisión @Model.Text("NumeroRevision") · @Model.Record.Text("TipoAtencion") · @Model.State</span></div>
-@if(Model.State is not ("ENVIADO" or "APROBADO")){<p class="report-status">@Model.State · Documento de la revisión indicada</p>}
-@if(Model.Format=="ANTERIOR"){<partial name="_Previous" model="Model" />}else{<partial name="_New" model="Model" />}
-<section class="report-totals" aria-label="Resumen de importes"><dl><dt>@(Model.Format=="ANTERIOR"?"Costo final sin IGV":"Base imponible / subtotal sin IGV")</dt><dd>@Model.Symbol @Model.Total("Subtotal")</dd><dt>IGV @((BudgetPrintModel.Amount(Model.Revision,"TasaIGVAplicada")!.Value*100).ToString("0.00",System.Globalization.CultureInfo.GetCultureInfo("es-PE"))) %</dt><dd>@Model.Symbol @Model.Total("Impuesto")</dd><dt class="report-grand-total">Total con IGV (@Model.Currency)</dt><dd class="report-grand-total">@Model.Symbol @Model.Total("Total")</dd></dl></section>
-<section class="report-notes"><h3>@(Model.Format=="ANTERIOR"?"Notas":"Consideraciones")</h3><p>Los precios unitarios @(Model.IncludesTax?"incluyen":"no incluyen") IGV. Los precios están expresados en @Model.CurrencyLabel.</p><p class="report-multiline">@Model.Text("Consideraciones")</p></section>
-<section class="report-signature"><p>Sin otro particular, quedamos a su disposición.</p><p>Muy atentamente,</p><strong>@(string.IsNullOrWhiteSpace(Model.Text("Firmante"))?Model.CompanyText("NombreFirmante"):Model.Text("Firmante"))</strong><p>@(string.IsNullOrWhiteSpace(Model.Text("CargoFirmante"))?Model.CompanyText("CargoFirmante"):Model.Text("CargoFirmante"))</p></section>
-<footer class="report-footer">@Model.Record.Text("NumeroInterno") · Revisión @Model.Text("NumeroRevision") · @Model.Currency · Generado @PeruDate.Display(Model.GeneratedAt)</footer>
-</main></body></html>
+@if(Model.Format=="NUEVO"){<partial name="_New" model="Model" />}else{<partial name="_Previous" model="Model" />}
+</body></html>

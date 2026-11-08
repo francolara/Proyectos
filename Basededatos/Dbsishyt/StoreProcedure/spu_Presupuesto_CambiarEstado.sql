@@ -3,6 +3,12 @@
 -- Create date:   03/11/2026
 -- Description:   Transiciones auditadas y regularización de emergencia con OC sin modificar contenido.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   06/11/2026
+-- Description:   Retira VENCIDO; reenvío de observado y motivo en observación, rechazo o cancelación. Guía sin flujo de estados.
+-- =============================================
+-- Firma: FRANCO LARA | Create date: 07/11/2026 | Comprueba el permiso específico del perfil antes de realizar la acción.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_Presupuesto_CambiarEstado
@@ -15,6 +21,8 @@ BEGIN
     SET XACT_ABORT ON;
     DECLARE @Propia BIT=0;
     BEGIN TRY
+        IF dbo.fn_HYTPermiso(@UsuarioId,N'PRESUPUESTOS.CAMBIAR_ESTADO') = 0
+            THROW 51700,N'[HYT_PERMISO] No tiene permiso para esta acción.',1;
         IF @@TRANCOUNT<>0 THROW 51302,N'[HYT_VALIDACION] La operación administra su transacción.',1;
         IF NOT EXISTS (SELECT 1 FROM dbo.AspNetUsers AS usuario
             INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId=usuario.Id
@@ -23,7 +31,7 @@ BEGIN
             THROW 51300,N'[HYT_PERMISO] No tiene permiso para cambiar el estado.',1;
         IF @FechaEvento IS NULL OR NULLIF(LTRIM(RTRIM(@Responsable)),N'') IS NULL OR @NuevoEstado IS NULL
             THROW 51318,N'[HYT_VALIDACION] Indica fecha y responsable de la acción.',1;
-        IF @NuevoEstado IN (N'OBSERVADO',N'RECHAZADO',N'CANCELADO',N'VENCIDO') AND NULLIF(LTRIM(RTRIM(@Motivo)),N'') IS NULL
+        IF @NuevoEstado IN (N'OBSERVADO',N'RECHAZADO',N'CANCELADO') AND NULLIF(LTRIM(RTRIM(@Motivo)),N'') IS NULL
             THROW 51318,N'[HYT_VALIDACION] Indica el motivo del cambio de estado.',1;
         BEGIN TRANSACTION;
         SET @Propia=1;
@@ -36,17 +44,15 @@ BEGIN
         IF @Estado IS NULL THROW 51309,N'[HYT_CONCURRENCIA] La revisión cambió o no pertenece al presupuesto.',1;
         IF EXISTS (SELECT 1 FROM dbo.PresupuestoRevision AS r WHERE r.PresupuestoId=@PresupuestoId AND r.NumeroRevision>(SELECT origen.NumeroRevision FROM dbo.PresupuestoRevision AS origen WHERE origen.RevisionId=@RevisionId))
             THROW 51319,N'[HYT_VALIDACION] Solo se cambia el estado de la última revisión.',1;
-        IF NOT ((@Estado=N'BORRADOR' AND @NuevoEstado IN (N'ENVIADO',N'CANCELADO'))
-            OR (@Estado=N'ENVIADO' AND @NuevoEstado IN (N'OBSERVADO',N'APROBADO',N'RECHAZADO',N'VENCIDO',N'CANCELADO'))
-            OR (@Estado IN (N'OBSERVADO',N'RECHAZADO',N'VENCIDO',N'APROBADO') AND @NuevoEstado=N'CANCELADO'))
+        IF NOT ((@Estado IN (N'BORRADOR',N'OBSERVADO') AND @NuevoEstado IN (N'ENVIADO',N'CANCELADO'))
+            OR (@Estado=N'ENVIADO' AND @NuevoEstado IN (N'OBSERVADO',N'APROBADO',N'RECHAZADO',N'CANCELADO'))
+            OR (@Estado IN (N'RECHAZADO',N'VENCIDO',N'APROBADO') AND @NuevoEstado=N'CANCELADO'))
             THROW 51319,N'[HYT_VALIDACION] La transición no está permitida. Para corregir contenido crea otra revisión.',1;
         IF EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS oc WITH (HOLDLOCK) WHERE oc.PresupuestoId=@PresupuestoId)
             AND NOT EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS oc INNER JOIN dbo.Presupuesto AS p ON p.PresupuestoId=oc.PresupuestoId
                 WHERE oc.PresupuestoId=@PresupuestoId AND oc.RevisionId=@RevisionId AND oc.Estado<>N'CANCELADA' AND p.TipoAtencion=N'EMERGENCIA'
                 AND ((@Estado=N'BORRADOR' AND @NuevoEstado=N'ENVIADO') OR (@Estado=N'ENVIADO' AND @NuevoEstado=N'APROBADO')))
             THROW 51320,N'[HYT_VALIDACION] La revisión vinculada a una OC no permite este cambio.',1;
-        IF @NuevoEstado=N'CANCELADO' AND EXISTS (SELECT 1 FROM dbo.GuiaConformidad AS guia WITH (HOLDLOCK) WHERE guia.PresupuestoId=@PresupuestoId AND guia.Estado<>N'ANULADA')
-            THROW 51320,N'[HYT_VALIDACION] No se puede cancelar mientras exista una guía vigente.',1;
         IF @NuevoEstado=N'ENVIADO'
         BEGIN
             IF @Total IS NULL OR NOT EXISTS (SELECT 1 FROM dbo.PresupuestoPartida AS linea WHERE linea.RevisionId=@RevisionId)

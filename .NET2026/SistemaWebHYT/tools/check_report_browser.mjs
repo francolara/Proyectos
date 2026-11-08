@@ -67,9 +67,42 @@ try {
     await navigate('/Acceso');
     await evaluate(`document.querySelector('#UserName').value=${JSON.stringify(fixture.user)};document.querySelector('#Password').value=${JSON.stringify(fixture.password)};document.querySelector('form').requestSubmit()`);
     await wait("location.pathname==='/'");
-    const output=path.join(project,'entregables','preview');await fs.mkdir(output,{recursive:true});
+    await navigate('/Configuracion/HYT');
+    if(!await evaluate("document.querySelector('[name=\"Fields[SubtituloCotizacion]\"]').value.includes('hytserviciosg@gmail.com - rene_torres35@hotmail.com')"))throw new Error('Subtítulo completo no está disponible en configuración.');
+    const documentNode=await send('DOM.getDocument');const fileNode=await send('DOM.querySelector',{nodeId:documentNode.root.nodeId,selector:'#budget-signature'});
+    await send('DOM.setFileInputFiles',{nodeId:fileNode.nodeId,files:[path.join(project,'GestionServicios.Web','wwwroot','images','logo-hyt.png')]});
+    await evaluate("document.querySelector('#budget-signature').closest('form').requestSubmit()");
+    await wait("document.querySelector('img[alt=\"Firma para presupuesto\"]')?.naturalWidth>0");
+    await navigate('/Presupuestos/Nuevo');
+    if(await evaluate("!!document.querySelector('.hyt-budget-print-card')"))throw new Error('Impresión visible antes de guardar.');
+    for(const route of ['/Presupuestos/1','/Presupuestos/1/Editar']){
+        await navigate(route);
+        if(!await evaluate("(()=>{const header=document.querySelector('.hyt-budget-header'),card=header?.querySelector('.hyt-budget-print-card'),form=card?.querySelector('form');return card&&form.method==='post'&&form.target==='_blank'&&form.querySelector('[name=__RequestVerificationToken]')&&card.querySelectorAll('button[name=format]').length===2&&[...card.querySelectorAll('button')].every(e=>!e.disabled)&&!document.body.textContent.includes('Consultar impresiones conservadas');})()"))throw new Error('Tarjeta de impresión incorrecta en '+route);
+    }
+    await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
+    await navigate('/Presupuestos/1');
+    await fs.mkdir(path.join(project,'entregables','preview','anterior-contacto-tienda'),{recursive:true});
+    let headingShot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});await fs.writeFile(path.join(project,'entregables','preview','anterior-contacto-tienda','cabecera-impresion.png'),Buffer.from(headingShot.data,'base64'));
+    await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+    if(!await evaluate("document.documentElement.scrollWidth<=innerWidth+1&&[...document.querySelectorAll('.hyt-budget-print-card button')].every(b=>b.getBoundingClientRect().width<=innerWidth)"))throw new Error('Tarjeta desborda en móvil.');
+    headingShot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});await fs.writeFile(path.join(project,'entregables','preview','anterior-contacto-tienda','cabecera-impresion-movil.png'),Buffer.from(headingShot.data,'base64'));
+    await send('Emulation.setDeviceMetricsOverride',{width:1280,height:1000,deviceScaleFactor:1,mobile:false});
+    await navigate('/Presupuestos/1');
+    for(const format of ['NUEVO','ANTERIOR']){
+        const prior=new Set((await send('Target.getTargets')).targetInfos.map(t=>t.targetId));
+        await click('.hyt-budget-print-card button[value="'+format+'"]');
+        let target;
+        for(let i=0;i<100;i++){
+            target=(await send('Target.getTargets')).targetInfos.find(t=>!prior.has(t.targetId)&&t.url.startsWith(fixture.url+'/Presupuestos/Impresiones/'));
+            if(target)break;await delay(100);
+        }
+        if(!target)throw new Error('Botón no generó impresión: '+format);
+        await send('Target.closeTarget',{targetId:target.targetId});
+        console.log('OK botón real: '+format+' abre impresión en pestaña nueva.');
+    }
+    const output=path.join(project,'entregables','preview','anterior-contacto-tienda');await fs.mkdir(output,{recursive:true});
     const results=[];
-    for(const [caseName,budget,format] of [['nuevo-una',1,'NUEVO'],['anterior-una',1,'ANTERIOR'],['nuevo-varias',50,'NUEVO'],['anterior-varias',50,'ANTERIOR'],['nuevo-vacio',51,'NUEVO'],['nuevo-usd',52,'NUEVO'],['nuevo-descripcion-larga',54,'NUEVO']]){
+    for(const [caseName,budget,format] of [['nuevo-una',1,'NUEVO'],['anterior-una',1,'ANTERIOR'],['nuevo-varias',50,'NUEVO'],['anterior-varias',50,'ANTERIOR'],['nuevo-vacio',51,'NUEVO'],['nuevo-usd',52,'NUEVO'],['nuevo-descripcion-larga',54,'NUEVO'],['anterior-vacio',51,'ANTERIOR'],['anterior-usd',52,'ANTERIOR'],['anterior-descripcion-larga',54,'ANTERIOR']]){
         await navigate('/Presupuestos/'+budget);
         const result=await evaluate(`(async()=>{
             const token=document.querySelector('input[name="__RequestVerificationToken"]').value;
@@ -79,9 +112,20 @@ try {
         if(result.status!==200||!result.url.includes('/Presupuestos/Impresiones/'))throw new Error('No se generó '+caseName+': '+JSON.stringify(result));
         await navigate(new URL(result.url).pathname);
         await evaluate('Promise.all([...document.images].map(image=>image.decode()))');
-        const state=await evaluate(`({columns:document.querySelector('thead tr').cells.length,rows:document.querySelectorAll('tbody tr').length,text:document.body.innerText,images:[...document.images].every(image=>image.complete&&image.naturalWidth>0)})`);
+        const state=await evaluate(`({columns:document.querySelector('.report-detail thead tr').cells.length,rows:document.querySelectorAll('tbody tr').length,text:document.body.innerText,images:[...document.images].every(image=>image.complete&&image.naturalWidth>0)})`);
         if(state.columns!==(format==='NUEVO'?11:7)||!state.images||state.text.includes('#N/A'))throw new Error('Estructura incorrecta: '+caseName);
-        if(caseName==='nuevo-usd'&&(!state.text.includes('USD')||!state.text.includes('$ 118.00')||!state.text.includes('incluyen IGV')))throw new Error('Moneda o IGV incorrectos.');
+        if(caseName==='nuevo-usd'&&(!state.text.includes('USD')||!state.text.includes('$ 118.00')))throw new Error('Moneda o IGV incorrectos.');
+        if(!await evaluate("(()=>{const p=document.querySelector('.new-services,.report-services');return p.textContent.includes('hytserviciosg@gmail.com - rene_torres35@hotmail.com') && getComputedStyle(p).textAlign==='center';})()"))throw new Error('Subtítulo configurado no está completo o centrado.');
+        if(caseName==='nuevo-una'&&!await evaluate("[...document.querySelectorAll('.report-detail tbody tr')].some(row=>row.cells.length===11&&row.cells[4].textContent.trim()==='0001-A'&&row.cells[1].textContent.trim()==='F001')"))throw new Error('Posición o centro FICO no están mapeados.');
+        if(caseName.endsWith('-una')&&state.text.includes('Servicio de prueba'))throw new Error('Se imprime la descripción interna del trabajo.');
+        if(caseName==='nuevo-una'){
+            const boxes=await evaluate(`(()=>{const cells=[...document.querySelectorAll('.new-zone td,.new-supplier td')],rects=cells.map(e=>e.getBoundingClientRect()),number=document.querySelector('.new-client tr:nth-child(2) td:nth-child(3)'),date=number.nextElementSibling,table=number.closest('table'),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');ctx.font=getComputedStyle(number).font;return {uniform:Math.max(...rects.map(r=>r.height))-Math.min(...rects.map(r=>r.height))<.2,wide:rects.every(r=>r.width>=38.5*96/25.4),center:cells.every(e=>getComputedStyle(e).textAlign==='center'),dateWidth:date.getBoundingClientRect().width/table.getBoundingClientRect().width,numberFits:ctx.measureText('202611000001').width+6<number.clientWidth};})()`);
+            if(!boxes.uniform||!boxes.wide||!boxes.center||!boxes.numberFits||Math.abs(boxes.dateWidth-.093)>.005)throw new Error('Cabecera o cuadros incorrectos: '+JSON.stringify(boxes));
+        }
+        if(!await evaluate("(()=>{const p=document.querySelector('.new-services');return getComputedStyle(document.body).fontFamily.startsWith('Arial')&&getComputedStyle(document.querySelector('.report-detail')).fontFamily.startsWith('Arial')&&getComputedStyle(p).fontWeight==='400'&&getComputedStyle(p).borderTopColor==='rgb(201, 22, 32)';})()"))throw new Error('Tipografía o línea roja incorrecta.');
+        if(format==='ANTERIOR'&&!await evaluate("(()=>{const t=document.querySelector('.report-old-table'),headers=[...t.tHead.rows[0].cells].map(c=>c.textContent.trim()),text=document.querySelector('.old-document').textContent;return headers.length===7&&headers[0]==='ITEM'&&headers[1]==='DESCRIPCIÓN'&&headers[6]==='TOTAL'&&getComputedStyle(t.tHead.rows[0].cells[0]).backgroundColor==='rgb(192, 0, 0)'&&text.includes('Coordinador/Encargado:')&&document.querySelector('[data-store-contact]').textContent.trim()==='Contacto de tienda'&&!text.includes('Registrado ·')&&!text.includes('Generado ')&&!text.includes('Los precios unitarios')&&text.split('Muy atentamente').length===2&&document.querySelector('.report-signature-image')?.naturalWidth>0;})()"))throw new Error('Formato anterior no cumple referencia o ajustes comunes.');
+        if(caseName==='anterior-usd'&&!await evaluate("document.querySelector('.old-summary').textContent.includes('$ 100.00')&&!document.querySelector('.old-summary').textContent.includes('$ 18.00')&&!document.querySelector('.old-summary').textContent.includes('$ 118.00')"))throw new Error('Resumen neto del formato anterior incorrecto.');
+        if(format==='ANTERIOR'&&!await evaluate("document.querySelector('.old-summary').rows.length===1&&document.querySelector('.old-context').rows[0].cells[1].textContent.trim()==='Tienda Centro'"))throw new Error('Resumen o nombre de tienda incorrectos.');
         const screenshot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});
         if(caseName.endsWith('-una'))await fs.writeFile(path.join(output,caseName+'.png'),Buffer.from(screenshot.data,'base64'));
         const pdf=await send('Page.printToPDF',{printBackground:true,preferCSSPageSize:true});

@@ -5,11 +5,11 @@ public sealed record BudgetVersion(long BudgetId,long RevisionId,string Number,i
 public sealed record BudgetListItem(long BudgetId,string Number,string Description,string Type,long ClientId,long StoreId,long RevisionId,int RevisionNumber,
     string ClientName,string StoreName,string State,string Currency,decimal? Net,decimal? Tax,decimal? Total,DateOnly? ApprovedOn,
     DateTimeOffset CreatedAt,string CreatedBy,DateTimeOffset? UpdatedAt,string? UpdatedBy,long? PurchaseOrderId,string? CustomerOrderNumber,
-    long? GuideId,string? GuideNumber,string? GuideState,long GuideAttachments);
-public sealed record BudgetPage(IReadOnlyList<BudgetListItem> Rows,long Total,int Page);
+    long? GuideId,string? GuideNumber,string? GuideState,long GuideAttachments,long? ExecutionId=null);
+public sealed record BudgetPage(IReadOnlyList<BudgetListItem> Rows,long Total,int Page,IReadOnlyDictionary<string,long>? StateCounts=null);
 public sealed record BudgetAudit(long Id,string Action,string? PreviousState,string? NewState,DateTimeOffset RecordedAt,DateOnly? EventDate,string User,string? Reason,string? Changes,string? Entity=null)
 {
-    public string EntityLabel=>Entity switch{"Presupuesto"=>"Presupuesto","PresupuestoRevision"=>"Revisión de presupuesto","OrdenCompraCliente"=>"Orden de Compra - Cliente","GuiaConformidad"=>"Guía / acta","ConfirmacionFacturacion"=>"Confirmación del cliente","Ejecucion"=>"Ejecución del trabajo","ArchivoAdjunto"=>"Archivo adjunto",_=>"Registro"};
+    public string EntityLabel=>Entity switch{"Presupuesto"=>"Presupuesto","PresupuestoRevision"=>"Revisión de presupuesto","OrdenCompraCliente"=>"Orden de Compra - Cliente","GuiaConformidad"=>"Guía","ConfirmacionFacturacion"=>"Confirmación del cliente","Ejecucion"=>"Ejecución del trabajo","ArchivoAdjunto"=>"Archivo adjunto",_=>"Registro"};
 }
 public sealed record BudgetRecord(JsonElement Data,IReadOnlyList<BudgetAudit> Audit,long AuditTotal)
 {
@@ -22,7 +22,7 @@ public sealed record TariffChoice(long TariffLineId,long MaterialId,string Inter
 public sealed record TariffChoicePage(IReadOnlyList<TariffChoice> Rows,long Total,int Page);
 public interface IBudgetRepository
 {
-    Task<BudgetPage> ListAsync(string actor,DateTimeOffset from,DateTimeOffset until,string? search,int page,string? state,CancellationToken ct,string? client=null,string? store=null);
+    Task<BudgetPage> ListAsync(string actor,DateTimeOffset from,DateTimeOffset until,string? search,int page,string? state,CancellationToken ct,string? client=null,string? store=null,string? type=null,bool pendingGuide=false,bool pendingOrder=false);
     Task<BudgetRecord?> GetAsync(string actor,long id,long? revisionId,int auditPage,CancellationToken ct);
     Task<BudgetVersion> SaveAsync(string actor,string payload,BudgetVersion? original,bool newRevision,CancellationToken ct);
     Task ChangeStateAsync(string actor,BudgetVersion original,string newState,DateOnly eventDate,string responsible,string? reason,CancellationToken ct);

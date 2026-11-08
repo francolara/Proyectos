@@ -1,3 +1,4 @@
+// Firma: FRANCO LARA - 06/11/2026 | Almacenamiento privado en subcarpetas seguras por registro; conserva claves históricas.
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using GestionServicios.Application.Followup;
@@ -5,7 +6,7 @@ using GestionServicios.Application.Maintenance;
 namespace GestionServicios.Web.Services;
 public interface IDocumentFileStore
 {
-    Task<DocumentAttachment> SaveAsync(IFormFile upload,DocumentKind kind,Guid operation,CancellationToken ct);
+    Task<DocumentAttachment> SaveAsync(IFormFile upload,DocumentKind kind,Guid operation,CancellationToken ct,string? folder=null);
     Task<byte[]?> ReadAsync(DocumentAttachment file,CancellationToken ct);
 }
 public sealed class PrivateDocumentFileStore(IConfiguration configuration,IWebHostEnvironment environment):IDocumentFileStore
@@ -25,12 +26,12 @@ public sealed class PrivateDocumentFileStore(IConfiguration configuration,IWebHo
     }
     private string Location(string key)
     {
-        if(!Regex.IsMatch(key,@"^[a-f0-9]{32}\.(pdf|png|jpg)$",RegexOptions.CultureInvariant))throw new MaintenanceException("La referencia del archivo no es válida.");
-        return Path.Combine(Root,key);
+        DocumentUploadRules.Reference(key);
+        return Path.Combine(Root,key.Replace('/',Path.DirectorySeparatorChar));
     }
-    private async Task<DocumentAttachment> SaveCoreAsync(IFormFile upload,DocumentKind kind,Guid operation,CancellationToken ct)
+    private async Task<DocumentAttachment> SaveCoreAsync(IFormFile upload,DocumentKind kind,Guid operation,CancellationToken ct,string? folder=null)
     {
-        var validated=await DocumentUploadRules.ValidateAsync(upload,kind,operation,ct);var bytes=validated.Bytes;var metadata=validated.Metadata;var key=metadata.ClaveAlmacenamiento;var location=Location(key);Directory.CreateDirectory(Root);
+        var validated=await DocumentUploadRules.ValidateAsync(upload,kind,operation,ct,folder);var bytes=validated.Bytes;var metadata=validated.Metadata;var key=metadata.ClaveAlmacenamiento;var location=Location(key);Directory.CreateDirectory(Path.GetDirectoryName(location)!);
         var staging=Path.Combine(Root,"stage-"+Guid.NewGuid().ToString("N")+".tmp");
         try
         {
@@ -55,9 +56,9 @@ public sealed class PrivateDocumentFileStore(IConfiguration configuration,IWebHo
         if(!Convert.ToHexString(SHA256.HashData(bytes)).Equals(file.SHA256,StringComparison.OrdinalIgnoreCase))throw new MaintenanceException("El archivo no coincide con su huella de integridad.");
         return bytes;
     }
-    public async Task<DocumentAttachment> SaveAsync(IFormFile upload,DocumentKind kind,Guid operation,CancellationToken ct)
+    public async Task<DocumentAttachment> SaveAsync(IFormFile upload,DocumentKind kind,Guid operation,CancellationToken ct,string? folder=null)
     {
-        try{return await SaveCoreAsync(upload,kind,operation,ct);}
+        try{return await SaveCoreAsync(upload,kind,operation,ct,folder);}
         catch(Exception error)when(error is IOException or UnauthorizedAccessException){throw new MaintenanceException("No se pudo conservar el adjunto. Revisa el registro antes de reintentar.");}
     }
     public async Task<byte[]?> ReadAsync(DocumentAttachment file,CancellationToken ct)

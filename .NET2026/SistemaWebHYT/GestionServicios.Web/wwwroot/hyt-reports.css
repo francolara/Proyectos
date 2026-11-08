@@ -12,3 +12,13 @@
 .hyt-report thead{display:table-header-group}.hyt-report tr{break-inside:avoid}.hyt-report a{color:inherit;text-decoration:none}
 .hyt-report h1{font-size:20px}.hyt-report h2{font-size:14px}.hyt-report .hyt-master-trace{padding:0;margin-bottom:12px}
 }
+/* Firma: FRANCO LARA - 06/11/2026 | Reporte integral con referencias legibles y salida HTML horizontal completa. */
+.hyt-report-summary{margin:20px 0;padding:16px 20px;border-left:4px solid var(--hyt-red,#c91620);background:var(--hyt-surface,#fff)}
+.hyt-report-summary h2{margin:0 0 8px;font-size:20px}.hyt-report-summary p{line-height:1.6;margin:6px 0}.hyt-report-summary span{margin-right:20px}
+.hyt-report-table{min-width:1650px}.hyt-report-table td{vertical-align:top}.hyt-report-table small{display:block;margin-top:6px;color:var(--hyt-muted,#626262);font-size:11px}.hyt-report-table strong{display:block}.hyt-report-money{font-variant-numeric:tabular-nums;white-space:nowrap}
+.hyt-report-print{margin:0;background:#eaeaea;font:12px/1.4 Arial,sans-serif;color:#181818}.hyt-report-print .hyt-report{margin:24px auto;padding:24px;background:#fff;max-width:1600px}.hyt-print-toolbar{display:flex;gap:20px;align-items:center;padding:16px;background:#181818;color:#fff}.hyt-print-toolbar button{background:#c91620;color:#fff;border:0;border-radius:6px;padding:12px 20px;font-weight:700;cursor:pointer}
+.hyt-report-brand{display:flex;gap:24px;align-items:center;border-bottom:3px solid #c91620;padding-bottom:16px}.hyt-report-brand img{width:100px;height:76px;object-fit:contain}.hyt-report-brand h1{font-size:22px;margin:0}.hyt-report-brand p{margin:8px 0 0}.hyt-report-footer{margin-top:16px;border-top:1px solid #ddd;padding-top:12px;color:#626262}
+.hyt-report-print table{border-collapse:collapse;width:100%;table-layout:fixed;min-width:0}.hyt-report-print th{background:#181818;color:white;text-align:left}.hyt-report-print th,.hyt-report-print td{padding:8px;border-bottom:1px solid #ddd;overflow-wrap:anywhere}.hyt-report-print .hyt-report-summary{border-left-color:#c91620;background:#f5f5f5}.hyt-report-print .hyt-report-table small{color:#626262}
+@media print{.hyt-print-toolbar{display:none!important}.hyt-report-print{background:white}.hyt-report-print .hyt-report{max-width:none;padding:0;margin:0}.hyt-report-print .hyt-report-table{font-size:10px;min-width:0}.hyt-report-print .hyt-report-table small{font-size:9px;margin-top:3px}.hyt-report-print th,.hyt-report-print td{padding:5px 4px}.hyt-report-print thead{display:table-header-group}.hyt-report-print tr{break-inside:avoid}.hyt-report-brand{margin-bottom:12px}.hyt-report-summary{break-inside:avoid}}
+
+.hyt-report-print{print-color-adjust:exact;-webkit-print-color-adjust:exact}

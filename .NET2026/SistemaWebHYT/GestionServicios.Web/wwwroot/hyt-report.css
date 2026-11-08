@@ -7,3 +7,49 @@
 .report-new .report-metadata dl{grid-template-columns:28mm minmax(0,1fr) 28mm minmax(0,1fr);gap:1.5mm 3mm}.report-new .report-footer{margin-top:4mm}
 
 .report-detail abbr{text-decoration:none}
+
+/* Firma: FRANCO LARA - 06/11/2026 | Nuevo presupuesto conforme al PDF HYT; impresión sin información interna y firma en imagen. Pie anterior compacto al incorporar firma; subtítulo configurable centrado a todo el ancho y cabecera anterior compacta para texto completo. Cuadros informativos 30 % más anchos, centrados y con altura común de 5 mm. Tipografía Arial legible y subtítulo regular con línea roja superior. Formato anterior fiel a sus siete columnas con cabecera y firma comunes, sin datos internos. */
+@page hyt-new{size:A4 portrait;margin:5mm}
+.report-signature-image{display:block;object-fit:contain;width:36mm;height:23mm;margin:2mm 0 0 24mm}
+.report-new{font-family:Arial,"Segoe UI",sans-serif;font-size:7pt;line-height:1.05;page:hyt-new}
+.report-new .new-document{padding:5mm;min-height:297mm}
+.new-brand{display:grid;grid-template-columns:29mm 1fr;align-items:center;margin:4mm 5mm 1mm 10mm;gap:4mm;min-height:19mm;text-align:center}
+.new-brand img{width:28mm;height:20mm;object-fit:contain}.new-brand h1{font-family:Arial,"Segoe UI",sans-serif;font-size:19pt;line-height:1.05;margin:0 0 1mm;white-space:normal}.new-brand strong{font-size:10pt}
+.new-services{font-weight:400;font-size:6pt;line-height:1.2;border-top:1.5px solid #c91620;padding-top:2mm;margin:1mm auto 3mm;width:100%;max-width:none;text-align:center;white-space:pre-wrap;overflow-wrap:anywhere}
+.new-client,.new-zone,.new-supplier,.new-totals{border-collapse:collapse;table-layout:fixed}.new-client{width:100%;font-size:7.5pt}.new-client th,.new-client td{border:1.5pt solid #000;padding:1px 2px;height:11pt;overflow-wrap:anywhere;font-weight:normal}.new-client th{text-align:center}
+.new-zone{width:65mm;margin:2mm 0 1.5mm;font-size:7pt}.new-zone th,.new-zone td{width:26mm;height:5mm;padding:0 2px;vertical-align:middle}.new-zone td{width:39mm;border:1.5pt solid #000;text-align:center;vertical-align:middle}.new-zone th{text-align:center}.new-zone .new-zone-name{border:1.5pt solid #000;text-transform:uppercase}
+.new-supplier{width:65mm;font-size:6.7pt;margin-bottom:2mm}.new-supplier th{width:26mm;text-align:left;padding:0 1px;height:5mm;vertical-align:middle}.new-supplier td{width:39mm;text-align:center;vertical-align:middle;border:1.5pt solid #000;padding:0 1px;height:5mm;overflow-wrap:anywhere}.new-supplier tr:first-child td{font-size:5.4pt;font-weight:bold}
+.report-new .report-detail{font-family:Arial,"Segoe UI",sans-serif;font-size:6.3pt;margin-top:0;line-height:1.05}.report-new .report-detail th,.report-new .report-detail td{border:1.5pt solid #000;padding:1px 1px;vertical-align:middle}.report-new .report-detail thead th{height:27pt;background:#c00000;color:#fff;font-size:6.3pt;line-height:1.05}.report-new .report-detail td{text-align:center}.report-new .report-detail .report-description{text-align:left}.report-new .report-detail .report-number{text-align:right;white-space:nowrap}.report-new .new-group td{background:#c00000;color:#fff;font-weight:normal;min-height:10pt}.new-empty-row{height:10.5pt}
+.new-totals{width:55mm;margin:3.5mm 0 0 auto;font-size:7.5pt;break-inside:avoid}.new-totals th,.new-totals td{width:50%;height:11pt;border:1.5pt solid #000;padding:0 2px;text-align:center;font-weight:normal}.new-totals tr:first-child{background:#ff0}
+.new-notes{margin-top:1mm;font-size:7pt}.new-notes h3{font-size:7.5pt;text-decoration:underline;margin:0 0 1mm}.new-notes p{margin:0;line-height:1.15}
+.new-signature{font-size:7pt;break-inside:avoid;margin-top:1mm}.new-signature p{margin:0 0 1mm}.new-signature strong{display:block;margin:0}.new-signature .new-signature-role{font-size:5.5pt;font-weight:bold;margin:1mm 0}
+@media print{.report-new .new-document{width:auto;margin:0;padding:0;min-height:0;box-shadow:none}.report-new table td,.report-new table th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+
+.report-new .report-detail thead th:nth-child(5){font-size:5.8pt;white-space:nowrap}.report-old .report-footer{margin-top:2mm}
+
+.report-services{text-align:center;white-space:pre-wrap;overflow-wrap:anywhere}
+
+.report-old .report-services{font-size:6pt;line-height:1.15;margin:2mm 0;padding-bottom:2mm}
+
+.new-client td:nth-child(n+3){text-align:center;white-space:nowrap;overflow-wrap:normal}
+
+@page hyt-old{size:A4 portrait;margin:5mm}
+.report-old{font-family:Arial,"Segoe UI",sans-serif;font-size:8pt;line-height:1.2;page:hyt-old}
+.report-old .old-document{padding:5mm;min-height:297mm}
+.old-context{width:100%;border-collapse:collapse;table-layout:fixed;margin:3mm 0;font-size:7pt}
+.old-context th,.old-context td{padding:1mm 1mm 1mm 0;text-align:left;vertical-align:middle;overflow-wrap:anywhere}
+.old-context tr:last-child{color:#b0101b}
+.report-old .report-old-table{font-size:8pt;line-height:1.15;margin-top:3mm}
+.report-old .report-old-table th,.report-old .report-old-table td{border:1.5pt solid #000;padding:1mm;vertical-align:middle}
+.report-old .report-old-table thead th{background:#c00000;color:#fff;text-align:center;height:8mm;font-size:7.5pt}
+.report-old .report-old-table td{text-align:center}
+.report-old .report-old-table .report-number{text-align:right;white-space:nowrap}
+.report-old .report-old-table .report-description{text-align:left}
+.report-old .old-group th,.report-old .old-group td{background:#c00000;color:#fff;min-height:5mm;font-weight:bold}
+.report-old .old-group th{text-align:left}
+.report-old .old-empty-row{height:5mm}
+.report-old .old-summary th{text-align:right;font-size:8pt}
+.report-old .old-summary .old-summary-spacer{border:0;background:#fff}
+.report-old .old-net-total th,.report-old .old-net-total td:not(.old-summary-spacer){background:#f2dbdb;font-weight:bold}
+.report-old .new-notes{margin-top:4mm}
+@media print{.report-old .old-document{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}}

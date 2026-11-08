@@ -4,7 +4,7 @@
 -- Description:   Paquete incremental HYT etapa 6; aplicar después de etapa 5.
 -- =============================================
 -- Las fuentes individuales están aplicadas en la base local de desarrollo.
--- Firma: FRANCO LARA | Create date: 06/11/2026 | Numeración mensual de presupuesto en consultas, reportes e impresiones; preserva claves internas.
+-- Firma: FRANCO LARA | Create date: 06/11/2026 | Numeración mensual de presupuesto en consultas, reportes e impresiones; preserva claves internas. Aceptación automática auditada por registro de OC o Guía; consulta OC incluye guía y adjuntos por permiso; carpetas R2 por tipo y número con claves históricas compatibles. Guía como documento sin estados. KPI por estado y filtros de pendientes en listados con paginación SQL. Confirmación completa OC registrada con auditoría; transición manual admite confirmación vigente.
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   05/11/2026
@@ -32,7 +32,6 @@ BEGIN
     );
 END;
 GO
-
 
 -- Fuente: Script/016_SeguimientoDocumental.sql
 USE [SistemaWebHYT];
@@ -68,6 +67,23 @@ BEGIN CATCH
 END CATCH;
 GO
 
+-- Fuente: Funciones/fn_ArchivoSegmento.sql
+USE [SistemaWebHYT];
+GO
+CREATE OR ALTER FUNCTION dbo.fn_ArchivoSegmento(@Numero NVARCHAR(100))
+RETURNS NVARCHAR(100)
+AS
+BEGIN
+    DECLARE @Origen NVARCHAR(100)=LTRIM(RTRIM(@Numero)),@Resultado NVARCHAR(100)=N'',@Indice INT=1,@Caracter NCHAR(1);
+    WHILE @Indice<=LEN(@Origen COLLATE Latin1_General_100_BIN2)
+    BEGIN
+        SET @Caracter=SUBSTRING(@Origen COLLATE Latin1_General_100_BIN2,@Indice,1);
+        SET @Resultado=@Resultado+CASE WHEN (@Caracter COLLATE Latin1_General_100_BIN2 LIKE N'[A-Za-z0-9]' OR @Caracter IN(N'_',N'-')) THEN @Caracter ELSE N'_' END;
+        SET @Indice=@Indice+1;
+    END;
+    RETURN @Resultado;
+END;
+GO
 
 -- Fuente: StoreProcedure/spu_SeguimientoCONFIRMACION_CambiarEstado.sql
 USE [SistemaWebHYT];
@@ -133,7 +149,6 @@ BEGIN
     END CATCH
 END;
 GO
-
 
 -- Fuente: StoreProcedure/spu_SeguimientoCONFIRMACION_Guardar.sql
 USE [SistemaWebHYT];
@@ -227,7 +242,7 @@ BEGIN
                 @Tamano BIGINT=TRY_CONVERT(BIGINT,JSON_VALUE(@ArchivoJson,N'$.TamanoBytes')),@SHA CHAR(64)=JSON_VALUE(@ArchivoJson,N'$.SHA256'),@Extension NVARCHAR(5);
             SET @Extension=CASE @TipoContenido WHEN N'application/pdf' THEN N'.pdf' WHEN N'image/png' THEN N'.png' WHEN N'image/jpeg' THEN N'.jpg' END;
             IF NULLIF(@Nombre,N'') IS NULL OR @Tamano IS NULL OR @Tamano<=0 OR @Tamano>15728640 OR @Extension IS NULL OR LEN(JSON_VALUE(@ArchivoJson,N'$.NombreOriginal'))>255
-                OR LEN(JSON_VALUE(@ArchivoJson,N'$.SHA256'))<>64 OR @SHA LIKE '%[^0-9a-fA-F]%' OR @SHA IS NULL OR @Clave IS NULL OR @Clave<>LOWER(REPLACE(CONVERT(NVARCHAR(36),@CorrelacionId),N'-',N''))+@Extension
+                OR LEN(JSON_VALUE(@ArchivoJson,N'$.SHA256'))<>64 OR @SHA LIKE '%[^0-9a-fA-F]%' OR @SHA IS NULL OR @Clave IS NULL OR (@Clave COLLATE Latin1_General_100_BIN2<>LOWER(REPLACE(CONVERT(NVARCHAR(36),@CorrelacionId),N'-',N''))+@Extension AND @Clave COLLATE Latin1_General_100_BIN2<>N'ConfirmacionCliente/'+dbo.fn_ArchivoSegmento(@NumeroConfirmacion)+N'/'+LOWER(REPLACE(CONVERT(NVARCHAR(36),@CorrelacionId),N'-',N''))+@Extension)
                 THROW 51419,N'[HYT_VALIDACION] Metadatos del adjunto no válidos.',1;
             INSERT INTO dbo.ArchivoAdjunto (NombreOriginal,ClaveAlmacenamiento,TipoContenido,TamanoBytes,SHA256,UsuarioRegistro)
             VALUES (@Nombre,@Clave,@TipoContenido,@Tamano,@SHA,@UsuarioId);
@@ -242,7 +257,20 @@ BEGIN
         DECLARE @EstadoAnterior NVARCHAR(40)=CASE WHEN @Anterior IS NULL THEN NULL ELSE @Estado END;
         EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@CorrelacionId,N'ConfirmacionFacturacion',@Registro,@Accion,@EstadoAnterior,@Estado,NULL,@Motivo,@Cambios;
         UPDATE dbo.Presupuesto SET FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE PresupuestoId=@PresupuestoId;
-        UPDATE dbo.OrdenCompraCliente SET FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE OrdenCompraId=@PadreId;
+        DECLARE @EstadoOCAnterior NVARCHAR(40);
+        SELECT @EstadoOCAnterior=oc.Estado FROM dbo.OrdenCompraCliente AS oc WHERE oc.OrdenCompraId=@PadreId;
+        UPDATE dbo.OrdenCompraCliente
+        SET Estado=CASE WHEN Estado=N'REGISTRADA' THEN N'TRABAJO_COMPLETADO' ELSE Estado END,
+            FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId
+        WHERE OrdenCompraId=@PadreId;
+        IF @EstadoOCAnterior=N'REGISTRADA'
+        BEGIN
+            DECLARE @RegistroOC NVARCHAR(100)=CONVERT(NVARCHAR(100),@PadreId),
+                @MotivoOC NVARCHAR(2000)=N'Trabajo completado automáticamente por confirmación del cliente.',
+                @CambiosOC NVARCHAR(MAX)=(SELECT @Id AS ConfirmacionId,@NumeroConfirmacion AS NumeroConfirmacion,@RepresentanteCliente AS RepresentanteCliente,
+                    JSON_QUERY(N'{"Estado":"REGISTRADA"}') AS Anterior,JSON_QUERY(N'{"Estado":"TRABAJO_COMPLETADO"}') AS Nuevo FOR JSON PATH,WITHOUT_ARRAY_WRAPPER);
+            EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@CorrelacionId,N'OrdenCompraCliente',@RegistroOC,N'CAMBIAR_ESTADO_AUTOMATICO',@EstadoOCAnterior,N'TRABAJO_COMPLETADO',@FechaConfirmacion,@MotivoOC,@CambiosOC;
+        END;
         INSERT INTO dbo.DocumentoOperacion (OperacionId,TipoOperacion,PadreId,RegistroId,ArchivoId,Huella,UsuarioId)
         VALUES (@CorrelacionId,@TipoOperacion,@PadreId,@Id,@ArchivoId,@Huella,@UsuarioId);
         COMMIT TRANSACTION;
@@ -305,7 +333,6 @@ BEGIN
 END;
 GO
 
-
 -- Fuente: StoreProcedure/spu_SeguimientoCONFIRMACION_Obtener.sql
 USE [SistemaWebHYT];
 GO
@@ -362,7 +389,6 @@ BEGIN
 END;
 GO
 
-
 -- Fuente: StoreProcedure/spu_SeguimientoEJECUCION_CambiarEstado.sql
 USE [SistemaWebHYT];
 GO
@@ -418,9 +444,8 @@ BEGIN
             THROW 51433,N'[HYT_VALIDACION] Completa responsable; invitación requiere OC y programación antes de iniciar.',1;
         IF @NuevoEstado=N'TERMINADA' AND EXISTS(SELECT 1 FROM dbo.Ejecucion AS ejecucion WHERE ejecucion.EjecucionId=@Id AND (ejecucion.FechaInicioReal IS NULL OR CONVERT(DATE,ejecucion.FechaInicioReal)>@FechaEvento))
             THROW 51433,N'[HYT_VALIDACION] La fecha de término debe ser igual o posterior al inicio real.',1;
-        IF @EstadoAnterior=N'TERMINADA' AND (EXISTS(SELECT 1 FROM dbo.OrdenCompraCliente AS oc WHERE oc.PresupuestoId=@PresupuestoId AND oc.Estado IN(N'TRABAJO_COMPLETADO',N'CERRADA_OPERATIVAMENTE'))
-            OR EXISTS(SELECT 1 FROM dbo.GuiaConformidad AS guia WHERE guia.PresupuestoId=@PresupuestoId AND guia.Estado=N'ACEPTADA'))
-            THROW 51433,N'[HYT_VALIDACION] Reabre la OC y revisa la aceptación de la guía antes de reabrir el trabajo.',1;
+        IF @EstadoAnterior=N'TERMINADA' AND (EXISTS(SELECT 1 FROM dbo.OrdenCompraCliente AS oc WHERE oc.PresupuestoId=@PresupuestoId AND oc.Estado IN(N'TRABAJO_COMPLETADO',N'CERRADA_OPERATIVAMENTE')))
+            THROW 51433,N'[HYT_VALIDACION] Reabre la OC antes de reabrir el trabajo.',1;
         UPDATE dbo.Ejecucion SET Estado=@NuevoEstado,
             FechaInicioReal=CASE WHEN @NuevoEstado=N'EN_EJECUCION' THEN COALESCE(FechaInicioReal,CONVERT(DATETIME2(3),@FechaEvento)) ELSE FechaInicioReal END,
             FechaTerminoReal=CASE WHEN @NuevoEstado=N'TERMINADA' THEN CONVERT(DATETIME2(3),@FechaEvento) WHEN @NuevoEstado=N'EN_EJECUCION' THEN NULL ELSE FechaTerminoReal END,
@@ -440,7 +465,6 @@ BEGIN
     END CATCH
 END;
 GO
-
 
 -- Fuente: StoreProcedure/spu_SeguimientoEJECUCION_Guardar.sql
 USE [SistemaWebHYT];
@@ -540,7 +564,6 @@ BEGIN
 END;
 GO
 
-
 -- Fuente: StoreProcedure/spu_SeguimientoEJECUCION_Listar.sql
 USE [SistemaWebHYT];
 GO
@@ -587,7 +610,6 @@ BEGIN
     END CATCH
 END;
 GO
-
 
 -- Fuente: StoreProcedure/spu_SeguimientoEJECUCION_Obtener.sql
 USE [SistemaWebHYT];
@@ -643,7 +665,6 @@ BEGIN
 END;
 GO
 
-
 -- Fuente: StoreProcedure/spu_SeguimientoGUIA_CambiarEstado.sql
 USE [SistemaWebHYT];
 GO
@@ -653,64 +674,18 @@ CREATE OR ALTER PROCEDURE dbo.spu_SeguimientoGUIA_CambiarEstado
 AS
 BEGIN
     SET NOCOUNT ON;
-    SET XACT_ABORT ON;
-    DECLARE @Propia BIT=0;
     BEGIN TRY
-        IF NOT EXISTS(SELECT 1 FROM dbo.AspNetUsers AS usuario INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId=usuario.Id
-            INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId WHERE usuario.Id=@UsuarioId AND usuario.Activo=1 AND permiso.CodigoPermiso=N'GUIAS.EDITAR')
-            THROW 51400,N'[HYT_PERMISO] No tiene permiso para cambiar este estado.',1;
-        IF @@TRANCOUNT<>0 THROW 51402,N'[HYT_VALIDACION] La operación administra su transacción.',1;
-        SET @Responsable=NULLIF(LTRIM(RTRIM(@Responsable)),N'');SET @Motivo=NULLIF(LTRIM(RTRIM(@Motivo)),N'');
-        IF @Id IS NULL OR @Id<=0 OR @PadreId IS NULL OR @PadreId<=0 OR @VersionPadre IS NULL OR @VersionOriginal IS NULL OR @FechaEvento IS NULL OR @Responsable IS NULL OR @CorrelacionId IS NULL OR @CorrelacionId='00000000-0000-0000-0000-000000000000'
-            THROW 51430,N'[HYT_VALIDACION] Completa la fecha, responsable y referencia del registro.',1;
-        DECLARE @Solicitud NVARCHAR(MAX)=(SELECT @Id AS Id,@PadreId AS PadreId,@VersionPadre AS VersionPadre,@VersionOriginal AS VersionOriginal,@NuevoEstado AS NuevoEstado,@FechaEvento AS FechaEvento,@Responsable AS Responsable,@Motivo AS Motivo FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES);
-        DECLARE @Huella CHAR(64)=CONVERT(CHAR(64),HASHBYTES('SHA2_256',CONVERT(VARBINARY(MAX),@Solicitud)),2),@Tipo NVARCHAR(40)=N'GUIA_ESTADO';
-        BEGIN TRANSACTION;SET @Propia=1;
-        DECLARE @Resultado BIGINT,@HuellaAnterior CHAR(64),@ActorAnterior NVARCHAR(128),@TipoAnterior NVARCHAR(40),@PadreAnterior BIGINT;
-        SELECT @Resultado=operacion.RegistroId,@HuellaAnterior=operacion.Huella,@ActorAnterior=operacion.UsuarioId,@TipoAnterior=operacion.TipoOperacion,@PadreAnterior=operacion.PadreId
-        FROM dbo.DocumentoOperacion AS operacion WITH(UPDLOCK,HOLDLOCK) WHERE operacion.OperacionId=@CorrelacionId;
-        IF @Resultado IS NOT NULL
-        BEGIN
-            IF @Resultado<>@Id OR @HuellaAnterior<>@Huella OR @ActorAnterior<>@UsuarioId OR @TipoAnterior<>@Tipo OR @PadreAnterior<>@PadreId
-                THROW 51409,N'[HYT_VALIDACION] La operación ya se utilizó con otros datos. Vuelve a abrir el registro.',1;
-            COMMIT;SET @Propia=0;SELECT @Resultado AS Id;RETURN;
-        END;
-        DECLARE @PresupuestoId BIGINT=@PadreId,@TipoAtencion NVARCHAR(20),@EstadoPresupuesto NVARCHAR(20);
-        SELECT @TipoAtencion=p.TipoAtencion FROM dbo.Presupuesto AS p WITH(UPDLOCK,HOLDLOCK) WHERE p.PresupuestoId=@PresupuestoId;
-        IF @TipoAtencion IS NULL THROW 51410,N'[HYT_VALIDACION] El presupuesto no existe.',1;
-        IF NOT EXISTS(SELECT 1 FROM dbo.Presupuesto AS p WHERE p.PresupuestoId=@PadreId AND p.VersionFila=@VersionPadre)
-            THROW 51411,N'[HYT_CONCURRENCIA] El presupuesto cambió. Vuelve a consultarlo.',1;
-        SELECT TOP(1) @EstadoPresupuesto=r.Estado FROM dbo.PresupuestoRevision AS r WITH(HOLDLOCK) WHERE r.PresupuestoId=@PresupuestoId ORDER BY r.NumeroRevision DESC;
-        IF @EstadoPresupuesto=N'CANCELADO' AND @NuevoEstado NOT IN(N'CANCELADA',N'ANULADA',N'RETIRADA') THROW 51412,N'[HYT_VALIDACION] El presupuesto está cancelado.',1;
-        IF EXISTS(SELECT 1 FROM dbo.OrdenCompraCliente AS oc INNER JOIN dbo.ReferenciaComprobanteExterno AS referencia ON referencia.OrdenCompraId=oc.OrdenCompraId AND referencia.Vigente=1 WHERE oc.PresupuestoId=@PresupuestoId)
-            THROW 51412,N'[HYT_VALIDACION] Retira primero el marcado facturado antes de cambiar documentos.',1;
-        DECLARE @EstadoAnterior NVARCHAR(40),@Anterior NVARCHAR(MAX),@Nuevo NVARCHAR(MAX);
-        SELECT @EstadoAnterior=documento.Estado,@Anterior=(SELECT documento.FechaActa,documento.NumeroActa,documento.Observacion,documento.Estado,documento.FechaAceptacion,documento.RepresentanteCliente FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)
-        FROM dbo.GuiaConformidad AS documento WITH(UPDLOCK,HOLDLOCK) WHERE documento.GuiaId=@Id AND documento.PresupuestoId=@PadreId AND documento.VersionFila=@VersionOriginal;
-        IF @Anterior IS NULL THROW 51411,N'[HYT_CONCURRENCIA] El documento cambió o no pertenece al expediente. Vuelve a consultarlo.',1;
-        IF NOT((@EstadoAnterior=N'REGISTRADA' AND @NuevoEstado=N'ENVIADA') OR (@EstadoAnterior=N'REGISTRADA' AND @NuevoEstado=N'OBSERVADA') OR (@EstadoAnterior=N'REGISTRADA' AND @NuevoEstado=N'ACEPTADA') OR (@EstadoAnterior=N'REGISTRADA' AND @NuevoEstado=N'ANULADA') OR (@EstadoAnterior=N'ENVIADA' AND @NuevoEstado=N'OBSERVADA') OR (@EstadoAnterior=N'ENVIADA' AND @NuevoEstado=N'ACEPTADA') OR (@EstadoAnterior=N'ENVIADA' AND @NuevoEstado=N'ANULADA') OR (@EstadoAnterior=N'OBSERVADA' AND @NuevoEstado=N'ENVIADA') OR (@EstadoAnterior=N'OBSERVADA' AND @NuevoEstado=N'ACEPTADA') OR (@EstadoAnterior=N'OBSERVADA' AND @NuevoEstado=N'ANULADA') OR (@EstadoAnterior=N'ACEPTADA' AND @NuevoEstado=N'OBSERVADA') OR (@EstadoAnterior=N'ACEPTADA' AND @NuevoEstado=N'ANULADA') OR (@EstadoAnterior=N'ANULADA' AND @NuevoEstado=N'REGISTRADA')) OR @NuevoEstado IS NULL THROW 51431,N'[HYT_VALIDACION] Transición de estado no permitida.',1;
-        IF @Motivo IS NULL AND (@NuevoEstado IN(N'OBSERVADA',N'ANULADA',N'CANCELADA',N'RETIRADA',N'PENDIENTE') OR @EstadoAnterior IN(N'ANULADA',N'CANCELADA',N'ACEPTADA',N'TERMINADA',N'CERRADA_OPERATIVAMENTE') OR (@EstadoAnterior=N'TRABAJO_COMPLETADO' AND @NuevoEstado=N'REGISTRADA'))
-            THROW 51432,N'[HYT_VALIDACION] Indica el motivo del cambio de estado.',1;
-        IF @EstadoAnterior=N'ACEPTADA' AND EXISTS(SELECT 1 FROM dbo.OrdenCompraCliente AS oc WHERE oc.PresupuestoId=@PresupuestoId AND oc.Estado=N'CERRADA_OPERATIVAMENTE')
-            THROW 51433,N'[HYT_VALIDACION] Reabre primero la OC antes de modificar la aceptación de la guía.',1;
-        UPDATE dbo.GuiaConformidad SET Estado=@NuevoEstado,FechaAceptacion=CASE WHEN @NuevoEstado=N'ACEPTADA' THEN CONVERT(DATETIME2(3),@FechaEvento) END,
-            RepresentanteCliente=CASE WHEN @NuevoEstado=N'ACEPTADA' THEN @Responsable END,FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE GuiaId=@Id;
-        SELECT @Nuevo=(SELECT actual.FechaActa,actual.NumeroActa,actual.Observacion,actual.Estado,actual.FechaAceptacion,actual.RepresentanteCliente FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) FROM dbo.GuiaConformidad AS actual WHERE actual.GuiaId=@Id;
-        DECLARE @Registro NVARCHAR(100)=CONVERT(NVARCHAR(100),@Id),@Detalle NVARCHAR(MAX)=(SELECT JSON_QUERY(@Anterior) AS Anterior,JSON_QUERY(@Nuevo) AS Nuevo,@Responsable AS Responsable FOR JSON PATH,WITHOUT_ARRAY_WRAPPER);
-        EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@CorrelacionId,N'GuiaConformidad',@Registro,N'CAMBIAR_ESTADO',@EstadoAnterior,@NuevoEstado,@FechaEvento,@Motivo,@Detalle;
-        UPDATE dbo.Presupuesto SET FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE PresupuestoId=@PresupuestoId;
-        INSERT INTO dbo.DocumentoOperacion(OperacionId,TipoOperacion,PadreId,RegistroId,Huella,UsuarioId) VALUES(@CorrelacionId,@Tipo,@PadreId,@Id,@Huella,@UsuarioId);
-        COMMIT;SET @Propia=0;SELECT @Id AS Id;
+        IF NOT EXISTS(SELECT 1 FROM dbo.AspNetUsers AS usuario INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId=usuario.Id INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId WHERE usuario.Id=@UsuarioId AND usuario.Activo=1 AND permiso.CodigoPermiso=N'GUIAS.EDITAR')
+            THROW 51400,N'[HYT_PERMISO] No tiene permiso para esta operación documental.',1;
+        THROW 51431,N'[HYT_VALIDACION] La guía no utiliza estados. Modifica los datos desde su registro.',1;
     END TRY
     BEGIN CATCH
-        IF @Propia=1 AND XACT_STATE()<>0 ROLLBACK TRANSACTION;
         DECLARE @ErrorMessage NVARCHAR(4000),@ErrorSeverity INT,@ErrorState INT;
         SELECT @ErrorMessage=ERROR_MESSAGE(),@ErrorSeverity=ERROR_SEVERITY(),@ErrorState=ERROR_STATE();
-        RAISERROR (@ErrorMessage,@ErrorSeverity,@ErrorState);
+        RAISERROR(@ErrorMessage,@ErrorSeverity,@ErrorState);
     END CATCH
 END;
 GO
-
 
 -- Fuente: StoreProcedure/spu_SeguimientoGUIA_Guardar.sql
 USE [SistemaWebHYT];
@@ -757,13 +732,14 @@ BEGIN
             SELECT @Resultado AS Id,@ArchivoId AS ArchivoId;
             RETURN;
         END;
+        DECLARE @RevisionAceptadaId BIGINT;
         DECLARE @PresupuestoId BIGINT,@TipoAtencion NVARCHAR(20),@EstadoPresupuesto NVARCHAR(20),@Moneda NVARCHAR(3),@Estado NVARCHAR(40)=N'REGISTRADA',@Anterior NVARCHAR(MAX),@Nuevo NVARCHAR(MAX);
         SET @PresupuestoId=@PadreId;
         SELECT @TipoAtencion=p.TipoAtencion FROM dbo.Presupuesto AS p WITH (UPDLOCK,HOLDLOCK) WHERE p.PresupuestoId=@PresupuestoId;
         IF @TipoAtencion IS NULL THROW 51410,N'[HYT_VALIDACION] El presupuesto no existe.',1;
         IF NOT EXISTS (SELECT 1 FROM dbo.Presupuesto AS p WHERE p.PresupuestoId=@PadreId AND p.VersionFila=@VersionPadre)
             THROW 51411,N'[HYT_CONCURRENCIA] El presupuesto cambió. Vuelve a consultarlo.',1;
-        SELECT TOP (1) @EstadoPresupuesto=r.Estado FROM dbo.PresupuestoRevision AS r WITH (HOLDLOCK) WHERE r.PresupuestoId=@PresupuestoId ORDER BY r.NumeroRevision DESC;
+        SELECT TOP (1) @RevisionAceptadaId=r.RevisionId,@EstadoPresupuesto=r.Estado FROM dbo.PresupuestoRevision AS r WITH (HOLDLOCK) WHERE r.PresupuestoId=@PresupuestoId ORDER BY r.NumeroRevision DESC;
         IF @EstadoPresupuesto IS NULL OR @EstadoPresupuesto=N'CANCELADO' THROW 51412,N'[HYT_VALIDACION] El presupuesto no admite este registro.',1;
         IF EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS oc INNER JOIN dbo.ReferenciaComprobanteExterno AS referencia ON referencia.OrdenCompraId=oc.OrdenCompraId AND referencia.Vigente=1 WHERE oc.PresupuestoId=@PresupuestoId)
             THROW 51412,N'[HYT_VALIDACION] Retira primero el marcado facturado antes de modificar documentos del expediente.',1;
@@ -774,11 +750,8 @@ BEGIN
             IF @Anterior IS NULL THROW 51411,N'[HYT_CONCURRENCIA] El registro cambió o no pertenece al expediente. Vuelve a consultarlo.',1;
         END;
         IF @Id IS NULL AND EXISTS (SELECT 1 FROM dbo.GuiaConformidad AS documento WITH (UPDLOCK,HOLDLOCK) WHERE documento.PresupuestoId=@PadreId) THROW 51413,N'[HYT_VALIDACION] Ya existe este registro. Ábrelo para consultar o modificar.',1;
-        IF @TipoAtencion=N'INVITACION' AND NOT EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS oc INNER JOIN dbo.PresupuestoRevision AS r ON r.RevisionId=oc.RevisionId AND r.Estado=N'APROBADO' WHERE oc.PresupuestoId=@PresupuestoId AND oc.Estado<>N'CANCELADA')
-            THROW 51416,N'[HYT_VALIDACION] Invitación requiere una OC del cliente vinculada a revisión aprobada.',1;
-        IF @Estado=N'ANULADA' THROW 51415,N'[HYT_VALIDACION] La guía anulada no permite modificaciones.',1;
-        IF @Id IS NOT NULL AND @Estado=N'ACEPTADA' AND (@NumeroActa<>JSON_VALUE(@Anterior,N'$.NumeroActa') OR @FechaActa<>TRY_CONVERT(DATE,JSON_VALUE(@Anterior,N'$.FechaActa'),23))
-            THROW 51415,N'[HYT_VALIDACION] Registra observación de la guía antes de corregir número o fecha aceptados.',1;
+        IF @Id IS NULL AND @EstadoPresupuesto NOT IN (N'BORRADOR',N'ENVIADO',N'OBSERVADO',N'APROBADO')
+            THROW 51416,N'[HYT_VALIDACION] El presupuesto no está vigente para registrar la guía.',1;
         IF @Id IS NULL
         BEGIN
             INSERT INTO dbo.GuiaConformidad (FechaActa,NumeroActa,Observacion,PresupuestoId,UsuarioRegistro) VALUES (@FechaActa,@NumeroActa,@Observacion,@PadreId,@UsuarioId);
@@ -805,7 +778,7 @@ BEGIN
                 @Tamano BIGINT=TRY_CONVERT(BIGINT,JSON_VALUE(@ArchivoJson,N'$.TamanoBytes')),@SHA CHAR(64)=JSON_VALUE(@ArchivoJson,N'$.SHA256'),@Extension NVARCHAR(5);
             SET @Extension=CASE @TipoContenido WHEN N'application/pdf' THEN N'.pdf' WHEN N'image/png' THEN N'.png' WHEN N'image/jpeg' THEN N'.jpg' END;
             IF NULLIF(@Nombre,N'') IS NULL OR @Tamano IS NULL OR @Tamano<=0 OR @Tamano>15728640 OR @Extension IS NULL OR LEN(JSON_VALUE(@ArchivoJson,N'$.NombreOriginal'))>255
-                OR LEN(JSON_VALUE(@ArchivoJson,N'$.SHA256'))<>64 OR @SHA LIKE '%[^0-9a-fA-F]%' OR @SHA IS NULL OR @Clave IS NULL OR @Clave<>LOWER(REPLACE(CONVERT(NVARCHAR(36),@CorrelacionId),N'-',N''))+@Extension
+                OR LEN(JSON_VALUE(@ArchivoJson,N'$.SHA256'))<>64 OR @SHA LIKE '%[^0-9a-fA-F]%' OR @SHA IS NULL OR @Clave IS NULL OR (@Clave COLLATE Latin1_General_100_BIN2<>LOWER(REPLACE(CONVERT(NVARCHAR(36),@CorrelacionId),N'-',N''))+@Extension AND @Clave COLLATE Latin1_General_100_BIN2<>N'Guia/'+dbo.fn_ArchivoSegmento(@NumeroActa)+N'/'+LOWER(REPLACE(CONVERT(NVARCHAR(36),@CorrelacionId),N'-',N''))+@Extension)
                 THROW 51419,N'[HYT_VALIDACION] Metadatos del adjunto no válidos.',1;
             IF @TipoContenido<>N'application/pdf' THROW 51419,N'[HYT_VALIDACION] La guía solo admite escaneado PDF.',1;
             INSERT INTO dbo.ArchivoAdjunto (NombreOriginal,ClaveAlmacenamiento,TipoContenido,TamanoBytes,SHA256,UsuarioRegistro)
@@ -820,6 +793,18 @@ BEGIN
             @Registro NVARCHAR(100)=CONVERT(NVARCHAR(100),@Id),@Accion NVARCHAR(60)=CASE WHEN @Anterior IS NULL THEN N'CREAR' ELSE N'ACTUALIZAR' END;
         DECLARE @EstadoAnterior NVARCHAR(40)=CASE WHEN @Anterior IS NULL THEN NULL ELSE @Estado END;
         EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@CorrelacionId,N'GuiaConformidad',@Registro,@Accion,@EstadoAnterior,@Estado,NULL,@Motivo,@Cambios;
+        IF @Anterior IS NULL AND @EstadoPresupuesto<>N'APROBADO'
+        BEGIN
+            DECLARE @FechaAceptacionAutomatica DATE=CONVERT(DATE,DATEADD(HOUR,-5,SYSUTCDATETIME()));
+            UPDATE dbo.PresupuestoRevision SET Estado=N'APROBADO',FechaAprobacion=@FechaAceptacionAutomatica,
+                FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE RevisionId=@RevisionAceptadaId;
+            DECLARE @RegistroRevision NVARCHAR(100)=CONVERT(NVARCHAR(100),@RevisionAceptadaId),
+                @MotivoAceptacion NVARCHAR(1000)=N'Aceptación automática por registro de GUIA.',
+                @DetalleAceptacion NVARCHAR(MAX)=(SELECT @EstadoPresupuesto AS EstadoAnterior,N'APROBADO' AS EstadoNuevo,
+                    @FechaAceptacionAutomatica AS FechaEvento,N'GUIA' AS TipoDocumento,@Id AS DocumentoId FOR JSON PATH,WITHOUT_ARRAY_WRAPPER);
+            EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@CorrelacionId,N'PresupuestoRevision',@RegistroRevision,N'CAMBIAR_ESTADO',
+                @EstadoPresupuesto,N'APROBADO',NULL,@MotivoAceptacion,@DetalleAceptacion;
+        END;
         UPDATE dbo.Presupuesto SET FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE PresupuestoId=@PresupuestoId;
         INSERT INTO dbo.DocumentoOperacion (OperacionId,TipoOperacion,PadreId,RegistroId,ArchivoId,Huella,UsuarioId)
         VALUES (@CorrelacionId,@TipoOperacion,@PadreId,@Id,@ArchivoId,@Huella,@UsuarioId);
@@ -834,7 +819,6 @@ BEGIN
     END CATCH
 END;
 GO
-
 
 -- Fuente: StoreProcedure/spu_SeguimientoGUIA_Listar.sql
 USE [SistemaWebHYT];
@@ -882,7 +866,6 @@ BEGIN
     END CATCH
 END;
 GO
-
 
 -- Fuente: StoreProcedure/spu_SeguimientoGUIA_Obtener.sql
 USE [SistemaWebHYT];
@@ -940,7 +923,6 @@ BEGIN
 END;
 GO
 
-
 -- Fuente: StoreProcedure/spu_SeguimientoOC_CambiarEstado.sql
 USE [SistemaWebHYT];
 GO
@@ -988,14 +970,17 @@ BEGIN
         IF NOT((@EstadoAnterior=N'REGISTRADA' AND @NuevoEstado=N'TRABAJO_COMPLETADO') OR (@EstadoAnterior=N'REGISTRADA' AND @NuevoEstado=N'CANCELADA') OR (@EstadoAnterior=N'TRABAJO_COMPLETADO' AND @NuevoEstado=N'CERRADA_OPERATIVAMENTE') OR (@EstadoAnterior=N'TRABAJO_COMPLETADO' AND @NuevoEstado=N'REGISTRADA') OR (@EstadoAnterior=N'TRABAJO_COMPLETADO' AND @NuevoEstado=N'CANCELADA') OR (@EstadoAnterior=N'CERRADA_OPERATIVAMENTE' AND @NuevoEstado=N'TRABAJO_COMPLETADO') OR (@EstadoAnterior=N'CANCELADA' AND @NuevoEstado=N'REGISTRADA')) OR @NuevoEstado IS NULL THROW 51431,N'[HYT_VALIDACION] Transición de estado no permitida.',1;
         IF @Motivo IS NULL AND (@NuevoEstado IN(N'OBSERVADA',N'ANULADA',N'CANCELADA',N'RETIRADA',N'PENDIENTE') OR @EstadoAnterior IN(N'ANULADA',N'CANCELADA',N'ACEPTADA',N'TERMINADA',N'CERRADA_OPERATIVAMENTE') OR (@EstadoAnterior=N'TRABAJO_COMPLETADO' AND @NuevoEstado=N'REGISTRADA'))
             THROW 51432,N'[HYT_VALIDACION] Indica el motivo del cambio de estado.',1;
-        IF @NuevoEstado IN(N'TRABAJO_COMPLETADO',N'CERRADA_OPERATIVAMENTE') AND NOT EXISTS(SELECT 1 FROM dbo.Ejecucion AS ejecucion WHERE ejecucion.PresupuestoId=@PresupuestoId AND ejecucion.Estado=N'TERMINADA')
-            THROW 51433,N'[HYT_VALIDACION] Registra primero la ejecución terminada del trabajo.',1;
-        IF @NuevoEstado=N'CERRADA_OPERATIVAMENTE' AND NOT EXISTS(SELECT 1 FROM dbo.GuiaConformidad AS guia WHERE guia.PresupuestoId=@PresupuestoId AND guia.Estado=N'ACEPTADA')
-            THROW 51433,N'[HYT_VALIDACION] Para cerrar la OC se requiere la guía aceptada.',1;
+        IF @NuevoEstado=N'TRABAJO_COMPLETADO'
+            AND NOT EXISTS(SELECT 1 FROM dbo.Ejecucion AS ejecucion WHERE ejecucion.PresupuestoId=@PresupuestoId AND ejecucion.Estado=N'TERMINADA')
+            AND NOT EXISTS(SELECT 1 FROM dbo.ConfirmacionFacturacion AS confirmacion WHERE confirmacion.OrdenCompraId=@Id AND confirmacion.Vigente=1)
+            THROW 51433,N'[HYT_VALIDACION] Registra la confirmación del cliente o la ejecución terminada para completar el trabajo.',1;
+        IF @NuevoEstado=N'CERRADA_OPERATIVAMENTE' AND NOT EXISTS(SELECT 1 FROM dbo.Ejecucion AS ejecucion WHERE ejecucion.PresupuestoId=@PresupuestoId AND ejecucion.Estado=N'TERMINADA')
+            THROW 51433,N'[HYT_VALIDACION] Para cerrar la OC registra la ejecución terminada del trabajo.',1;
+        IF @NuevoEstado=N'CERRADA_OPERATIVAMENTE' AND NOT EXISTS(SELECT 1 FROM dbo.GuiaConformidad AS guia WHERE guia.PresupuestoId=@PresupuestoId)
+            THROW 51433,N'[HYT_VALIDACION] Para cerrar la OC se requiere la guía registrada.',1;
         IF @NuevoEstado=N'CANCELADA' AND (EXISTS(SELECT 1 FROM dbo.ConfirmacionFacturacion AS confirmacion WHERE confirmacion.OrdenCompraId=@Id AND confirmacion.Vigente=1)
-            OR EXISTS(SELECT 1 FROM dbo.GuiaConformidad AS guia WHERE guia.PresupuestoId=@PresupuestoId AND guia.Estado<>N'ANULADA')
             OR EXISTS(SELECT 1 FROM dbo.Ejecucion AS ejecucion WHERE ejecucion.PresupuestoId=@PresupuestoId AND ejecucion.Estado=N'EN_EJECUCION'))
-            THROW 51433,N'[HYT_VALIDACION] Retira la confirmación, anula la guía y detén la ejecución antes de cancelar la OC.',1;
+            THROW 51433,N'[HYT_VALIDACION] Retira la confirmación, detén la ejecución antes de cancelar la OC.',1;
         UPDATE dbo.OrdenCompraCliente SET Estado=@NuevoEstado,FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE OrdenCompraId=@Id;
         SELECT @Nuevo=(SELECT actual.RevisionId,actual.NumeroOCCliente,actual.FechaEmisionOC,actual.FechaRecepcionOC,actual.Importe,actual.Observacion,actual.Estado FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) FROM dbo.OrdenCompraCliente AS actual WHERE actual.OrdenCompraId=@Id;
         DECLARE @Registro NVARCHAR(100)=CONVERT(NVARCHAR(100),@Id),@Detalle NVARCHAR(MAX)=(SELECT JSON_QUERY(@Anterior) AS Anterior,JSON_QUERY(@Nuevo) AS Nuevo,@Responsable AS Responsable FOR JSON PATH,WITHOUT_ARRAY_WRAPPER);
@@ -1088,8 +1073,8 @@ BEGIN
         IF @Id IS NULL AND EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS documento WITH (UPDLOCK,HOLDLOCK) WHERE documento.PresupuestoId=@PadreId) THROW 51413,N'[HYT_VALIDACION] Ya existe este registro. Ábrelo para consultar o modificar.',1;
         DECLARE @EstadoRevision NVARCHAR(20),@TotalRevision DECIMAL(19,2);
         SELECT @EstadoRevision=r.Estado,@TotalRevision=r.Total,@Moneda=r.CodigoMoneda FROM dbo.PresupuestoRevision AS r WITH (HOLDLOCK) WHERE r.PresupuestoId=@PresupuestoId AND r.RevisionId=@RevisionId;
-        IF @EstadoRevision IS NULL OR @TotalRevision IS NULL OR (@TipoAtencion=N'INVITACION' AND @EstadoRevision<>N'APROBADO') OR (@TipoAtencion=N'EMERGENCIA' AND @EstadoRevision NOT IN (N'BORRADOR',N'ENVIADO',N'APROBADO'))
-            THROW 51414,N'[HYT_VALIDACION] Invitación requiere revisión aprobada. Emergencia admite revisión completa sin aprobación previa.',1;
+        IF @EstadoRevision IS NULL OR @TotalRevision IS NULL OR @EstadoRevision NOT IN (N'BORRADOR',N'ENVIADO',N'OBSERVADO',N'APROBADO')
+            THROW 51414,N'[HYT_VALIDACION] El presupuesto debe estar vigente y tener sus importes completos para registrar la OC.',1;
         IF @Estado=N'CANCELADA' THROW 51415,N'[HYT_VALIDACION] Reactiva la OC antes de editarla.',1;
         IF @Id IS NOT NULL AND (@Estado=N'CERRADA_OPERATIVAMENTE' OR EXISTS (SELECT 1 FROM dbo.ConfirmacionFacturacion AS confirmacion WHERE confirmacion.OrdenCompraId=@Id AND confirmacion.Vigente=1))
             AND (@RevisionId<>TRY_CONVERT(BIGINT,JSON_VALUE(@Anterior,N'$.RevisionId')) OR @NumeroOCCliente<>JSON_VALUE(@Anterior,N'$.NumeroOCCliente')
@@ -1124,7 +1109,7 @@ BEGIN
                 @Tamano BIGINT=TRY_CONVERT(BIGINT,JSON_VALUE(@ArchivoJson,N'$.TamanoBytes')),@SHA CHAR(64)=JSON_VALUE(@ArchivoJson,N'$.SHA256'),@Extension NVARCHAR(5);
             SET @Extension=CASE @TipoContenido WHEN N'application/pdf' THEN N'.pdf' WHEN N'image/png' THEN N'.png' WHEN N'image/jpeg' THEN N'.jpg' END;
             IF NULLIF(@Nombre,N'') IS NULL OR @Tamano IS NULL OR @Tamano<=0 OR @Tamano>15728640 OR @Extension IS NULL OR LEN(JSON_VALUE(@ArchivoJson,N'$.NombreOriginal'))>255
-                OR LEN(JSON_VALUE(@ArchivoJson,N'$.SHA256'))<>64 OR @SHA LIKE '%[^0-9a-fA-F]%' OR @SHA IS NULL OR @Clave IS NULL OR @Clave<>LOWER(REPLACE(CONVERT(NVARCHAR(36),@CorrelacionId),N'-',N''))+@Extension
+                OR LEN(JSON_VALUE(@ArchivoJson,N'$.SHA256'))<>64 OR @SHA LIKE '%[^0-9a-fA-F]%' OR @SHA IS NULL OR @Clave IS NULL OR (@Clave COLLATE Latin1_General_100_BIN2<>LOWER(REPLACE(CONVERT(NVARCHAR(36),@CorrelacionId),N'-',N''))+@Extension AND @Clave COLLATE Latin1_General_100_BIN2<>N'OCCliente/'+dbo.fn_ArchivoSegmento(@NumeroOCCliente)+N'/'+LOWER(REPLACE(CONVERT(NVARCHAR(36),@CorrelacionId),N'-',N''))+@Extension)
                 THROW 51419,N'[HYT_VALIDACION] Metadatos del adjunto no válidos.',1;
             INSERT INTO dbo.ArchivoAdjunto (NombreOriginal,ClaveAlmacenamiento,TipoContenido,TamanoBytes,SHA256,UsuarioRegistro)
             VALUES (@Nombre,@Clave,@TipoContenido,@Tamano,@SHA,@UsuarioId);
@@ -1138,6 +1123,18 @@ BEGIN
             @Registro NVARCHAR(100)=CONVERT(NVARCHAR(100),@Id),@Accion NVARCHAR(60)=CASE WHEN @Anterior IS NULL THEN N'CREAR' ELSE N'ACTUALIZAR' END;
         DECLARE @EstadoAnterior NVARCHAR(40)=CASE WHEN @Anterior IS NULL THEN NULL ELSE @Estado END;
         EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@CorrelacionId,N'OrdenCompraCliente',@Registro,@Accion,@EstadoAnterior,@Estado,NULL,@Motivo,@Cambios;
+        IF @Anterior IS NULL AND @EstadoRevision<>N'APROBADO'
+        BEGIN
+            DECLARE @FechaAceptacionAutomatica DATE=CONVERT(DATE,DATEADD(HOUR,-5,SYSUTCDATETIME()));
+            UPDATE dbo.PresupuestoRevision SET Estado=N'APROBADO',FechaAprobacion=@FechaAceptacionAutomatica,
+                FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE RevisionId=@RevisionId;
+            DECLARE @RegistroRevision NVARCHAR(100)=CONVERT(NVARCHAR(100),@RevisionId),
+                @MotivoAceptacion NVARCHAR(1000)=N'Aceptación automática por registro de OC.',
+                @DetalleAceptacion NVARCHAR(MAX)=(SELECT @EstadoRevision AS EstadoAnterior,N'APROBADO' AS EstadoNuevo,
+                    @FechaAceptacionAutomatica AS FechaEvento,N'OC' AS TipoDocumento,@Id AS DocumentoId FOR JSON PATH,WITHOUT_ARRAY_WRAPPER);
+            EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@CorrelacionId,N'PresupuestoRevision',@RegistroRevision,N'CAMBIAR_ESTADO',
+                @EstadoRevision,N'APROBADO',NULL,@MotivoAceptacion,@DetalleAceptacion;
+        END;
         UPDATE dbo.Presupuesto SET FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE PresupuestoId=@PresupuestoId;
         INSERT INTO dbo.DocumentoOperacion (OperacionId,TipoOperacion,PadreId,RegistroId,ArchivoId,Huella,UsuarioId)
         VALUES (@CorrelacionId,@TipoOperacion,@PadreId,@Id,@ArchivoId,@Huella,@UsuarioId);
@@ -1153,12 +1150,11 @@ BEGIN
 END;
 GO
 
-
 -- Fuente: StoreProcedure/spu_SeguimientoOC_Listar.sql
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_SeguimientoOC_Listar
-    @UsuarioId NVARCHAR(128),@Desde DATETIME2(3),@HastaExclusiva DATETIME2(3),@Pagina INT=1,@Busqueda NVARCHAR(200)=NULL,@Estado NVARCHAR(40)=NULL,@Confirmada BIT=NULL,@Cliente NVARCHAR(200)=NULL,@Tienda NVARCHAR(200)=NULL
+    @UsuarioId NVARCHAR(128),@Desde DATETIME2(3),@HastaExclusiva DATETIME2(3),@Pagina INT=1,@Busqueda NVARCHAR(200)=NULL,@Estado NVARCHAR(40)=NULL,@Confirmada BIT=NULL,@Cliente NVARCHAR(200)=NULL,@Tienda NVARCHAR(200)=NULL,@PendienteConfirmacion BIT=0,@PendienteFacturar BIT=0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -1167,6 +1163,8 @@ BEGIN
             INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId
             WHERE usuario.Id=@UsuarioId AND usuario.Activo=1 AND permiso.CodigoPermiso=N'OC_CLIENTE.CONSULTAR')
             THROW 51400,N'[HYT_PERMISO] No tiene permiso para esta operación documental.',1;
+        IF @PendienteFacturar=1 AND NOT EXISTS(SELECT 1 FROM dbo.AspNetUserRoles AS rol INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId WHERE rol.UserId=@UsuarioId AND permiso.CodigoPermiso=N'FACTURADO.CONSULTAR')
+            THROW 51400,N'[HYT_PERMISO] No tiene permiso para consultar facturación pendiente.',1;
         IF @Pagina<1 OR @Pagina>100000000 OR @Desde IS NULL OR @HastaExclusiva IS NULL OR @HastaExclusiva<=@Desde THROW 51420,N'[HYT_VALIDACION] Revisa rango de fechas y página.',1;
         SET @Busqueda=NULLIF(LTRIM(RTRIM(@Busqueda)),N'');
         DECLARE @Patron NVARCHAR(410)=N'%' + REPLACE(REPLACE(REPLACE(REPLACE(@Busqueda,N'~',N'~~'),N'%',N'~%'),N'_',N'~_'),N'[',N'~[') + N'%';
@@ -1175,21 +1173,28 @@ BEGIN
             fuente.CodigoMoneda,documento.Importe AS Importe,
             documento.FechaRegistro,creador.Nombres AS UsuarioRegistro,documento.FechaActualizacion,editor.Nombres AS UsuarioActualizacion,CONVERT(BINARY(8),documento.VersionFila) AS VersionFila,
             CONVERT(BINARY(8),p.VersionFila) AS VersionPadre,(SELECT COUNT_BIG(1) FROM dbo.OrdenCompraArchivo AS vinculo INNER JOIN dbo.ArchivoAdjunto AS archivo ON archivo.ArchivoId=vinculo.ArchivoId AND archivo.Retirado=0 WHERE vinculo.OrdenCompraId=documento.OrdenCompraId) AS Adjuntos,(SELECT MIN(archivo.ArchivoId) FROM dbo.OrdenCompraArchivo AS vinculo INNER JOIN dbo.ArchivoAdjunto AS archivo ON archivo.ArchivoId=vinculo.ArchivoId AND archivo.Retirado=0 WHERE vinculo.OrdenCompraId=documento.OrdenCompraId) AS PrimerArchivoId,
+            guia.GuiaId,guia.NumeroActa AS NumeroGuia,
+            (SELECT COUNT_BIG(1) FROM dbo.GuiaArchivo AS vinculo INNER JOIN dbo.ArchivoAdjunto AS archivo ON archivo.ArchivoId=vinculo.ArchivoId AND archivo.Retirado=0 WHERE vinculo.GuiaId=guia.GuiaId) AS AdjuntosGuia,
             confirmacion.ConfirmacionId,confirmacion.NumeroConfirmacion,confirmacion.FechaConfirmacion,
             (SELECT COUNT_BIG(1) FROM dbo.ConfirmacionArchivo AS vinculo INNER JOIN dbo.ArchivoAdjunto AS archivo ON archivo.ArchivoId=vinculo.ArchivoId AND archivo.Retirado=0 WHERE vinculo.ConfirmacionId=confirmacion.ConfirmacionId) AS AdjuntosConfirmacion,(SELECT referencia.FechaDocumento,referencia.CodigoTipoDocumento,referencia.Serie,referencia.NumeroDocumento,referencia.FechaRegistro,autor.Nombres AS UsuarioRegistro FROM dbo.ReferenciaComprobanteExterno AS referencia INNER JOIN dbo.AspNetUsers AS autor ON autor.Id=referencia.UsuarioRegistro WHERE referencia.OrdenCompraId=documento.OrdenCompraId AND referencia.Vigente=1 AND EXISTS(SELECT 1 FROM dbo.AspNetUserRoles AS rol INNER JOIN dbo.RolPermiso AS permisoFactura ON permisoFactura.RoleId=rol.RoleId WHERE rol.UserId=@UsuarioId AND permisoFactura.CodigoPermiso=N'FACTURADO.CONSULTAR') FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) AS Facturado
         INTO #Pagina FROM dbo.OrdenCompraCliente AS documento
         INNER JOIN dbo.Presupuesto AS p ON p.PresupuestoId=documento.PresupuestoId INNER JOIN dbo.PresupuestoRevision AS fuente ON fuente.RevisionId=documento.RevisionId LEFT JOIN dbo.ConfirmacionFacturacion AS confirmacion ON confirmacion.OrdenCompraId=documento.OrdenCompraId AND confirmacion.Vigente=1
+        LEFT JOIN dbo.GuiaConformidad AS guia ON guia.PresupuestoId=p.PresupuestoId AND EXISTS
+            (SELECT 1 FROM dbo.AspNetUserRoles AS rolGuia INNER JOIN dbo.RolPermiso AS permisoGuia ON permisoGuia.RoleId=rolGuia.RoleId WHERE rolGuia.UserId=@UsuarioId AND permisoGuia.CodigoPermiso=N'GUIAS.CONSULTAR')
         INNER JOIN dbo.AspNetUsers AS creador ON creador.Id=documento.UsuarioRegistro
         LEFT JOIN dbo.AspNetUsers AS editor ON editor.Id=documento.UsuarioActualizacion
-        WHERE documento.FechaRegistro>=@Desde AND documento.FechaRegistro<@HastaExclusiva AND (@Estado IS NULL OR documento.Estado=@Estado)
+        WHERE documento.FechaRegistro>=@Desde AND documento.FechaRegistro<@HastaExclusiva
             AND (@Cliente IS NULL OR fuente.ClienteNombre LIKE N'%'+@Cliente+N'%') AND (@Tienda IS NULL OR fuente.TiendaNombre LIKE N'%'+@Tienda+N'%')
             AND (@Busqueda IS NULL OR CONVERT(NVARCHAR(100),documento.NumeroRegistroInterno) LIKE @Patron ESCAPE N'~' OR documento.NumeroOCCliente LIKE @Patron ESCAPE N'~' OR p.NumeroPresupuesto LIKE @Patron ESCAPE N'~' OR fuente.ClienteNombre LIKE @Patron ESCAPE N'~' OR fuente.TiendaNombre LIKE @Patron ESCAPE N'~')
-            AND (@Confirmada IS NULL OR (@Confirmada=1 AND confirmacion.ConfirmacionId IS NOT NULL) OR (@Confirmada=0 AND confirmacion.ConfirmacionId IS NULL));
+            AND (@Confirmada IS NULL OR (@Confirmada=1 AND confirmacion.ConfirmacionId IS NOT NULL) OR (@Confirmada=0 AND confirmacion.ConfirmacionId IS NULL))
+            AND (@PendienteConfirmacion=0 OR confirmacion.ConfirmacionId IS NULL)
+            AND (@PendienteFacturar=0 OR NOT EXISTS(SELECT 1 FROM dbo.ReferenciaComprobanteExterno AS pendiente WHERE pendiente.OrdenCompraId=documento.OrdenCompraId AND pendiente.Vigente=1));
         SELECT (SELECT pagina.Id,pagina.PadreId,pagina.PresupuestoId,pagina.PresupuestoNumero,pagina.TipoAtencion,pagina.ClienteNombre,pagina.TiendaNombre,pagina.NumeroInterno,pagina.NumeroDocumento,
             pagina.Estado,pagina.FechaDocumento,pagina.CodigoMoneda,pagina.Importe,pagina.FechaRegistro,pagina.UsuarioRegistro,pagina.FechaActualizacion,pagina.UsuarioActualizacion,pagina.VersionFila,pagina.VersionPadre,pagina.Adjuntos,pagina.PrimerArchivoId,
-            pagina.ConfirmacionId,pagina.NumeroConfirmacion,pagina.FechaConfirmacion,pagina.AdjuntosConfirmacion,JSON_QUERY(pagina.Facturado) AS Facturado
-            FROM #Pagina AS pagina ORDER BY pagina.FechaRegistro DESC,pagina.Id DESC OFFSET (CONVERT(BIGINT,@Pagina)-1)*20 ROWS FETCH NEXT 20 ROWS ONLY FOR JSON PATH,INCLUDE_NULL_VALUES) AS Datos;
-        SELECT COUNT_BIG(1) AS Total FROM #Pagina AS pagina;
+            pagina.GuiaId,pagina.NumeroGuia,pagina.AdjuntosGuia,pagina.ConfirmacionId,pagina.NumeroConfirmacion,pagina.FechaConfirmacion,pagina.AdjuntosConfirmacion,JSON_QUERY(pagina.Facturado) AS Facturado
+            FROM #Pagina AS pagina WHERE (@Estado IS NULL OR pagina.Estado=@Estado) ORDER BY pagina.FechaRegistro DESC,pagina.Id DESC OFFSET (CONVERT(BIGINT,@Pagina)-1)*20 ROWS FETCH NEXT 20 ROWS ONLY FOR JSON PATH,INCLUDE_NULL_VALUES) AS Datos;
+        SELECT COUNT_BIG(1) AS Total FROM #Pagina AS pagina WHERE (@Estado IS NULL OR pagina.Estado=@Estado);
+        SELECT pagina.Estado,COUNT_BIG(1) AS Cantidad FROM #Pagina AS pagina GROUP BY pagina.Estado;
         DROP TABLE #Pagina;
     END TRY
     BEGIN CATCH
@@ -1200,7 +1205,6 @@ BEGIN
     END CATCH
 END;
 GO
-
 
 -- Fuente: StoreProcedure/spu_SeguimientoOC_Obtener.sql
 USE [SistemaWebHYT];
@@ -1257,7 +1261,6 @@ BEGIN
     END CATCH
 END;
 GO
-
 
 -- Fuente: StoreProcedure/spu_Seguimiento_ObtenerArchivo.sql
 USE [SistemaWebHYT];

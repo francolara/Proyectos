@@ -25,6 +25,7 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.AddScoped(_ => new SqlConnectionFactory(builder.Configuration.GetConnectionString("HYT") ?? ""));
 builder.Services.AddScoped<IAccessRepository, SqlAccessRepository>();
+builder.Services.AddScoped<ISecurityAdministrationRepository, SqlSecurityAdministrationRepository>();
 builder.Services.AddScoped<GestionServicios.Application.Maintenance.IMaintenanceRepository, GestionServicios.Infrastructure.Maintenance.SqlMaintenanceRepository>();
 builder.Services.AddScoped<GestionServicios.Application.Maintenance.ITaxRateRepository, GestionServicios.Infrastructure.Maintenance.SqlTaxRateRepository>();
 builder.Services.AddScoped<GestionServicios.Application.Maintenance.ICompanySettingsRepository, GestionServicios.Infrastructure.Maintenance.SqlCompanySettingsRepository>();
@@ -105,12 +106,26 @@ app.Use(async (context, next) =>
     await next();
 });
 app.UseRequestLocalization();
+app.UseRouting();
 app.UseAuthentication();
+app.Use(async (context, next) =>
+{
+    if (context.User.HasClaim(AccessService.MandatoryPasswordClaim, "true") &&
+        context.GetEndpoint()?.Metadata.GetMetadata<GestionServicios.Web.Security.PasswordChangeAllowedAttribute>() is null)
+    {
+        if (HttpMethods.IsGet(context.Request.Method) && context.Request.Headers.Accept.ToString().Contains("text/html", StringComparison.OrdinalIgnoreCase))
+            context.Response.Redirect("/Cuenta/CambiarClave");
+        else
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        return;
+    }
+    await next();
+});
 app.UseAuthorization();
 app.UseRateLimiter();
 app.UseAntiforgery();
 app.MapGet("/health/live",()=>Results.Text("ok","text/plain")).AllowAnonymous();
-app.MapStaticAssets().AllowAnonymous();
+app.MapStaticAssets().WithMetadata(new PasswordChangeAllowedAttribute()).AllowAnonymous();
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 app.Run();
 

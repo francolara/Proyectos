@@ -1,3 +1,5 @@
+using GestionServicios.Application.Security;
+using GestionServicios.Infrastructure.Security;
 using System.Data;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -59,7 +61,7 @@ async Task<BudgetVersion> Save(SqlConnection connection, object payload, BudgetV
     await using var reader = await command.ExecuteReaderAsync(); await reader.ReadAsync();
     return new(reader.GetInt64(0), reader.GetInt64(1), reader.GetString(2), reader.GetInt32(3), (byte[])reader.GetValue(4), (byte[])reader.GetValue(5));
 }
-async Task<BudgetVersion> State(SqlConnection connection, BudgetVersion prior, string state)
+async Task<BudgetVersion> State(SqlConnection connection, BudgetVersion prior, string state,string? reason="Prueba aislada")
 {
     await using var command = new SqlCommand("dbo.spu_Presupuesto_CambiarEstado", connection) { CommandType = CommandType.StoredProcedure };
     command.Parameters.Add("@UsuarioId", SqlDbType.NVarChar, 128).Value = actor;
@@ -71,7 +73,7 @@ async Task<BudgetVersion> State(SqlConnection connection, BudgetVersion prior, s
     command.Parameters.Add("@NuevoEstado", SqlDbType.NVarChar, 20).Value = state;
     command.Parameters.Add("@FechaEvento", SqlDbType.Date).Value = new DateTime(2026,11,3);
     command.Parameters.Add("@Responsable", SqlDbType.NVarChar, 150).Value = "Representante de prueba";
-    command.Parameters.Add("@Motivo", SqlDbType.NVarChar, 2000).Value = "Prueba aislada";
+    command.Parameters.Add("@Motivo", SqlDbType.NVarChar, 2000).Value = (object?)reason ?? DBNull.Value;
     await using var reader = await command.ExecuteReaderAsync(); await reader.ReadAsync();
     return prior with { HeaderVersion = (byte[])reader.GetValue(2), RevisionVersion = (byte[])reader.GetValue(3) };
 }
@@ -107,9 +109,11 @@ try
                 using var stageManifest=JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(sources,$"manifest-etapa{stage}.json")));
                 foreach(var item in stageManifest.RootElement.GetProperty("scripts").EnumerateArray())bundled.Add(Path.Combine(sources,item.GetString()!));
             }
-            installation.RemoveAll(bundled.Contains);
+            installation.RemoveAll(source => bundled.Contains(source) ||
+                Path.GetFileName(source) is "spu_Auditoria_Listar.sql" or "spu_Auditoria_Obtener.sql" or "032_PermisosAdministracion.sql");
             foreach(var stage in new[]{5,6,7,8})installation.Add(Path.Combine(project,$"entregables/ETAPA_{stage}_HYT.sql"));
-            Console.WriteLine("Instalación aislada desde paquetes incrementales de etapas 5/6/7/8.");
+            installation.Add(Path.Combine(project,"entregables/ADMINISTRACION_HYT.sql"));
+            Console.WriteLine("Instalación aislada desde paquetes incrementales de etapas 5/6/7/8 y administración.");
         }
         foreach (var name in installation)
         {
@@ -236,17 +240,20 @@ try
     catch(SqlException) { Check(true,"Segunda guía del mismo presupuesto es rechazada"); }
     var invitation=await Save(connection,Payload([Manual()],attention:"INVITACION"));
     var ocPayload=new {RevisionId=invitation.RevisionId,NumeroOCCliente="OC-000A/01",FechaEmisionOC="2026-11-03",FechaRecepcionOC="2026-11-03",Importe=236m};
-    await ExpectFailure(()=>SaveDocument(connection,"OC",invitation.BudgetId,invitation.HeaderVersion,ocPayload,Guid.NewGuid()),"Invitación requiere","Invitación impide OC sin revisión aprobada");
     invitation=await State(connection,invitation,"ENVIADO");
-    invitation=await State(connection,invitation,"APROBADO");
     var ocId=await SaveDocument(connection,"OC",invitation.BudgetId,invitation.HeaderVersion,ocPayload,Guid.NewGuid());
     Check(ocId>0&&Convert.ToString(await Scalar(connection,$"SELECT NumeroOCCliente FROM dbo.OrdenCompraCliente WHERE OrdenCompraId={ocId}"))=="OC-000A/01","OC conserva número externo alfanumérico después de aprobar invitación");
+    Check(Convert.ToString(await Scalar(connection,$"SELECT Estado FROM dbo.PresupuestoRevision WHERE RevisionId={invitation.RevisionId}"))=="APROBADO","Registrar OC en invitación enviada acepta automáticamente el presupuesto");
+    Check(Convert.ToInt64(await Scalar(connection,$"SELECT COUNT_BIG(1) FROM dbo.EventoAuditoria WHERE Entidad=N'PresupuestoRevision' AND RegistroId=N'{invitation.RevisionId}' AND EstadoNuevo=N'APROBADO' AND Motivo LIKE N'%automática%OC%'"))==1,"OC registra una aceptación auditada con origen documental");
     var parentVersion=(byte[])(await Scalar(connection,$"SELECT VersionFila FROM dbo.Presupuesto WHERE PresupuestoId={invitation.BudgetId}"))!;
     await ExpectFailure(()=>SaveDocument(connection,"OC",invitation.BudgetId,parentVersion,ocPayload,Guid.NewGuid()),"Ya existe","Un presupuesto no admite segunda OC");
     var ocVersion=(byte[])(await Scalar(connection,$"SELECT VersionFila FROM dbo.OrdenCompraCliente WHERE OrdenCompraId={ocId}"))!;
     var confirmationPayload=new {FechaConfirmacion="2026-11-03",NumeroConfirmacion="ACEP-0002B",Observacion="Aceptación del cliente"};
-    var confirmationId=await SaveDocument(connection,"CONFIRMACION",ocId,ocVersion,confirmationPayload,Guid.NewGuid());
+    var confirmationOperation=Guid.NewGuid();
+    var confirmationId=await SaveDocument(connection,"CONFIRMACION",ocId,ocVersion,confirmationPayload,confirmationOperation);
     Check(confirmationId>0,"Confirmación del cliente se registra en su OC");
+    Check(Convert.ToString(await Scalar(connection,$"SELECT Estado FROM dbo.OrdenCompraCliente WHERE OrdenCompraId={ocId}"))=="TRABAJO_COMPLETADO","Confirmación completa OC automáticamente sin ejecución registrada");
+    Check(await SaveDocument(connection,"CONFIRMACION",ocId,ocVersion,confirmationPayload,confirmationOperation)==confirmationId&&Convert.ToInt64(await Scalar(connection,$"SELECT COUNT_BIG(1) FROM dbo.EventoAuditoria WHERE Entidad=N'OrdenCompraCliente' AND RegistroId=N'{ocId}' AND Accion=N'CAMBIAR_ESTADO_AUTOMATICO' AND EstadoAnterior=N'REGISTRADA' AND EstadoNuevo=N'TRABAJO_COMPLETADO' AND FechaEvento='20261103'"))==1,"Reintento de confirmación no duplica cambio automático auditado con fecha del cliente");
     ocVersion=(byte[])(await Scalar(connection,$"SELECT VersionFila FROM dbo.OrdenCompraCliente WHERE OrdenCompraId={ocId}"))!;
     await ExpectFailure(()=>SaveDocument(connection,"CONFIRMACION",ocId,ocVersion,confirmationPayload,Guid.NewGuid()),"Ya existe","OC impide dos confirmaciones vigentes");
     foreach(var entry in new[]{(Code:"GUIA",Id:guideId),(Code:"OC",Id:ocId),(Code:"CONFIRMACION",Id:confirmationId)})
@@ -264,7 +271,7 @@ try
     var documents=new GestionServicios.Infrastructure.Followup.SqlDocumentRepository(new GestionServicios.Infrastructure.SqlConnectionFactory(localConnection+"Initial Catalog="+testDatabase+";"));
     var ocKind=GestionServicios.Application.Followup.DocumentKind.Resolve("oc-cliente");
     var actualOc=await documents.GetAsync(ocKind,actor,ocId,null,1,CancellationToken.None);
-    Check(actualOc is not null&&actualOc.Audit.Count==1&&actualOc.Data.GetProperty("Documento").GetProperty("NumeroOCCliente").GetString()=="OC-000A/01","Repositorio documental mapea ficha, contexto y auditoría reales");
+    Check(actualOc is not null&&actualOc.Audit.Count==2&&actualOc.Data.GetProperty("Documento").GetProperty("NumeroOCCliente").GetString()=="OC-000A/01","Repositorio documental mapea ficha, contexto y auditoría reales");
     var actualPage=await documents.ListAsync(ocKind,actor,DateTimeOffset.UtcNow.AddDays(-1),DateTimeOffset.UtcNow.AddDays(1),"OC-000A/01",1,null,true,CancellationToken.None);
     Check(actualPage.Total==1&&actualPage.Rows.Count==1,"Repositorio documental mapea listado y filtro de confirmación");
     var noConfirmation=await documents.ListAsync(ocKind,actor,DateTimeOffset.UtcNow.AddDays(-1),DateTimeOffset.UtcNow.AddDays(1),null,1,null,false,CancellationToken.None);
@@ -278,7 +285,7 @@ try
     var attachmentOperation=Guid.NewGuid();
     var guideParent=(byte[])(await Scalar(connection,$"SELECT VersionFila FROM dbo.Presupuesto WHERE PresupuestoId={emergency.BudgetId}"))!;
     var guideVersion=(byte[])(await Scalar(connection,$"SELECT VersionFila FROM dbo.GuiaConformidad WHERE GuiaId={guideId}"))!;
-    var attachmentPayload=JsonSerializer.Serialize(new{FechaActa="2026-11-03",NumeroActa="GUIA-0007B",MotivoCambio="Adjuntar escaneado",Adjunto=new{NombreOriginal="Guía escaneada.pdf",ClaveAlmacenamiento=attachmentOperation.ToString("N")+".pdf",TipoContenido="application/pdf",TamanoBytes=15,SHA256=new string('A',64)}});
+    var attachmentPayload=JsonSerializer.Serialize(new{FechaActa="2026-11-03",NumeroActa="GUIA-0007B",MotivoCambio="Adjuntar escaneado",Adjunto=new{NombreOriginal="Guía escaneada.pdf",ClaveAlmacenamiento="Guia/GUIA-0007B/"+attachmentOperation.ToString("N")+".pdf",TipoContenido="application/pdf",TamanoBytes=15,SHA256=new string('A',64)}});
     var attached=await documents.SaveAsync(guideKind,actor,emergency.BudgetId,guideParent,attachmentPayload,attachmentOperation,guideId,guideVersion,CancellationToken.None);
     var filesRepository=new GestionServicios.Infrastructure.Followup.SqlDocumentFileRepository(new GestionServicios.Infrastructure.SqlConnectionFactory(localConnection+"Initial Catalog="+testDatabase+";"));
     var file=await filesRepository.GetAsync(guideKind,actor,attached.FileId!.Value,CancellationToken.None);
@@ -310,29 +317,25 @@ try
     await ExpectFailure(()=>DocumentState("ejecucion",execution.Id,emergency.BudgetId,"TERMINADA","2026-11-02"),"fecha de término","Trabajo no puede terminar antes de su inicio real");
     await DocumentState("ejecucion",execution.Id,emergency.BudgetId,"TERMINADA","2026-11-04");
     Check(Convert.ToString(await Scalar(connection,$"SELECT Estado FROM dbo.Ejecucion WHERE EjecucionId={execution.Id}"))=="TERMINADA","Emergencia termina ejecución sin OC");
-    var beforeAcceptance=await documents.GetAsync(guideKind,actor,guideId,emergency.BudgetId,1,CancellationToken.None);var acceptanceOperation=Guid.NewGuid();
-    await DocumentState("guias",guideId,emergency.BudgetId,"ACEPTADA","2026-11-04",acceptanceOperation,beforeAcceptance);
-    await DocumentState("guias",guideId,emergency.BudgetId,"ACEPTADA","2026-11-04",acceptanceOperation,beforeAcceptance);
-    Check(Convert.ToInt64(await Scalar(connection,$"SELECT COUNT_BIG(1) FROM dbo.EventoAuditoria WHERE Entidad=N'GuiaConformidad' AND RegistroId=N'{guideId}' AND Accion=N'CAMBIAR_ESTADO'"))==1,"Aceptación de guía idempotente no duplica auditoría");
-    Check(await Scalar(connection,$"SELECT FechaAceptacion FROM dbo.GuiaConformidad WHERE GuiaId={guideId}") is DateTime acceptedDate&&acceptedDate.Date==new DateTime(2026,11,4),"Guía conserva fecha de aceptación y representante");
-    await ExpectFailure(()=>DocumentState("guias",guideId,emergency.BudgetId,"OBSERVADA",original:beforeAcceptance),"cambió","Cambio documental rechaza versiones anteriores");
-    await ExpectFailure(()=>DocumentState("oc-cliente",ocId,invitation.BudgetId,"TRABAJO_COMPLETADO"),"ejecución terminada","OC no marca trabajo completado sin ejecución terminada");
+    await DocumentState("oc-cliente",ocId,invitation.BudgetId,"REGISTRADA");
+    await DocumentState("oc-cliente",ocId,invitation.BudgetId,"TRABAJO_COMPLETADO");
+    Check(Convert.ToString(await Scalar(connection,$"SELECT Estado FROM dbo.OrdenCompraCliente WHERE OrdenCompraId={ocId}"))=="TRABAJO_COMPLETADO","Cambio manual admite confirmación vigente sin exigir ejecución terminada");
+    await ExpectFailure(()=>DocumentState("oc-cliente",ocId,invitation.BudgetId,"CERRADA_OPERATIVAMENTE"),"ejecución terminada","Cierre operativo conserva requisito de ejecución terminada");
     var invitationParent=(byte[])(await Scalar(connection,$"SELECT VersionFila FROM dbo.Presupuesto WHERE PresupuestoId={invitation.BudgetId}"))!;
     var inviteExecution=await documents.SaveAsync(executionKind,actor,invitation.BudgetId,invitationParent,JsonSerializer.Serialize(new{Responsable="Técnico",FechaProgramada="2026-11-03"}),Guid.NewGuid(),null,null,CancellationToken.None);
     await ExpectFailure(()=>DocumentState("ejecucion",inviteExecution.Id,invitation.BudgetId,"TERMINADA"),"Transición","Ejecución pendiente no salta directamente a terminada");
     await DocumentState("ejecucion",inviteExecution.Id,invitation.BudgetId,"PROGRAMADA");
     await DocumentState("ejecucion",inviteExecution.Id,invitation.BudgetId,"EN_EJECUCION");
     await DocumentState("ejecucion",inviteExecution.Id,invitation.BudgetId,"TERMINADA","2026-11-04");
-    await DocumentState("oc-cliente",ocId,invitation.BudgetId,"TRABAJO_COMPLETADO");
-    await ExpectFailure(()=>DocumentState("oc-cliente",ocId,invitation.BudgetId,"CERRADA_OPERATIVAMENTE"),"guía aceptada","Cierre OC requiere guía aceptada");
+    await ExpectFailure(()=>DocumentState("oc-cliente",ocId,invitation.BudgetId,"CERRADA_OPERATIVAMENTE"),"guía registrada","Cierre OC requiere guía registrada");
     invitationParent=(byte[])(await Scalar(connection,$"SELECT VersionFila FROM dbo.Presupuesto WHERE PresupuestoId={invitation.BudgetId}"))!;
     var inviteGuide=await documents.SaveAsync(guideKind,actor,invitation.BudgetId,invitationParent,JsonSerializer.Serialize(new{FechaActa="2026-11-04",NumeroActa="INV-0008C"}),Guid.NewGuid(),null,null,CancellationToken.None);
-    await DocumentState("guias",inviteGuide.Id,invitation.BudgetId,"ACEPTADA","2026-11-04");
     await DocumentState("oc-cliente",ocId,invitation.BudgetId,"CERRADA_OPERATIVAMENTE");
-    Check(Convert.ToString(await Scalar(connection,$"SELECT Estado FROM dbo.OrdenCompraCliente WHERE OrdenCompraId={ocId}"))=="CERRADA_OPERATIVAMENTE","OC cierra después de ejecución terminada y guía aceptada");
-    await ExpectFailure(()=>DocumentState("guias",inviteGuide.Id,invitation.BudgetId,"OBSERVADA"),"Reabre primero la OC","Guía aceptada no se revoca mientras OC sigue cerrada");
+    Check(Convert.ToString(await Scalar(connection,$"SELECT Estado FROM dbo.OrdenCompraCliente WHERE OrdenCompraId={ocId}"))=="CERRADA_OPERATIVAMENTE","OC cierra después de ejecución terminada y guía registrada");
+    var closedConfirmation=(await documents.GetAsync(GestionServicios.Application.Followup.DocumentKind.Resolve("confirmaciones"),actor,confirmationId,null,1,CancellationToken.None))!;
+    await documents.SaveAsync(GestionServicios.Application.Followup.DocumentKind.Resolve("confirmaciones"),actor,ocId,Convert.FromBase64String(closedConfirmation.Data.GetProperty("VersionPadre").GetString()!),JsonSerializer.Serialize(new{FechaConfirmacion="2026-11-03",NumeroConfirmacion="ACEP-0002B",MotivoCambio="Corregir observación sin reabrir OC"}),Guid.NewGuid(),confirmationId,Convert.FromBase64String(closedConfirmation.Data.GetProperty("Documento").GetProperty("VersionFila").GetString()!),CancellationToken.None);
+    Check(Convert.ToString(await Scalar(connection,$"SELECT Estado FROM dbo.OrdenCompraCliente WHERE OrdenCompraId={ocId}"))=="CERRADA_OPERATIVAMENTE","Editar confirmación no degrada una OC cerrada operativamente");
     await DocumentState("oc-cliente",ocId,invitation.BudgetId,"TRABAJO_COMPLETADO");
-    await DocumentState("guias",inviteGuide.Id,invitation.BudgetId,"OBSERVADA");
     await ExpectFailure(()=>DocumentState("ejecucion",inviteExecution.Id,invitation.BudgetId,"EN_EJECUCION"),"Reabre la OC","Trabajo no se reabre mientras OC figura trabajo completado");
     await DocumentState("oc-cliente",ocId,invitation.BudgetId,"REGISTRADA");
     await DocumentState("ejecucion",inviteExecution.Id,invitation.BudgetId,"EN_EJECUCION");
@@ -345,30 +348,49 @@ try
     await documents.ChangeStateAsync(executionKind,actor,inviteExecution.Id,invitation.BudgetId,Convert.FromBase64String(executionForRepository!.Data.GetProperty("VersionPadre").GetString()!),Convert.FromBase64String(executionForRepository.Data.GetProperty("Documento").GetProperty("VersionFila").GetString()!),Guid.NewGuid(),"TERMINADA",new DateOnly(2026,11,5),"Técnico responsable","Término real",CancellationToken.None);
     Check(await Scalar(connection,$"SELECT FechaTerminoReal FROM dbo.Ejecucion WHERE EjecucionId={inviteExecution.Id}") is DateTime repositoryDate&&repositoryDate.Date==new DateTime(2026,11,5),"Repositorio de estados conserva fecha real sin desfase horario");
     await ExpectDomainFailure(()=>documents.ChangeStateAsync(executionKind,"sql-test-budget-only",inviteExecution.Id,invitation.BudgetId,new byte[8],new byte[8],Guid.NewGuid(),"CANCELADA",new DateOnly(2026,11,5),"Responsable","Prueba",CancellationToken.None),"permiso","Cambio de estado documental exige permiso de edición SQL");
+    var guideInvitation=await Save(connection,Payload([Manual()],attention:"INVITACION"));
+    guideInvitation=await State(connection,guideInvitation,"ENVIADO");
+    var guideAcceptanceOperation=Guid.NewGuid();
+    var guideAcceptancePayload=new {FechaActa="2026-11-06",NumeroActa="AUTO-INVITACION"};
+    await Execute(connection,"CREATE OR ALTER TRIGGER dbo.trg_TestAutoAcceptanceFailure ON dbo.EventoAuditoria AFTER INSERT AS BEGIN SET NOCOUNT ON; IF EXISTS(SELECT 1 FROM inserted AS e WHERE e.Entidad=N'PresupuestoRevision' AND e.EstadoNuevo=N'APROBADO') THROW 51999,N'Fallo aceptación automática.',1; END;");
+    try
+    {
+        await ExpectFailure(()=>SaveDocument(connection,"GUIA",guideInvitation.BudgetId,guideInvitation.HeaderVersion,guideAcceptancePayload,guideAcceptanceOperation),"Fallo aceptación automática","Error al auditar aceptación revierte todo el registro de guía");
+        Check(Convert.ToString(await Scalar(connection,$"SELECT Estado FROM dbo.PresupuestoRevision WHERE RevisionId={guideInvitation.RevisionId}"))=="ENVIADO"&&Convert.ToInt64(await Scalar(connection,$"SELECT COUNT_BIG(1) FROM dbo.GuiaConformidad WHERE PresupuestoId={guideInvitation.BudgetId}"))==0,"Fallo no deja presupuesto aceptado ni guía parcial");
+    }
+    finally {await Execute(connection,"DROP TRIGGER dbo.trg_TestAutoAcceptanceFailure;");}
+    var autoGuideId=await SaveDocument(connection,"GUIA",guideInvitation.BudgetId,guideInvitation.HeaderVersion,guideAcceptancePayload,guideAcceptanceOperation);
+    Check(autoGuideId>0&&Convert.ToString(await Scalar(connection,$"SELECT Estado FROM dbo.PresupuestoRevision WHERE RevisionId={guideInvitation.RevisionId}"))=="APROBADO","Guía de invitación enviada acepta presupuesto sin OC previa");
+    Check(await SaveDocument(connection,"GUIA",guideInvitation.BudgetId,guideInvitation.HeaderVersion,guideAcceptancePayload,guideAcceptanceOperation)==autoGuideId&&Convert.ToInt64(await Scalar(connection,$"SELECT COUNT_BIG(1) FROM dbo.EventoAuditoria WHERE Entidad=N'PresupuestoRevision' AND RegistroId=N'{guideInvitation.RevisionId}' AND EstadoNuevo=N'APROBADO'"))==1,"Reintento de guía no duplica aceptación ni auditoría");
     var regularization=await Save(connection,Payload([Manual(25)]));
     var regularizationOc=await documents.SaveAsync(ocKind,actor,regularization.BudgetId,regularization.HeaderVersion,JsonSerializer.Serialize(new{RevisionId=regularization.RevisionId,NumeroOCCliente="EMERG-0009A",FechaEmisionOC="2026-11-03",FechaRecepcionOC="2026-11-03"}),Guid.NewGuid(),null,null,CancellationToken.None);
-    regularization=regularization with{HeaderVersion=(byte[])(await Scalar(connection,$"SELECT VersionFila FROM dbo.Presupuesto WHERE PresupuestoId={regularization.BudgetId}"))!};
+    regularization=regularization with{HeaderVersion=(byte[])(await Scalar(connection,$"SELECT VersionFila FROM dbo.Presupuesto WHERE PresupuestoId={regularization.BudgetId}"))!,RevisionVersion=(byte[])(await Scalar(connection,$"SELECT VersionFila FROM dbo.PresupuestoRevision WHERE RevisionId={regularization.RevisionId}"))!};
     await ExpectFailure(()=>Save(connection,Payload([Manual(99)]),regularization),"no admite cambios","Emergencia con OC mantiene bloqueados contenido e importes");
-    regularization=await State(connection,regularization,"ENVIADO");
-    await ExpectFailure(()=>State(connection,regularization,"RECHAZADO"),"OC no permite","Regularización con OC no habilita rechazo que contradiga el documento");
-    regularization=await State(connection,regularization,"APROBADO");
+    Check(Convert.ToString(await Scalar(connection,$"SELECT Estado FROM dbo.PresupuestoRevision WHERE RevisionId={regularization.RevisionId}"))=="APROBADO","OC de emergencia acepta automáticamente sin regularización manual");
     Check(Convert.ToDecimal(await Scalar(connection,$"SELECT Total FROM dbo.PresupuestoRevision WHERE RevisionId={regularization.RevisionId}"))==59m,"Emergencia se regulariza después de OC sin recalcular importes");
     await ExpectFailure(()=>State(connection,regularization,"CANCELADO"),"OC no permite","Presupuesto aprobado con OC no se cancela desde regularización");
+    await ExpectFailure(()=>DocumentState("guias",guideId,emergency.BudgetId,"ACEPTADA"),"no utiliza estados","Guía rechaza cambios de estado en SQL");
+    async Task EditGuideForTest(string observation)
+    {
+        var original=await documents.GetAsync(guideKind,actor,guideId,null,1,CancellationToken.None);
+        await documents.SaveAsync(guideKind,actor,emergency.BudgetId,Convert.FromBase64String(original!.Data.GetProperty("VersionPadre").GetString()!),JsonSerializer.Serialize(new{FechaActa="2026-11-03",NumeroActa="GUIA-0007B",Observacion=observation,MotivoCambio="Corrección de datos de guía"}),Guid.NewGuid(),guideId,Convert.FromBase64String(original.Data.GetProperty("Documento").GetProperty("VersionFila").GetString()!),CancellationToken.None);
+    }
+    var priorGuideObservation=Convert.ToString(await Scalar(connection,$"SELECT Observacion FROM dbo.GuiaConformidad WHERE GuiaId={guideId}"));
     await Execute(connection,"""
         CREATE OR ALTER TRIGGER dbo.trg_TestAuditFailure ON dbo.EventoAuditoria AFTER INSERT AS
         BEGIN
             SET NOCOUNT ON;
-            IF EXISTS(SELECT 1 FROM inserted AS evento WHERE evento.Entidad=N'GuiaConformidad' AND evento.Accion=N'CAMBIAR_ESTADO')
+            IF EXISTS(SELECT 1 FROM inserted AS evento WHERE evento.Entidad=N'GuiaConformidad' AND evento.Accion=N'ACTUALIZAR')
                 THROW 51999,N'Fallo de auditoría provocado para prueba aislada.',1;
         END;
         """);
     try
     {
-        await ExpectFailure(()=>DocumentState("guias",guideId,emergency.BudgetId,"OBSERVADA"),"Fallo de auditoría","Error de auditoría rechaza la transición completa");
-        Check(Convert.ToString(await Scalar(connection,$"SELECT Estado FROM dbo.GuiaConformidad WHERE GuiaId={guideId}"))=="ACEPTADA","Fallo al auditar no deja aplicado el cambio de estado");
+        await ExpectFailure(()=>EditGuideForTest("Prueba rollback"),"Fallo de auditoría","Fallo de auditoría revierte edición de guía");
+        Check(Convert.ToString(await Scalar(connection,$"SELECT Observacion FROM dbo.GuiaConformidad WHERE GuiaId={guideId}"))==priorGuideObservation,"Fallo de edición conserva datos previos de guía");
     }
     finally{await Execute(connection,"DROP TRIGGER dbo.trg_TestAuditFailure;");}
-    for(var eventIndex=0;eventIndex<25;eventIndex++)await DocumentState("guias",guideId,emergency.BudgetId,eventIndex%2==0?"OBSERVADA":"ENVIADA");
+    for(var eventIndex=0;eventIndex<25;eventIndex++)await EditGuideForTest("Cambio "+eventIndex);
     var fullHistory=await repository.GetAsync(actor,emergency.BudgetId,null,1,CancellationToken.None);
     var nextHistory=await repository.GetAsync(actor,emergency.BudgetId,null,2,CancellationToken.None)??throw new InvalidOperationException("Falta segunda página del expediente.");
     Check(fullHistory!.Audit.Count==20&&fullHistory.AuditTotal>20&&nextHistory!.Audit.Count>0&&!fullHistory.Audit.Select(row=>row.Id).Intersect(nextHistory.Audit.Select(row=>row.Id)).Any(),"Expediente consolida eventos repetidos con páginas SQL sin duplicación");
@@ -379,6 +401,7 @@ try
     var updatedBudgetPage=await repository.ListAsync(actor,DateTimeOffset.UtcNow.AddDays(-1),DateTimeOffset.UtcNow.AddDays(1),emergency.Number,1,null,CancellationToken.None);
     var latestUpdated=updatedBudgetPage.Rows.Single(row=>row.BudgetId==emergency.BudgetId);
     Check(latestUpdated.UpdatedAt.HasValue&&latestUpdated.UpdatedAt.Value.UtcDateTime==(DateTime)(await Scalar(connection,$"SELECT FechaActualizacion FROM dbo.Presupuesto WHERE PresupuestoId={emergency.BudgetId}"))!,"Listado presupuesto muestra la última actualización documental");
+    Check(latestUpdated.ExecutionId==execution.Id&&latestUpdated.GuideId==guideId,"Listado SQL de presupuestos identifica ejecución y guía ya registradas");
     Check(await repository.GetAsync(actor,999999,null,1,CancellationToken.None) is null,"Consulta SQL de presupuesto inexistente devuelve vacío sin error");
     var noOrderInvitation=await Save(connection,Payload([Manual()],attention:"INVITACION"));
     var unapprovedExecution=await documents.SaveAsync(executionKind,actor,noOrderInvitation.BudgetId,noOrderInvitation.HeaderVersion,JsonSerializer.Serialize(new{Responsable="Técnico",FechaProgramada="2026-11-03"}),Guid.NewGuid(),null,null,CancellationToken.None);
@@ -390,17 +413,14 @@ try
     Check(Convert.ToString(await Scalar(connection,$"SELECT Estado FROM dbo.Ejecucion WHERE EjecucionId={immediateExecution.Id}"))=="EN_EJECUCION","Emergencia puede iniciar directamente sin programación ni OC");
     await ExpectFailure(()=>DocumentState("oc-cliente",ocId,invitation.BudgetId,"CANCELADA"),"Retira la confirmación","Cancelación OC exige resolver confirmación y guía vigentes");
     await DocumentState("confirmaciones",replacementConfirmation.Id,ocId,"RETIRADA");
-    await DocumentState("guias",inviteGuide.Id,invitation.BudgetId,"ANULADA");
     await DocumentState("oc-cliente",ocId,invitation.BudgetId,"CANCELADA");
     await DocumentState("oc-cliente",ocId,invitation.BudgetId,"REGISTRADA");
     Check(Convert.ToInt64(await Scalar(connection,$"SELECT COUNT_BIG(1) FROM dbo.OrdenCompraCliente WHERE PresupuestoId={invitation.BudgetId}"))==1,"Cancelar y reactivar OC conserva el mismo registro único");
-    await DocumentState("guias",inviteGuide.Id,invitation.BudgetId,"REGISTRADA");
     var invalidUploadOperation=Guid.NewGuid();
     var currentGuide=await documents.GetAsync(guideKind,actor,inviteGuide.Id,null,1,CancellationToken.None);
     var beforeInvalidFiles=Convert.ToInt64(await Scalar(connection,"SELECT COUNT_BIG(1) FROM dbo.ArchivoAdjunto"));
     await ExpectDomainFailure(()=>documents.SaveAsync(guideKind,actor,invitation.BudgetId,Convert.FromBase64String(currentGuide!.Data.GetProperty("VersionPadre").GetString()!),JsonSerializer.Serialize(new{FechaActa="2026-11-04",NumeroActa="INV-0008C",MotivoCambio="Prueba rechazo de imagen",Adjunto=new{NombreOriginal="imagen.png",ClaveAlmacenamiento=invalidUploadOperation.ToString("N")+".png",TipoContenido="image/png",TamanoBytes=20,SHA256=new string('B',64)}}),invalidUploadOperation,inviteGuide.Id,Convert.FromBase64String(currentGuide!.Data.GetProperty("Documento").GetProperty("VersionFila").GetString()!),CancellationToken.None),"solo admite escaneado PDF","SQL también rechaza imagen en guía aunque se omita la validación web");
     Check(Convert.ToInt64(await Scalar(connection,"SELECT COUNT_BIG(1) FROM dbo.ArchivoAdjunto"))==beforeInvalidFiles,"Adjunto rechazado no deja metadatos parciales");
-    await ExpectFailure(()=>DocumentState("guias",guideId,emergency.BudgetId,"OBSERVADA","2026-11-04",acceptanceOperation,beforeAcceptance),"otros datos","Identificador de operación no se reutiliza para otra transición");
     async Task<long> MarkInvoice(long order,byte[] version,Guid operation,long? reference=null,byte[]? referenceVersion=null,bool withdraw=false)
     {
         await using var command=new SqlCommand("dbo.spu_Facturado_Guardar",connection){CommandType=CommandType.StoredProcedure};
@@ -422,7 +442,6 @@ try
     await DocumentState("ejecucion",completeWork.Id,regularization.BudgetId,"TERMINADA");
     completionParent=(byte[])(await Scalar(connection,$"SELECT VersionFila FROM dbo.Presupuesto WHERE PresupuestoId={regularization.BudgetId}"))!;
     var completeGuide=await documents.SaveAsync(guideKind,actor,regularization.BudgetId,completionParent,JsonSerializer.Serialize(new{FechaActa="2026-11-03",NumeroActa="FACT-GUIA-01"}),Guid.NewGuid(),null,null,CancellationToken.None);
-    await DocumentState("guias",completeGuide.Id,regularization.BudgetId,"ACEPTADA");
     var markOperation=Guid.NewGuid();var markId=await MarkInvoice(markOrder,markVersion,markOperation);
     Check(Convert.ToString(await Scalar(connection,$"SELECT CodigoTipoDocumento+N'|'+Serie+N'|'+NumeroDocumento FROM dbo.ReferenciaComprobanteExterno WHERE ReferenciaId={markId}"))=="01|F001|000012A","Facturado guarda código textual y número externo sin perder ceros");
     Check(await MarkInvoice(markOrder,markVersion,markOperation)==markId&&Convert.ToInt64(await Scalar(connection,$"SELECT COUNT_BIG(1) FROM dbo.ReferenciaComprobanteExterno WHERE OrdenCompraId={markOrder}"))==1,"Reintento Facturado no duplica referencia");
@@ -493,8 +512,9 @@ try
     var absentStore=await reportingRepository.DashboardAsync(actor,DateTimeOffset.UtcNow.AddDays(-1),DateTimeOffset.UtcNow.AddDays(1),CancellationToken.None,store:"TIENDA_NO_EXISTE_73");
     Check(absentClient.GetProperty("Presupuestos").GetInt64()==0&&absentClient.GetProperty("Ordenes").GetInt64()==0&&absentClient.GetProperty("Movimientos").GetArrayLength()==0&&absentClient.GetProperty("TotalPendientes").GetInt64()==0,"Filtro cliente se aplica a cifras, movimientos y pendientes");
     Check(absentStore.GetProperty("Presupuestos").GetInt64()==0&&absentStore.GetProperty("Ordenes").GetInt64()==0&&absentStore.GetProperty("Movimientos").GetArrayLength()==0&&absentStore.GetProperty("TotalPendientes").GetInt64()==0,"Filtro tienda se aplica a cifras, movimientos y pendientes");
-    Check(queueFirst.GetProperty("Movimientos").EnumerateArray().Sum(row=>row.GetProperty("Confirmaciones").GetInt64())==Convert.ToInt64(await Scalar(connection,"SELECT COUNT(DISTINCT OrdenCompraId) FROM dbo.ConfirmacionFacturacion")),"Primera confirmación cuenta una vez por OC pese al historial");
-    Check(queueFirst.GetProperty("Movimientos").EnumerateArray().Sum(row=>row.GetProperty("Marcados").GetInt64())==Convert.ToInt64(await Scalar(connection,"SELECT COUNT(DISTINCT OrdenCompraId) FROM dbo.ReferenciaComprobanteExterno")),"Primer marcado cuenta una vez por OC pese a correcciones y retiro");
+    Check(queueFirst.GetProperty("Movimientos").EnumerateArray().Sum(row=>row.GetProperty("Presupuestos").GetInt64())==queueFirst.GetProperty("Presupuestos").GetInt64()&&queueFirst.GetProperty("Movimientos").EnumerateArray().Sum(row=>row.GetProperty("Ordenes").GetInt64())==queueFirst.GetProperty("Ordenes").GetInt64(),"Curvas actuales concilian registros de presupuestos y OC del período");
+    Check(queueFirst.GetProperty("Movimientos").EnumerateArray().Sum(row=>row.GetProperty("Confirmaciones").GetInt64())==Convert.ToInt64(await Scalar(connection,"SELECT COUNT_BIG(1) FROM dbo.ConfirmacionFacturacion AS confirmacion INNER JOIN dbo.OrdenCompraCliente AS oc ON oc.OrdenCompraId=confirmacion.OrdenCompraId WHERE confirmacion.Vigente=1 AND oc.Estado<>N'CANCELADA'")),"Curva confirmación cuenta registros vigentes y no primeros eventos históricos");
+    Check(queueFirst.GetProperty("Movimientos").EnumerateArray().Sum(row=>row.GetProperty("Marcados").GetInt64())==Convert.ToInt64(await Scalar(connection,"SELECT COUNT_BIG(1) FROM dbo.ReferenciaComprobanteExterno AS referencia INNER JOIN dbo.OrdenCompraCliente AS oc ON oc.OrdenCompraId=referencia.OrdenCompraId WHERE referencia.Vigente=1 AND oc.Estado<>N'CANCELADA'")),"Curva Facturado cuenta referencias vigentes, sin sumar retiradas");
     await Execute(connection,"INSERT INTO dbo.RolPermiso(RoleId,CodigoPermiso) VALUES(N'sql-test-budget-role',N'REPORTES.CONSULTAR');");
     var restrictedQueue=await reportingRepository.DashboardAsync("sql-test-budget-only",DateTimeOffset.UtcNow.AddDays(-1),DateTimeOffset.UtcNow.AddDays(1),CancellationToken.None);
     Check(!restrictedQueue.GetProperty("VerPendientes").GetBoolean()&&restrictedQueue.GetProperty("Pendientes").GetArrayLength()==0,"Bandeja no revela guía sin su permiso específico");
@@ -679,6 +699,212 @@ try
     await Execute(connection,"CREATE USER hyt_test_executor WITHOUT LOGIN; ALTER ROLE hyt_app_executor ADD MEMBER hyt_test_executor;");
     await Execute(connection,$"EXECUTE AS USER=N'hyt_test_executor'; EXEC dbo.spu_MantZona_Guardar @UsuarioId=N'{actor}',@CorrelacionId='66666666-6666-6666-6666-666666666666',@Datos=N'{{\"Descripcion\":\"Prueba permisos secuencia\",\"Activo\":true}}'; REVERT;");
     Check(true,"Rol SQL limitado ejecuta numeración automática por cadena de propiedad");
+    var observed=await Save(connection,Payload([Manual()]));
+    observed=await State(connection,observed,"ENVIADO");
+    await ExpectFailure(()=>State(connection,observed,"VENCIDO"),"transición","SQL no permite asignar Vencido");
+    foreach(var targetState in new[]{"OBSERVADO","RECHAZADO","CANCELADO"})await ExpectFailure(()=>State(connection,observed,targetState,null),"motivo","SQL exige motivo para "+targetState);
+    observed=await State(connection,observed,"OBSERVADO");
+    var observedStale=observed;
+    var sameObserved=await Save(connection,Payload([Manual(175)],description:"Corrección directa"),observed);
+    Check(sameObserved.RevisionId==observed.RevisionId&&sameObserved.RevisionNumber==observed.RevisionNumber,"Observado se edita sin generar nueva revisión");
+    Check(Convert.ToString(await Scalar(connection,$"SELECT Estado FROM dbo.PresupuestoRevision WHERE RevisionId={observed.RevisionId}"))=="OBSERVADO"&&Convert.ToDecimal(await Scalar(connection,$"SELECT Total FROM dbo.PresupuestoRevision WHERE RevisionId={observed.RevisionId}"))==413m,"Edición conserva Observado y recalcula importes");
+    Check(Convert.ToInt64(await Scalar(connection,$"SELECT COUNT_BIG(1) FROM dbo.EventoAuditoria WHERE Entidad=N'PresupuestoRevision' AND RegistroId=N'{observed.RevisionId}' AND EstadoNuevo=N'OBSERVADO'"))>=2,"Auditoría conserva estado real de observación y edición");
+    await ExpectFailure(()=>Save(connection,Payload([Manual()]),observedStale),"cambió","Edición de observado respeta concurrencia");
+    sameObserved=await State(connection,sameObserved,"ENVIADO");
+    sameObserved=await State(connection,sameObserved,"APROBADO");
+    Check(Convert.ToString(await Scalar(connection,$"SELECT Estado FROM dbo.PresupuestoRevision WHERE RevisionId={observed.RevisionId}"))=="APROBADO","Observado corregido puede reenviarse y aceptarse");
+    var firmaCompany=(await companyRepository.GetAsync(actor,1,CancellationToken.None))!;
+    var firmaVersion=Convert.FromBase64String(firmaCompany.Text("VersionFila"));
+    var firmaPayload=JsonSerializer.Serialize(new{NombreOriginal="firma.png",ClaveAlmacenamiento="ConfigHYT/Firma/"+new string('a',32)+".png",TipoContenido="image/png",TamanoBytes=100,SHA256=new string('A',64)});
+    await ExpectDomainFailure(()=>companyRepository.SaveSignatureAsync("usuario-inexistente",firmaPayload,firmaVersion,CancellationToken.None),"permiso","Firma SQL exige permiso de edición de configuración");
+    await companyRepository.SaveSignatureAsync(actor,firmaPayload,firmaVersion,CancellationToken.None);
+    var firmaStored=(await companyRepository.GetAsync(actor,1,CancellationToken.None))!;
+    Check(firmaStored.Text("FirmaPresupuestoJson")==firmaPayload&&firmaStored.Audit.Any(row=>row.Action=="ACTUALIZAR_FIRMA"),"Firma conserva metadatos R2 y auditoría en SQL");
+    await ExpectDomainFailure(()=>companyRepository.SaveSignatureAsync(actor,firmaPayload,firmaVersion,CancellationToken.None),"configuración","Firma protege la versión original de configuración");
+    await ExpectDomainFailure(()=>companyRepository.SaveSignatureAsync(actor,firmaPayload.Replace("image/png","image/svg+xml"),Convert.FromBase64String(firmaStored.Text("VersionFila")),CancellationToken.None),"válida","Firma SQL rechaza formato diferente a PNG/JPG");
+    await companyRepository.SaveAsync(actor,JsonSerializer.Serialize(new{Ruc=firmaStored.Text("Ruc"),RazonSocial=firmaStored.Text("RazonSocial")}),Convert.FromBase64String(firmaStored.Text("VersionFila")),CancellationToken.None);
+    Check((await companyRepository.GetAsync(actor,1,CancellationToken.None))!.Text("FirmaPresupuestoJson")==firmaPayload,"Guardar datos corporativos no borra firma configurada");
+    var subtitleCompany=(await companyRepository.GetAsync(actor,1,CancellationToken.None))!;
+    Check(subtitleCompany.Text("SubtituloCotizacion").Contains("hytserviciosg@gmail.com")&&subtitleCompany.Text("SubtituloCotizacion").Contains("rene_torres35@hotmail.com"),"Subtítulo inicial conserva texto completo y ambos correos indicados");
+    await companyRepository.SaveAsync(actor,JsonSerializer.Serialize(new{Ruc=subtitleCompany.Text("Ruc"),RazonSocial=subtitleCompany.Text("RazonSocial"),SubtituloCotizacion="Subtítulo modificado de prueba"}),Convert.FromBase64String(subtitleCompany.Text("VersionFila")),CancellationToken.None);
+    var subtitleChanged=(await companyRepository.GetAsync(actor,1,CancellationToken.None))!;
+    Check(subtitleChanged.Text("SubtituloCotizacion")=="Subtítulo modificado de prueba"&&subtitleChanged.Audit.Any(row=>row.Changes?.Contains("SubtituloCotizacion")==true),"Subtítulo configurable se guarda y audita sin alterar firma");
+    await ExpectDomainFailure(()=>companyRepository.SaveAsync(actor,JsonSerializer.Serialize(new{Ruc=subtitleChanged.Text("Ruc"),RazonSocial=subtitleChanged.Text("RazonSocial"),SubtituloCotizacion=new string('X',2001)}),Convert.FromBase64String(subtitleChanged.Text("VersionFila")),CancellationToken.None),"longitud","Subtítulo valida límite de 2000 caracteres en SQL");
+    var autoCodes=await Save(connection,new{ClienteId=1,TiendaId=1,TipoAtencion="INVITACION",Descripcion="Códigos desde maestros",Revision=new{FechaEmision="2026-11-05",CodigoMoneda="PEN",CodigoTipoIGV="SIN_IGV"},Partidas=new[]{new{MaterialId=1,OrigenPrecio="MANUAL",CodigoInterno="FALSO",Posicion="FALSA",CentroSAPFICO="FALSO",Descripcion="Servicio",Unidad="UND",Cantidad=1,PrecioManual=10,CodigoMonedaOrigen="PEN",CodigoTipoIGVOrigen="SIN_IGV",MotivoPrecioManual="Prueba"}}});
+    Check(Convert.ToString(await Scalar(connection,$"SELECT p.Posicion FROM dbo.PresupuestoPartida AS p WHERE p.RevisionId={autoCodes.RevisionId}"))==Convert.ToString(await Scalar(connection,"SELECT m.CodigoInterno FROM dbo.ServicioMaterial AS m WHERE m.MaterialId=1")),"Posición se toma del código interno de material e ignora dato manipulado");
+    Check(Convert.ToString(await Scalar(connection,$"SELECT p.CentroSAPFICO FROM dbo.PresupuestoPartida AS p WHERE p.RevisionId={autoCodes.RevisionId}"))==Convert.ToString(await Scalar(connection,"SELECT t.CentroSAPFICO FROM dbo.Tienda AS t WHERE t.TiendaId=1")),"Centro SAP FICO se obtiene de la tienda e ignora dato manipulado");
+    await Execute(connection,$"UPDATE dbo.PresupuestoPartida SET CentroSAPFICO=NULL WHERE RevisionId={autoCodes.RevisionId};");
+    var ficoFallback=(await sapBudgets.GetAsync(actor,autoCodes.BudgetId,autoCodes.RevisionId,1,CancellationToken.None))!;
+    var masterFico=Convert.ToString(await Scalar(connection,"SELECT t.CentroSAPFICO FROM dbo.Tienda AS t WHERE t.TiendaId=1"));
+    Check(ficoFallback.Data.GetProperty("Partidas")[0].GetProperty("CentroSAPFICO").GetString()==masterFico,"Consulta completa FICO vacío de presupuesto anterior desde su tienda");
+    Check(await Scalar(connection,$"SELECT p.CentroSAPFICO FROM dbo.PresupuestoPartida AS p WHERE p.RevisionId={autoCodes.RevisionId}") is DBNull,"Respaldo FICO de consulta no modifica partidas históricas");
+    await Execute(connection,$"UPDATE dbo.PresupuestoPartida SET CentroSAPFICO=N'FICO-HISTORICO' WHERE RevisionId={autoCodes.RevisionId};");
+    var ficoHistorical=(await sapBudgets.GetAsync(actor,autoCodes.BudgetId,autoCodes.RevisionId,1,CancellationToken.None))!;
+    Check(ficoHistorical.Data.GetProperty("Partidas")[0].GetProperty("CentroSAPFICO").GetString()=="FICO-HISTORICO","Consulta conserva FICO histórico cuando ya tiene valor");
+    var contactStore=await MasterSave("tiendas",new{ClienteId=1,Nombre="Tienda para contacto presupuesto",Activo=true});
+    var contactBudget=await Save(connection,Payload([Manual()],store:contactStore));
+    var noStoreContacts=(await sapBudgets.GetAsync(actor,contactBudget.BudgetId,contactBudget.RevisionId,1,CancellationToken.None))!;
+    Check(noStoreContacts.Text("ContactosTienda")=="","Sin contactos de tienda no toma un responsable interno ni inventa nombre");
+    await MasterSave("contactos",new{ClienteId=1,TiendaId=contactStore,Nombre="Encargado Tienda",Activo=true});
+    await MasterSave("contactos",new{ClienteId=1,TiendaId=contactStore,Nombre="Contacto inactivo",Activo=false});
+    await MasterSave("contactos",new{ClienteId=1,Nombre="Contacto general del cliente",Activo=true});
+    await MasterSave("contactos",new{ClienteId=1,TiendaId=1,Nombre="Contacto de otra tienda",Activo=true});
+    var oneStoreContact=(await sapBudgets.GetAsync(actor,contactBudget.BudgetId,contactBudget.RevisionId,1,CancellationToken.None))!;
+    Check(oneStoreContact.Text("ContactosTienda")=="Encargado Tienda","Presupuesto recupera solo contacto activo de su tienda y cliente");
+    await MasterSave("contactos",new{ClienteId=1,TiendaId=contactStore,Nombre="Coordinador Tienda",Activo=true});
+    var manyStoreContacts=(await sapBudgets.GetAsync(actor,contactBudget.BudgetId,contactBudget.RevisionId,1,CancellationToken.None))!;
+    Check(manyStoreContacts.Text("ContactosTienda")=="Encargado Tienda / Coordinador Tienda","Varios contactos activos de tienda se presentan ordenados sin elegir uno arbitrariamente");
+    Check(Convert.ToString(await Scalar(connection,"SELECT dbo.fn_ArchivoSegmento(N'OC 001/A')"))=="OC_001_A","SQL genera el mismo segmento seguro para carpeta por número");
+    var folderBudget=await Save(connection,Payload([Manual()],attention:"INVITACION"));
+    var folderOperation=Guid.NewGuid();
+    var folderOcData=new {RevisionId=folderBudget.RevisionId,NumeroOCCliente="OC 001/A",FechaEmisionOC="2026-11-06",FechaRecepcionOC="2026-11-06",Adjunto=new{NombreOriginal="oc.pdf",ClaveAlmacenamiento="OCCliente/OC_001_A/"+folderOperation.ToString("N")+".pdf",TipoContenido="application/pdf",TamanoBytes=15,SHA256=new string('A',64)}};
+    var folderOcId=await SaveDocument(connection,"OC",folderBudget.BudgetId,folderBudget.HeaderVersion,folderOcData,folderOperation);
+    Check(folderOcId>0,"OC SQL acepta adjunto en carpeta derivada de su número externo");
+    var folderOcVersion=(byte[])(await Scalar(connection,$"SELECT VersionFila FROM dbo.OrdenCompraCliente WHERE OrdenCompraId={folderOcId}"))!;
+    var folderConfirmationOperation=Guid.NewGuid();
+    var folderConfirmation=new{FechaConfirmacion="2026-11-06",NumeroConfirmacion="CONF/001",Adjunto=new{NombreOriginal="confirmacion.pdf",ClaveAlmacenamiento="ConfirmacionCliente/CONF_001/"+folderConfirmationOperation.ToString("N")+".pdf",TipoContenido="application/pdf",TamanoBytes=15,SHA256=new string('A',64)}};
+    var folderConfirmationId=await SaveDocument(connection,"CONFIRMACION",folderOcId,folderOcVersion,folderConfirmation,folderConfirmationOperation);
+    Check(folderConfirmationId>0,"Confirmación SQL acepta carpeta por su número y mantiene vínculo a OC");
+    var ocWithGuide=await documents.ListAsync(ocKind,actor,DateTimeOffset.UtcNow.AddDays(-1),DateTimeOffset.UtcNow.AddDays(1),"OC-000A/01",1,null,null,CancellationToken.None);
+    Check(ocWithGuide.Rows.Count==1&&ocWithGuide.Rows[0].GetProperty("GuiaId").GetInt64()==inviteGuide.Id&&ocWithGuide.Rows[0].GetProperty("NumeroGuia").GetString()=="INV-0008C"&&ocWithGuide.Rows[0].GetProperty("AdjuntosGuia").GetInt64()==0,"Listado SQL OC incluye guía del presupuesto y cuenta de adjuntos vigentes");
+    var kpiPrefix="KPI-"+Guid.NewGuid().ToString("N");
+    var kpiBudgets=new List<BudgetVersion>();
+    for(var index=0;index<25;index++)
+    {
+        var sample=await Save(connection,Payload([Manual()],description:kpiPrefix,attention:index%2==0?"EMERGENCIA":"INVITACION"));
+        if(index<5)sample=await State(connection,sample,"ENVIADO");
+        kpiBudgets.Add(sample);
+    }
+    var kpiStart=DateTimeOffset.UtcNow.AddDays(-1);var kpiEnd=DateTimeOffset.UtcNow.AddDays(1);
+    var kpiFirst=await repository.ListAsync(actor,kpiStart,kpiEnd,kpiPrefix,1,null,CancellationToken.None);
+    var kpiSecond=await repository.ListAsync(actor,kpiStart,kpiEnd,kpiPrefix,2,null,CancellationToken.None);
+    Check(kpiFirst.Total==25&&kpiFirst.Rows.Count==20&&kpiSecond.Rows.Count==5&&kpiFirst.StateCounts!.Values.Sum()==25&&kpiSecond.StateCounts!["BORRADOR"]==20,"KPI SQL presupuesto cuenta todos los registros y conserva paginación de 20");
+    var kpiFiltered=await repository.ListAsync(actor,kpiStart,kpiEnd,kpiPrefix,1,"BORRADOR",CancellationToken.None,type:"EMERGENCIA",pendingGuide:true,pendingOrder:true);
+    Check(kpiFiltered.Total==10&&kpiFiltered.StateCounts!.Values.Sum()==13&&kpiFiltered.Rows.All(row=>row.Type=="EMERGENCIA"&&!row.GuideId.HasValue&&!row.PurchaseOrderId.HasValue),"SQL combina tipo y pendientes; KPI conserva distribución previa al selector Estado");
+    for(var index=0;index<21;index++)await SaveDocument(connection,"OC",kpiBudgets[index].BudgetId,kpiBudgets[index].HeaderVersion,new{RevisionId=kpiBudgets[index].RevisionId,NumeroOCCliente=kpiPrefix+"-"+index,FechaEmisionOC="2026-11-06",FechaRecepcionOC="2026-11-06"},Guid.NewGuid());
+    var kpiOc=await documents.ListAsync(ocKind,actor,kpiStart,kpiEnd,kpiPrefix,1,null,null,CancellationToken.None,pendingConfirmation:true,pendingInvoice:true);
+    var kpiOcSecond=await documents.ListAsync(ocKind,actor,kpiStart,kpiEnd,kpiPrefix,2,null,null,CancellationToken.None,pendingConfirmation:true,pendingInvoice:true);
+    Check(kpiOc.Total==21&&kpiOc.Rows.Count==20&&kpiOcSecond.Rows.Count==1&&kpiOc.StateCounts!.Values.Sum()==21,"KPI OC y filtros pendientes cuentan 21 documentos con paginación SQL");
+    var kpiWithoutOc=await repository.ListAsync(actor,kpiStart,kpiEnd,kpiPrefix,1,null,CancellationToken.None,pendingOrder:true);
+    Check(kpiWithoutOc.Total==4&&kpiWithoutOc.StateCounts!.Values.Sum()==4,"Pendiente OC excluye presupuestos que ya tienen orden registrada");
+    var rollbackBudget=await Save(connection,Payload([Manual()]));
+    var rollbackOc=await SaveDocument(connection,"OC",rollbackBudget.BudgetId,rollbackBudget.HeaderVersion,new{RevisionId=rollbackBudget.RevisionId,NumeroOCCliente="CONF-ROLLBACK",FechaEmisionOC="2026-11-06",FechaRecepcionOC="2026-11-06"},Guid.NewGuid());
+    await ExpectFailure(()=>DocumentState("oc-cliente",rollbackOc,rollbackBudget.BudgetId,"TRABAJO_COMPLETADO"),"confirmación del cliente","OC sin confirmación ni ejecución informa el requisito correcto");
+    await Execute(connection,"CREATE OR ALTER TRIGGER dbo.trg_TestConfirmationAuditFailure ON dbo.EventoAuditoria AFTER INSERT AS BEGIN IF EXISTS(SELECT 1 FROM inserted AS evento WHERE evento.Accion=N'CAMBIAR_ESTADO_AUTOMATICO' AND evento.Entidad=N'OrdenCompraCliente') THROW 51999,N'Fallo auditoría automática OC',1; END;");
+    try
+    {
+        var rollbackVersion=(byte[])(await Scalar(connection,$"SELECT VersionFila FROM dbo.OrdenCompraCliente WHERE OrdenCompraId={rollbackOc}"))!;
+        await ExpectFailure(()=>SaveDocument(connection,"CONFIRMACION",rollbackOc,rollbackVersion,new{FechaConfirmacion="2026-11-06",NumeroConfirmacion="CONF-ROLLBACK"},Guid.NewGuid()),"Fallo auditoría","Error de auditoría revierte confirmación y cambio automático de OC");
+        Check(Convert.ToString(await Scalar(connection,$"SELECT Estado FROM dbo.OrdenCompraCliente WHERE OrdenCompraId={rollbackOc}"))=="REGISTRADA"&&Convert.ToInt64(await Scalar(connection,$"SELECT COUNT_BIG(1) FROM dbo.ConfirmacionFacturacion WHERE OrdenCompraId={rollbackOc}"))==0,"Fallo transaccional no deja confirmación parcial ni OC completada");
+    }
+    finally{await Execute(connection,"DROP TRIGGER dbo.trg_TestConfirmationAuditFailure;");}
+    var invoiceWithoutExecutionBudget=await Save(connection,Payload([Manual()]));
+    var invoiceWithoutExecutionOc=await SaveDocument(connection,"OC",invoiceWithoutExecutionBudget.BudgetId,invoiceWithoutExecutionBudget.HeaderVersion,new{RevisionId=invoiceWithoutExecutionBudget.RevisionId,NumeroOCCliente="OC-SIN-EJECUCION",FechaEmisionOC="2026-11-06",FechaRecepcionOC="2026-11-06"},Guid.NewGuid());
+    var invoiceWithoutExecutionVersion=(byte[])(await Scalar(connection,$"SELECT VersionFila FROM dbo.OrdenCompraCliente WHERE OrdenCompraId={invoiceWithoutExecutionOc}"))!;
+    await SaveDocument(connection,"CONFIRMACION",invoiceWithoutExecutionOc,invoiceWithoutExecutionVersion,new{FechaConfirmacion="2026-11-06",NumeroConfirmacion="CONF-SIN-EJECUCION"},Guid.NewGuid());
+    invoiceWithoutExecutionVersion=(byte[])(await Scalar(connection,$"SELECT VersionFila FROM dbo.OrdenCompraCliente WHERE OrdenCompraId={invoiceWithoutExecutionOc}"))!;
+    await ExpectFailure(()=>MarkInvoice(invoiceWithoutExecutionOc,invoiceWithoutExecutionVersion,Guid.NewGuid()),"guía registrada","OC completada y confirmada no factura sin guía");
+    var invoiceGuideParent=(byte[])(await Scalar(connection,$"SELECT VersionFila FROM dbo.Presupuesto WHERE PresupuestoId={invoiceWithoutExecutionBudget.BudgetId}"))!;
+    await SaveDocument(connection,"GUIA",invoiceWithoutExecutionBudget.BudgetId,invoiceGuideParent,new{FechaActa="2026-11-06",NumeroActa="GUIA-SIN-EJECUCION"},Guid.NewGuid());
+    var noExecutionMark=await MarkInvoice(invoiceWithoutExecutionOc,invoiceWithoutExecutionVersion,Guid.NewGuid());
+    Check(noExecutionMark>0&&Convert.ToInt64(await Scalar(connection,$"SELECT COUNT_BIG(1) FROM dbo.Ejecucion WHERE PresupuestoId={invoiceWithoutExecutionBudget.BudgetId}"))==0,"OC Trabajo completado con guía y confirmación permite Facturado sin ejecución separada");
+    var integralReport=await reportingRepository.ReportAsync(actor,"PRESUPUESTO",kpiStart,kpiEnd,1,CancellationToken.None,filters:new(Search:invoiceWithoutExecutionBudget.Number,State:"APROBADO"));
+    var integralRow=integralReport.Rows.Single();
+    Check(integralRow.GetProperty("NumeroCliente").GetString()=="OC-SIN-EJECUCION"&&integralRow.GetProperty("Guia").GetString()=="GUIA-SIN-EJECUCION"&&integralRow.GetProperty("Confirmacion").GetString()=="CONF-SIN-EJECUCION"&&integralRow.GetProperty("NumeroComprobante").GetString()=="000012A"&&integralRow.GetProperty("TipoComprobante").GetString()=="01","Reporte de presupuesto integra OC, guía, confirmación y comprobante vigente con sus números");
+    Check(new[]{"PresupuestoRegistro","OCRegistro","GuiaRegistro","ConfirmacionRegistro","FacturadoRegistro"}.All(key=>integralRow.GetProperty(key).ValueKind!=JsonValueKind.Null),"Reporte conserva fechas de registro de cada relación documental");
+    var integralAll=await reportingRepository.ReportAsync(actor,"PRESUPUESTO",kpiStart,kpiEnd,1,CancellationToken.None,filters:new(Export:true));
+    Check(integralAll.Rows.Count==integralAll.Total&&integralAll.Rows.Count>20&&integralAll.Amounts.Sum(row=>row.Count)==integralAll.Total,"Exportación SQL devuelve todos los resultados y totales completos por moneda");
+    var reportPending=await reportingRepository.ReportAsync(actor,"PRESUPUESTO",kpiStart,kpiEnd,1,CancellationToken.None,filters:new(Type:"EMERGENCIA",PendingGuide:true,PendingOrder:true,Export:true));
+    Check(reportPending.Rows.Count>0&&reportPending.Rows.All(row=>row.GetProperty("TipoAtencion").GetString()=="EMERGENCIA"&&row.GetProperty("Guia").ValueKind==JsonValueKind.Null&&row.GetProperty("NumeroCliente").ValueKind==JsonValueKind.Null),"Reporte aplica tipo y pendientes simultáneamente antes de totales y exportación");
+    foreach(var stateCode in new[]{"REGISTRADA","TRABAJO_COMPLETADO","CERRADA_OPERATIVAMENTE","CANCELADA"}){
+        var stateReport=await reportingRepository.ReportAsync(actor,"OC_CLIENTE",kpiStart,kpiEnd,1,CancellationToken.None,filters:new(State:stateCode,Export:true));
+        Check(stateReport.Rows.All(row=>row.GetProperty("Estado").GetString()==stateCode),"Reporte OC filtra estado vigente: "+stateCode);
+    }
+    var integralDash=await reportingRepository.DashboardAsync(actor,kpiStart,kpiEnd,CancellationToken.None);
+    var pendingOcReport=await reportingRepository.ReportAsync(actor,"PRESUPUESTO",kpiStart,kpiEnd,1,CancellationToken.None,filters:new(PendingOrder:true));
+    var pendingGuideReport=await reportingRepository.ReportAsync(actor,"PRESUPUESTO",kpiStart,kpiEnd,1,CancellationToken.None,filters:new(PendingGuide:true));
+    var pendingInvoiceReport=await reportingRepository.ReportAsync(actor,"OC_CLIENTE",kpiStart,kpiEnd,1,CancellationToken.None,filters:new(PendingInvoice:true));
+    Check(integralDash.GetProperty("PresupuestosSinOC").GetInt64()==pendingOcReport.Total&&integralDash.GetProperty("PresupuestosSinGuia").GetInt64()==pendingGuideReport.Total&&integralDash.GetProperty("PendientesFacturar").GetInt64()==pendingInvoiceReport.Total,"Pendientes del dashboard concilian con los nuevos filtros de reportes");
+    var restrictedIntegral=await reportingRepository.ReportAsync("sql-test-budget-only","PRESUPUESTO",kpiStart,kpiEnd,1,CancellationToken.None,filters:new(Search:invoiceWithoutExecutionBudget.Number));
+    Check(restrictedIntegral.Rows.Single().GetProperty("Guia").ValueKind==JsonValueKind.Null&&restrictedIntegral.Rows.Single().GetProperty("NumeroComprobante").ValueKind==JsonValueKind.Null,"Reporte presupuesto oculta referencias de módulos sin permiso");
+    await Execute(connection, "UPDATE dbo.AspNetUsers SET PasswordHash=N'hash-fixture-admin',SecurityStamp=N'stamp-fixture-admin',ConcurrencyStamp=N'version-fixture-admin' WHERE Id=N'sql-test-editor';");
+    var securityConnections = new GestionServicios.Infrastructure.SqlConnectionFactory(connection.ConnectionString);
+    var security = new SqlSecurityAdministrationRepository(securityConnections);
+    var access = new SqlAccessRepository(securityConnections);
+    const string role = "qa-seguridad-consulta";
+    const string user = "qa-seguridad-usuario";
+    const string tempHash = "hash-temporal-solo-prueba";
+    const string ownHash = "hash-propio-solo-prueba";
+    await security.SaveRoleAsync(actor, new(role, null, "QA Consulta parcial",
+        ["CLIENTES.CONSULTAR", "CLIENTES.CREAR"]), default);
+    var userCommand = new SecurityUserCommand(user, null, "Ana", "Pruebas", "qa-seguridad@example.test", role, true, tempHash);
+    await security.SaveUserAsync(actor, userCommand, default);
+    var createdUser = await access.FindByNameAsync("QA-SEGURIDAD@EXAMPLE.TEST");
+    Check(createdUser is { MustChangePassword: true } && createdUser.PasswordHash == tempHash &&
+        createdUser.Permissions.Contains("CLIENTES.CREAR") && !createdUser.Permissions.Contains("CLIENTES.MODIFICAR"),
+        "Alta con contraseña temporal y permisos separados por acción");
+    var listedUsers = await security.UsersAsync(actor, "Ana Pruebas", true, "TEMPORAL", 1, default);
+    Check(listedUsers.Total == 1 && listedUsers.Rows.Single().GetProperty("Email").GetString() == userCommand.Email,
+        "Listado de usuarios busca el nombre completo y filtra contraseña pendiente");
+    await ExpectDomainFailure(() => security.SaveUserAsync(actor, userCommand with { Id = "qa-seguridad-duplicado", Email = "QA-SEGURIDAD@EXAMPLE.TEST" }, default),
+        "correo", "Correo duplicado se rechaza sin distinguir mayúsculas");
+    await ExpectDomainFailure(() => security.RolesAsync(user, null, 1, default),
+        "permiso", "Usuario temporal no consulta perfiles por SQL");
+    await ExpectDomainFailure(() => security.ChangePasswordAsync(user, "sello-anterior", tempHash, ownHash, true, default),
+        "Inicia sesión nuevamente", "Cambio obligatorio exige el sello vigente");
+    await security.ChangePasswordAsync(user, createdUser!.SecurityStamp, tempHash, ownHash, true, default);
+    var updatedUser = (await access.FindByIdAsync(user))!;
+    Check(!updatedUser.MustChangePassword && updatedUser.PasswordHash == ownHash &&
+        updatedUser.SecurityStamp != createdUser.SecurityStamp, "Cambio obligatorio persiste el hash y revoca la sesión temporal");
+    await ExpectFailure(() => Execute(connection, "EXEC dbo.spu_MantCliente_Guardar @UsuarioId=N'qa-seguridad-usuario',@CorrelacionId=NULL,@Datos=N'{}',@Id=1;"),
+        "permiso", "Permiso para crear no autoriza editar el cliente por SQL");
+    await ExpectDomainFailure(() => security.AuditAsync(user, DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(1),
+        null, null, null, null, 1, default), "permiso", "Auditoría restringida por SQL");
+    var partialRole = (await security.RoleAsync(actor, role, default))!.Value;
+    await security.SaveRoleAsync(actor, new(role, partialRole.GetProperty("ConcurrencyStamp").GetString(),
+        "QA Consulta parcial", ["CLIENTES.CONSULTAR"]), default);
+    var reduced = (await access.FindByIdAsync(user))!;
+    Check(reduced.SecurityStamp == updatedUser.SecurityStamp && !reduced.Permissions.Contains("CLIENTES.CREAR"),
+        "Retirar una acción se refleja en una sesión vigente");
+    var details = (await security.UserAsync(actor, user, default))!.Value;
+    await security.UserActionAsync(actor, user, details.GetProperty("ConcurrencyStamp").GetString()!,
+        "RESTABLECER", tempHash, "Restablecimiento de prueba", default);
+    var reset = (await access.FindByIdAsync(user))!;
+    Check(reset.MustChangePassword && reset.SecurityStamp != updatedUser.SecurityStamp,
+        "Restablecimiento exige cambiar la contraseña y revoca sesiones");
+    await ExpectDomainFailure(() => security.UserActionAsync(actor, actor, "version-fixture-admin",
+        "DESACTIVAR", null, "Prueba de protección", default), "administrador", "No se puede desactivar al último administrador");
+    var adminRole = (await security.RoleAsync(actor, "HYT-ADMIN", default))!.Value;
+    await ExpectDomainFailure(() => security.SaveRoleAsync(actor, new("HYT-ADMIN", adminRole.GetProperty("ConcurrencyStamp").GetString(),
+        "Administrador", ["CLIENTES.CONSULTAR"]), default), "administrador", "No se pueden retirar los permisos al último administrador");
+    var audit = await security.AuditAsync(actor, DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(1),
+        userCommand.Email, null, "AspNetUsers", "USUARIO_RESTABLECER", 1, default);
+    var auditDetail = (await security.AuditEventAsync(actor, audit.Data.Rows.Single().GetProperty("EventoId").GetInt64(), default))!.Value;
+    Check(audit.Data.Total == 1 && audit.Options.Any(row => row.GetProperty("Accion").GetString() == "USUARIO_RESTABLECER") &&
+        auditDetail.GetProperty("Motivo").GetString() == "Restablecimiento de prueba" &&
+        !auditDetail.GetRawText().Contains(tempHash) && !auditDetail.GetRawText().Contains(ownHash),
+        "Auditoría filtra por usuario y acción, conserva motivo y excluye hashes");
+    var budgetAudit = await security.AuditAsync(actor, DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(1),
+        null, null, "Presupuesto", "GENERAR_IMPRESION", 1, default);
+    Check(budgetAudit.Data.Rows.Count > 0 &&
+        budgetAudit.Data.Rows.All(row => row.GetProperty("Entidad").GetString() == "PresupuestoRevision") &&
+        budgetAudit.Options.Count(row => row.GetProperty("Entidad").GetString() == "Presupuesto" &&
+            row.GetProperty("Accion").GetString() == "GENERAR_IMPRESION") == 1 &&
+        budgetAudit.Options.All(row => row.GetProperty("Entidad").GetString() != "PresupuestoRevision"),
+        "Auditoría agrupa Presupuestos y permite filtrar eventos de revisión");
+    const string anotherAdmin = "qa-seguridad-admin";
+    await security.SaveUserAsync(actor, userCommand with { Id = anotherAdmin, Email = "qa-admin@example.test", RoleId = "HYT-ADMIN" }, default);
+    var another = (await access.FindByIdAsync(anotherAdmin))!;
+    await security.ChangePasswordAsync(anotherAdmin, another.SecurityStamp, tempHash, ownHash, true, default);
+    var anotherVersion = (await security.UserAsync(actor, anotherAdmin, default))!.Value.GetProperty("ConcurrencyStamp").GetString()!;
+    async Task<bool> TryDeactivate(string id, string version)
+    {
+        try { await security.UserActionAsync(id, id, version, "DESACTIVAR", null, "Prueba concurrente", default); return true; }
+        catch (GestionServicios.Application.Maintenance.MaintenanceException error) when (error.Message.Contains("administrador", StringComparison.Ordinal))
+        { return false; }
+    }
+    var outcomes = await Task.WhenAll(TryDeactivate(actor, "version-fixture-admin"), TryDeactivate(anotherAdmin, anotherVersion));
+    Check(outcomes.Count(success => success) == 1, "Dos desactivaciones concurrentes conservan un administrador activo");
     Console.WriteLine($"SQL real: {checks} comprobaciones aprobadas en base aislada.");
 }
 finally

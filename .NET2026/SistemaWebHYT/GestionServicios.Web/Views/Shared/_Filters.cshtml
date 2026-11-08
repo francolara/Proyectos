@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 06/11/2026 | Filtros de pendientes mediante checks enviados por GET. *@
 @model FilterModel
 @* Firma: FRANCO LARA - 03/11/2026 | Filtros MVC enviados al controlador para consulta SQL, fechas y búsqueda. *@
 @* Firma: FRANCO LARA - 05/11/2026 | Filtros comerciales y de estado conservados en accesos del dashboard. *@
@@ -6,5 +7,6 @@
 @if (Model.WithDates) { <partial name="_DatePicker" model="@(new DatePickerModel("From", "Desde", Model.From))" /><partial name="_DatePicker" model="@(new DatePickerModel("To", "Hasta", Model.To))" /> }
 @foreach(var field in Model.Texts){<div class="hyt-field"><label for="@("filter-"+field.Name)">@field.Label</label><input id="@("filter-"+field.Name)" name="@field.Name" value="@field.Value" maxlength="200" /></div>}
 @foreach(var select in Model.Selects){<div class="hyt-field"><label for="@("filter-"+select.Name)">@select.Label</label><select id="@("filter-"+select.Name)" name="@select.Name">@foreach(var choice in select.Choices){<option value="@choice.Value" selected="@(choice.Value==select.Value)">@choice.Label</option>}</select></div>}
+@if(Model.Checks.Count>0){<div class="hyt-filter-checks">@foreach(var check in Model.Checks){<label><input type="checkbox" name="@check.Name" value="true" checked="@check.Checked" />@check.Label</label>}</div>}
 <div class="hyt-filters-actions"><button class="hyt-button-primary" type="submit">Consultar</button><a class="hyt-button-secondary" asp-controller="@Model.Controller" asp-action="@Model.Action">Restablecer</a></div>
 </form>

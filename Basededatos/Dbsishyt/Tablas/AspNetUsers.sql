@@ -3,6 +3,7 @@
 -- Create date:   03/11/2026
 -- Description:   Define AspNetUsers para la base inicial de HYT.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 06/11/2026 | Apellidos, cambio obligatorio, último ingreso y responsables de administración.
 USE [SistemaWebHYT];
 GO
 SET NOCOUNT ON;
@@ -26,6 +27,12 @@ BEGIN
         LockoutEnabled BIT NOT NULL DEFAULT 1,
         AccessFailedCount INT NOT NULL DEFAULT 0,
         Nombres NVARCHAR(150) NOT NULL,
+        Apellidos NVARCHAR(150) NOT NULL CONSTRAINT DF_AspNetUsers_Apellidos DEFAULT N'',
+        DebeCambiarClave BIT NOT NULL CONSTRAINT DF_AspNetUsers_CambiarClave DEFAULT 0,
+        FechaCambioClave DATETIME2(3) NULL,
+        UltimoIngreso DATETIME2(3) NULL,
+        UsuarioRegistro NVARCHAR(128) NULL,
+        UsuarioActualizacion NVARCHAR(128) NULL,
         Activo BIT NOT NULL DEFAULT 1,
         FechaRegistro DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME(),
         FechaActualizacion DATETIME2(3) NULL

@@ -3,6 +3,7 @@
 -- Create date:   03/11/2026
 -- Description:   Finaliza intento con bloqueo persistente y auditoria atomica.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 06/11/2026 | Último ingreso y bloqueo automático auditado.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_FinalizarAcceso
@@ -30,7 +31,7 @@ BEGIN
             IF @PasswordValido = 1
             BEGIN
                 UPDATE dbo.AspNetUsers SET AccessFailedCount = 0, LockoutEnd = NULL,
-                    PasswordHash = COALESCE(@HashActualizado, PasswordHash)
+                    PasswordHash = COALESCE(@HashActualizado, PasswordHash),UltimoIngreso=SYSUTCDATETIME()
                 WHERE Id = @UsuarioId;
                 SET @Exito = 1;
             END
@@ -48,6 +49,8 @@ BEGIN
             VALUES (@CorrelacionId, N'AspNetUsers', @UsuarioId,
                 CASE WHEN @Exito = 1 THEN N'INICIO_SESION' ELSE N'ACCESO_RECHAZADO' END, @UsuarioId);
         END;
+        IF @PasswordValido=0 AND @Intentos>=5 AND @Activo=1
+            INSERT INTO dbo.EventoAuditoria(CorrelacionId,Entidad,RegistroId,Accion,UsuarioId) VALUES(@CorrelacionId,N'AspNetUsers',@UsuarioId,N'BLOQUEO_AUTOMATICO',@UsuarioId);
         COMMIT TRANSACTION;
         SELECT @Exito AS Exito;
     END TRY

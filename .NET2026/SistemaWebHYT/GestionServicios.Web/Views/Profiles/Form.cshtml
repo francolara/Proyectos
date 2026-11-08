@@ -1,0 +1,50 @@
+@* Firma: FRANCO LARA - 07/11/2026 | Perfiles y consulta de auditoría HYT. *@
+@using GestionServicios.Web.Security
+@using GestionServicios.Web.ViewModels.Security
+@model ProfileFormModel
+@{
+    var id = Model.Record?.Text("Id");
+    var selected = Model.Input.Permissions.ToHashSet(StringComparer.Ordinal);
+    var groups = Model.Catalog.Select(p => p.Text("Codigo")).GroupBy(p => p.Split('.')[0]).OrderBy(p => SecurityDisplay.Module(p.Key));
+    ViewData["Title"] = Model.ReadOnly ? "Perfil de acceso" : id is null ? "Nuevo perfil de acceso" : "Editar perfil de acceso";
+}
+<header class="hyt-page-header"><div><h1>@ViewData["Title"]</h1><p>Permisos por módulo</p></div><a class="hyt-button-secondary" asp-action="Index">Volver al listado</a></header>
+@if (TempData["SecurityNotice"] is string notice) { <p class="hyt-panel hyt-master-trace" role="status">@notice</p> }
+<form method="post" asp-action="@(id is null ? "Create" : "Update")" asp-route-id="@id" class="hyt-panel hyt-master-form" data-security-profile>
+    <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+    <input type="hidden" name="Version" value="@Model.Input.Version" />
+    <div class="hyt-field"><label for="profile-name">Nombre del perfil</label><input id="profile-name" name="Name" value="@Model.Input.Name" maxlength="256" required readonly="@Model.ReadOnly" /></div>
+    @if (Model.Record is { } row) { <p>@row.Text("Usuarios", "0") usuarios con este perfil.</p> }
+    @if (!Model.ReadOnly) { <p>Al elegir una acción, también se habilita la consulta del módulo si corresponde.</p> }
+    <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Permisos por módulo">
+    <table class="hyt-table hyt-security-matrix"><thead><tr><th>Módulo</th><th>Acciones permitidas</th></tr></thead><tbody>
+    @foreach (var group in groups)
+    {
+        <tr data-security-module><th scope="row">@SecurityDisplay.Module(group.Key)</th><td>
+        <div class="hyt-security-options">
+            @if (!Model.ReadOnly)
+            { <label><input type="checkbox" data-security-all /> Todas</label> }
+            @foreach (var code in group.OrderBy(code => !code.EndsWith(".CONSULTAR", StringComparison.Ordinal)).ThenBy(SecurityDisplay.Permission))
+            {
+                <label><input type="checkbox" name="Permissions" value="@code" checked="@selected.Contains(code)" disabled="@Model.ReadOnly" data-security-consult="@(code.EndsWith(".CONSULTAR", StringComparison.Ordinal) ? "" : null)" /> @SecurityDisplay.Permission(code)</label>
+            }
+        </div>
+        </td></tr>
+    }
+    </tbody></table></div>
+    <div class="hyt-master-related">
+    @if (!Model.ReadOnly)
+    {
+        <span data-security-count role="status"></span>
+        <button type="submit" class="hyt-button-primary">Guardar perfil</button>
+        <a class="hyt-button-secondary" asp-action="@(id is null ? "Index" : "Detail")" asp-route-id="@id">Cancelar</a>
+    }
+    else if (User.HasClaim(AccessService.PermissionClaim, "PERFILES.EDITAR"))
+    {
+        <a class="hyt-button-primary" asp-action="Edit" asp-route-id="@id">Editar perfil</a>
+        <a class="hyt-button-secondary" asp-action="Duplicate" asp-route-id="@id">Duplicar perfil</a>
+    }
+    </div>
+</form>
+@if (Model.Record is { } record) { <partial name="_SecurityTrace" model="record" /> }
+@section Scripts { <script src="~/hyt-security.js" asp-append-version="true" defer></script> }

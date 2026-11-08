@@ -6,6 +6,6 @@ public sealed record BudgetPrintPage(IReadOnlyList<BudgetPrintEntry> Rows,long T
 public interface IBudgetPrintRepository
 {
     Task<long> SaveAsync(string actor,long revisionId,byte[] expectedVersion,string format,string templateVersion,string html,CancellationToken ct);
-    Task<BudgetPrint?> GetAsync(string actor,long printId,CancellationToken ct);
+    Task<BudgetPrint?> GetAsync(string actor,long printId,CancellationToken ct,bool download=false);
     Task<BudgetPrintPage> ListAsync(string actor,long revisionId,int page,CancellationToken ct);
 }

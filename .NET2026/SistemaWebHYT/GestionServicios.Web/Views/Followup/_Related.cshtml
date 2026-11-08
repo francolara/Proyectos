@@ -1,10 +1,11 @@
+@* Firma: FRANCO LARA - 06/11/2026 | Denominación Guía uniforme en los enlaces del expediente. *@
 @using GestionServicios.Web.ViewModels.Followup
 @using GestionServicios.Web.Security
 @model DocumentDetailsModel
 @* Firma: FRANCO LARA - 03/11/2026 | Enlaces del expediente visibles solo con permiso de consulta. *@
 <nav class="hyt-master-related" aria-label="Documentos del expediente">
 @if(User.HasClaim(AccessService.PermissionClaim,"PRESUPUESTOS.CONSULTAR")&&long.TryParse(Model.Text("PresupuestoId"),out var budgetId)){<a class="hyt-button-secondary" asp-controller="Budget" asp-action="Details" asp-route-id="@budgetId">Ver presupuesto</a>}
-@foreach(var item in new[]{(Kind:"oc-cliente",Permission:"OC_CLIENTE",Field:"OrdenCompraId",Label:"Ver OC del cliente"),(Kind:"guias",Permission:"GUIAS",Field:"GuiaId",Label:"Ver guía / acta"),(Kind:"ejecucion",Permission:"EJECUCION",Field:"EjecucionId",Label:"Ver ejecución"),(Kind:"confirmaciones",Permission:"CONFIRMACIONES",Field:"ConfirmacionId",Label:"Ver confirmación")})
+@foreach(var item in new[]{(Kind:"oc-cliente",Permission:"OC_CLIENTE",Field:"OrdenCompraId",Label:"Ver OC del cliente"),(Kind:"guias",Permission:"GUIAS",Field:"GuiaId",Label:"Ver guía"),(Kind:"ejecucion",Permission:"EJECUCION",Field:"EjecucionId",Label:"Ver ejecución"),(Kind:"confirmaciones",Permission:"CONFIRMACIONES",Field:"ConfirmacionId",Label:"Ver confirmación")})
 {
     if(item.Kind!=Model.Kind.Key&&User.HasClaim(AccessService.PermissionClaim,item.Permission+".CONSULTAR")&&long.TryParse(Model.Text(item.Field),out var documentId)&&documentId>0)
     {<a class="hyt-button-secondary" asp-controller="Followup" asp-action="Details" asp-route-kind="@item.Kind" asp-route-id="@documentId">@item.Label</a>}

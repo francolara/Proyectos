@@ -2,7 +2,7 @@
   {
     "case": "nuevo-una",
     "columns": 11,
-    "rows": 1
+    "rows": 27
   },
   {
     "case": "anterior-una",
@@ -12,7 +12,7 @@
   {
     "case": "nuevo-varias",
     "columns": 11,
-    "rows": 44
+    "rows": 58
   },
   {
     "case": "anterior-varias",
@@ -22,16 +22,16 @@
   {
     "case": "nuevo-vacio",
     "columns": 11,
-    "rows": 1
+    "rows": 28
   },
   {
     "case": "nuevo-usd",
     "columns": 11,
-    "rows": 1
+    "rows": 27
   },
   {
     "case": "nuevo-descripcion-larga",
     "columns": 11,
-    "rows": 1
+    "rows": 27
   }
 ]

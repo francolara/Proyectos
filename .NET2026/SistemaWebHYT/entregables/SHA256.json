@@ -61,7 +61,7 @@
   },
   {
     "path": "Tablas/ConfiguracionHYT.sql",
-    "sha256": "e4876f5175bba6d34a8c1a8d64427a47dff18faa9c092ff26026f442f386bb9d"
+    "sha256": "db0d192aa7b330e0869ada4a2f6008d34804159740bca6f0e80630701262c68e"
   },
   {
     "path": "Tablas/UnidadMedida.sql",
@@ -229,7 +229,7 @@
   },
   {
     "path": "Script/007_ProteccionAuditoria.sql",
-    "sha256": "80cd1dbddf3ae6ef0469b4417102acaf16e02e9e38004152f9d61aa22d2c6373"
+    "sha256": "1aceacce6af72144ca164a52d24ccb7b26e4df117e5cf53d4ef354b1af1ac457"
   },
   {
     "path": "Script/008_PermisosAplicacion.sql",
@@ -237,6 +237,6 @@
   },
   {
     "path": "ETAPA_1_HYT.sql",
-    "sha256": "2d29d3dfcf48c4374a79cfcd892e4a47039826334f103883fc5c350150e388bd"
+    "sha256": "ded8b485e6d506672604abee369dad9fab15d038cbd1812920a72b9beec0e464"
   }
 ]

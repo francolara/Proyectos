@@ -1,4 +1,5 @@
 @* Firma: FRANCO LARA - 06/11/2026 | Captcha manual solo ante fallo o falta de carga de Turnstile, sin selector alternativo. *@
+@* Firma: FRANCO LARA - 07/11/2026 | Icono común para alternar la visibilidad de la contraseña. *@
 @model AccessViewModel
 @{ Layout = null;var turnstileRequired=ViewData["TurnstileRequired"] is true;var siteKey=ViewData["TurnstileSiteKey"] as string??""; }
 @* Firma: FRANCO LARA - 03/11/2026 | Acceso MVC privado HYT con antifalsificacion, validacion y widget Turnstile de Cloudflare. *@
@@ -18,7 +19,7 @@
                 <input type="hidden" asp-for="ReturnUrl" />
                 <div asp-validation-summary="ModelOnly" class="hyt-alert" role="alert" tabindex="-1"></div>
                 <div class="hyt-field"><label asp-for="UserName">Usuario</label><input asp-for="UserName" autocomplete="username" maxlength="256" required /><span asp-validation-for="UserName"></span></div>
-                <div class="hyt-field"><label asp-for="Password">Contraseña</label><div class="hyt-password-control"><input asp-for="Password" type="password" autocomplete="current-password" maxlength="1024" required /><button type="button" data-hyt-password-toggle aria-controls="Password" aria-label="Mostrar contraseña" aria-pressed="false">Mostrar</button></div><span asp-validation-for="Password"></span></div>
+                <div class="hyt-field"><label asp-for="Password">Contraseña</label><div class="hyt-password-control"><input asp-for="Password" type="password" autocomplete="current-password" maxlength="1024" required /><partial name="_PasswordToggle" model="@("Password")" /></div><span asp-validation-for="Password"></span></div>
                 @if(turnstileRequired)
                 {
                     <input asp-for="UseManualCaptcha" type="hidden" />
@@ -39,6 +40,7 @@
             <p class="hyt-muted hyt-auth-help">Si necesitas recuperar tu acceso, comunícate con el administrador de HYT.</p>
         </section>
     </main>
+<script src="~/hyt-password.js" asp-append-version="true" defer></script>
 <script src="~/hyt-access.js" asp-append-version="true" defer></script>
 @if(turnstileRequired&&!Model.UseManualCaptcha&&!string.IsNullOrWhiteSpace(siteKey)){<script id="hyt-turnstile-script" src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer></script>}
 </body></html>
