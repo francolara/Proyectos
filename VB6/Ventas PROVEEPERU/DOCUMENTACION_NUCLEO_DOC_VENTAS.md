@@ -257,6 +257,8 @@ El modo agrupado conserva su funcionamiento histórico porque, al combinar produ
 | `dbo.spu_Docventas_AuditaImportacionItems` | Auditoría de solo lectura que identifica importaciones históricas ambiguas cuando se repite producto/UM. |
 | `dbo.spu_Docventas_ValidaEliminaItemImportado` | Informa qué líneas del documento origen ya fueron importadas y protege su identidad durante la edición. |
 
+Para pedidos (`40`), la orden de compra (`94`) se conserva como documento anexo. El recálculo y la validación de cantidades importadas excluyen esa referencia. La anulación de la orden de compra tampoco devuelve cantidades ni cambia el estado del pedido.
+
 ### 11.6 Archivos VB6 modificados
 
 | Archivo | Cambio |

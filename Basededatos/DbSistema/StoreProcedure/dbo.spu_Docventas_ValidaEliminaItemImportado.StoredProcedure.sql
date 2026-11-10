@@ -9,6 +9,11 @@ GO
 -- Create date:   19/10/2026
 -- Description:   Valida items importados e informa tipo, serie, numero y cantidad de cada documento destino vigente.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   10/11/2026
+-- Description:   Excluye la orden de compra anexa de las cantidades importadas del pedido.
+-- =============================================
 CREATE OR ALTER PROCEDURE dbo.spu_Docventas_ValidaEliminaItemImportado
     @IdEmpresa VARCHAR(10),
     @IdSucursal VARCHAR(10),
@@ -64,6 +69,7 @@ BEGIN
                 AND destino.IdSerieImp = @IdSerieOrigen
                 AND destino.IdDocVentasImp = @IdDocVentasOrigen
                 AND ISNULL(cabeceraDestino.EstDocVentas, '') <> 'ANU'
+                AND (@IdDocumentoOrigen <> '40' OR destino.IdDocumento <> '94')
         )
         SELECT
             origen.Item,

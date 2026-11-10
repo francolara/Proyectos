@@ -6393,6 +6393,11 @@ Dim ncorrela        As Double
         
         strMovCaja = "" & rst.Fields("idMovCaja")
         
+        ' =============================================
+        ' Author:        FRANCO LARA
+        ' Create date:   10/11/2026
+        ' Description:   Evita devolver cantidades o cambiar el estado de un pedido al anular su orden de compra anexa.
+        ' =============================================
         csql = "SELECT d.idDocumentoImp,d.idDocVentasImp,d.idSerieImp,d.idProducto,d.idUM,d.Cantidad " & _
                 "FROM docventasdet d " & _
                 "WHERE d.idEmpresa = '" & glsEmpresa & "'" & _
@@ -6400,7 +6405,7 @@ Dim ncorrela        As Double
                 "AND d.idDocumento = '" & strTipoDoc & "'" & _
                 "AND d.idDocVentas = '" & Trim(txt_NumDoc.Text) & "'" & _
                 "AND d.idSerie = '" & Trim(txt_Serie.Text) & "'" & _
-                "AND d.idDocVentasImp <> ''"
+                "AND d.idDocVentasImp <> '' AND (d.idDocumento <> '94' OR d.idDocumentoImp <> '40')"
                 
         If rst.State = 1 Then rst.Close
         rst.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
@@ -6414,7 +6419,8 @@ Dim ncorrela        As Double
         Loop
         
         csql = "SELECT DISTINCT idDocumentoImp,idDocVentasImp,idSerieImp  FROM docventasdet " & _
-               "WHERE idEmpresa = '" & glsEmpresa & "' AND idSucursal = '" & glsSucursal & "' AND idDocumento = '" & strTipoDoc & "' AND idDocVentas = '" & Trim(txt_NumDoc.Text) & "' AND idSerie = '" & Trim(txt_Serie.Text) & "' AND idDocVentasImp <> '' AND ISNULL(idDocVentasImp) = False"
+               "WHERE idEmpresa = '" & glsEmpresa & "' AND idSucursal = '" & glsSucursal & "' AND idDocumento = '" & strTipoDoc & "' AND idDocVentas = '" & Trim(txt_NumDoc.Text) & "' AND idSerie = '" & Trim(txt_Serie.Text) & "' AND idDocVentasImp <> '' AND idDocVentasImp IS NOT NULL " & _
+               "AND (idDocumento <> '94' OR idDocumentoImp <> '40')"
         If rst.State = 1 Then rst.Close
         rst.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
         Do While Not rst.EOF
