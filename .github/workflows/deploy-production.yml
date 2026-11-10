@@ -17,6 +17,7 @@ on:
           - fralsecont
           - fralsetech
           - zonadeportiva
+          - hyt
 
 permissions: {}
 
@@ -34,7 +35,7 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$IMAGE_TAG" == "main" || "$IMAGE_TAG" =~ ^[0-9a-f]{40}$ ]]
-          [[ "$TARGET" =~ ^(all|fralsecont|fralsetech|zonadeportiva)$ ]]
+          [[ "$TARGET" =~ ^(all|fralsecont|fralsetech|zonadeportiva|hyt)$ ]]
           [[ "$CONTABO_USER" == "fralse-deploy" ]]
 
       - name: Configure restricted SSH access

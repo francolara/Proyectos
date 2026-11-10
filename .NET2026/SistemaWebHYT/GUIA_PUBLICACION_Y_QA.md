@@ -23,7 +23,14 @@ El script `047_PermisosEntregaPlanillas.sql` concede ejecución de reingreso, co
 
 El validador estático reconoce las adiciones de varias columnas en una misma sentencia. Ejecutar `Hyt.SqlValidation`, `Hyt.DatabaseTests --run-local-sql` y `Hyt.AccessTests` antes de regenerar los artefactos. La comprobación SQL se hace en una base de prueba aislada. En producción, repetir las verificaciones con el usuario restringido y los permisos funcionales asignados.
 
-La carpeta de diagramas de Contabo describe la ruta de FRALSE desde GitHub Actions y GHCR hasta despliegue manual, Nginx detrás de Cloudflare, SQL en red privada y respaldos cifrados a R2. HYT conserva su Compose propio. El workflow de despliegue existente todavía no tiene HYT como destino. Su incorporación requiere coordinación con el comando autorizado del VPS.
+La carpeta de diagramas de Contabo describe la ruta de FRALSE desde GitHub Actions y GHCR hasta despliegue manual, Nginx detrás de Cloudflare, SQL en red privada y respaldos cifrados a R2. HYT conserva su Compose propio. El workflow **Deploy production** acepta `hyt` como destino individual. La entrada SSH autorizada en Contabo lo deriva a `/usr/local/sbin/fralse-deploy-hyt`, instalado desde `deploy/fralse-deploy-hyt.sh`. La opción `all` conserva el grupo de aplicaciones del Compose compartido de FRALSE.
+
+### Desplegar una imagen de HYT desde GitHub Actions
+
+1. Confirmar que el trabajo **Build hyt** publicó en GHCR el SHA que se va a desplegar.
+2. En **Actions → Deploy production → Run workflow**, indicar el SHA completo en `image_tag` y seleccionar `hyt` en `target`.
+3. El VPS descarga la imagen, actualiza exclusivamente `hyt-web` con su Compose y comprueba `/health/live` en loopback. Si falla el arranque o la sonda, recupera la imagen anterior. La etiqueta se guarda en `hyt.compose.env` al superar la sonda.
+4. Revisar por separado el acceso público, SQL, adjuntos y CAPTCHA. Este workflow actualiza la imagen y conserva la configuración privada y las claves persistentes.
 
 ### Aceptación adicional de Planillas
 
