@@ -9,6 +9,7 @@
 -- Description:   Aceptación automática auditada al crear GUIA, atómica con el documento; elimina aprobación previa; adjuntos por carpeta y número de documento. Guía sin flujo de estados.
 -- =============================================
 -- Firma: FRANCO LARA | Create date: 07/11/2026 | Distingue entre permisos de registro y edición del documento.
+-- Firma: FRANCO LARA | Create date: 10/11/2026 | Permite cambios exclusivos de adjuntos en expedientes facturados.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_SeguimientoGUIA_Guardar
@@ -64,14 +65,20 @@ BEGIN
             THROW 51411,N'[HYT_CONCURRENCIA] El presupuesto cambió. Vuelve a consultarlo.',1;
         SELECT TOP (1) @RevisionAceptadaId=r.RevisionId,@EstadoPresupuesto=r.Estado FROM dbo.PresupuestoRevision AS r WITH (HOLDLOCK) WHERE r.PresupuestoId=@PresupuestoId ORDER BY r.NumeroRevision DESC;
         IF @EstadoPresupuesto IS NULL OR @EstadoPresupuesto=N'CANCELADO' THROW 51412,N'[HYT_VALIDACION] El presupuesto no admite este registro.',1;
-        IF EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS oc INNER JOIN dbo.ReferenciaComprobanteExterno AS referencia ON referencia.OrdenCompraId=oc.OrdenCompraId AND referencia.Vigente=1 WHERE oc.PresupuestoId=@PresupuestoId)
-            THROW 51412,N'[HYT_VALIDACION] Retira primero el marcado facturado antes de modificar documentos del expediente.',1;
         IF @Id IS NOT NULL
         BEGIN
             SELECT @Anterior=(SELECT documento.FechaActa, documento.NumeroActa, documento.Observacion, documento.FechaAceptacion, documento.RepresentanteCliente, documento.Estado FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),@Estado=documento.Estado
             FROM dbo.GuiaConformidad AS documento WITH (UPDLOCK,HOLDLOCK) WHERE documento.GuiaId=@Id AND documento.PresupuestoId=@PadreId AND documento.VersionFila=@VersionOriginal;
             IF @Anterior IS NULL THROW 51411,N'[HYT_CONCURRENCIA] El registro cambió o no pertenece al expediente. Vuelve a consultarlo.',1;
         END;
+        IF EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS oc INNER JOIN dbo.ReferenciaComprobanteExterno AS referencia ON referencia.OrdenCompraId=oc.OrdenCompraId AND referencia.Vigente=1 WHERE oc.PresupuestoId=@PresupuestoId)
+            AND (@Id IS NULL
+                OR (JSON_QUERY(@Datos,N'$.Adjunto') IS NULL
+                    AND NOT EXISTS (SELECT 1 FROM OPENJSON(JSON_QUERY(@Datos,N'$.RetirarAdjuntos'))))
+                OR @FechaActa IS DISTINCT FROM TRY_CONVERT(DATE,JSON_VALUE(@Anterior,N'$.FechaActa'))
+                OR @NumeroActa IS DISTINCT FROM JSON_VALUE(@Anterior,N'$.NumeroActa')
+                OR @Observacion IS DISTINCT FROM JSON_VALUE(@Anterior,N'$.Observacion'))
+            THROW 51412,N'[HYT_VALIDACION] En un expediente facturado solo puedes agregar o retirar adjuntos. Retira el marcado facturado para cambiar otros datos.',1;
         IF @Id IS NULL AND EXISTS (SELECT 1 FROM dbo.GuiaConformidad AS documento WITH (UPDLOCK,HOLDLOCK) WHERE documento.PresupuestoId=@PadreId) THROW 51413,N'[HYT_VALIDACION] Ya existe este registro. Ábrelo para consultar o modificar.',1;
         IF @Id IS NULL AND @EstadoPresupuesto NOT IN (N'BORRADOR',N'ENVIADO',N'OBSERVADO',N'APROBADO')
             THROW 51416,N'[HYT_VALIDACION] El presupuesto no está vigente para registrar la guía.',1;

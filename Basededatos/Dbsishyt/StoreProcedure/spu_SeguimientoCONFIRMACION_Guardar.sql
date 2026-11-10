@@ -5,6 +5,7 @@
 -- =============================================
 -- Firma: FRANCO LARA | Create date: 06/11/2026 | Claves de adjuntos por carpeta y número, compatibles con cargas históricas. Confirmación vigente completa automáticamente la OC registrada con auditoría transaccional, sin degradar una OC cerrada.
 -- Firma: FRANCO LARA | Create date: 07/11/2026 | Distingue entre permisos de registro y edición del documento.
+-- Firma: FRANCO LARA | Create date: 10/11/2026 | Permite cambios exclusivos de adjuntos en expedientes facturados.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_SeguimientoCONFIRMACION_Guardar
@@ -62,14 +63,21 @@ BEGIN
             THROW 51411,N'[HYT_CONCURRENCIA] La OC cambió o está cancelada. Vuelve a consultarla.',1;
         SELECT TOP (1) @EstadoPresupuesto=r.Estado FROM dbo.PresupuestoRevision AS r WITH (HOLDLOCK) WHERE r.PresupuestoId=@PresupuestoId ORDER BY r.NumeroRevision DESC;
         IF @EstadoPresupuesto IS NULL OR @EstadoPresupuesto=N'CANCELADO' THROW 51412,N'[HYT_VALIDACION] El presupuesto no admite este registro.',1;
-        IF EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS oc INNER JOIN dbo.ReferenciaComprobanteExterno AS referencia ON referencia.OrdenCompraId=oc.OrdenCompraId AND referencia.Vigente=1 WHERE oc.PresupuestoId=@PresupuestoId)
-            THROW 51412,N'[HYT_VALIDACION] Retira primero el marcado facturado antes de modificar documentos del expediente.',1;
         IF @Id IS NOT NULL
         BEGIN
             SELECT @Anterior=(SELECT documento.FechaConfirmacion, documento.NumeroConfirmacion, documento.RepresentanteCliente, documento.Observacion, documento.Vigente FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),@Estado=CASE WHEN documento.Vigente=1 THEN N'VIGENTE' ELSE N'RETIRADA' END
             FROM dbo.ConfirmacionFacturacion AS documento WITH (UPDLOCK,HOLDLOCK) WHERE documento.ConfirmacionId=@Id AND documento.OrdenCompraId=@PadreId AND documento.VersionFila=@VersionOriginal;
             IF @Anterior IS NULL THROW 51411,N'[HYT_CONCURRENCIA] El registro cambió o no pertenece al expediente. Vuelve a consultarlo.',1;
         END;
+        IF EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS oc INNER JOIN dbo.ReferenciaComprobanteExterno AS referencia ON referencia.OrdenCompraId=oc.OrdenCompraId AND referencia.Vigente=1 WHERE oc.PresupuestoId=@PresupuestoId)
+            AND (@Id IS NULL
+                OR (JSON_QUERY(@Datos,N'$.Adjunto') IS NULL
+                    AND NOT EXISTS (SELECT 1 FROM OPENJSON(JSON_QUERY(@Datos,N'$.RetirarAdjuntos'))))
+                OR @FechaConfirmacion IS DISTINCT FROM TRY_CONVERT(DATE,JSON_VALUE(@Anterior,N'$.FechaConfirmacion'))
+                OR @NumeroConfirmacion IS DISTINCT FROM JSON_VALUE(@Anterior,N'$.NumeroConfirmacion')
+                OR @RepresentanteCliente IS DISTINCT FROM JSON_VALUE(@Anterior,N'$.RepresentanteCliente')
+                OR @Observacion IS DISTINCT FROM JSON_VALUE(@Anterior,N'$.Observacion'))
+            THROW 51412,N'[HYT_VALIDACION] En un expediente facturado solo puedes agregar o retirar adjuntos. Retira el marcado facturado para cambiar otros datos.',1;
         IF @Id IS NULL AND EXISTS (SELECT 1 FROM dbo.ConfirmacionFacturacion AS documento WITH (UPDLOCK,HOLDLOCK) WHERE documento.OrdenCompraId=@PadreId AND documento.Vigente=1) THROW 51413,N'[HYT_VALIDACION] Ya existe este registro. Ábrelo para consultar o modificar.',1;
         IF @Estado=N'RETIRADA' THROW 51415,N'[HYT_VALIDACION] La confirmación retirada se conserva como historial. Registra una nueva.',1;
         IF @Id IS NULL

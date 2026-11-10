@@ -1196,6 +1196,48 @@ try
     await SaveDocument(connection,"GUIA",invoiceWithoutExecutionBudget.BudgetId,invoiceGuideParent,new{FechaActa="2026-11-06",NumeroActa="GUIA-SIN-EJECUCION"},Guid.NewGuid());
     var noExecutionMark=await MarkInvoice(invoiceWithoutExecutionOc,invoiceWithoutExecutionVersion,Guid.NewGuid());
     Check(noExecutionMark>0&&Convert.ToInt64(await Scalar(connection,$"SELECT COUNT_BIG(1) FROM dbo.Ejecucion WHERE PresupuestoId={invoiceWithoutExecutionBudget.BudgetId}"))==0,"OC Trabajo completado con guía y confirmación permite Facturado sin ejecución separada");
+    foreach (var entry in new[]
+    {
+        (Kind: ocKind, ParentId: invoiceWithoutExecutionBudget.BudgetId),
+        (Kind: guideKind, ParentId: invoiceWithoutExecutionBudget.BudgetId),
+        (Kind: GestionServicios.Application.Followup.DocumentKind.Resolve("confirmaciones"), ParentId: invoiceWithoutExecutionOc)
+    })
+    {
+        var current = (await documents.GetAsync(entry.Kind, actor, null, entry.ParentId, 1, default))!;
+        var document = current.Data.GetProperty("Documento");
+        var id = document.GetProperty(GestionServicios.Application.Followup.DocumentFields.PrimaryKey(entry.Kind)).GetInt64();
+        var fields = GestionServicios.Application.Followup.DocumentFields.For(entry.Kind)
+            .ToDictionary(field => field.Name, field => (object?)document.GetProperty(field.Name));
+        fields["MotivoCambio"] = "Actualizar adjuntos";
+        byte[] ParentVersion() => current.Data.GetProperty("VersionPadre").GetBytesFromBase64();
+        byte[] OriginalVersion() => current.Data.GetProperty("Documento").GetProperty("VersionFila").GetBytesFromBase64();
+        Task<GestionServicios.Application.Followup.DocumentSaved> SaveAttachment(Guid operation)
+            => documents.SaveAsync(entry.Kind, actor, entry.ParentId, ParentVersion(),
+                JsonSerializer.Serialize(fields), operation, id, OriginalVersion(), default);
+        void SetAttachment(Guid operation) => fields["Adjunto"] = new
+        {
+            NombreOriginal = "Adjunto de prueba.pdf", ClaveAlmacenamiento = operation.ToString("N") + ".pdf",
+            TipoContenido = "application/pdf", TamanoBytes = 15, SHA256 = new string('A', 64)
+        };
+
+        var operation = Guid.NewGuid();
+        SetAttachment(operation);
+        var firstFile = (await SaveAttachment(operation)).FileId!.Value;
+        current = (await documents.GetAsync(entry.Kind, actor, id, null, 1, default))!;
+        fields["RetirarAdjuntos"] = new[] { firstFile };
+
+        operation = Guid.NewGuid();
+        SetAttachment(operation);
+        var priorObservation = fields["Observacion"];
+        fields["Observacion"] = "Cambio de datos facturados";
+        await ExpectDomainFailure(() => SaveAttachment(operation), "solo puedes agregar o retirar adjuntos",
+            "Facturado protege los datos del documento " + entry.Kind.Code);
+        fields["Observacion"] = priorObservation;
+        var replacement = (await SaveAttachment(operation)).FileId!.Value;
+        Check(await filesRepository.GetAsync(entry.Kind, actor, firstFile, default) is null
+            && await filesRepository.GetAsync(entry.Kind, actor, replacement, default) is not null,
+            "Facturado permite retirar y reemplazar el adjunto de " + entry.Kind.Code);
+    }
     var integralReport=await reportingRepository.ReportAsync(actor,"PRESUPUESTO",kpiStart,kpiEnd,1,CancellationToken.None,filters:new(Search:invoiceWithoutExecutionBudget.Number,State:"APROBADO"));
     var integralRow=integralReport.Rows.Single();
     Check(integralRow.GetProperty("NumeroCliente").GetString()=="OC-SIN-EJECUCION"&&integralRow.GetProperty("Guia").GetString()=="GUIA-SIN-EJECUCION"&&integralRow.GetProperty("Confirmacion").GetString()=="CONF-SIN-EJECUCION"&&integralRow.GetProperty("NumeroComprobante").GetString()=="000012A"&&integralRow.GetProperty("TipoComprobante").GetString()=="01","Reporte de presupuesto integra OC, guía, confirmación y comprobante vigente con sus números");

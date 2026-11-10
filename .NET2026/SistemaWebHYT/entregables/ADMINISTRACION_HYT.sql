@@ -2245,14 +2245,21 @@ BEGIN
             THROW 51411,N'[HYT_CONCURRENCIA] La OC cambió o está cancelada. Vuelve a consultarla.',1;
         SELECT TOP (1) @EstadoPresupuesto=r.Estado FROM dbo.PresupuestoRevision AS r WITH (HOLDLOCK) WHERE r.PresupuestoId=@PresupuestoId ORDER BY r.NumeroRevision DESC;
         IF @EstadoPresupuesto IS NULL OR @EstadoPresupuesto=N'CANCELADO' THROW 51412,N'[HYT_VALIDACION] El presupuesto no admite este registro.',1;
-        IF EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS oc INNER JOIN dbo.ReferenciaComprobanteExterno AS referencia ON referencia.OrdenCompraId=oc.OrdenCompraId AND referencia.Vigente=1 WHERE oc.PresupuestoId=@PresupuestoId)
-            THROW 51412,N'[HYT_VALIDACION] Retira primero el marcado facturado antes de modificar documentos del expediente.',1;
         IF @Id IS NOT NULL
         BEGIN
             SELECT @Anterior=(SELECT documento.FechaConfirmacion, documento.NumeroConfirmacion, documento.RepresentanteCliente, documento.Observacion, documento.Vigente FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),@Estado=CASE WHEN documento.Vigente=1 THEN N'VIGENTE' ELSE N'RETIRADA' END
             FROM dbo.ConfirmacionFacturacion AS documento WITH (UPDLOCK,HOLDLOCK) WHERE documento.ConfirmacionId=@Id AND documento.OrdenCompraId=@PadreId AND documento.VersionFila=@VersionOriginal;
             IF @Anterior IS NULL THROW 51411,N'[HYT_CONCURRENCIA] El registro cambió o no pertenece al expediente. Vuelve a consultarlo.',1;
         END;
+        IF EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS oc INNER JOIN dbo.ReferenciaComprobanteExterno AS referencia ON referencia.OrdenCompraId=oc.OrdenCompraId AND referencia.Vigente=1 WHERE oc.PresupuestoId=@PresupuestoId)
+            AND (@Id IS NULL
+                OR (JSON_QUERY(@Datos,N'$.Adjunto') IS NULL
+                    AND NOT EXISTS (SELECT 1 FROM OPENJSON(JSON_QUERY(@Datos,N'$.RetirarAdjuntos'))))
+                OR @FechaConfirmacion IS DISTINCT FROM TRY_CONVERT(DATE,JSON_VALUE(@Anterior,N'$.FechaConfirmacion'))
+                OR @NumeroConfirmacion IS DISTINCT FROM JSON_VALUE(@Anterior,N'$.NumeroConfirmacion')
+                OR @RepresentanteCliente IS DISTINCT FROM JSON_VALUE(@Anterior,N'$.RepresentanteCliente')
+                OR @Observacion IS DISTINCT FROM JSON_VALUE(@Anterior,N'$.Observacion'))
+            THROW 51412,N'[HYT_VALIDACION] En un expediente facturado solo puedes agregar o retirar adjuntos. Retira el marcado facturado para cambiar otros datos.',1;
         IF @Id IS NULL AND EXISTS (SELECT 1 FROM dbo.ConfirmacionFacturacion AS documento WITH (UPDLOCK,HOLDLOCK) WHERE documento.OrdenCompraId=@PadreId AND documento.Vigente=1) THROW 51413,N'[HYT_VALIDACION] Ya existe este registro. Ábrelo para consultar o modificar.',1;
         IF @Estado=N'RETIRADA' THROW 51415,N'[HYT_VALIDACION] La confirmación retirada se conserva como historial. Registra una nueva.',1;
         IF @Id IS NULL
@@ -2587,14 +2594,20 @@ BEGIN
             THROW 51411,N'[HYT_CONCURRENCIA] El presupuesto cambió. Vuelve a consultarlo.',1;
         SELECT TOP (1) @RevisionAceptadaId=r.RevisionId,@EstadoPresupuesto=r.Estado FROM dbo.PresupuestoRevision AS r WITH (HOLDLOCK) WHERE r.PresupuestoId=@PresupuestoId ORDER BY r.NumeroRevision DESC;
         IF @EstadoPresupuesto IS NULL OR @EstadoPresupuesto=N'CANCELADO' THROW 51412,N'[HYT_VALIDACION] El presupuesto no admite este registro.',1;
-        IF EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS oc INNER JOIN dbo.ReferenciaComprobanteExterno AS referencia ON referencia.OrdenCompraId=oc.OrdenCompraId AND referencia.Vigente=1 WHERE oc.PresupuestoId=@PresupuestoId)
-            THROW 51412,N'[HYT_VALIDACION] Retira primero el marcado facturado antes de modificar documentos del expediente.',1;
         IF @Id IS NOT NULL
         BEGIN
             SELECT @Anterior=(SELECT documento.FechaActa, documento.NumeroActa, documento.Observacion, documento.FechaAceptacion, documento.RepresentanteCliente, documento.Estado FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),@Estado=documento.Estado
             FROM dbo.GuiaConformidad AS documento WITH (UPDLOCK,HOLDLOCK) WHERE documento.GuiaId=@Id AND documento.PresupuestoId=@PadreId AND documento.VersionFila=@VersionOriginal;
             IF @Anterior IS NULL THROW 51411,N'[HYT_CONCURRENCIA] El registro cambió o no pertenece al expediente. Vuelve a consultarlo.',1;
         END;
+        IF EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS oc INNER JOIN dbo.ReferenciaComprobanteExterno AS referencia ON referencia.OrdenCompraId=oc.OrdenCompraId AND referencia.Vigente=1 WHERE oc.PresupuestoId=@PresupuestoId)
+            AND (@Id IS NULL
+                OR (JSON_QUERY(@Datos,N'$.Adjunto') IS NULL
+                    AND NOT EXISTS (SELECT 1 FROM OPENJSON(JSON_QUERY(@Datos,N'$.RetirarAdjuntos'))))
+                OR @FechaActa IS DISTINCT FROM TRY_CONVERT(DATE,JSON_VALUE(@Anterior,N'$.FechaActa'))
+                OR @NumeroActa IS DISTINCT FROM JSON_VALUE(@Anterior,N'$.NumeroActa')
+                OR @Observacion IS DISTINCT FROM JSON_VALUE(@Anterior,N'$.Observacion'))
+            THROW 51412,N'[HYT_VALIDACION] En un expediente facturado solo puedes agregar o retirar adjuntos. Retira el marcado facturado para cambiar otros datos.',1;
         IF @Id IS NULL AND EXISTS (SELECT 1 FROM dbo.GuiaConformidad AS documento WITH (UPDLOCK,HOLDLOCK) WHERE documento.PresupuestoId=@PadreId) THROW 51413,N'[HYT_VALIDACION] Ya existe este registro. Ábrelo para consultar o modificar.',1;
         IF @Id IS NULL AND @EstadoPresupuesto NOT IN (N'BORRADOR',N'ENVIADO',N'OBSERVADO',N'APROBADO')
             THROW 51416,N'[HYT_VALIDACION] El presupuesto no está vigente para registrar la guía.',1;
@@ -2810,14 +2823,23 @@ BEGIN
             THROW 51411,N'[HYT_CONCURRENCIA] El presupuesto cambió. Vuelve a consultarlo.',1;
         SELECT TOP (1) @EstadoPresupuesto=r.Estado FROM dbo.PresupuestoRevision AS r WITH (HOLDLOCK) WHERE r.PresupuestoId=@PresupuestoId ORDER BY r.NumeroRevision DESC;
         IF @EstadoPresupuesto IS NULL OR @EstadoPresupuesto=N'CANCELADO' THROW 51412,N'[HYT_VALIDACION] El presupuesto no admite este registro.',1;
-        IF EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS oc INNER JOIN dbo.ReferenciaComprobanteExterno AS referencia ON referencia.OrdenCompraId=oc.OrdenCompraId AND referencia.Vigente=1 WHERE oc.PresupuestoId=@PresupuestoId)
-            THROW 51412,N'[HYT_VALIDACION] Retira primero el marcado facturado antes de modificar documentos del expediente.',1;
         IF @Id IS NOT NULL
         BEGIN
             SELECT @Anterior=(SELECT documento.RevisionId, documento.NumeroOCCliente, documento.FechaEmisionOC, documento.FechaRecepcionOC, documento.Importe, documento.Observacion, documento.NumeroRegistroInterno, documento.CodigoMoneda, documento.Estado FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),@Estado=documento.Estado
             FROM dbo.OrdenCompraCliente AS documento WITH (UPDLOCK,HOLDLOCK) WHERE documento.OrdenCompraId=@Id AND documento.PresupuestoId=@PadreId AND documento.VersionFila=@VersionOriginal;
             IF @Anterior IS NULL THROW 51411,N'[HYT_CONCURRENCIA] El registro cambió o no pertenece al expediente. Vuelve a consultarlo.',1;
         END;
+        IF EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS oc INNER JOIN dbo.ReferenciaComprobanteExterno AS referencia ON referencia.OrdenCompraId=oc.OrdenCompraId AND referencia.Vigente=1 WHERE oc.PresupuestoId=@PresupuestoId)
+            AND (@Id IS NULL
+                OR (JSON_QUERY(@Datos,N'$.Adjunto') IS NULL
+                    AND NOT EXISTS (SELECT 1 FROM OPENJSON(JSON_QUERY(@Datos,N'$.RetirarAdjuntos'))))
+                OR @RevisionId IS DISTINCT FROM TRY_CONVERT(BIGINT,JSON_VALUE(@Anterior,N'$.RevisionId'))
+                OR @NumeroOCCliente IS DISTINCT FROM JSON_VALUE(@Anterior,N'$.NumeroOCCliente')
+                OR @FechaEmisionOC IS DISTINCT FROM TRY_CONVERT(DATE,JSON_VALUE(@Anterior,N'$.FechaEmisionOC'))
+                OR @FechaRecepcionOC IS DISTINCT FROM TRY_CONVERT(DATE,JSON_VALUE(@Anterior,N'$.FechaRecepcionOC'))
+                OR @Importe IS DISTINCT FROM TRY_CONVERT(DECIMAL(19,2),JSON_VALUE(@Anterior,N'$.Importe'))
+                OR @Observacion IS DISTINCT FROM JSON_VALUE(@Anterior,N'$.Observacion'))
+            THROW 51412,N'[HYT_VALIDACION] En un expediente facturado solo puedes agregar o retirar adjuntos. Retira el marcado facturado para cambiar otros datos.',1;
         IF @Id IS NULL AND EXISTS (SELECT 1 FROM dbo.OrdenCompraCliente AS documento WITH (UPDLOCK,HOLDLOCK) WHERE documento.PresupuestoId=@PadreId) THROW 51413,N'[HYT_VALIDACION] Ya existe este registro. Ábrelo para consultar o modificar.',1;
         DECLARE @EstadoRevision NVARCHAR(20),@TotalRevision DECIMAL(19,2);
         SELECT @EstadoRevision=r.Estado,@TotalRevision=r.Total,@Moneda=r.CodigoMoneda FROM dbo.PresupuestoRevision AS r WITH (HOLDLOCK) WHERE r.PresupuestoId=@PresupuestoId AND r.RevisionId=@RevisionId;

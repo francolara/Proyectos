@@ -709,3 +709,7 @@ La vista previa y **Imprimir reporte** ejecutan la misma consulta con los filtro
 ### Permisos SQL de la entrega HYT · 10/11/2026
 
 `047_PermisosEntregaPlanillas.sql` concede a `hyt_app_executor` la ejecución de los procedimientos de reingreso, estimado previsional, mantenimiento de tasas y confirmación de pago de planilla. Se ejecuta al final del manifiesto acumulado, cuando existen el rol y los procedimientos. Los permisos funcionales y la restricción de escritura directa se mantienen.
+
+### Adjuntos de expedientes facturados · 10/11/2026
+
+Los procedimientos `spu_SeguimientoOC_Guardar`, `spu_SeguimientoGUIA_Guardar` y `spu_SeguimientoCONFIRMACION_Guardar` permiten agregar y retirar adjuntos cuando el expediente está marcado como facturado. Exigen motivo, versiones vigentes y que los demás campos del documento coincidan con el registro guardado. El marcado facturado y el historial de archivos retirados se conservan. Las correcciones a los datos del documento siguen requiriendo retirar el marcado.

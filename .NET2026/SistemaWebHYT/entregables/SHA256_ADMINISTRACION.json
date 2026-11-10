@@ -117,7 +117,7 @@
   },
   {
     "path": "StoreProcedure/spu_SeguimientoCONFIRMACION_Guardar.sql",
-    "sha256": "d2a519200fcc63df16c810c6402bfa724ed3078c9069333d1f62a495b1a3d4f7"
+    "sha256": "6061c70e89b8e6230279a4db623ef607907b3155ac22703bf561b9801589d316"
   },
   {
     "path": "StoreProcedure/spu_SeguimientoEJECUCION_CambiarEstado.sql",
@@ -133,7 +133,7 @@
   },
   {
     "path": "StoreProcedure/spu_SeguimientoGUIA_Guardar.sql",
-    "sha256": "a190a5a45a6625d4a43fd74917c20c4959e3c4e5abc744db596ef6308d9a72c0"
+    "sha256": "36caed9771a9dde341d928a2fb118dc4310b50b1e447e79892a9183a0bec995c"
   },
   {
     "path": "StoreProcedure/spu_SeguimientoOC_CambiarEstado.sql",
@@ -141,7 +141,7 @@
   },
   {
     "path": "StoreProcedure/spu_SeguimientoOC_Guardar.sql",
-    "sha256": "04ff4a933c979376e4fab1e153746ed2eafdb0fd746f4a8bb9899b5cdfb62ca4"
+    "sha256": "758b861f428ae694ff3d8793131a67cfe2daa3135aefb315d03216f1b728a355"
   },
   {
     "path": "StoreProcedure/spu_Seguimiento_ObtenerArchivo.sql",
@@ -197,6 +197,6 @@
   },
   {
     "path": "ADMINISTRACION_HYT.sql",
-    "sha256": "2d284fc93f18e83e68617704148607fefc99f462c1de4a433d589adc36d2b31f"
+    "sha256": "7f5d28e6b1f842126870f9fb6e02755532745a672381f0f3ff0e2e92e633b8d9"
   }
 ]

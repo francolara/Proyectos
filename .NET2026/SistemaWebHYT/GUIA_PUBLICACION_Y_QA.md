@@ -108,6 +108,13 @@ Registrar resultados, usuario responsable, fecha, versión probada y evidencias 
 
 ## Respaldo y restauración
 
+### Pendiente de operación de HYT · 10/11/2026
+
+- Incorporar `SistemaWebHYT` a la lista `DATABASES` de `/usr/local/sbin/fralse-sql-backup` en Contabo. El temporizador está activo y la lista verificada contiene `FralseCont` y `ZonaDeportiva`. Este cambio queda pendiente por indicación del usuario.
+- Después de incorporarla, comprobar la primera copia cifrada en R2 y ensayar su restauración en una base aislada.
+- El usuario confirmó la carga y descarga de adjuntos desde HYT en producción.
+
+
 Antes de publicar, incorporar SistemaWebHYT al esquema de backup SQL existente documentado para FRALSE (03:00 Perú, verificación y cifrado). Verificar inclusión real y retención; no asumir cobertura por el nombre de la base.
 
 El respaldo coordinado debe cubrir SQL (referencias/metadatos/historia), objetos R2 y volumen de Data Protection. Un .bak no contiene los archivos adjuntos. R2 no debe tratarse como sustituto de un respaldo independiente: preparar exportación/copia con inventario de claves y SHA256 a almacenamiento privado de respaldo, con credenciales separadas. Proteger/cifrar los respaldos de claves y configuración.
