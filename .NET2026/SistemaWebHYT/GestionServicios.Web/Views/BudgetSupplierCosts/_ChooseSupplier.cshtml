@@ -1,0 +1,41 @@
+@model GestionServicios.Web.Controllers.SupplierCostSupplierLookup
+@* Firma: FRANCO LARA - 09/11/2026 | Ayuda de proveedores activos por RUC o razón social. Alinea importes y cantidades en la grilla. *@
+<form method="get" asp-action="ChooseSupplier" asp-route-id="@Model.BudgetId" class="hyt-filters" data-supplier-search>
+    <div class="hyt-field">
+        <label for="supplier-lookup-search">RUC o razón social</label>
+        <input id="supplier-lookup-search" type="search" name="search" value="@Model.Search" maxlength="180" />
+    </div>
+    <button type="submit" class="hyt-button-primary">Buscar</button>
+</form>
+<div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Proveedores activos">
+    <table class="hyt-table hyt-align-supplier-lookup">
+        <thead><tr><th scope="col">RUC</th><th scope="col">Razón social</th><th scope="col">Acción</th></tr></thead>
+        <tbody>
+        @if (Model.Suppliers.Count == 0)
+        {
+            <tr><td colspan="3" class="hyt-grid-message">No se encontraron proveedores activos.</td></tr>
+        }
+        @foreach (var supplier in Model.Suppliers)
+        {
+            <tr>
+                <td>@supplier.TaxId</td><td>@supplier.Name</td>
+                <td><button type="button" class="hyt-button-secondary" data-supplier-select="@supplier.Id"
+                    data-supplier-name="@supplier.Name (@supplier.TaxId)" aria-label="Seleccionar @supplier.Name">Seleccionar</button></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+<nav class="hyt-pagination" aria-label="Páginas de proveedores">
+    @if (Model.Page > 1)
+    {
+        <a asp-action="ChooseSupplier" asp-route-id="@Model.BudgetId" asp-route-search="@Model.Search"
+           asp-route-page="@(Model.Page - 1)" class="hyt-button-secondary" data-supplier-page>Anterior</a>
+    }
+    <span>Página @Model.Page</span>
+    @if (Model.Suppliers.Count > 0 && Model.Suppliers[0].Total > (long)Model.Page * 20)
+    {
+        <a asp-action="ChooseSupplier" asp-route-id="@Model.BudgetId" asp-route-search="@Model.Search"
+           asp-route-page="@(Model.Page + 1)" class="hyt-button-secondary" data-supplier-page>Siguiente</a>
+    }
+</nav>

@@ -1,0 +1,50 @@
+@model GestionServicios.Application.Payroll.PayPlan
+@* Firma: FRANCO LARA - 09/11/2026 | Reporte de planilla con el formato corporativo de Presupuestos. Identifica el pago confirmado. *@
+@{
+    Layout = "_ReportPrintLayout";
+    ViewData["Title"] = "Planificación de Planilla";
+    ViewData["ReportSubtitle"] = "Reporte de gestión · Planificación de Planilla";
+    ViewData["ReportFooter"] = "HYT · Planificación guardada del período indicado. Importes en soles.";
+    var label = Model.Frecuencia switch { "SEMANAL" => "Semana de pago", "QUINCENAL" => "Quincena de pago", _ => "Mes de pago" };
+    var identityColumns = Model.VerCuenta ? 5 : 2;
+}
+<section class="hyt-report-summary">
+    <h2>Planificación de Planilla</h2>
+    <p><strong>@label</strong> · Desde @Model.Desde.ToString("dd/MM/yyyy") hasta @Model.Hasta.ToString("dd/MM/yyyy")</p>
+    <p><strong>@Model.Filas.Length registros</strong></p>
+    @if (Model.FechaPago is DateOnly paid)
+    {
+        <p><strong>Pagada y cerrada</strong> · @paid.ToString("dd/MM/yyyy") · Operación @Model.ReferenciaPago</p>
+    }
+</section>
+<div class="hyt-report-table-region" tabindex="0" role="region" aria-label="Detalle de la planificación">
+    <table class="hyt-report-table hyt-report-pay-plan">
+        <thead>
+            <tr><th>Trabajador</th><th>Tipo</th>
+                @if (Model.VerCuenta) { <th>Banco</th><th class="hyt-report-count">Cuenta bancaria</th><th class="hyt-report-count">CCI</th> }
+                <th class="hyt-report-money">Base (S/)</th><th class="hyt-report-count">Horas extra</th><th class="hyt-report-money">Extra (S/)</th><th class="hyt-report-money">Descuento (S/)</th><th class="hyt-report-money">Neto (S/)</th></tr>
+        </thead>
+        <tbody>
+        @if (Model.Filas.Length == 0)
+        {
+            <tr><td colspan="@(identityColumns + 5)">Sin trabajadores en el período seleccionado.</td></tr>
+        }
+        @foreach (var row in Model.Filas)
+        {
+            <tr>
+                <th scope="row"><strong>@row.Nombre</strong></th><td>@(row.Tipo == "PLANILLA" ? "En planilla" : "Externo")</td>
+                @if (Model.VerCuenta) { <td>@(row.Banco ?? "—")</td><td class="hyt-report-count">@(row.Cuenta ?? "—")</td><td class="hyt-report-count">@(row.Cci ?? "—")</td> }
+                <td class="hyt-report-money">@row.Base.ToString("N2")</td><td class="hyt-report-count">@((row.MinutosExtra / 60m).ToString("0.##"))</td>
+                <td class="hyt-report-money">@row.ImporteExtra.ToString("N2")</td><td class="hyt-report-money">@row.Descuento.ToString("N2")</td>
+                <td class="hyt-report-money">@row.Neto.ToString("N2")</td>
+            </tr>
+        }
+        </tbody>
+        <tfoot><tr><th colspan="@identityColumns">Totales</th>
+            <td class="hyt-report-money">@Model.Filas.Sum(row => row.Base).ToString("N2")</td>
+            <td class="hyt-report-count">@((Model.Filas.Sum(row => (long)row.MinutosExtra) / 60m).ToString("0.##"))</td>
+            <td class="hyt-report-money">@Model.Filas.Sum(row => row.ImporteExtra).ToString("N2")</td>
+            <td class="hyt-report-money">@Model.Filas.Sum(row => row.Descuento).ToString("N2")</td>
+            <td class="hyt-report-money">@Model.Filas.Sum(row => row.Neto).ToString("N2")</td></tr></tfoot>
+    </table>
+</div>

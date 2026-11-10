@@ -1,0 +1,64 @@
+@model GestionServicios.Web.Controllers.PayrollObligationsPage
+@* Firma: FRANCO LARA - 09/11/2026 | Pólizas SCTR por trabajador y estado visual de vigencia. *@
+@{
+    var policy = Model.Policy;
+    ViewData["Title"] = policy is null ? "Nueva póliza SCTR" : "Editar póliza SCTR";
+    var covered = policy?.Trabajadores ?? [];
+    var selected = covered.Select(worker => worker.TrabajadorId).ToHashSet();
+    var workers = (Model.Data.PersonalActivo ?? []).Concat(covered)
+        .DistinctBy(worker => worker.TrabajadorId).OrderBy(worker => worker.Nombre).ToArray();
+}
+<header class="hyt-page-header">
+    <div><h1>@ViewData["Title"]</h1></div>
+    <a asp-action="Sctr" class="hyt-button-secondary">Volver al listado</a>
+</header>
+@if (TempData["ObligationError"] is string error) { <p role="alert">@error</p> }
+@if (Model.CanEdit)
+{
+    <section class="hyt-panel hyt-payroll-section">
+
+        <form asp-action="SavePolicy" method="post" class="hyt-payroll-form">
+            <input type="hidden" name="Id" value="@(policy?.PolizaId ?? 0)" />
+            <div class="hyt-master-fields">
+                @if (policy is not null) { <input type="hidden" name="Version" value="@Convert.ToBase64String(policy.VersionFila)" /> }
+                <div class="hyt-field">
+                    <label for="payrollobligations-insurer-1">Aseguradora</label>
+                    <input id="payrollobligations-insurer-1" name="Insurer" maxlength="120" value="@policy?.Aseguradora" required />
+                </div>
+                <div class="hyt-field">
+                    <label for="payrollobligations-number-1">Número de póliza</label>
+                    <input id="payrollobligations-number-1" name="Number" maxlength="80" value="@policy?.NumeroPoliza" required />
+                </div>
+                <div class="hyt-field">
+                    <label for="payrollobligations-coverage-1">Cobertura</label>
+                    <select id="payrollobligations-coverage-1" name="Coverage"><option value="SALUD" selected="@(policy?.Cobertura == "SALUD")">Salud</option><option value="PENSION" selected="@(policy?.Cobertura == "PENSION")">Pensión</option></select>
+                </div>
+                <div class="hyt-field">
+                    <label for="payrollobligations-from-1">Vigente desde</label>
+                    <input id="payrollobligations-from-1" name="From" type="date" value="@policy?.VigenciaDesde.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="hyt-field">
+                    <label for="payrollobligations-to-1">Vigente hasta</label>
+                    <input id="payrollobligations-to-1" name="To" type="date" value="@policy?.VigenciaHasta.ToString("yyyy-MM-dd")" required />
+                </div>
+            </div>
+            <fieldset class="hyt-sctr-workers">
+                <legend>Trabajadores cubiertos</legend>
+                <div class="hyt-master-fields">
+                    @foreach (var worker in workers)
+                    {
+                        <label class="hyt-payroll-check">
+                            <input type="checkbox" name="WorkerIds" value="@worker.TrabajadorId" checked="@selected.Contains(worker.TrabajadorId)" />
+                            @worker.Nombre
+                        </label>
+                    }
+                </div>
+                @if (workers.Length == 0) { <p>No hay trabajadores activos para asignar.</p> }
+            </fieldset>
+            <div class="hyt-payroll-actions">
+                <button class="hyt-button-primary" type="submit">Guardar póliza</button>
+                @if (policy is not null) { <a asp-action="Sctr" class="hyt-button-secondary">Cancelar edición</a> }
+            </div>
+        </form>
+    </section>
+}

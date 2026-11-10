@@ -1,0 +1,7 @@
+@model GestionServicios.Web.Controllers.SupplierCostBudgetLookup
+@{ ViewData["Title"] = "Elegir presupuesto"; }
+<header class="hyt-page-header">
+    <div><h1>Elegir presupuesto</h1></div>
+    <a href="@Model.ReturnUrl" class="hyt-button-secondary">Volver a pagos</a>
+</header>
+<partial name="_ChooseBudget" model="Model" />

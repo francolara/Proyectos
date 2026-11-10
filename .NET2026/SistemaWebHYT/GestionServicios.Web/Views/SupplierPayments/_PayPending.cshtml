@@ -1,0 +1,15 @@
+@model GestionServicios.Web.Controllers.SupplierPaymentDetails
+@* Firma: FRANCO LARA - 10/11/2026 | Pago directo desde la bandeja de proveedores. *@
+<section data-document-title="Registrar pago a proveedor">
+    <p><strong>@Model.Cost.SupplierName</strong> · @Model.Cost.BudgetNumber · @Model.Cost.Description</p>
+    <p>Saldo pendiente <strong>@Model.Cost.Currency @Model.Cost.Balance.ToString("N2")</strong></p>
+    @if (Model.Cost.Balance > 0)
+    {
+        <partial name="_PaymentForm" model="Model" />
+    }
+    else
+    {
+        <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+        <p>El trabajo ya está pagado.</p>
+    }
+</section>

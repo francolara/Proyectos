@@ -1,0 +1,156 @@
+@{ ViewData["Wide"] = true; }
+@model GestionServicios.Web.Controllers.WorkerVacationsPage
+@* Firma: FRANCO LARA - 09/11/2026 | Total de vacaciones pendientes y tarjetas separadas de días reconocidos y salidas. Alinea importes y cantidades en la grilla. *@
+@{
+    ViewData["Title"] = "Vacaciones";
+    var entry = Model.Entry;
+}
+<header class="hyt-page-header">
+    <div><h1>Vacaciones</h1><p>@Model.WorkerName</p></div>
+    <a asp-controller="Workers" asp-action="Details" asp-route-id="@Model.WorkerId" class="hyt-button-secondary">Volver al trabajador</a>
+</header>
+@if (TempData["VacationMessage"] is string message)
+{
+    <p role="status">@message</p>
+}
+<section class="hyt-panel hyt-payroll-section" aria-labelledby="pending-vacation-title">
+    <h2 id="pending-vacation-title">Vacaciones pendientes</h2>
+    <p class="hyt-vacation-total"><strong>@Model.Data.Periods.Sum(period => (long)period.Available).ToString("N0")</strong> días disponibles</p>
+    <p>Los días de las salidas aprobadas ya están descontados, incluso si la salida es futura.</p>
+</section>
+<div class="hyt-vacation-cards">
+@if (Model.CanEdit)
+{
+    <section class="hyt-panel hyt-payroll-section">
+        <h2>Registrar vacaciones</h2>
+        <p>Registra los días reconocidos para el período del trabajador.</p>
+        <form asp-action="AddPeriod" asp-route-id="@Model.WorkerId" method="post" class="hyt-payroll-form">
+            <div class="hyt-master-fields">
+                <div class="hyt-field">
+                    <label for="workervacations-from-1">Desde</label>
+                    <input id="workervacations-from-1" type="date" name="From" required />
+                </div>
+                <div class="hyt-field">
+                    <label for="workervacations-to-1">Hasta</label>
+                    <input id="workervacations-to-1" type="date" name="To" required />
+                </div>
+                <div class="hyt-field">
+                    <label for="workervacations-days-1">Días reconocidos</label>
+                    <input id="workervacations-days-1" type="number" name="Days" min="1" max="32767" required />
+                </div>
+            </div>
+            <div class="hyt-payroll-actions">
+                <button type="submit" class="hyt-button-primary">Guardar días reconocidos</button>
+            </div>
+        </form>
+    </section>
+}
+@if (Model.CanEdit)
+{
+    <section class="hyt-panel hyt-payroll-section">
+        <h2>@(entry is null ? "Registrar salida de vacaciones" : "Editar salida de vacaciones")</h2>
+        @if (Model.Data.Periods.Count == 0)
+        {
+            <p>Primero registra los días reconocidos de un período.</p>
+        }
+        else if (entry?.Status == "ANULADA")
+        {
+            <p>Esta salida está anulada.</p>
+        }
+        else
+        {
+        <form asp-action="Save" asp-route-id="@Model.WorkerId" method="post" class="hyt-payroll-form">
+            <div class="hyt-master-fields">
+                @if (entry is not null)
+                {
+                    <input type="hidden" name="EntryId" value="@entry.Id" />
+                    <input type="hidden" name="Version" value="@Convert.ToBase64String(entry.Version)" />
+                    <input type="hidden" name="PeriodId" value="@entry.PeriodId" />
+                }
+                else
+                {
+                    <div class="hyt-field">
+                        <label for="workervacations-periodid-1">Período</label>
+                        <select id="workervacations-periodid-1" name="PeriodId" required>
+                            <option value="">Selecciona un período</option>
+                            @foreach (var period in Model.Data.Periods)
+                            {
+                                <option value="@period.Id">@period.From.ToString("dd/MM/yyyy") a @period.To.ToString("dd/MM/yyyy")</option>
+                            }
+                        </select>
+                    </div>
+                }
+                <div class="hyt-field">
+                    <label for="workervacations-from-2">Inicio</label>
+                    <input id="workervacations-from-2" type="date" name="From" value="@entry?.From.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="hyt-field">
+                    <label for="workervacations-to-2">Fin</label>
+                    <input id="workervacations-to-2" type="date" name="To" value="@entry?.To.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="hyt-field">
+                    <label for="workervacations-days-2">Días</label>
+                    <input id="workervacations-days-2" type="number" name="Days" min="1" max="32767" value="@entry?.Days" required />
+                </div>
+                <div class="hyt-field">
+                    <label for="workervacations-status-1">Estado</label>
+                    <select id="workervacations-status-1" name="Status" required>
+                        <option value="PENDIENTE" selected="@(entry?.Status == "PENDIENTE")">Pendiente</option>
+                        <option value="APROBADA" selected="@(entry is null || entry.Status == "APROBADA")">Aprobada</option>
+                        @if (entry is not null) { <option value="ANULADA">Anulada</option> }
+                    </select>
+                </div>
+            </div>
+            <div class="hyt-payroll-actions">
+                <button type="submit" class="hyt-button-primary">Guardar salida</button>
+                @if (entry is not null) { <a asp-action="Index" asp-route-id="@Model.WorkerId" class="hyt-button-secondary">Cancelar edición</a> }
+            </div>
+        </form>
+        }
+    </section>
+}
+</div>
+<h2>Saldo por período</h2>
+@if (Model.Data.Periods.Count == 0)
+{
+    <p class="hyt-panel hyt-grid-message">Todavía no hay períodos registrados.</p>
+}
+else
+{
+    <div class="hyt-panel hyt-table-wrap" tabindex="0" role="region" aria-label="Saldo de vacaciones">
+        <table class="hyt-table hyt-align-vacation-balances">
+            <thead><tr><th scope="col">Desde</th><th scope="col">Hasta</th><th scope="col">Reconocidos</th><th scope="col">Gozados</th><th scope="col">Programados</th><th scope="col">Disponibles</th></tr></thead>
+            <tbody>
+            @foreach (var period in Model.Data.Periods)
+            {
+                <tr><td>@period.From.ToString("dd/MM/yyyy")</td><td>@period.To.ToString("dd/MM/yyyy")</td><td>@period.Granted</td><td>@period.Taken</td><td>@period.Scheduled</td><td>@period.Available</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+<h2>Historial de salidas de vacaciones</h2>
+@if (Model.Data.Entries.Count == 0)
+{
+    <p class="hyt-panel hyt-grid-message">Todavía no hay vacaciones registradas.</p>
+}
+else
+{
+    <div class="hyt-panel hyt-table-wrap" tabindex="0" role="region" aria-label="Historial de vacaciones">
+        <table class="hyt-table hyt-align-vacation-entries">
+            <thead><tr><th scope="col">Inicio</th><th scope="col">Fin</th><th scope="col">Días</th><th scope="col">Estado</th>@if (Model.CanEdit) { <th scope="col">Acción</th> }</tr></thead>
+            <tbody>
+            @foreach (var item in Model.Data.Entries)
+            {
+                <tr>
+                    <td>@item.From.ToString("dd/MM/yyyy")</td><td>@item.To.ToString("dd/MM/yyyy")</td><td>@item.Days</td><td>@item.Status</td>
+                    @if (Model.CanEdit)
+                    {
+                        <td>@if (item.Status != "ANULADA") { <a class="hyt-button-secondary hyt-action-button" asp-action="Index" asp-route-id="@Model.WorkerId" asp-route-entryId="@item.Id">Editar</a> }</td>
+                    }
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

@@ -1,0 +1,59 @@
+@{ ViewData["Wide"] = true; }
+@model GestionServicios.Web.Controllers.WorkersList
+@* Firma: FRANCO LARA - 09/11/2026 | Búsqueda y consulta del maestro de trabajadores. Aplica el estándar HYT de grillas, filtros y formularios. Muestra el saldo de vacaciones por trabajador. Alinea importes y números en la grilla. *@
+@* Firma: FRANCO LARA - 10/11/2026 | Agrega filtro por estado y acceso al estado de cuenta. *@
+@{ ViewData["Title"] = "Trabajadores"; }
+<header class="hyt-page-header">
+    <div><h1>Trabajadores</h1><p>Consulta al personal en planilla y a los trabajadores externos.</p></div>
+    @if (Model.CanEdit)
+    {
+        <a asp-action="Details" class="hyt-button-primary">Nuevo trabajador</a>
+    }
+</header>
+<form method="get" asp-action="Index" class="hyt-filters">
+    <div class="hyt-field">
+        <label for="workers-search-1">Documento o nombre</label>
+        <input id="workers-search-1" type="search" name="search" value="@Model.Search" maxlength="180" />
+    </div>
+    <div class="hyt-field">
+        <label for="workers-kind-1">Tipo</label>
+        <select id="workers-kind-1" name="kind">
+            <option value="">Todos</option>
+            <option value="PLANILLA" selected="@(Model.Kind == "PLANILLA")">En planilla</option>
+            <option value="EXTERNO" selected="@(Model.Kind == "EXTERNO")">Externo</option>
+        </select>
+    </div>
+    <div class="hyt-field">
+        <label for="workers-active">Estado</label>
+        <select id="workers-active" name="active">
+            <option value="">Todos</option>
+            <option value="true" selected="@(Model.Active == true)">Activo</option>
+            <option value="false" selected="@(Model.Active == false)">Inactivo</option>
+        </select>
+    </div>
+    <button class="hyt-button-primary" type="submit">Buscar</button>
+    <a asp-action="Index" class="hyt-button-secondary">Limpiar</a>
+</form>
+@{
+    var query = new Dictionary<string, string>();
+    if (Model.Search is { Length: > 0 } searchValue) query["search"] = searchValue;
+    if (Model.Kind is { Length: > 0 } kindValue) query["kind"] = kindValue;
+    if (Model.Active.HasValue) query["active"] = Model.Active.Value ? "true" : "false";
+    var showAccount = User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "PAGOS_PERSONAL.CONSULTAR");
+    var showVacationBalance = User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "VACACIONES.CONSULTAR");
+    var grid = new GridModel
+    {
+        Label = (string)ViewData["Title"]!,
+        Controller = "Workers",
+        Headers = ["Documento", "Nombre completo", "Cargo", "Tipo", "Ingreso", "Banco", "Cuenta", "Estado",
+            .. (showVacationBalance ? new[] { "Vacaciones pendientes (días)" } : Array.Empty<string>())],
+        Rows = Model.Workers.Select(row => new GridRow(row.Id.ToString(),
+            [row.Document, row.Name, row.CargoName ?? "—", row.Kind == "PLANILLA" ? "En planilla" : "Externo", row.StartDate.ToString("dd/MM/yyyy"), row.Bank ?? "—", row.MaskedAccount ?? "—", row.Active ? "Activo" : "Inactivo",
+                .. (showVacationBalance ? new[] { row.PendingVacationDays?.ToString("N0") ?? "—" } : Array.Empty<string>())],
+            Actions: showAccount ? [new GridAction("Estado de cuenta", Url.Action("Index", "PersonalPayments", new { id = row.Id })!)] : null)).ToArray(),
+        TotalRecords = Model.Workers.FirstOrDefault()?.Total ?? 0,
+        Page = Model.Page,
+        Query = query
+    };
+}
+<div class="hyt-align-workers"><partial name="_Grid" model="grid" /></div>

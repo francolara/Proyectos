@@ -1,6 +1,7 @@
 // Firma: FRANCO LARA - 06/11/2026 | Ignora cancelaciones propagadas del selector de archivos; solo el diálogo puede solicitar su cierre.
 // Firma: FRANCO LARA - 03/11/2026 | Popup compartido y registro único de eventos aunque se importe con distintas URL de versión.
 // Firma: FRANCO LARA - 05/11/2026 | Unifica espera y bloqueo de envíos en el runtime común y protege el cierre de formularios dinámicos ocupados.
+// Firma: FRANCO LARA - 10/11/2026 | Conserva la posición del menú por pestaña al navegar.
 const runtimeKey = Symbol.for('hyt.ui.runtime');
 const runtime = globalThis[runtimeKey] ??= {dialogs:new WeakMap(),initialized:false};
 const dialogs = runtime.dialogs;
@@ -27,13 +28,38 @@ export function setDialog(element, open, busy = false, onClose = null) {
         (element.querySelector('[autofocus]:not(:disabled)')||element.querySelector('button:not(:disabled),input:not(:disabled)')||element).focus();
     }else if(!open&&element.open){element.close();if(state.previous?.isConnected)state.previous.focus();state.previous=null;}
 }
+function initializeNavigation() {
+    const navigation = document.getElementById('hyt-navigation');
+    if (!navigation) return;
+    const sidebar = navigation.closest('.hyt-sidebar');
+    const toggle = sidebar.querySelector('[data-hyt-menu]');
+    const mobile = window.matchMedia('(max-width: 850px)');
+    const key = () => mobile.matches ? 'hyt.nav.scroll.mobile' : 'hyt.nav.scroll.desktop';
+
+    function remember() {
+        if (!navigation.clientHeight) return;
+        try { sessionStorage.setItem(key(), String(navigation.scrollTop)); } catch { }
+    }
+
+    function restore() {
+        if (!navigation.clientHeight) return;
+        try { navigation.scrollTop = Number(sessionStorage.getItem(key())) || 0; } catch { }
+    }
+
+    restore();
+    window.addEventListener('pagehide', remember);
+    toggle?.addEventListener('click', () => {
+        remember();
+        const open = sidebar.classList.toggle('is-menu-open');
+        toggle.setAttribute('aria-expanded', String(open));
+        if (open) restore();
+    });
+}
+
 function initialize() {
 if(runtime.initialized)return;
 runtime.initialized=true;
-document.querySelector('[data-hyt-menu]')?.addEventListener('click',event=>{
-    const button=event.currentTarget, sidebar=button.closest('.hyt-sidebar');
-    button.setAttribute('aria-expanded',String(sidebar.classList.toggle('is-menu-open')));
-});
+initializeNavigation();
 document.addEventListener('click',event=>{
     const opener=event.target.closest('[data-hyt-open]');
     if(opener)setDialog(document.getElementById(opener.dataset.hytOpen),true);

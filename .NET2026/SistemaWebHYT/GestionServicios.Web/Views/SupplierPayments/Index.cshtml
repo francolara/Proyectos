@@ -1,0 +1,72 @@
+@* Firma: FRANCO LARA - 10/11/2026 | Actualiza el nombre del apartado Trabajos de Proveedores. Incluye bandeja de saldos pendientes y pago directo. *@
+@{ ViewData["Wide"] = true; }
+@model GestionServicios.Web.Controllers.SupplierPaymentsList
+@* Firma: FRANCO LARA - 09/11/2026 | Grilla HYT, alta en pop-up y filtros por fecha, estado y búsqueda. Alinea importes y números en la grilla. *@
+@{
+    ViewData["Title"] = Model.PendingQueue ? "Pagos a Proveedores" : "Trabajos de Proveedores";
+    var action = Model.PendingQueue ? "Pending" : "Index";
+}
+<header class="hyt-page-header">
+    <div><h1>@ViewData["Title"]</h1><p>Consulta los saldos de los costos registrados por presupuesto.</p></div>
+    @if (!Model.PendingQueue && new[] { "PRESUPUESTOS.CONSULTAR", "COSTOS_PROVEEDOR.CONSULTAR", "COSTOS_PROVEEDOR.EDITAR", "PROVEEDORES.CONSULTAR" }
+        .All(permission => User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, permission)))
+    {
+        <a asp-controller="BudgetSupplierCosts" asp-action="ChooseBudget"
+           asp-route-returnUrl="@(Context.Request.Path + Context.Request.QueryString)"
+           class="hyt-button-primary" data-document-open>Nuevo costo</a>
+    }
+</header>
+@if (TempData["SupplierPaymentSaved"] is string paymentMessage) { <p role="status">@paymentMessage</p> }
+@if (TempData["SupplierCostSaved"] is string message) { <p role="status">@message</p> }
+<form method="get" asp-action="@action" class="hyt-filters hyt-supplier-payment-filters">
+    @if (Model.BudgetId.HasValue) { <input type="hidden" name="budgetId" value="@Model.BudgetId" /> }
+    @if (Model.SupplierId.HasValue) { <input type="hidden" name="supplierId" value="@Model.SupplierId" /> }
+    <div class="hyt-supplier-payment-filter-row">
+        <partial name="_DatePicker" model='@(new DatePickerModel("from", "Registro del costo desde", Model.Filters.From))' />
+        <partial name="_DatePicker" model='@(new DatePickerModel("to", "Registro del costo hasta", Model.Filters.To))' />
+        @if (!Model.PendingQueue)
+        {
+        <div class="hyt-field">
+            <label for="supplier-payments-status">Estado</label>
+            <select id="supplier-payments-status" name="status">
+                <option value="PENDIENTES" selected='@(Model.Filters.Status == "PENDIENTES")'>Pendientes</option>
+                <option value="PAGADOS" selected='@(Model.Filters.Status == "PAGADOS")'>Pagados</option>
+                <option value="TODOS" selected='@(Model.Filters.Status == "TODOS")'>Todos</option>
+            </select>
+        </div>
+        }
+    </div>
+    <div class="hyt-supplier-payment-filter-row">
+        <div class="hyt-field">
+            <label for="supplier-payments-search">Buscar por proveedor, concepto o presupuesto</label>
+            <input id="supplier-payments-search" type="search" name="search" maxlength="180" value="@Model.Filters.Search" />
+        </div>
+        <button type="submit" class="hyt-button-primary">Buscar</button>
+        <a asp-action="@action" class="hyt-button-secondary">Limpiar</a>
+    </div>
+</form>
+@{
+    var query = new Dictionary<string, string>();
+    if (Model.BudgetId?.ToString() is { Length: > 0 } budgetIdValue) query["budgetId"] = budgetIdValue;
+    if (Model.SupplierId?.ToString() is { Length: > 0 } supplierIdValue) query["supplierId"] = supplierIdValue;
+    if (!Model.PendingQueue) query["status"] = Model.Filters.Status;
+    if (Model.Filters.From is DateOnly from) query["from"] = from.ToString("yyyy-MM-dd");
+    if (Model.Filters.To is DateOnly to) query["to"] = to.ToString("yyyy-MM-dd");
+    if (!string.IsNullOrWhiteSpace(Model.Filters.Search)) query["search"] = Model.Filters.Search;
+    var grid = new GridModel
+    {
+        Label = (string)ViewData["Title"]!,
+        Controller = "SupplierPayments",
+        Action = action,
+        Headers = ["Fecha de registro", "Presupuesto", "Proveedor", "Concepto", "Costo", "Pagado", "Saldo", "Estado"],
+        Rows = Model.Costs.Select(row => new GridRow(row.Id.ToString(),
+            [row.CostDate?.ToString("dd/MM/yyyy") ?? "—", row.BudgetNumber, row.SupplierName, row.Description, $"{row.Currency} {row.Amount:N2}", row.Paid.ToString("N2"), row.Balance.ToString("N2"), row.Status],
+            CanView: !Model.PendingQueue, Actions: Model.PendingQueue && Model.CanPay
+                ? [new GridAction("Registrar pago", Url.Action("PayPending", new { id = row.Id, returnUrl = Context.Request.Path + Context.Request.QueryString })!, Popup: true)]
+                : null)).ToArray(),
+        TotalRecords = Model.Costs.FirstOrDefault()?.Total ?? 0,
+        Page = Model.Page,
+        Query = query
+    };
+}
+<div class="hyt-align-supplier-payments"><partial name="_Grid" model="grid" /></div>

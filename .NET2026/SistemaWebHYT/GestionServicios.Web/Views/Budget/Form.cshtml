@@ -29,6 +29,20 @@
 }
 </header>
 @if(TempData["Notice"] is string notice){<p role="status">@notice</p>}
+@* Firma: FRANCO LARA - 09/11/2026 | Acceso al listado y al pop-up de costos de proveedores del presupuesto. *@
+@if (record is not null && Model.ReadOnly && User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "COSTOS_PROVEEDOR.CONSULTAR"))
+{
+    <div class="hyt-master-related">
+        <a class="hyt-button-secondary" asp-controller="BudgetSupplierCosts" asp-action="Index" asp-route-id="@input.Id">Costos de proveedores</a>
+        @if (User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "COSTOS_PROVEEDOR.EDITAR")
+            && User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "PROVEEDORES.CONSULTAR"))
+        {
+            <a class="hyt-button-secondary" asp-controller="BudgetSupplierCosts" asp-action="New" asp-route-id="@input.Id"
+               asp-route-returnUrl="@(Context.Request.Path + Context.Request.QueryString)" data-document-open>Nuevo costo de proveedor</a>
+        }
+    </div>
+}
+@if (TempData["SupplierCostSaved"] is string costMessage) { <p role="status">@costMessage</p> }
 <form method="post" asp-action="Save" class="hyt-panel hyt-master-form" data-budget-form data-hyt-save data-tax-rate="@(rate?.ToString(CultureInfo.InvariantCulture)??"")" data-read-only="@Model.ReadOnly.ToString().ToLowerInvariant()" data-original-currency="@(record is null?"":BudgetRecord.Text(record.Revision,"CodigoMoneda"))">
 <input type="hidden" name="Draft.DetalleNeto" value="true"/><input type="hidden" name="Id" value="@input.Id" /><input type="hidden" name="RevisionId" value="@input.RevisionId" /><input type="hidden" name="HeaderVersion" value="@input.HeaderVersion" /><input type="hidden" name="RevisionVersion" value="@input.RevisionVersion" /><input type="hidden" name="NewRevision" value="@input.NewRevision.ToString().ToLowerInvariant()" /><input type="hidden" name="ReturnUrl" value="@input.ReturnUrl" />
 <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>

@@ -1,0 +1,79 @@
+@model GestionServicios.Web.Controllers.WorkerTerminationPage
+@* Firma: FRANCO LARA - 10/11/2026 | Pantalla exclusiva para ceses y reingresos con historial. *@
+@{
+    ViewData["Title"] = "Registro de Cese";
+    var account = Model.Account;
+    var latest = account.Ceses.FirstOrDefault();
+    var canReenter = !account.Activo && latest is { FechaReingreso: null };
+    var today = Model.Today.ToString("yyyy-MM-dd");
+}
+<header class="hyt-page-header">
+    <div><h1>Registro de Cese</h1><p>@account.NombreCompleto · @(account.Activo ? "Activo" : "Inactivo")</p></div>
+    <a asp-controller="Workers" asp-action="Details" asp-route-id="@account.TrabajadorId" class="hyt-button-secondary">Volver a la ficha</a>
+</header>
+@if (TempData["TerminationMessage"] is string message) { <p role="status">@message</p> }
+@if (TempData["TerminationError"] is string error) { <p class="hyt-validation" role="alert">@error</p> }
+
+@if (account.Activo || canReenter)
+{
+    <section class="hyt-panel hyt-master-form">
+        <h2>@(account.Activo ? "Registrar Cese" : "Quitar cese")</h2>
+        @if (canReenter)
+        {
+            <p>Registra el reingreso para actualizar la fecha de ingreso y habilitar al trabajador.</p>
+        }
+        <form asp-action="@(account.Activo ? "Terminate" : "Reenter")" asp-route-id="@account.TrabajadorId" method="post" class="hyt-payroll-form">
+            <input type="hidden" name="OperationId" value="@Model.OperationId" />
+            @if (canReenter) { <input type="hidden" name="TerminationId" value="@latest!.CeseId" /> }
+            <div class="hyt-master-fields">
+                <div class="hyt-field">
+                    <label for="termination-date">@(account.Activo ? "Fecha de cese" : "Fecha de reingreso")</label>
+                    <input id="termination-date" name="Date" type="date" min="@(canReenter ? latest!.FechaCese.AddDays(1).ToString("yyyy-MM-dd") : null)" max="@today" required />
+                </div>
+                @if (account.Activo)
+                {
+                    <div class="hyt-field">
+                        <label for="termination-last-worked">Último día trabajado</label>
+                        <input id="termination-last-worked" name="LastWorked" type="date" max="@today" required />
+                    </div>
+                }
+                <div class="hyt-field hyt-field-wide">
+                    <label for="termination-reason">Motivo (opcional)</label>
+                    <input id="termination-reason" name="Reason" maxlength="300" />
+                </div>
+            </div>
+            <div class="hyt-payroll-actions">
+                <button type="submit" class="hyt-button-primary">@(account.Activo ? "Registrar Cese" : "Registrar reingreso")</button>
+            </div>
+        </form>
+    </section>
+}
+else
+{
+    <p>El trabajador está inactivo y no tiene un cese vigente para registrar el reingreso.</p>
+}
+
+<section class="hyt-panel hyt-payroll-section">
+    <h2>Historial de ceses y reingresos</h2>
+    <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Historial de ceses y reingresos">
+        <table class="hyt-table">
+            <thead><tr><th scope="col" class="hyt-numeric">Cese</th><th scope="col" class="hyt-numeric">Último día trabajado</th><th scope="col">Motivo del cese</th><th scope="col" class="hyt-numeric">Reingreso</th><th scope="col">Motivo del reingreso</th></tr></thead>
+            <tbody>
+                @if (account.Ceses.Length == 0)
+                {
+                    <tr><td colspan="5" class="hyt-grid-message">Sin ceses registrados.</td></tr>
+                }
+                @foreach (var item in account.Ceses)
+                {
+                    <tr>
+                        <td class="hyt-numeric">@item.FechaCese.ToString("dd/MM/yyyy")</td>
+                        <td class="hyt-numeric">@item.UltimoDiaTrabajado.ToString("dd/MM/yyyy")</td>
+                        <td>@(item.Motivo ?? "—")</td>
+                        <td class="hyt-numeric">@(item.FechaReingreso?.ToString("dd/MM/yyyy") ?? "—")</td>
+                        <td>@(item.MotivoReingreso ?? "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

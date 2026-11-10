@@ -1,0 +1,25 @@
+{
+  "database": "SistemaWebHYT",
+  "requires": "planillas",
+  "scripts": [
+    "Script/034_PeriodicidadPagoProveedor.sql",
+    "StoreProcedure/spu_PagoProveedor_Registrar.sql",
+    "StoreProcedure/spu_PagoProveedor_Listar.sql",
+    "Tablas/CierrePersonalHYT.sql",
+    "Tablas/CeseTrabajadorHYT.sql",
+    "Tablas/MovimientoPersonalHYT.sql",
+    "Tablas/ObligacionPersonalHYT.sql",
+    "Tablas/PolizaSctrHYT.sql",
+    "StoreProcedure/spu_MovimientoPersonalHYT_Registrar.sql",
+    "StoreProcedure/spu_CierrePersonalHYT_Registrar.sql",
+    "StoreProcedure/spu_EstadoCuentaPersonalHYT_Consultar.sql",
+    "StoreProcedure/spu_CeseTrabajadorHYT_Registrar.sql",
+    "StoreProcedure/spu_CeseTrabajadorHYT_Reingresar.sql",
+    "StoreProcedure/spu_ReportePlanillasHYT_Consultar.sql",
+    "Script/035_PermisosPagosPersonal.sql",
+    "StoreProcedure/spu_ObligacionesHYT_Consultar.sql",
+    "StoreProcedure/spu_ObligacionPersonalHYT_Guardar.sql",
+    "StoreProcedure/spu_PolizaSctrHYT_Guardar.sql",
+    "Script/036_PermisosObligaciones.sql"
+  ]
+}

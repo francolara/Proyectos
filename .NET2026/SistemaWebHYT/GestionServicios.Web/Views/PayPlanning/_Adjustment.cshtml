@@ -1,0 +1,38 @@
+@model GestionServicios.Web.Controllers.PayPlanAdjustmentField
+@* Firma: FRANCO LARA - 09/11/2026 | Captura individual de horas completas o descuentos con ayuda de presupuestos. *@
+@{
+    var row = Model.Value;
+    var prefix = Model.Prefix;
+    var canSearchBudgets = User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "PRESUPUESTOS.CONSULTAR");
+}
+<div class="hyt-master-fields hyt-plan-adjustment" data-plan-adjustment>
+    <label class="hyt-field">Tipo
+        <select name="@(prefix + ".Tipo")" data-adjustment-field="Tipo">
+            <option value="EXTRA" selected="@(row?.Tipo == "EXTRA")">Horas extra</option>
+            <option value="DESCUENTO" selected="@(row?.Tipo == "DESCUENTO")">Descuento</option>
+        </select>
+    </label>
+    <label class="hyt-field">Fecha
+        <input name="@(prefix + ".Fecha")" data-adjustment-field="Fecha" type="date"
+               value="@(row?.Fecha?.ToString("yyyy-MM-dd") ?? Model.From.ToString("yyyy-MM-dd"))"
+               min="@Model.From.ToString("yyyy-MM-dd")" max="@Model.To.ToString("yyyy-MM-dd")" required />
+    </label>
+    <div class="hyt-field">
+        <label for="plan-adjustment-budget">N.º de presupuesto, si corresponde</label>
+        <input id="plan-adjustment-budget" name="@(prefix + ".Presupuesto")" data-adjustment-field="Presupuesto" maxlength="40" value="@row?.Presupuesto" />
+        @if (canSearchBudgets)
+        {
+            <button type="button" class="hyt-button-secondary" data-plan-budget-open
+                    aria-haspopup="dialog" aria-controls="pay-plan-budget">Buscar presupuesto</button>
+        }
+    </div>
+    <label class="hyt-field">Concepto u observación
+        <input name="@(prefix + ".Concepto")" data-adjustment-field="Concepto" maxlength="300" value="@row?.Concepto" />
+    </label>
+    <label class="hyt-field" data-plan-hours>Horas completas
+        <input name="@(prefix + ".Horas")" data-adjustment-field="Horas" class="hyt-numeric" type="number" min="0" max="24" step="1" value="@(row?.Horas ?? 1)" required />
+    </label>
+    <label class="hyt-field">Importe (S/)
+        <input name="@(prefix + ".Importe")" data-adjustment-field="Importe" class="hyt-money" inputmode="decimal" value="@(row?.Importe.ToString("0.00") ?? "0.00")" required />
+    </label>
+</div>

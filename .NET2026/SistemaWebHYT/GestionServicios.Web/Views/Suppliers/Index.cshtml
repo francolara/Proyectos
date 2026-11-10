@@ -1,0 +1,35 @@
+@{ ViewData["Wide"] = true; }
+@model GestionServicios.Web.Controllers.SuppliersList
+@* Firma: FRANCO LARA - 09/11/2026 | Búsqueda y consulta del maestro de proveedores. Aplica el estándar HYT de grillas, filtros y formularios. Alinea importes y números en la grilla. *@
+@{ ViewData["Title"] = "Proveedores"; }
+<header class="hyt-page-header">
+    <div><h1>Proveedores</h1><p>Consulta a quiénes paga HYT y los datos de sus fichas.</p></div>
+    @if (Model.CanEdit)
+    {
+        <a asp-action="Details" class="hyt-button-primary">Nuevo proveedor</a>
+    }
+</header>
+<form method="get" asp-action="Index" class="hyt-filters">
+    <div class="hyt-field">
+        <label for="suppliers-search-1">RUC o razón social</label>
+        <input id="suppliers-search-1" type="search" name="search" value="@Model.Search" maxlength="180" />
+    </div>
+    <button class="hyt-button-primary" type="submit">Buscar</button>
+    <a asp-action="Index" class="hyt-button-secondary">Limpiar</a>
+</form>
+@{
+    var query = new Dictionary<string, string>();
+    if (Model.Search is { Length: > 0 } searchValue) query["search"] = searchValue;
+    var grid = new GridModel
+    {
+        Label = (string)ViewData["Title"]!,
+        Controller = "Suppliers",
+        Headers = ["RUC", "Razón social", "Banco", "Cuenta", "Estado"],
+        Rows = Model.Suppliers.Select(row => new GridRow(row.Id.ToString(),
+            [row.TaxId, row.Name, row.Bank ?? "—", row.MaskedAccount ?? "—", row.Active ? "Activo" : "Inactivo"])).ToArray(),
+        TotalRecords = Model.Suppliers.FirstOrDefault()?.Total ?? 0,
+        Page = Model.Page,
+        Query = query
+    };
+}
+<div class="hyt-align-suppliers"><partial name="_Grid" model="grid" /></div>

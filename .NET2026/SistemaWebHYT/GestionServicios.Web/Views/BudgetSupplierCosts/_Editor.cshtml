@@ -1,0 +1,69 @@
+@model GestionServicios.Web.Controllers.SupplierCostEditor
+@* Firma: FRANCO LARA - 09/11/2026 | Registro de costo con ayuda de proveedores y referencias de OC y guía. *@
+@{ var input = Model.Input; }
+<section data-supplier-editor aria-label="Registrar un costo" data-document-title="Registrar costo de proveedor">
+    <dl class="hyt-payroll-summary">
+        <dt>Presupuesto</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Model.BudgetNumber) ? Model.BudgetId.ToString() : Model.BudgetNumber)</dd>
+        @if (Model.CustomerOrderNumber is not null)
+        {
+            <dt>OC del cliente</dt>
+            <dd>@(string.IsNullOrWhiteSpace(Model.CustomerOrderNumber) ? "Sin registrar" : Model.CustomerOrderNumber)</dd>
+        }
+        @if (Model.GuideNumber is not null)
+        {
+            <dt>Guía</dt>
+            <dd>@(string.IsNullOrWhiteSpace(Model.GuideNumber) ? "Sin registrar" : Model.GuideNumber)</dd>
+        }
+    </dl>
+    <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+    <form method="post" asp-action="Save" asp-route-id="@Model.BudgetId" class="hyt-payroll-form" data-document-form>
+        <input type="hidden" name="popup" value="@Model.Popup.ToString().ToLowerInvariant()" />
+        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+        <input type="hidden" name="OperationId" value="@input.OperationId" />
+        <div class="hyt-master-fields">
+            <div class="hyt-field hyt-field-wide">
+                <span id="cost-supplier-heading">Proveedor</span>
+                <input type="hidden" name="SupplierId" value="@input.SupplierId" />
+                <div class="hyt-reference" role="group" aria-labelledby="cost-supplier-heading">
+                    <span data-reference-label data-supplier-label aria-live="polite">@(Model.Supplier is null ? "Sin seleccionar" : $"{Model.Supplier.Name} ({Model.Supplier.TaxId})")</span>
+                    <button type="button" class="hyt-button-secondary"
+                            data-supplier-open="@Url.Action("ChooseSupplier", new { id = Model.BudgetId })">Buscar proveedor</button>
+                </div>
+            </div>
+            <div class="hyt-field hyt-field-wide">
+                <label for="budgetsuppliercosts-description-1">Descripción</label>
+                <input id="budgetsuppliercosts-description-1" name="Description" value="@input.Description" maxlength="300" required />
+            </div>
+            <div class="hyt-field">
+                <label for="budgetsuppliercosts-amount-1">Importe</label>
+                <input id="budgetsuppliercosts-amount-1" name="Amount" inputmode="decimal" value="@(input.Amount == 0 ? "" : input.Amount.ToString("0.00"))" required />
+            </div>
+            <div class="hyt-field">
+                <label for="budgetsuppliercosts-currency-1">Moneda</label>
+                <select id="budgetsuppliercosts-currency-1" name="Currency" required>
+                    <option value="PEN" selected="@(input.Currency == "PEN")">Soles (PEN)</option>
+                    <option value="USD" selected="@(input.Currency == "USD")">Dólares (USD)</option>
+                </select>
+            </div>
+            <div class="hyt-field">
+                <label for="budgetsuppliercosts-document-1">Documento de sustento</label>
+                <input id="budgetsuppliercosts-document-1" name="Document" value="@input.Document" maxlength="100" />
+            </div>
+        </div>
+        <div class="hyt-payroll-actions">
+            <button type="submit" class="hyt-button-primary">Registrar costo</button>
+        </div>
+    </form>
+    <dialog class="hyt-modal" data-supplier-dialog aria-labelledby="supplier-lookup-title">
+        <header class="hyt-modal-header">
+            <h2 id="supplier-lookup-title">Elegir proveedor</h2>
+            <button type="button" class="hyt-modal-close" data-hyt-close aria-label="Cerrar ayuda de proveedores">×</button>
+        </header>
+        <div class="hyt-modal-body">
+            <p role="status" data-supplier-status></p>
+            <div data-supplier-results></div>
+        </div>
+    </dialog>
+    @if (!Model.Popup) { <p><a href="@Model.ReturnUrl" class="hyt-button-secondary">Volver</a></p> }
+</section>

@@ -145,3 +145,89 @@ form[data-budget-form] .hyt-budget-table .hyt-detail-icon{box-sizing:border-box;
 @media (max-width: 700px) {
     .hyt-password-control input { font-size: 16px; }
 }
+
+/* Firma: FRANCO LARA - 09/11/2026 | Espaciado, controles, ajustes en pop-up y alineación de importes y números en Planillas. */
+.hyt-payroll-section { padding: 24px; margin-bottom: 24px; }
+.hyt-payroll-section > h2, .hyt-payroll-form > h2 { margin: 0 0 12px; font-size: 20px; }
+.hyt-payroll-form .hyt-field { min-width: 0; }
+.hyt-payroll-form > .hyt-payroll-group-title { border-top: 1px solid var(--hyt-border); padding-top: 16px; margin-top: 16px; }
+.hyt-payroll-form input, .hyt-payroll-form select { min-width: 0; font: inherit; }
+.hyt-payroll-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.hyt-payroll-check { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.hyt-payroll-check input { width: 18px; height: 18px; flex: none; }
+.hyt-payroll-summary { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 12px 24px; }
+dl.hyt-panel.hyt-payroll-summary { padding: 24px; }
+.hyt-payroll-summary dt { font-weight: 600; }
+.hyt-payroll-summary dd { margin: 0; overflow-wrap: anywhere; }
+.hyt-vacation-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.hyt-vacation-cards > section { min-width: 0; }
+.hyt-vacation-total { font-size: 18px; }
+.hyt-vacation-total strong { font-size: 30px; font-variant-numeric: tabular-nums; }
+@media (max-width: 850px) {
+    .hyt-vacation-cards { grid-template-columns: minmax(0, 1fr); }
+}
+.hyt-catalog-field { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hyt-catalog-field > input { flex: 1 1 180px; min-width: 0; width: auto; }
+.hyt-supplier-payment-filters { display: grid; gap: 16px; }
+.hyt-supplier-payment-filter-row { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 12px; }
+.hyt-supplier-payment-filter-row .hyt-date-field { flex: 1 1 180px; min-width: 0; }
+.hyt-supplier-payment-filter-row .hyt-field { min-width: min(200px, 100%); }
+.hyt-sctr-workers { border: 1px solid var(--hyt-border); border-radius: 6px; min-width: 0; margin-top: 16px; padding: 12px; }
+.hyt-sctr-status { display: inline-block; border-radius: 6px; padding: 4px 8px; font-weight: 600; white-space: nowrap; }
+.hyt-sctr-status[data-status="VIGENTE"] { color: #125831; background: #ddf5e5; }
+.hyt-sctr-status[data-status="POR_VENCER"] { color: #674500; background: #fff0b8; }
+.hyt-sctr-status[data-status="VENCIDA"] { color: #8b2027; background: #fce1e3; }
+.hyt-pay-plan-table input:not([type=hidden]) {
+    width: 100%;
+    min-width: 100px;
+    min-height: 44px;
+    border: 1px solid var(--hyt-control-border);
+    border-radius: 6px;
+    padding: 8px;
+    font: inherit;
+    color: var(--hyt-text);
+    background: var(--hyt-input);
+}
+.hyt-plan-adjustment { border-top: 1px solid var(--hyt-border); padding: 12px 0; }
+.hyt-plan-adjustment [data-plan-hours][hidden] { display: none; }
+/* Firma: FRANCO LARA - 10/11/2026 | Reduce el ancho de las acciones del listado de ajustes. */
+.hyt-adjustment-row-actions { margin-top: 0; flex-wrap: nowrap; gap: 6px; }
+.hyt-adjustment-row-actions .hyt-adjustment-icon { box-sizing: border-box; flex: 0 0 36px; padding: 0; }
+.hyt-adjustment-icon[data-plan-remove] { color: var(--hyt-link); }
+
+
+.hyt-table .hyt-money,
+.hyt-money,
+.hyt-payroll-form input[inputmode="decimal"],
+.hyt-pay-plan-table [data-plan-base],
+.hyt-pay-plan-table tr > :is(th, td):is(:nth-child(3), :nth-child(n+5):nth-child(-n+7)),
+.hyt-align-supplier-payments .hyt-table tr > :is(th, td):nth-child(n+5):nth-child(-n+7),
+.hyt-align-budget-costs tr > :is(th, td):nth-child(n+5),
+.hyt-align-supplier-abonos tr > :is(th, td):nth-child(5),
+.hyt-align-personal-balances tr > :is(th, td):nth-child(n+2),
+.hyt-align-personal-movements tr > :is(th, td):nth-child(4),
+.hyt-align-payroll-report-personal tr > :is(th, td):nth-child(n+4),
+.hyt-align-payroll-report-suppliers tr > :is(th, td):nth-child(n+4),
+.hyt-align-payroll-obligations tr > :is(th, td):nth-child(3) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+.hyt-table .hyt-numeric,
+.hyt-numeric,
+.hyt-payroll-form input[type="number"],
+.hyt-pay-plan-table tr > :is(th, td):nth-child(4),
+.hyt-align-supplier-payments .hyt-table tr > :is(th, td):nth-child(2),
+.hyt-align-suppliers .hyt-table tr > :is(th, td):is(:first-child, :nth-child(4)),
+.hyt-align-workers .hyt-table tr > :is(th, td):is(:first-child, :nth-child(7), :nth-child(9):not(:last-child)),
+:is(.hyt-align-supplier-lookup, .hyt-align-budget-lookup) tr > :is(th, td):first-child:not([colspan]),
+.hyt-align-payroll-report-suppliers tr > :is(th, td):nth-child(2),
+.hyt-align-sctr-policies tr > :is(th, td):nth-child(2),
+:is(.hyt-align-attendance-hours, .hyt-align-vacation-entries) tr > :is(th, td):nth-child(3),
+.hyt-align-vacation-balances tr > :is(th, td):nth-child(n+3) {
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+@media (max-width: 620px) {
+    .hyt-payroll-section { padding: 16px; }
+    .hyt-payroll-form .hyt-master-fields { grid-template-columns: minmax(0, 1fr); }
+}

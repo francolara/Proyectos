@@ -2,6 +2,39 @@
 
 Fecha: 03/11/2026. Por instrucción expresa del usuario, la publicación queda preparada y no se activa todavía. Faltan claves Cloudflare y pruebas manuales. El dominio sigue parametrizado.
 
+## Estado para el VPS · 10/11/2026
+
+La aplicación y Planillas se han probado localmente. Antes de publicar, quedan estos puntos:
+
+| Punto | Acción pendiente |
+|---|---|
+| Versión de entrega | Preparar la versión candidata con código web y `Basededatos/Dbsishyt` en una misma revisión. Usar su SHA para identificar la publicación, el paquete SQL y la imagen. |
+| Imagen Docker | La matriz de `build-images.yml` incluye HYT como `ghcr.io/francolara/hyt`. Cuando se publique la revisión, fijar `HYT_IMAGE` a la etiqueta del SHA y verificar acceso desde el VPS. La activación del servicio HYT sigue el paso manual separado de Contabo. |
+| SQL del servidor | Confirmar la versión del motor y si `SistemaWebHYT` ya existe. El manifiesto requiere SQL Server 2022 como mínimo. Elegir instalación limpia o actualización de una copia restaurada antes de tocar producción. |
+| Permisos SQL | El manifiesto incorpora `047_PermisosEntregaPlanillas.sql`. Verificar en el VPS con el usuario real de la aplicación, con rol `hyt_app_executor`. |
+| Infraestructura | Confirmar dominio, puerto libre, redes Docker, IP del proxy, certificado y DNS proxied. Completar R2, Turnstile y el usuario SQL en el archivo privado del servidor. |
+| Respaldo y aceptación | Verificar que el trabajo de respaldo incluya HYT. Probar restauración de SQL, adjuntos R2 y claves persistentes. Ejecutar la aceptación de Planillas antes de habilitar el dominio. |
+
+### Base de datos y artefactos de Planillas
+
+El inventario de SQL vigente es `Basededatos/Dbsishyt/manifest.json` desde la raíz del repositorio Proyectos. Para una base nueva, ensayar el manifiesto completo en su orden. Para una base existente, inventariar el esquema y los paquetes aplicados y preparar el incremento exacto sobre una copia restaurada. Los paquetes históricos de Planillas y `SHA256_PUBLICACION.json` son referencias de entregas anteriores. La entrega nueva debe cubrir reingresos, tasas previsionales, confirmación de planilla y cobertura opcional de pagos a proveedores. Verificar que el paquete SQL y la imagen pertenezcan a la misma revisión.
+
+El script `047_PermisosEntregaPlanillas.sql` concede ejecución de reingreso, consulta de estimados, edición de tasas y confirmación de pagos de planilla al rol `hyt_app_executor`. La prueba aislada verifica los cuatro permisos efectivos y que el rol no puede actualizar directamente la tabla de trabajadores.
+
+El validador estático reconoce las adiciones de varias columnas en una misma sentencia. Ejecutar `Hyt.SqlValidation`, `Hyt.DatabaseTests --run-local-sql` y `Hyt.AccessTests` antes de regenerar los artefactos. La comprobación SQL se hace en una base de prueba aislada. En producción, repetir las verificaciones con el usuario restringido y los permisos funcionales asignados.
+
+La carpeta de diagramas de Contabo describe la ruta de FRALSE desde GitHub Actions y GHCR hasta despliegue manual, Nginx detrás de Cloudflare, SQL en red privada y respaldos cifrados a R2. HYT conserva su Compose propio. El workflow de despliegue existente todavía no tiene HYT como destino. Su incorporación requiere coordinación con el comando autorizado del VPS.
+
+### Aceptación adicional de Planillas
+
+- Registrar un trabajo desde Presupuestos y confirmar un abono parcial y uno total desde **Pagos a Proveedores**. Verificar el saldo y el historial.
+- Registrar y confirmar una obligación AFP u ONP. Verificar el cálculo del estimado, sus trabajadores y el número de operación.
+- Confirmar una planificación de prueba. Comprobar los movimientos del personal, el bloqueo de edición y que el reintento conserve un solo pago.
+- Revisar cese y reingreso, cuentas bancarias según permisos y SCTR. Comparar vista previa e impresión horizontal de los tres reportes.
+- Verificar que un perfil de solo consulta pueda abrir los listados autorizados y que sus acciones de registro estén bloqueadas.
+
+Esta revisión se hizo sobre el repositorio y SQL local. La disponibilidad de redes, dominio, secretos y respaldos en Contabo queda por verificar en el VPS.
+
 ## Archivos de entrega
 
 - Dockerfile en la raíz del proyecto: compilación .NET 10 y ejecución ASP.NET Core 10 sin usuario root.

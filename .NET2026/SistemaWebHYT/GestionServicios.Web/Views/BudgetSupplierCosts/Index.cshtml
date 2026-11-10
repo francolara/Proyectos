@@ -1,0 +1,53 @@
+@{ ViewData["Wide"] = true; }
+@model GestionServicios.Web.Controllers.BudgetSupplierCostsPage
+@* Firma: FRANCO LARA - 09/11/2026 | Listado de costos por presupuesto con alta en pop-up. Alinea importes y cantidades en la grilla. *@
+@{
+    ViewData["Title"] = "Costos de proveedores";
+}
+<header class="hyt-page-header">
+    <div><h1>Costos de proveedores</h1><p>Registra los conceptos que HYT pagará por este presupuesto.</p></div>
+    <div class="hyt-payroll-actions">
+    @if (Model.CanRegister)
+    {
+        <a asp-action="New" asp-route-id="@Model.BudgetId" class="hyt-button-primary" data-document-open>Nuevo costo</a>
+    }
+    <a asp-controller="Budget" asp-action="Details" asp-route-id="@Model.BudgetId" class="hyt-button-secondary">Volver al presupuesto</a>
+    </div>
+</header>
+@if (TempData["SupplierCostSaved"] is string message)
+{
+    <p role="status">@message</p>
+}
+<h2>Costos registrados</h2>
+@if (Model.Costs.Count == 0)
+{
+    <p class="hyt-panel hyt-grid-message">No hay costos registrados en esta página.</p>
+}
+else
+{
+    <div class="hyt-panel hyt-table-wrap" tabindex="0" role="region" aria-label="Costos registrados">
+        <table class="hyt-table hyt-align-budget-costs">
+            <thead><tr><th scope="col">Proveedor</th><th scope="col">Descripción</th><th scope="col">Sustento</th><th scope="col">Moneda</th><th scope="col">Costo</th><th scope="col">Pagado</th><th scope="col">Saldo</th></tr></thead>
+            <tbody>
+            @foreach (var cost in Model.Costs)
+            {
+                <tr>
+                    <td>@cost.SupplierName</td><td>@cost.Description</td><td>@cost.Document</td>
+                    <td>@cost.Currency</td><td>@cost.Amount.ToString("N2")</td><td>@cost.Paid.ToString("N2")</td><td>@cost.Balance.ToString("N2")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+<nav class="hyt-pagination" aria-label="Páginas de costos">
+    @if (Model.Page > 1)
+    {
+        <a class="hyt-button-secondary" asp-route-page="@(Model.Page - 1)">Anterior</a>
+    }
+    <span>Página @Model.Page</span>
+    @if (Model.Costs.Count > 0 && Model.Costs[0].Total > (long)Model.Page * 20)
+    {
+        <a class="hyt-button-secondary" asp-route-page="@(Model.Page + 1)">Siguiente</a>
+    }
+</nav>

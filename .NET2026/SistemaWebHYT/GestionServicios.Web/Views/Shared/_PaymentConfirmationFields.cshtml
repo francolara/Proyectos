@@ -1,0 +1,16 @@
+@model string
+@* Firma: FRANCO LARA - 10/11/2026 | Campos compartidos de confirmación de pago. *@
+<div class="hyt-master-fields">
+    <div class="hyt-field">
+        <label for="@(Model + "-date")">Fecha de pago</label>
+        <input id="@(Model + "-date")" name="Date" type="date" required />
+    </div>
+    <div class="hyt-field">
+        <label for="@(Model + "-reference")">N.º de operación</label>
+        <input id="@(Model + "-reference")" name="Reference" maxlength="100" required />
+    </div>
+</div>
+<div class="hyt-payroll-actions">
+    <button type="submit" class="hyt-button-primary">Confirmar pago</button>
+    <button type="button" class="hyt-button-secondary" data-hyt-close>Cancelar</button>
+</div>

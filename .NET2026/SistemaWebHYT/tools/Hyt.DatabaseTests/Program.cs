@@ -1,4 +1,6 @@
 using GestionServicios.Application.Security;
+using GestionServicios.Application.Payroll;
+using GestionServicios.Infrastructure.Payroll;
 using GestionServicios.Infrastructure.Security;
 using System.Data;
 using System.Text.Json;
@@ -6,6 +8,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Data.SqlClient;
 
 // Firma: FRANCO LARA - 03/11/2026 | Pruebas SQL aisladas de presupuestos, impresiones, documentos, archivos, estados, regularización, historial y reversión por fallo de auditoría.
+// Firma: FRANCO LARA - 09/11/2026 | Verifica Planillas, pagos concurrentes y reaplicación del paquete incremental.
 
 if (!args.Contains("--run-local-sql"))
 {
@@ -115,6 +118,44 @@ try
             installation.Add(Path.Combine(project,"entregables/ADMINISTRACION_HYT.sql"));
             Console.WriteLine("Instalación aislada desde paquetes incrementales de etapas 5/6/7/8 y administración.");
         }
+        if (args.Contains("--use-payroll-bundle"))
+        {
+            using var payrollManifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(sources, "manifest-planillas.json")));
+            var payrollSources = payrollManifest.RootElement.GetProperty("scripts").EnumerateArray()
+                .Select(item => Path.Combine(sources, item.GetString()!)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            using var nextManifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(sources, "manifest-planillas-etapas34.json")));
+            payrollSources.UnionWith(nextManifest.RootElement.GetProperty("scripts").EnumerateArray()
+                .Select(item => Path.Combine(sources, item.GetString()!)));
+            installation.RemoveAll(payrollSources.Contains);
+            var workerUpgrade = new[] { "Tablas/CargoTrabajadorHYT.sql", "Script/037_CargosYSueldoHYT.sql",
+                "StoreProcedure/spu_CargoTrabajadorHYT_Listar.sql", "StoreProcedure/spu_CargoTrabajadorHYT_Guardar.sql",
+                "Script/038_PermisosCargosHYT.sql", "Script/039_ConfiguracionPagoTrabajador.sql",
+                "StoreProcedure/spu_TrabajadorHYT_Listar.sql",
+                "StoreProcedure/spu_TrabajadorHYT_Guardar.sql" }.Select(path => Path.Combine(sources, path)).ToArray();
+            var planningStart = installation.FindIndex(path => Path.GetFileName(path) == "PlanPagoHYT.sql");
+            var planningUpgrade = installation.Skip(planningStart).ToArray();
+            installation.RemoveRange(planningStart, planningUpgrade.Length);
+            installation.RemoveAll(workerUpgrade.Contains);
+            var catalogUpgrade = new[] { "Tablas/BancoPeruHYT.sql", "Tablas/EntidadPrevisionalHYT.sql",
+                "Tablas/PolizaSctrTrabajadorHYT.sql", "Script/041_CatalogosBancosPrevisionHYT.sql",
+                "StoreProcedure/spu_CatalogosPlanillasHYT_Consultar.sql", "Script/042_PermisosCatalogosPlanillasHYT.sql",
+                "StoreProcedure/spu_ObligacionesHYT_Consultar.sql", "StoreProcedure/spu_PolizaSctrHYT_Guardar.sql"
+            }.Select(path => Path.Combine(sources, path)).ToArray();
+            installation.RemoveAll(catalogUpgrade.Contains);
+            var payrollBundle = Path.Combine(project, "entregables/PLANILLAS_HYT.sql");
+            var nextBundle = Path.Combine(project, "entregables/PLANILLAS_ETAPAS_3_4_HYT.sql");
+            installation.AddRange([payrollBundle, payrollBundle, nextBundle, nextBundle]);
+            var cciMigration = Path.Combine(sources, "Script/043_CuentaInterbancariaHYT.sql");
+            installation.Remove(cciMigration);
+            installation.Add(cciMigration);
+            installation.Add(Path.Combine(sources, "StoreProcedure/spu_ProveedorHYT_Listar.sql"));
+            installation.Add(Path.Combine(sources, "StoreProcedure/spu_ProveedorHYT_Guardar.sql"));
+            installation.AddRange(workerUpgrade);
+            installation.AddRange(planningUpgrade);
+            installation.AddRange(catalogUpgrade);
+            installation.Add(Path.Combine(sources, "StoreProcedure/spu_CostoProveedor_Listar.sql"));
+            Console.WriteLine("Aplicación y reaplicación de los paquetes incrementales de Planillas.");
+        }
         foreach (var name in installation)
         {
             var text = (await File.ReadAllTextAsync(name)).Replace("SistemaWebHYT", testDatabase, StringComparison.Ordinal);
@@ -139,6 +180,353 @@ try
         INSERT INTO dbo.TarifarioPartida (VersionId,MaterialId,CodigoMoneda,CodigoTipoIGV,PrecioPEN,PrecioUSD,UsuarioRegistro) VALUES (1,1,N'PEN',N'SIN_IGV',100,NULL,N'sql-test-editor');
         """);
     var budget = await Save(connection, Payload([Manual()]));
+    await Execute(connection, """
+        INSERT INTO dbo.RolPermiso (RoleId, CodigoPermiso)
+        SELECT N'HYT-ADMIN', permiso.Codigo
+        FROM dbo.Permiso AS permiso
+        WHERE permiso.Codigo LIKE N'PROVEEDORES.%'
+           OR permiso.Codigo LIKE N'COSTOS_PROVEEDOR.%'
+           OR permiso.Codigo LIKE N'PAGOS_PROVEEDOR.%'
+           OR permiso.Codigo LIKE N'TRABAJADORES.%'
+           OR permiso.Codigo LIKE N'VACACIONES.%'
+           OR permiso.Codigo LIKE N'ASISTENCIA.%'
+           OR permiso.Codigo LIKE N'PAGOS_PERSONAL.%'
+           OR permiso.Codigo = N'REPORTES_PLANILLAS.CONSULTAR'
+           OR permiso.Codigo LIKE N'OBLIGACIONES.%';
+        """);
+    var appPermissions = await Scalar(connection, """
+        CREATE USER [hyt-release-test] WITHOUT LOGIN;
+        ALTER ROLE hyt_app_executor ADD MEMBER [hyt-release-test];
+        EXECUTE AS USER = 'hyt-release-test';
+        SELECT CASE WHEN
+            HAS_PERMS_BY_NAME('dbo.spu_CeseTrabajadorHYT_Reingresar', 'OBJECT', 'EXECUTE') = 1
+            AND HAS_PERMS_BY_NAME('dbo.spu_EstimadoPrevisionalHYT_Consultar', 'OBJECT', 'EXECUTE') = 1
+            AND HAS_PERMS_BY_NAME('dbo.spu_EntidadPrevisionalHYT_GuardarTasa', 'OBJECT', 'EXECUTE') = 1
+            AND HAS_PERMS_BY_NAME('dbo.spu_PlanPagoHYT_ConfirmarPago', 'OBJECT', 'EXECUTE') = 1
+            AND HAS_PERMS_BY_NAME('dbo.TrabajadorHYT', 'OBJECT', 'UPDATE') = 0
+        THEN 1 ELSE 0 END;
+        REVERT;
+        DROP USER [hyt-release-test];
+        """);
+    Check(Convert.ToInt32(appPermissions) == 1, "El rol restringido ejecuta los nuevos procedimientos de Planillas y no actualiza tablas directamente");
+    var payroll = new SqlSupplierPaymentsRepository(
+        new GestionServicios.Infrastructure.SqlConnectionFactory(localConnection + "Initial Catalog=" + testDatabase + ";"));
+    IWorkersRepository workers = payroll;
+    var hireDate = new DateOnly(2025, 1, 1);
+    var emptyObligations = await payroll.ObligationsAsync(actor, new(2026, 10, 1), default);
+    Check(emptyObligations.Obligaciones.Length == 0 && emptyObligations.Polizas.Length == 0,
+        "Un mes sin obligaciones ni pólizas devuelve dos listas vacías");
+    var cargo = await workers.SavePositionAsync(actor, new(0, "Supervisor", true, []), default);
+    var workerId = await workers.SaveWorkerAsync(actor,
+        new(null, "00001234", "Personal temporal", "PLANILLA", hireDate, true, null, true, "Banco temporal", "0000000042",
+            cargo, 1500.50m, true, new(new(8, 0), new(17, 0), "AFP", "Prima AFP", "SEMANAL"),
+            "00012345678901234567", true), default);
+    var externalId = await workers.SaveWorkerAsync(actor,
+        new(null, "EXT-01", "Externo temporal", "EXTERNO", hireDate, true, null, false, null, null,
+            null, 900m, true, new(null, null, null, null, "SEMANAL")), default);
+    var worker = (await workers.WorkersAsync(actor, workerId, null, null, 1, default)).Single();
+    Check(worker.Cci == "00012345678901234567" &&
+        (await workers.WorkersAsync(actor, null, "00001234", null, 1, default)).Single().Cci is null,
+        "El CCI conserva ceros iniciales y se oculta en el listado");
+    Check(worker.CargoId == cargo && worker.CargoName == "Supervisor" && worker.MonthlySalary == 1500.50m,
+        "La ficha recupera el cargo seleccionado y el sueldo mensual");
+    Check(worker.PaySettings is { Pension: "AFP", Afp: "Prima AFP", Frequency: "SEMANAL", Entry.Hour: 8, Exit.Hour: 17 },
+        "La ficha conserva horario habitual, AFP y frecuencia");
+    Check(worker.Kind == "PLANILLA" && worker.Document == "00001234" && worker.Account == "0000000042",
+        "La ficha de personal conserva tipo y ceros de documento y cuenta");
+    var external = (await workers.WorkersAsync(actor, null, null, "EXTERNO", 1, default)).Single();
+    Check(external.Id == externalId && external.Kind == "EXTERNO", "El filtro separa el personal externo");
+
+    var periodInput = new VacationPeriodInput(hireDate, hireDate.AddYears(1).AddDays(-1), 10);
+    await ExpectFailure(() => workers.SaveVacationPeriodAsync(actor, externalId, periodInput, default),
+        "trabajador en planilla", "Vacaciones rechaza un período para personal externo");
+    var periodId = await workers.SaveVacationPeriodAsync(actor, workerId, periodInput, default);
+    var vacation = new VacationInput(periodId, new(2026, 1, 5), new(2026, 1, 8), 4, "APROBADA", null, null);
+    var vacationId = await workers.SaveVacationAsync(actor, workerId, vacation, default);
+    Check((await workers.WorkersAsync(actor, workerId, null, null, 1, default)).Single().PendingVacationDays == 6,
+        "La salida aprobada reduce el saldo de vacaciones del listado");
+    var vacations = await workers.VacationsAsync(actor, workerId, new(2026, 2, 1), default);
+    Check(vacations.Periods.Single() is { Taken: 4, Available: 6 } &&
+        vacations.Entries.Single().Id == vacationId, "Las vacaciones aprobadas aparecen en el historial y reducen el saldo");
+    await ExpectFailure(() => workers.SaveVacationAsync(actor, workerId, vacation with { From = new(2026, 1, 7), To = new(2026, 1, 10) }, default),
+        "superponen", "Vacaciones rechaza fechas superpuestas");
+    await ExpectFailure(() => workers.SaveVacationAsync(actor, workerId,
+        vacation with { From = new(2026, 1, 12), To = new(2026, 1, 18), Days = 7 }, default),
+        "exceden", "Vacaciones rechaza una aprobación mayor al saldo");
+    await workers.SaveVacationAsync(actor, workerId,
+        vacation with { Id = vacationId, Version = vacations.Entries.Single().Version, Status = "ANULADA" }, default);
+    Check((await workers.WorkersAsync(actor, workerId, null, null, 1, default)).Single().PendingVacationDays == 10,
+        "Anular la salida restituye el saldo de vacaciones del listado");
+    vacations = await workers.VacationsAsync(actor, workerId, new(2026, 2, 1), default);
+    Check(vacations.Periods.Single().Available == 10 && vacations.Entries.Single().Status == "ANULADA",
+        "Anular vacaciones devuelve días al saldo y conserva el registro");
+
+    var shiftInput = new WorkShiftInput(null, null, new(2026, 11, 9, 8, 0, 0), null, 0);
+    var shiftId = await workers.SaveShiftAsync(actor, workerId, shiftInput, default);
+    await ExpectFailure(() => workers.SaveShiftAsync(actor, workerId, shiftInput with { Entry = shiftInput.Entry.AddHours(1) }, default),
+        "superpone", "Asistencia rechaza otra jornada mientras la anterior está abierta");
+    var shift = (await workers.ShiftsAsync(actor, workerId, null, null, shiftId, 1, default)).Single();
+    Check(shift.Exit is null && shift.Entry == shiftInput.Entry, "La jornada abierta conserva la hora local de entrada");
+    var closedShift = shiftInput with { Id = shiftId, Version = shift.Version, Exit = shift.Entry.AddHours(9), ExtraMinutes = 60 };
+    await ExpectFailure(() => workers.SaveShiftAsync(actor, workerId, closedShift with { ExtraMinutes = 541 }, default),
+        "minutos extras", "Asistencia rechaza minutos extra mayores a la duración");
+    await workers.SaveShiftAsync(actor, workerId, closedShift, default);
+    var month = (await workers.ShiftsAsync(actor, workerId, new(2026, 11, 1), new(2026, 11, 30), null, 1, default)).Single();
+    Check(month.Exit == closedShift.Exit && month.ExtraMinutes == 60 && month.PeriodExtraMinutes == 60,
+        "Asistencia registra la salida y consolida los minutos extra del mes");
+    var planStart = new DateOnly(2026, 11, 9);
+    var draftPlan = await payroll.PlanAsync(actor, "SEMANAL", planStart, default);
+    Check(draftPlan.Filas.Length == 2 && draftPlan.Filas.Any(row => row.Tipo == "EXTERNO" && row.Base == 900m)
+        && draftPlan.Filas.Any(row => row.Tipo == "PLANILLA" && row.Base == 1500.50m && row.MinutosExtra == 0),
+        "La precarga semanal incluye personal y externos con sueldo mensual");
+    Check((await payroll.PlanAsync(actor, "QUINCENAL", new(2026, 11, 16), default)).Hasta == new DateOnly(2026, 11, 30)
+        && (await payroll.PlanAsync(actor, "MENSUAL", new(2026, 11, 1), default)).Filas.Length == 0,
+        "La planificación distingue la quincena y el mes y filtra por frecuencia");
+    var planRows = draftPlan.Filas.Select(row => new PayPlanLineInput
+    {
+        TrabajadorId = row.TrabajadorId, Base = 350m,
+        Ajustes = row.TrabajadorId == workerId
+            ? [new("EXTRA", planStart, null, "Trabajo sin presupuesto", 2, 50m),
+                new("DESCUENTO", planStart, "PPTO-1", "Material repuesto", 0, 25m)]
+            : []
+    }).ToArray();
+    var planId = await payroll.SavePlanAsync(actor, "SEMANAL", planStart, null, planRows, default);
+    var savedPlan = await payroll.PlanAsync(actor, "SEMANAL", planStart, default);
+    Check(savedPlan.PlanId == planId && savedPlan.Filas.Single(row => row.TrabajadorId == workerId).Neto == 375m,
+        "El plan guardado conserva el ajuste de base, extras y descuentos");
+    var reportPlan = await payroll.ReportPlanAsync(actor, "SEMANAL", planStart, default);
+    Check(reportPlan.VerCuenta && reportPlan.Filas.Single(row => row.TrabajadorId == workerId) is
+        { MinutosExtra: 120, Cci: "00012345678901234567", Ajustes.Length: 2 } &&
+        savedPlan.Filas.All(row => row.Cci is null),
+        "El reporte concilia los ajustes y devuelve el CCI solo en modo reporte");
+    await ExpectFailure(() => payroll.SavePlanAsync(actor, "SEMANAL", planStart, null, planRows, default),
+        "cambio", "El plan rechaza una versión desactualizada");
+
+    var personalMonth = new DateOnly(2026, 10, 1);
+    var catalog = await payroll.CatalogAsync(actor, default);
+    Check(catalog.Bancos.Length == 21 && catalog.Entidades.Count(item => item.Regimen == "AFP") == 4
+        && catalog.Entidades.Any(item => item.Nombre == "ONP"), "Los catálogos incluyen los bancos y entidades de previsión");
+    var obligation = new PayrollObligation(0, "AFP", "Prima AFP", personalMonth, 150m,
+        personalMonth.AddDays(8), null, null, [], "");
+    var obligationId = await payroll.SaveObligationAsync(actor, obligation, default);
+    await payroll.SaveObligationAsync(actor, obligation with { Tipo = "ONP", Entidad = "ONP" }, default);
+    var prima = (await payroll.PensionEstimatesAsync(actor, personalMonth, default, includeWorkers: true)).Single(row => row.Entidad == "Prima AFP");
+    Check(prima is { Porcentaje: 10m, BaseMensual: 1500.50m, Estimado: 150.05m } &&
+        prima.Trabajadores?.Single() is { Documento: "00001234", SueldoMensual: 1500.50m, Estimado: 150.05m },
+        "La estimación de AFP detalla los trabajadores afiliados y sus aportes");
+    await payroll.SavePensionRateAsync(actor, "Prima AFP", 12.5m, default);
+    prima = (await payroll.PensionEstimatesAsync(actor, personalMonth, default)).Single(row => row.Entidad == "Prima AFP");
+    Check(prima is { Porcentaje: 12.5m, Estimado: 187.56m } &&
+        (await payroll.ObligationsAsync(actor, personalMonth, default)).Obligaciones.Single(row => row.ObligacionId == obligationId).Importe == 150m,
+        "El porcentaje editable actualiza el estimado y conserva el importe registrado");
+    await ExpectFailure(() => payroll.SaveObligationAsync(actor, obligation with
+        { FechaPago = personalMonth, ReferenciaPago = "Alta pagada" }, default),
+        "Revise la entidad", "El alta de una obligación exige estado pendiente");
+    var sctrToday = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow,
+        TimeZoneInfo.FindSystemTimeZoneById("America/Lima")).DateTime);
+    await payroll.SavePolicyAsync(actor,
+        new(0, "Aseguradora temporal", "SCTR-01", "SALUD", sctrToday.AddDays(-5), sctrToday.AddDays(10), [], "",
+            [new(workerId, ""), new(externalId, "")]), default);
+    var obligations = await payroll.ObligationsAsync(actor, personalMonth, default);
+    var savedObligation = obligations.Obligaciones.Single(item => item.ObligacionId == obligationId);
+    Check(obligations.Obligaciones.Length == 2 && savedObligation.Estado == "VENCIDA" &&
+        obligations.Polizas.Single().Estado == "POR_VENCER", "AFP, ONP y SCTR muestran sus vencimientos");
+    Check(obligations.Polizas.Single().Trabajadores?.Length == 2, "Una póliza SCTR cubre a dos trabajadores");
+    var paidObligation = savedObligation with { FechaPago = sctrToday, ReferenciaPago = "PAGO-AFP" };
+    await payroll.SaveObligationAsync(actor, paidObligation, default);
+    await ExpectFailure(() => payroll.SaveObligationAsync(actor, paidObligation, default),
+        "cambio", "Una versión anterior no sobrescribe el pago de la obligación");
+    obligations = await payroll.ObligationsAsync(actor, personalMonth, default);
+    Check(obligations.Obligaciones.Single(item => item.ObligacionId == obligationId) is
+        { Estado: "PAGADA", ReferenciaPago: "PAGO-AFP" }, "La obligación pagada conserva fecha y referencia");
+    var paidForScheduling = obligations.Obligaciones.Single(item => item.ObligacionId == obligationId);
+    await payroll.SaveObligationAsync(actor, paidForScheduling with
+        { Vencimiento = paidForScheduling.Vencimiento.AddDays(1), FechaPago = null, ReferenciaPago = null },
+        default, preservePayment: true);
+    Check((await payroll.ObligationsAsync(actor, personalMonth, default)).Obligaciones.Single(item => item.ObligacionId == obligationId)
+        is { Estado: "PAGADA", ReferenciaPago: "PAGO-AFP" }, "Editar la programación conserva los datos de pagos anteriores");
+    var advance = new PersonalMovementInput(Guid.NewGuid(), workerId, "ADELANTO", personalMonth,
+        "Adelanto regular", 200m, "PEN", "SEMANAL", personalMonth, personalMonth.AddDays(6), "A-01", null);
+    var advanceId = await payroll.RegisterMovementAsync(actor, advance, default);
+    Check(await payroll.RegisterMovementAsync(actor, advance, default) == advanceId, "Reintento conserva un solo adelanto");
+    await payroll.RegisterMovementAsync(actor, advance with
+    {
+        OperationId = Guid.NewGuid(), Concept = "REMUNERACION", Date = personalMonth.AddDays(14),
+        Description = "Primera quincena", Amount = 1000m, Frequency = "QUINCENAL",
+        PeriodTo = personalMonth.AddDays(14), Reference = null
+    }, default);
+    var staffPayment = advance with
+    {
+        OperationId = Guid.NewGuid(), Concept = "PAGO", Date = personalMonth.AddDays(15),
+        Description = "Pago a cuenta", Amount = 500m, Reference = "P-01"
+    };
+    await payroll.RegisterMovementAsync(actor, staffPayment, default);
+    var personalAccount = await payroll.AccountAsync(actor, workerId, personalMonth, default);
+    Check(personalAccount?.Saldos.Single() is { Adelantado: 200m, Pagado: 500m, Saldo: 300m } &&
+        personalAccount.Movimientos.Length == 3, "Estado de cuenta concilia adelanto, remuneración y pago");
+    await ExpectFailure(() => payroll.RegisterMovementAsync(actor, staffPayment with { OperationId = Guid.NewGuid(), Amount = 301m }, default),
+        "excede el saldo", "Personal rechaza un pago mayor al saldo");
+    await payroll.CloseMonthAsync(actor, personalMonth, default);
+    Check((await payroll.AccountAsync(actor, workerId, personalMonth, default))?.Cerrado == true, "El estado de cuenta identifica un mes cerrado");
+    var monthlyStaff = await payroll.ReportAsync(actor, personalMonth, null, null, default);
+    Check(monthlyStaff.Cerrado && monthlyStaff.Personal.Single() is { Adelantado: 200m, Pagado: 500m, Saldo: 300m },
+        "El reporte mensual de personal concilia con el estado de cuenta");
+    await ExpectFailure(() => payroll.RegisterMovementAsync(actor, staffPayment with { OperationId = Guid.NewGuid(), Amount = 1m }, default),
+        "mes cerrado", "No se registran movimientos en un mes cerrado");
+    var terminationDate = new DateOnly(2026, 11, 9);
+    var termination = new PersonalTerminationInput(Guid.NewGuid(), workerId, terminationDate, terminationDate, "Cese de prueba");
+    var terminationId = await payroll.RegisterTerminationAsync(actor, termination, default);
+    Check(await payroll.RegisterTerminationAsync(actor, termination, default) == terminationId, "El cese es idempotente");
+    await payroll.RegisterMovementAsync(actor, staffPayment with
+    {
+        OperationId = Guid.NewGuid(), Concept = "VACACIONES_PENDIENTES", Date = terminationDate,
+        Description = "Vacaciones valorizadas al cese", Amount = 100m, TerminationId = terminationId, Reference = null
+    }, default);
+    var finalAccount = await payroll.AccountAsync(actor, workerId, new(2026, 11, 1), default);
+    Check(finalAccount is { Activo: false } && finalAccount.Ceses.Single().CeseId == terminationId &&
+        finalAccount.Saldos.Single() is { SaldoAnterior: 300m, Saldo: 400m },
+        "El trabajador cesado conserva saldo previo y conceptos del cese");
+    Check((await workers.WorkersAsync(actor, workerId, null, null, 1, default, false)).Single().Active == false &&
+        (await workers.WorkersAsync(actor, workerId, null, null, 1, default, true)).Count == 0,
+        "El filtro por estado encuentra al trabajador cesado");
+    var reentryDate = terminationDate.AddDays(1);
+    var reentryOperation = Guid.NewGuid();
+    await ExpectFailure(() => payroll.RegisterReentryAsync(actor, reentryOperation, workerId, terminationId, terminationDate, null, default),
+        "no es posterior", "Reingreso rechaza la fecha de cese");
+    Check(await payroll.RegisterReentryAsync(actor, reentryOperation, workerId, terminationId, reentryDate, "Retorno de prueba", default) == terminationId &&
+        await payroll.RegisterReentryAsync(actor, reentryOperation, workerId, terminationId, reentryDate, "Retorno de prueba", default) == terminationId,
+        "El reingreso es idempotente");
+    var reentered = (await workers.WorkersAsync(actor, workerId, null, null, 1, default, true)).Single();
+    var reenteredAccount = await payroll.AccountAsync(actor, workerId, new(2026, 11, 1), default);
+    Check(reentered.Active && DateOnly.FromDateTime(reentered.StartDate) == reentryDate &&
+        reenteredAccount!.Ceses.Single() is { MotivoReingreso: "Retorno de prueba" } savedTermination &&
+        savedTermination.FechaCese == terminationDate && savedTermination.FechaReingreso == reentryDate &&
+        reenteredAccount.Saldos.Single().Saldo == 400m,
+        "El reingreso actualiza la ficha y conserva el cese y su saldo");
+    await Execute(connection, $"UPDATE dbo.TrabajadorHYT SET FechaIngreso = '20261111' WHERE TrabajadorId = {externalId};");
+    await ExpectFailure(() => payroll.ConfirmPlanAsync(actor, "SEMANAL", planStart, savedPlan.VersionFila!,
+        reentryDate, "TRANSFERENCIA-PLAN", default), "fecha del movimiento", "Una fila inválida revierte el pago de toda la planilla");
+    Check((await payroll.PlanAsync(actor, "SEMANAL", planStart, default)).FechaPago is null &&
+        Convert.ToInt32(await Scalar(connection, "SELECT COUNT(1) FROM dbo.MovimientoPersonalHYT WHERE Referencia = N'TRANSFERENCIA-PLAN';")) == 0,
+        "El fallo conserva el período abierto y sin pagos parciales");
+    await Execute(connection, $"UPDATE dbo.TrabajadorHYT SET FechaIngreso = '20250101' WHERE TrabajadorId = {externalId};");
+    Check(await payroll.ConfirmPlanAsync(actor, "SEMANAL", planStart, savedPlan.VersionFila!,
+        reentryDate, "TRANSFERENCIA-PLAN", default) == planId &&
+        await payroll.ConfirmPlanAsync(actor, "SEMANAL", planStart, savedPlan.VersionFila!,
+            reentryDate, "TRANSFERENCIA-PLAN", default) == planId, "Confirmar un pago de planilla es idempotente");
+    var confirmedPlan = await payroll.ReportPlanAsync(actor, "SEMANAL", planStart, default);
+    var planAccount = await payroll.AccountAsync(actor, workerId, new(2026, 11, 1), default);
+    Check(confirmedPlan.FechaPago == reentryDate && confirmedPlan.ReferenciaPago == "TRANSFERENCIA-PLAN" &&
+        planAccount!.Movimientos.Single(row => row.Referencia == "TRANSFERENCIA-PLAN").Importe == 375m &&
+        Convert.ToInt32(await Scalar(connection, "SELECT COUNT(1) FROM dbo.MovimientoPersonalHYT WHERE Referencia = N'TRANSFERENCIA-PLAN';")) == 2,
+        "La confirmación registra el neto por trabajador y queda disponible en el reporte");
+    await ExpectFailure(() => payroll.SavePlanAsync(actor, "SEMANAL", planStart, confirmedPlan.VersionFila, planRows, default),
+        "pagada y cerrada", "SQL bloquea la edición de una planificación pagada");
+    var supplierId = Convert.ToInt64(await Scalar(connection, """
+        EXEC dbo.spu_ProveedorHYT_Guardar N'sql-test-editor', '20000000001',
+             N'Proveedor temporal', 1, @ActualizarCuenta = 1,
+             @Banco = N'Banco temporal', @NumeroCuenta = N'0000012345',
+             @CuentaInterbancaria = '00012345678901234567', @ActualizarCCI = 1;
+        """));
+    var costOperation = Guid.NewGuid();
+    var costSql = $"""
+        EXEC dbo.spu_CostoProveedor_Registrar N'{actor}', '{costOperation}',
+             {budget.BudgetId}, {supplierId}, N'Instalación eléctrica', 1200, N'PEN';
+        """;
+    var costId = Convert.ToInt64(await Scalar(connection, costSql));
+    Check(Convert.ToInt64(await Scalar(connection, costSql)) == costId, "Reintento del costo conserva su identificador");
+    var paymentOperation = Guid.NewGuid();
+    var paymentSql = $"""
+        EXEC dbo.spu_PagoProveedor_Registrar N'{actor}', '{paymentOperation}',
+             {costId}, 500, '20261109', N'ABONO-1';
+        """;
+    var paymentId = Convert.ToInt64(await Scalar(connection, paymentSql));
+    Check(Convert.ToInt64(await Scalar(connection, paymentSql)) == paymentId, "Reintento del abono no duplica el pago");
+    await ExpectFailure(() => Execute(connection, paymentSql.Replace(", 500,", ", 501,")),
+        "otros datos", "Rechaza el mismo identificador con otro importe");
+    await ExpectFailure(() => Execute(connection, $"""
+        EXEC dbo.spu_PagoProveedor_Registrar N'{actor}', '{Guid.NewGuid()}',
+             {costId}, 701, '20261109', N'SOBREPAGO';
+        """), "excede", "Rechaza el pago superior al saldo");
+
+    async Task CheckSupplierBalance(decimal? expected)
+    {
+        await using var command = new SqlCommand($"""
+            EXEC dbo.spu_CostoProveedor_Listar N'{actor}', @CostoProveedorId={costId}, @SoloPendientes=1;
+            """, connection);
+        await using var reader = await command.ExecuteReaderAsync();
+        var found = await reader.ReadAsync();
+        Check(expected is null ? !found : found && reader.GetDecimal(reader.GetOrdinal("Pendiente")) == expected,
+            expected is null ? "El costo pagado desaparece de los pendientes" : "El abono deja S/ 700 pendientes");
+    }
+    await CheckSupplierBalance(700);
+    await Execute(connection, $"""
+        EXEC dbo.spu_PagoProveedor_Registrar N'{actor}', '{Guid.NewGuid()}',
+             {costId}, 700, '20261109', N'ABONO-2';
+        """);
+    await CheckSupplierBalance(null);
+    await using (var command = new SqlCommand($"EXEC dbo.spu_PagoProveedor_Listar N'{actor}', {costId};", connection))
+    await using (var reader = await command.ExecuteReaderAsync())
+    {
+        Check(await reader.ReadAsync() && reader.GetInt64(reader.GetOrdinal("Total")) == 2,
+            "El historial conserva los dos abonos");
+    }
+    var concurrentCostId = await payroll.SaveCostAsync(actor,
+        new(Guid.NewGuid(), budget.BudgetId, supplierId, "Costo para abonos concurrentes", 700m, "PEN", null), default);
+    var paymentGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    async Task<bool> TryConcurrentPayment(string reference)
+    {
+        await paymentGate.Task;
+        try
+        {
+            await payroll.SavePaymentAsync(actor,
+                new(Guid.NewGuid(), concurrentCostId, 500m, new(2026, 11, 9), reference,
+                    "SEMANAL", new(2026, 11, 2), new(2026, 11, 8)), default);
+            return true;
+        }
+        catch (SqlException error) when (error.Message == "El importe excede el saldo pendiente.")
+        {
+            return false;
+        }
+    }
+    var competingPayments = new[] { TryConcurrentPayment("CONCURRENTE-1"), TryConcurrentPayment("CONCURRENTE-2") };
+    paymentGate.SetResult();
+    var paymentOutcomes = await Task.WhenAll(competingPayments);
+    var remainingCost = (await payroll.CostsAsync(actor, null, null, concurrentCostId, true, 1, default)).Single();
+    var savedPayments = await payroll.PaymentsAsync(actor, concurrentCostId, 1, default);
+    Check(paymentOutcomes.Count(success => success) == 1 && remainingCost.Balance == 200m && savedPayments.Single().Amount == 500m,
+        "Dos abonos concurrentes dejan un único pago y un saldo de S/ 200");
+    Check(savedPayments.Single() is { Frequency: "SEMANAL", PeriodFrom.Day: 2, PeriodTo.Day: 8 },
+        "El historial conserva la frecuencia y el período de cobertura");
+    var optionalCoveragePayment = Guid.NewGuid();
+    await payroll.SavePaymentAsync(actor,
+        new(optionalCoveragePayment, concurrentCostId, 1m, new(2026, 11, 9), "SIN-COBERTURA",
+            "MENSUAL", null, null), default);
+    Check((await payroll.PaymentsAsync(actor, concurrentCostId, 1, default))
+        .Single(row => row.Reference == "SIN-COBERTURA") is { Frequency: "MENSUAL", PeriodFrom: null, PeriodTo: null },
+        "Un pago de proveedor conserva su frecuencia sin fechas de cobertura");
+    var monthlySuppliers = await payroll.ReportAsync(actor, new(2026, 11, 1), supplierId, budget.BudgetId, default);
+    var costDate = DateOnly.FromDateTime(remainingCost.CostDate!.Value);
+    var filteredPending = await payroll.CostsAsync(actor, null, null, null, false, 1, default,
+        new(costDate, costDate, "PENDIENTES", "abonos concurrentes"));
+    var filteredPaid = await payroll.CostsAsync(actor, null, null, null, false, 1, default,
+        new(costDate, costDate, "PAGADOS", "Instalacion electrica"));
+    var outsideRange = await payroll.CostsAsync(actor, null, null, null, false, 1, default,
+        new(costDate.AddDays(-1), costDate.AddDays(-1), "TODOS", "Proveedor temporal"));
+    Check(filteredPending.Single().Id == concurrentCostId && filteredPaid.Single().Id == costId && outsideRange.Count == 0,
+        "Pagos filtra fechas inclusivas, estado y concepto sin exigir tildes");
+    Check(monthlySuppliers.Proveedores.Single() is { MonedaCodigo: "PEN", Costo: 1900m, PagadoMes: 1701m, Pendiente: 199m },
+        "El reporte mensual de proveedores concilia por presupuesto y moneda");
+
+    await Execute(connection, "DELETE FROM dbo.RolPermiso WHERE RoleId = N'HYT-ADMIN' AND CodigoPermiso = N'PROVEEDORES.CUENTA';");
+    await using (var command = new SqlCommand($"EXEC dbo.spu_ProveedorHYT_Listar N'{actor}', {supplierId};", connection))
+    await using (var reader = await command.ExecuteReaderAsync())
+    {
+        Check(await reader.ReadAsync() && reader.IsDBNull(reader.GetOrdinal("NumeroCuenta"))
+            && reader.IsDBNull(reader.GetOrdinal("CuentaInterbancaria"))
+            && reader.GetString(reader.GetOrdinal("CuentaEnmascarada")) == "****2345",
+            "La ficha oculta el número completo cuando falta el permiso bancario");
+    }
     Check(Regex.IsMatch(budget.Number,@"^\d{12}$") && budget.RevisionNumber == 1 && Convert.ToString(await Scalar(connection,"SELECT NumeroInterno FROM dbo.Presupuesto WHERE PresupuestoId=1"))=="PPTO-1", "Numeración interna y primera revisión");
     Check(Convert.ToString(await Scalar(connection,$"SELECT TiendaCodigo FROM dbo.PresupuestoRevision WHERE RevisionId={budget.RevisionId}"))=="T1"&&Convert.ToString(await Scalar(connection,$"SELECT CentroSAPFICO FROM dbo.PresupuestoPartida WHERE RevisionId={budget.RevisionId}"))=="F001","Código de tienda y centro FICO se recuperan de datos reales");
     Check(Convert.ToDecimal(await Scalar(connection,$"SELECT Total FROM dbo.PresupuestoRevision WHERE RevisionId={budget.RevisionId}")) == 236m, "Totales reales calculados en SQL a dos decimales");

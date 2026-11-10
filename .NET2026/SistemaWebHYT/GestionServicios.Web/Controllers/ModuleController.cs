@@ -21,6 +21,15 @@ public sealed class ModuleController(IAuthorizationService authorization) : Cont
         if (code == "presupuestos") return RedirectToAction("Index", "Budget");
         if (code is "oc-cliente" or "guias") return RedirectToAction("Index", "Followup", new { kind = code });
         if (code == "reportes") return RedirectToAction("Index", "Reports");
+        if (entry.Code == "pagos-pendientes-proveedores") return RedirectToAction("Pending", "SupplierPayments");
+        if (entry.Code == "pagos-proveedores") return RedirectToAction("Index", "SupplierPayments");
+        if (entry.Code == "proveedores") return RedirectToAction("Index", "Suppliers");
+        if (entry.Code == "trabajadores") return RedirectToAction("Index", "Workers");
+        if (entry.Code == "planificacion-pagos") return RedirectToAction("Index", "PayPlanning");
+        if (entry.Code == "cargos") return RedirectToAction("Index", "WorkerPositions");
+        if (entry.Code == "reporte-planillas") return RedirectToAction("Index", "PayrollReports");
+        if (entry.Code == "obligaciones-planillas") return RedirectToAction("Index", "PayrollObligations");
+        if (entry.Code == "sctr") return RedirectToAction("Sctr", "PayrollObligations");
         if (code == "usuarios") return RedirectToAction("Index", "Users");
         if (code == "auditoria") return RedirectToAction("Index", "Audit");
         return View(entry);

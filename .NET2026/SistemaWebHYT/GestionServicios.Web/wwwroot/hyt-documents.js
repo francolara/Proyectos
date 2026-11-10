@@ -2,6 +2,7 @@
 // Firma: FRANCO LARA - 03/11/2026 | Captura documental en popup compartido, foco, validación y bloqueo de doble envío.
 // Firma: FRANCO LARA - 05/11/2026 | Mantiene la espera común en el retorno tras guardar documentos.
 import {setDialog} from './hyt-ui.js';
+// Firma: FRANCO LARA - 09/11/2026 | Búsqueda y paginación dentro del pop-up de costos de proveedor.
 const dialog=document.querySelector('#document-dialog');
 const body=dialog?.querySelector('[data-document-body]');
 let loading=false;
@@ -19,10 +20,14 @@ async function openDocument(event){
     const doubleClick=link.dataset.documentDoubleclick?.toLowerCase()==='true';
     if(event.type==='dblclick'&&!doubleClick)return;
     if(doubleClick&&event.type==='click'&&event.detail!==0){event.preventDefault();return;}
-    event.preventDefault();if(loading)return;loading=true;
+    event.preventDefault();
+    await loadDocument(link.href);
+}
+async function loadDocument(href){
+    if(loading)return;loading=true;
     dialog.querySelector("h2").textContent="Registro documental";window.hytDisposeDates?.(body);const loadingMessage=document.createElement('p');loadingMessage.textContent='Cargando registro…';body.replaceChildren(loadingMessage);setDialog(dialog,true,true);
     try{
-        const url=new URL(link.href,location.href);if(url.origin!==location.origin)throw new Error('Enlace no válido.');url.searchParams.set('popup','true');
+        const url=new URL(href,location.href);if(url.origin!==location.origin)throw new Error('Enlace no válido.');url.searchParams.set('popup','true');
         const response=await fetch(url,{headers:{'X-Requested-With':'XMLHttpRequest'}});
         if(!response.ok||response.redirected)throw new Error(response.redirected?'La sesión o los permisos cambiaron. Vuelve a abrir el listado.':await response.text());
         body.innerHTML=await response.text();dialog.querySelector("h2").textContent=body.querySelector("[data-document-title]")?.dataset.documentTitle??"Registro documental";window.hytInitDates?.(body);body.querySelectorAll("[data-budget-state-form]").forEach(updateBudgetReason);setDialog(dialog,true,false);body.querySelector('input:not([type=hidden]),select,textarea')?.focus();
@@ -32,6 +37,14 @@ async function openDocument(event){
 document.addEventListener('click',openDocument);
 document.addEventListener('dblclick',openDocument);
 document.addEventListener('submit',async event=>{
+    const search=event.target.closest('#document-dialog [data-document-search]');
+    if(search){
+        event.preventDefault();
+        const url=new URL(search.action,location.href);
+        url.search=new URLSearchParams(new FormData(search)).toString();
+        await loadDocument(url);
+        return;
+    }
     const form=event.target.closest('#document-dialog [data-document-form]');if(!form)return;
     event.preventDefault();if(form.dataset.documentBusy==='true')return;if(!form.checkValidity()){form.reportValidity();return;}
     form.dataset.documentBusy='true';setDialog(dialog,true,true);const buttons=[...form.querySelectorAll('button')];buttons.forEach(button=>button.disabled=true);

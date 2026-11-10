@@ -1,0 +1,27 @@
+{
+  "database": "SistemaWebHYT",
+  "requires": "administracion",
+  "scripts": [
+    "Tablas/ProveedorHYT.sql",
+    "Tablas/CostoProveedorPresupuesto.sql",
+    "Tablas/PagoProveedorHYT.sql",
+    "Tablas/TrabajadorHYT.sql",
+    "Tablas/PeriodoVacacionesHYT.sql",
+    "Tablas/VacacionesHYT.sql",
+    "Tablas/JornadaHYT.sql",
+    "StoreProcedure/spu_CostoProveedor_Registrar.sql",
+    "StoreProcedure/spu_PagoProveedor_Registrar.sql",
+    "StoreProcedure/spu_CostoProveedor_Listar.sql",
+    "StoreProcedure/spu_ProveedorHYT_Listar.sql",
+    "StoreProcedure/spu_ProveedorHYT_Guardar.sql",
+    "StoreProcedure/spu_PagoProveedor_Listar.sql",
+    "StoreProcedure/spu_TrabajadorHYT_Listar.sql",
+    "StoreProcedure/spu_TrabajadorHYT_Guardar.sql",
+    "StoreProcedure/spu_VacacionesHYT_Consultar.sql",
+    "StoreProcedure/spu_PeriodoVacacionesHYT_Registrar.sql",
+    "StoreProcedure/spu_VacacionesHYT_Guardar.sql",
+    "StoreProcedure/spu_JornadaHYT_Listar.sql",
+    "StoreProcedure/spu_JornadaHYT_Guardar.sql",
+    "Script/033_PermisosPlanillas.sql"
+  ]
+}

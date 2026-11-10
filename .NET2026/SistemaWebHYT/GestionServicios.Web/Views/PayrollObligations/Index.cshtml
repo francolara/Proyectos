@@ -1,0 +1,76 @@
+@model GestionServicios.Web.Controllers.PayrollObligationsPage
+@* Firma: FRANCO LARA - 09/11/2026 | Registro de AFP, ONP con catálogo previsional. Aplica el estándar HYT de grillas, filtros y formularios. Ayudas de catálogo en pop-up. Alinea importes y cantidades en la grilla. *@
+@* Firma: FRANCO LARA - 10/11/2026 | Listado independiente con acceso a ficha y tasas previsionales. Muestra la programación y confirma pagos desde la fila. *@
+@{
+    ViewData["Title"] = "Obligaciones";
+    ViewData["Wide"] = true;
+}
+<header class="hyt-page-header">
+    <div><h1>Obligaciones</h1><p>Programa las obligaciones de AFP y ONP.</p></div>
+    @if (Model.CanEdit)
+    {
+        <div class="hyt-master-related">
+            <a asp-action="Rates" asp-route-month="@Model.Month" class="hyt-button-secondary">Porcentajes AFP y ONP</a>
+            <a asp-action="ObligationDetails" asp-route-month="@Model.Month" class="hyt-button-primary">Registrar obligación</a>
+        </div>
+    }
+</header>
+<form asp-action="Index" method="get" class="hyt-filters">
+    <div class="hyt-field">
+        <label for="payrollobligations-month-1">Mes de AFP y ONP</label>
+        <input id="payrollobligations-month-1" type="month" name="month" value="@Model.Month" required />
+    </div>
+    <button class="hyt-button-primary" type="submit">Consultar</button>
+</form>
+@if (TempData["ObligationMessage"] is string message) { <p role="status">@message</p> }
+@if (TempData["ObligationError"] is string error) { <p role="alert">@error</p> }
+<h2>AFP y ONP</h2>
+@if (Model.Data.Obligaciones.Length == 0) { <p class="hyt-panel hyt-grid-message">No hay obligaciones registradas para el mes.</p> }
+else
+{
+    <div class="hyt-panel hyt-table-wrap" tabindex="0" role="region" aria-label="Obligaciones AFP y ONP">
+        <table class="hyt-table hyt-align-payroll-obligations">
+            <thead><tr><th scope="col">Tipo</th><th scope="col">Entidad</th><th scope="col">Importe</th><th scope="col">Vence</th><th scope="col">Estado</th>@if (Model.CanEdit) { <th scope="col">Acción</th> }</tr></thead>
+            <tbody>
+            @foreach (var row in Model.Data.Obligaciones)
+            {
+                <tr><td>@row.Tipo</td><td>@row.Entidad</td><td>S/ @row.Importe.ToString("N2")</td><td>@row.Vencimiento.ToString("dd/MM/yyyy")</td>
+                    <td>@(row.Estado == "PAGADA" ? "Pagada" : row.Estado == "VENCIDA" ? "Pendiente · Vencida" : "Pendiente")</td>
+                    @if (Model.CanEdit)
+                    {
+                        <td>
+                            @if (row.FechaPago is null)
+                            {
+                                <a class="hyt-button-secondary" asp-action="ObligationDetails" asp-route-month="@Model.Month" asp-route-obligationId="@row.ObligacionId">Editar</a>
+                                <button type="button" class="hyt-button-secondary" data-hyt-open="obligation-payment-@row.ObligacionId">Confirmar pago</button>
+                            }
+                        </td>
+                    }
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (Model.CanEdit)
+{
+    @foreach (var row in Model.Data.Obligaciones.Where(item => item.FechaPago is null))
+    {
+        var dialogId = $"obligation-payment-{row.ObligacionId}";
+        <dialog id="@dialogId" class="hyt-modal" aria-labelledby="@(dialogId + "-title")">
+            <header class="hyt-modal-header">
+                <h2 id="@(dialogId + "-title")">Confirmar pago de obligación</h2>
+                <button type="button" class="hyt-modal-close" data-hyt-close aria-label="Cerrar">×</button>
+            </header>
+            <div class="hyt-modal-body">
+                <p><strong>@row.Entidad</strong> · @Model.Month · S/ @row.Importe.ToString("N2")</p>
+                <form asp-action="ConfirmPayment" asp-route-id="@row.ObligacionId" method="post" class="hyt-payroll-form">
+                    <input type="hidden" name="month" value="@Model.Month" />
+                    <input type="hidden" name="Version" value="@Convert.ToBase64String(row.VersionFila)" />
+                    <partial name="_PaymentConfirmationFields" model="dialogId" />
+                </form>
+            </div>
+        </dialog>
+    }
+}
