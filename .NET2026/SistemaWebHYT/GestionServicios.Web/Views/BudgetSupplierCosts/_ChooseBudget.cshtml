@@ -1,0 +1,44 @@
+@model GestionServicios.Web.Controllers.SupplierCostBudgetLookup
+@* Firma: FRANCO LARA - 09/11/2026 | Ayuda para seleccionar el presupuesto antes de registrar un costo. Alinea importes y cantidades en la grilla. *@
+<section data-document-title="Elegir presupuesto">
+    <form method="get" asp-action="ChooseBudget" class="hyt-filters" data-document-search>
+        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+        <div class="hyt-field">
+            <label for="cost-budget-search">Número o descripción del presupuesto</label>
+            <input id="cost-budget-search" type="search" name="search" maxlength="180" value="@Model.Search" />
+        </div>
+        <button class="hyt-button-primary" type="submit">Buscar</button>
+    </form>
+    <div class="hyt-panel hyt-table-wrap" tabindex="0" role="region" aria-label="Resultados de presupuestos">
+        <table class="hyt-table hyt-align-budget-lookup">
+            <thead><tr><th scope="col">Presupuesto</th><th scope="col">Descripción</th><th scope="col">Cliente</th><th scope="col">Acción</th></tr></thead>
+            <tbody>
+            @if (Model.Results.Rows.Count == 0)
+            {
+                <tr><td colspan="4" class="hyt-grid-message">No se encontraron presupuestos.</td></tr>
+            }
+            @foreach (var budget in Model.Results.Rows)
+            {
+                <tr>
+                    <td>@budget.Number</td><td>@budget.Description</td><td>@budget.ClientName</td>
+                    <td><a asp-action="New" asp-route-id="@budget.BudgetId" asp-route-returnUrl="@Model.ReturnUrl"
+                           class="hyt-button-secondary" data-document-open aria-label="Seleccionar presupuesto @budget.Number">Seleccionar</a></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    <nav class="hyt-pagination" aria-label="Páginas de presupuestos">
+        @if (Model.Results.Page > 1)
+        {
+            <a asp-action="ChooseBudget" asp-route-page="@(Model.Results.Page - 1)" asp-route-search="@Model.Search"
+               asp-route-returnUrl="@Model.ReturnUrl" class="hyt-button-secondary" data-document-open>Anterior</a>
+        }
+        <span>Página @Model.Results.Page</span>
+        @if (Model.Results.Total > (long)Model.Results.Page * 20)
+        {
+            <a asp-action="ChooseBudget" asp-route-page="@(Model.Results.Page + 1)" asp-route-search="@Model.Search"
+               asp-route-returnUrl="@Model.ReturnUrl" class="hyt-button-secondary" data-document-open>Siguiente</a>
+        }
+    </nav>
+</section>

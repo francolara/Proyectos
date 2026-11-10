@@ -1,0 +1,29 @@
+@model GestionServicios.Web.Controllers.WorkerPositionsPage
+@* Firma: FRANCO LARA - 09/11/2026 | Listado de cargos con filtros y enlaces a la ficha independiente. *@
+@{
+    ViewData["Wide"] = true;
+    ViewData["Title"] = "Cargos";
+    var grid = new GridModel
+    {
+        Label = "Cargos", Controller = "WorkerPositions", Headers = ["Cargo", "Estado"],
+        Rows = Model.Positions.Select(position => new GridRow(position.Id.ToString(),
+            [position.Name, position.Active ? "Activo" : "Inactivo"], CanView: false,
+            Actions: Model.CanEdit ? [new("Editar", Url.Action("Details", new { id = position.Id })!)] : [])).ToArray(),
+        TotalRecords = Model.Total, Page = Model.Page,
+        Query = Model.Search is null ? [] : new() { ["search"] = Model.Search }
+    };
+}
+<header class="hyt-page-header">
+    <div><h1>Cargos</h1><p>Administra los puestos que se pueden asignar a los trabajadores.</p></div>
+    @if (Model.CanEdit) { <a asp-action="Details" class="hyt-button-primary">Nuevo cargo</a> }
+</header>
+@if (TempData["PositionSaved"] is string message) { <p role="status">@message</p> }
+<form method="get" asp-action="Index" class="hyt-filters">
+    <div class="hyt-field">
+        <label for="position-search">Buscar por cargo</label>
+        <input id="position-search" name="search" type="search" maxlength="100" value="@Model.Search" />
+    </div>
+    <button class="hyt-button-primary" type="submit">Buscar</button>
+    <a asp-action="Index" class="hyt-button-secondary">Limpiar</a>
+</form>
+<partial name="_Grid" model="grid" />

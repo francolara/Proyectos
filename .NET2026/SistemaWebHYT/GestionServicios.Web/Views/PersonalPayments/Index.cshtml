@@ -1,0 +1,140 @@
+@{ ViewData["Wide"] = true; }
+@model GestionServicios.Web.Controllers.PersonalPaymentsPage
+@* Firma: FRANCO LARA - 09/11/2026 | Estado de cuenta, movimientos de personal y registro de cese. Aplica el estándar HYT de grillas, filtros y formularios. Alinea importes y cantidades en la grilla. *@
+@* Firma: FRANCO LARA - 10/11/2026 | Separa el registro de cese del estado de cuenta. *@
+@{
+    ViewData["Title"] = "Estado de cuenta";
+    var account = Model.Account;
+    var date = Model.Date.ToString("yyyy-MM-dd");
+    var concepts = new Dictionary<string, string>
+    {
+        ["REMUNERACION"] = "Remuneración", ["SERVICIO"] = "Servicio externo", ["GRATIFICACION"] = "Gratificación",
+        ["LIQUIDACION"] = "Liquidación", ["VACACIONES_PENDIENTES"] = "Vacaciones pendientes",
+        ["ADELANTO"] = "Adelanto", ["ADELANTO_GRATIFICACION"] = "Adelanto de gratificación",
+        ["DESCUENTO"] = "Descuento", ["PAGO"] = "Pago"
+    };
+}
+<header class="hyt-page-header">
+    <div><h1>Estado de cuenta</h1><p>@account.NombreCompleto · @(account.Tipo == "PLANILLA" ? "En planilla" : "Externo") · @(account.Activo ? "Activo" : "Inactivo")</p></div>
+    <a asp-controller="Workers" asp-action="Details" asp-route-id="@account.TrabajadorId" class="hyt-button-secondary">Volver al trabajador</a>
+</header>
+<form method="get" asp-action="Index" asp-route-id="@account.TrabajadorId" class="hyt-filters">
+    <div class="hyt-field">
+        <label for="personalpayments-month-1">Mes</label>
+        <input id="personalpayments-month-1" name="month" type="month" value="@Model.Month" required />
+    </div>
+    <button class="hyt-button-secondary" type="submit">Consultar</button>
+    <span>@(account.Cerrado ? "Mes cerrado" : "Mes abierto")</span>
+</form>
+@if (TempData["PersonalPaymentMessage"] is string message) { <p role="status">@message</p> }
+@if (TempData["PersonalPaymentError"] is string error) { <p role="alert">@error</p> }
+
+<h2>Saldos por moneda</h2>
+@if (account.Saldos.Length == 0) { <p class="hyt-panel hyt-grid-message">El trabajador todavía no tiene movimientos hasta este mes.</p> }
+else
+{
+    <div class="hyt-panel hyt-table-wrap" tabindex="0" role="region" aria-label="Saldos por moneda">
+        <table class="hyt-table hyt-align-personal-balances">
+            <thead><tr><th scope="col">Moneda</th><th scope="col">Saldo anterior</th><th scope="col">Devengado</th><th scope="col">Adelantado</th><th scope="col">Descontado</th><th scope="col">Pagado</th><th scope="col">Saldo final</th></tr></thead>
+            <tbody>
+            @foreach (var balance in account.Saldos)
+            {
+                <tr><td>@balance.MonedaCodigo</td><td>@balance.SaldoAnterior.ToString("N2")</td>
+                    <td>@balance.Devengado.ToString("N2")</td><td>@balance.Adelantado.ToString("N2")</td>
+                    <td>@balance.Descontado.ToString("N2")</td><td>@balance.Pagado.ToString("N2")</td>
+                    <td><strong>@balance.Saldo.ToString("N2")</strong></td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    <p>Un saldo negativo indica dinero adelantado que aún queda por compensar.</p>
+}
+
+@if (Model.CanEdit && !account.Cerrado)
+{
+    <section class="hyt-panel hyt-payroll-section">
+        <h2>Registrar movimiento</h2>
+        <form asp-action="Save" asp-route-id="@account.TrabajadorId" method="post" class="hyt-payroll-form">
+            <input type="hidden" name="month" value="@Model.Month" />
+            <input type="hidden" name="OperationId" value="@Model.MovementOperation" />
+            <div class="hyt-master-fields">
+                <div class="hyt-field">
+                    <label for="personalpayments-concept-1">Concepto</label>
+                    <select id="personalpayments-concept-1" name="Concept" required>
+                        <option value="">Selecciona un concepto</option>
+                        @foreach (var concept in concepts)
+                        {
+                            if (account.Tipo == "EXTERNO" && concept.Key is not ("SERVICIO" or "ADELANTO" or "DESCUENTO" or "PAGO")) { continue; }
+                            if (account.Tipo == "PLANILLA" && concept.Key == "SERVICIO") { continue; }
+                            if (account.Ceses.Length == 0 && concept.Key is ("LIQUIDACION" or "VACACIONES_PENDIENTES")) { continue; }
+                            <option value="@concept.Key">@concept.Value</option>
+                        }
+                    </select>
+                </div>
+                <div class="hyt-field">
+                    <label for="personalpayments-date-1">Fecha del movimiento</label>
+                    <input id="personalpayments-date-1" type="date" name="Date" value="@date" required />
+                </div>
+                <div class="hyt-field hyt-field-wide">
+                    <label for="personalpayments-description-1">Descripción</label>
+                    <input id="personalpayments-description-1" name="Description" maxlength="300" required />
+                </div>
+                <div class="hyt-field">
+                    <label for="personalpayments-amount-1">Importe</label>
+                    <input id="personalpayments-amount-1" name="Amount" inputmode="decimal" required />
+                </div>
+                <div class="hyt-field">
+                    <label for="personalpayments-currency-1">Moneda</label>
+                    <select id="personalpayments-currency-1" name="Currency"><option value="PEN">Soles</option><option value="USD">Dólares</option></select>
+                </div>
+                <div class="hyt-field">
+                    <label for="personalpayments-frequency-1">Frecuencia</label>
+                    <select id="personalpayments-frequency-1" name="Frequency"><option value="">Puntual</option><option value="SEMANAL">Semanal</option><option value="QUINCENAL">Quincenal</option><option value="MENSUAL">Mensual</option></select>
+                </div>
+                <div class="hyt-field">
+                    <label for="personalpayments-periodfrom-1">Cobertura desde</label>
+                    <input id="personalpayments-periodfrom-1" name="PeriodFrom" type="date" />
+                </div>
+                <div class="hyt-field">
+                    <label for="personalpayments-periodto-1">Cobertura hasta</label>
+                    <input id="personalpayments-periodto-1" name="PeriodTo" type="date" />
+                </div>
+                <div class="hyt-field">
+                    <label for="personalpayments-reference-1">Referencia de pago o adelanto</label>
+                    <input id="personalpayments-reference-1" name="Reference" maxlength="100" />
+                </div>
+                @if (account.Ceses.Length > 0)
+                {
+                    <div class="hyt-field hyt-field-wide">
+                        <label for="personalpayments-terminationid-1">Cese asociado</label>
+                        <select id="personalpayments-terminationid-1" name="TerminationId"><option value="">Sin asociar</option>
+                        @foreach (var termination in account.Ceses) { <option value="@termination.CeseId">@termination.FechaCese.ToString("dd/MM/yyyy")</option> }
+                        </select>
+                    </div>
+                }
+            </div>
+            <div class="hyt-payroll-actions">
+                <button type="submit" class="hyt-button-primary">Guardar movimiento</button>
+            </div>
+        </form>
+    </section>
+}
+<h2>Movimientos del mes</h2>
+@if (account.Movimientos.Length == 0) { <p class="hyt-panel hyt-grid-message">No hay movimientos en el mes seleccionado.</p> }
+else
+{
+    <div class="hyt-panel hyt-table-wrap" tabindex="0" role="region" aria-label="Movimientos del mes">
+        <table class="hyt-table hyt-align-personal-movements">
+            <thead><tr><th scope="col">Fecha</th><th scope="col">Concepto</th><th scope="col">Descripción</th><th scope="col">Importe</th><th scope="col">Frecuencia</th><th scope="col">Cobertura</th><th scope="col">Referencia</th></tr></thead>
+            <tbody>
+            @foreach (var entry in account.Movimientos)
+            {
+                <tr><td>@entry.Fecha.ToString("dd/MM/yyyy")</td><td>@concepts.GetValueOrDefault(entry.Concepto, entry.Concepto)</td>
+                    <td>@entry.Descripcion</td><td>@entry.MonedaCodigo @entry.Importe.ToString("N2")</td>
+                    <td>@(entry.Frecuencia ?? "—")</td><td>@entry.PeriodoDesde?.ToString("dd/MM/yyyy") @entry.PeriodoHasta?.ToString("dd/MM/yyyy")</td>
+                    <td>@entry.Referencia</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

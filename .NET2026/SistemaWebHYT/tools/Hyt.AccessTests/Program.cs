@@ -13,6 +13,14 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using GestionServicios.Application.Maintenance;
 using GestionServicios.Application.Budgets;
+using GestionServicios.Application.Payroll;
+
+string[] payrollPermissions = ["PROVEEDORES.CONSULTAR", "PROVEEDORES.EDITAR", "PROVEEDORES.CUENTA",
+    "COSTOS_PROVEEDOR.CONSULTAR", "COSTOS_PROVEEDOR.EDITAR", "PAGOS_PROVEEDOR.CONSULTAR", "PAGOS_PROVEEDOR.EDITAR",
+    "TRABAJADORES.CONSULTAR", "TRABAJADORES.EDITAR", "TRABAJADORES.CUENTA", "VACACIONES.CONSULTAR", "VACACIONES.EDITAR",
+    "ASISTENCIA.CONSULTAR", "ASISTENCIA.EDITAR", "PAGOS_PERSONAL.CONSULTAR", "PAGOS_PERSONAL.EDITAR",
+    "PAGOS_PERSONAL.CESES", "PAGOS_PERSONAL.CERRAR", "REPORTES_PLANILLAS.CONSULTAR",
+    "OBLIGACIONES.CONSULTAR", "OBLIGACIONES.EDITAR"];
 
 if (args.Contains("--browser-host"))
 {
@@ -24,6 +32,11 @@ if (args.Contains("--browser-host"))
             Permissions = browserRepository.Account.Permissions.Concat(["USUARIOS.CONSULTAR", "USUARIOS.CREAR",
                 "USUARIOS.MODIFICAR", "USUARIOS.RESTABLECER", "PERFILES.CONSULTAR", "PERFILES.EDITAR", "AUDITORIA.CONSULTAR"]).ToArray(),
             MustChangePassword = args.Contains("--browser-temporary-password")
+        };
+    if (args.Contains("--browser-payroll"))
+        browserRepository.Account = browserRepository.Account with
+        {
+            Permissions = browserRepository.Account.Permissions.Concat(payrollPermissions).Distinct().ToArray()
         };
     using var browserFactory = new HytFactory(browserRepository,args.Contains("--browser-captcha"),args.Contains("--browser-captcha")?"":"sitekey-prueba");
     browserFactory.UseKestrel(5198);
@@ -695,6 +708,117 @@ using(var proxyServices=proxyBuilder.Services.BuildServiceProvider())
     var proxyOptions=proxyServices.GetRequiredService<Microsoft.Extensions.Options.IOptions<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>>().Value;
     Check(proxyOptions.ForwardLimit==1&&proxyOptions.RequireHeaderSymmetry&&proxyOptions.KnownIPNetworks.Count==0&&proxyOptions.KnownProxies.All(ip=>ip.Equals(System.Net.IPAddress.Parse("172.30.0.1"))||ip.Equals(System.Net.IPAddress.Parse("172.30.0.1").MapToIPv6())),"Solo proxy explícito puede proporcionar IP/protocolo de una solicitud");
 }
+var payrollAccess = new TestAccessRepository();
+payrollAccess.Account = payrollAccess.Account with
+{
+    Permissions = ["PRESUPUESTOS.CONSULTAR", .. payrollPermissions]
+};
+using var payrollFactory = new HytFactory(payrollAccess);
+using var payrollClient = payrollFactory.CreateClient(new WebApplicationFactoryClientOptions
+    { BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false });
+async Task<HttpResponseMessage> PayrollPost(string path, Dictionary<string, string> fields, string? formPath = null)
+{
+    var html = await payrollClient.GetStringAsync(formPath ?? path);
+    var token = Regex.Match(html, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"");
+    Check(token.Success, "Formulario con protección antifalsificación: " + path);
+    fields["__RequestVerificationToken"] = WebUtility.HtmlDecode(token.Groups[1].Value);
+    return await payrollClient.PostAsync(path, new FormUrlEncodedContent(fields));
+}
+Check((await PayrollPost("/Acceso", new() { ["UserName"] = "operador", ["Password"] = payrollAccess.Password })).StatusCode
+    == HttpStatusCode.Redirect, "Inicio de sesión para Planillas");
+Check((await payrollClient.GetAsync("/modulo/pagos-proveedores")).Headers.Location?.OriginalString == "/Planillas/PagosProveedores",
+    "El menú Planillas enlaza al listado de pagos");
+Check((await PayrollPost("/Proveedores/Ficha", new()
+{
+    ["TaxId"] = "20000000001", ["Name"] = "Proveedor de prueba", ["Active"] = "true",
+    ["Bank"] = "Banco", ["Account"] = "000012345"
+})).StatusCode == HttpStatusCode.Redirect, "Alta de proveedor por formulario MVC");
+const string costsUrl = "/Presupuestos/1/CostosProveedores";
+var supplierFilters = await payrollClient.GetStringAsync("/Planillas/PagosProveedores?status=PAGADOS&search=Servicio&from=2026-11-01&to=2026-11-09");
+Check(supplierFilters.Contains("name=\"status\"") && supplierFilters.Contains("value=\"Servicio\"") &&
+    supplierFilters.IndexOf("name=\"from\"", StringComparison.Ordinal) < supplierFilters.IndexOf("name=\"status\"", StringComparison.Ordinal)
+    && supplierFilters.IndexOf("name=\"status\"", StringComparison.Ordinal) < supplierFilters.IndexOf("name=\"search\"", StringComparison.Ordinal),
+    "Pagos presenta fechas, estado y búsqueda en ese orden");
+const string costPopupUrl = costsUrl + "/Nuevo?popup=true";
+Check(!(await payrollClient.GetStringAsync(costsUrl)).Contains("name=\"SupplierId\""),
+    "El listado de costos no incluye el formulario");
+var budgetLookup = await payrollClient.GetStringAsync("/Planillas/PagosProveedores/ElegirPresupuesto?popup=true");
+Check(budgetLookup.Contains("data-document-title=\"Elegir presupuesto\"") && budgetLookup.Contains(costsUrl + "/Nuevo"),
+    "La ayuda de pagos enlaza al registro del presupuesto seleccionado");
+Check((await PayrollPost(costsUrl, new()
+{
+    ["OperationId"] = Guid.NewGuid().ToString(), ["SupplierId"] = "1", ["Description"] = "Instalación temporal",
+    ["Amount"] = "1200", ["Currency"] = "PEN", ["popup"] = "true", ["returnUrl"] = "/Planillas/PagosProveedores?all=true"
+}, costPopupUrl)).StatusCode == HttpStatusCode.OK, "Registro de un costo desde el pop-up");
+const string paymentUrl = "/Planillas/PagosProveedores/1";
+Check((await PayrollPost(paymentUrl, new()
+{
+    ["OperationId"] = Guid.NewGuid().ToString(), ["Amount"] = "500", ["Date"] = "2026-11-09", ["Reference"] = "ABONO-HTTP"
+})).StatusCode == HttpStatusCode.Redirect, "Abono por formulario MVC");
+var paymentHtml = await payrollClient.GetStringAsync(paymentUrl);
+Check(paymentHtml.Contains("ABONO-HTTP") && paymentHtml.Contains("700") && paymentHtml.Contains("000012345"),
+    "El detalle muestra el abono, el saldo y la cuenta autorizada");
+const string workerUrl = "/Planillas/Trabajadores/Ficha/1";
+var workerHtml = await payrollClient.GetStringAsync(workerUrl);
+Check(workerHtml.Contains("name=\"CargoId\"") && workerHtml.Contains("Supervisor") &&
+    workerHtml.Contains("name=\"MonthlySalary\""), "La ficha ofrece selección de cargo y sueldo base");
+var positionsHtml = await payrollClient.GetStringAsync("/Planillas/Cargos");
+Check(!positionsHtml.Contains("Guardar cargo") && positionsHtml.Contains("/Planillas/Cargos/Ficha"),
+    "El listado de cargos enlaza a la ficha y no muestra el formulario");
+Check((await payrollClient.GetStringAsync("/Planillas/Cargos/Ficha")).Contains("Guardar cargo"),
+    "La ficha de alta contiene el formulario");
+Check((await payrollClient.GetStringAsync("/Planillas/Cargos/Ficha/1")).Contains("Supervisor"),
+    "La ficha de edición carga el cargo seleccionado");
+Check((await payrollClient.GetStringAsync("/Planillas/Obligaciones")).Contains("No hay obligaciones registradas"),
+    "Obligaciones muestra el estado vacío sin error");
+Check(workerHtml.Contains("Interbank") && workerHtml.Contains("AFP Integra"),
+    "La ficha ofrece los catálogos de bancos y AFP");
+const string sctrUrl = "/Planillas/SCTR";
+Check((await payrollClient.GetStringAsync(sctrUrl)).Contains("Nueva póliza"), "SCTR ofrece acceso a su propia ficha");
+Check((await PayrollPost(sctrUrl, new()
+{
+    ["Insurer"] = "Aseguradora temporal", ["Number"] = "WEB-SCTR", ["Coverage"] = "SALUD",
+    ["From"] = "2026-11-01", ["To"] = "2026-11-25", ["WorkerIds[0]"] = "1", ["WorkerIds[1]"] = "2"
+}, sctrUrl + "/Ficha")).StatusCode == HttpStatusCode.Redirect &&
+    (await payrollClient.GetStringAsync(sctrUrl)).Contains("data-status=\"POR_VENCER\""),
+    "SCTR guarda una selección múltiple y muestra su estado de vencimiento");
+const string planningUrl = "/Planillas/PlanificacionPagos";
+Check((await payrollClient.GetStringAsync(planningUrl + "?from=2026-11-09")).Contains("Precarga sin guardar"),
+    "La planificación abre la precarga semanal");
+var savePlanResponse = await PayrollPost(planningUrl, new()
+{
+    ["Frequency"] = "SEMANAL", ["From"] = "2026-11-09", ["Lines[0].TrabajadorId"] = "1",
+    ["Lines[0].Base"] = "350", ["Lines[0].MinutosExtra"] = "60",
+    ["Lines[0].ImporteExtra"] = "50", ["Lines[0].Descuento"] = "25"
+});
+Check(savePlanResponse.StatusCode == HttpStatusCode.Redirect &&
+    (await payrollClient.GetStringAsync(planningUrl + "?from=2026-11-09")).Contains("375.00"),
+    "La pantalla registra y vuelve a cargar la planificación");
+Check(workerHtml.Contains("/Planillas/Trabajadores/1/Vacaciones") && !workerHtml.Contains("Registro horario"),
+    "La ficha del trabajador enlaza a vacaciones y retira el acceso de registro horario");
+Check((await payrollClient.GetStringAsync("/Planillas/Trabajadores")).Contains("Vacaciones pendientes"),
+    "El listado muestra la columna de vacaciones pendientes");
+const string vacationsUrl = "/Planillas/Trabajadores/1/Vacaciones";
+var vacationHtml = await payrollClient.GetStringAsync(vacationsUrl);
+Check(vacationHtml.Contains("Vacaciones pendientes") && vacationHtml.Contains("Registrar vacaciones") &&
+    vacationHtml.Contains("Registrar salida de vacaciones"), "Vacaciones presenta saldo y tarjetas separadas");
+Check((await PayrollPost(vacationsUrl + "/Periodos", new()
+{
+    ["From"] = "2025-01-01", ["To"] = "2025-12-31", ["Days"] = "10"
+}, vacationsUrl)).StatusCode == HttpStatusCode.Redirect, "Registro de período de vacaciones por formulario MVC");
+Check((await PayrollPost(vacationsUrl, new()
+{
+    ["PeriodId"] = "1", ["From"] = "2026-11-12", ["To"] = "2026-11-13", ["Days"] = "2", ["Status"] = "APROBADA"
+})).StatusCode == HttpStatusCode.Redirect && (await payrollClient.GetStringAsync(vacationsUrl)).Contains("APROBADA"),
+    "Las vacaciones registradas aparecen en el historial MVC");
+const string attendanceUrl = "/Planillas/Trabajadores/1/Asistencia";
+Check((await PayrollPost(attendanceUrl, new()
+{
+    ["Entry"] = "2026-11-09T08:00", ["Exit"] = "2026-11-09T17:00", ["ExtraMinutes"] = "60"
+})).StatusCode == HttpStatusCode.Redirect &&
+    (await payrollClient.GetStringAsync(attendanceUrl + "?from=2026-11-01&to=2026-11-30")).Contains("17:00"),
+    "La jornada registrada muestra la salida y el total de extras");
+
 sealed class HytFactory(TestAccessRepository repository,bool turnstileEnabled=false,string siteKey="sitekey-prueba") : WebApplicationFactory<WebEntryPoint>
 {
     public StubCloudflareHandler Turnstile {get;}=new();
@@ -741,6 +865,13 @@ sealed class HytFactory(TestAccessRepository repository,bool turnstileEnabled=fa
             services.RemoveAll<IBudgetPrintRepository>();services.AddSingleton<IBudgetPrintRepository>(Prints);
             services.RemoveAll<ICompanySettingsRepository>();services.AddSingleton<ICompanySettingsRepository>(Company);
             services.RemoveAll<TimeProvider>(); services.AddSingleton<TimeProvider>(Clock);
+            var payroll = new TestPayrollRepository();
+            services.RemoveAll<ISupplierPaymentsRepository>(); services.AddSingleton<ISupplierPaymentsRepository>(payroll);
+            services.RemoveAll<IWorkersRepository>(); services.AddSingleton<IWorkersRepository>(payroll);
+            services.RemoveAll<IPersonalPaymentsRepository>(); services.AddSingleton<IPersonalPaymentsRepository>(payroll);
+            services.RemoveAll<IPayrollObligationsRepository>(); services.AddSingleton<IPayrollObligationsRepository>(payroll);
+            services.RemoveAll<IPayPlanningRepository>(); services.AddSingleton<IPayPlanningRepository>(payroll);
+            services.RemoveAll<IPayrollCatalogRepository>(); services.AddSingleton<IPayrollCatalogRepository>(payroll);
         });
     }
 }

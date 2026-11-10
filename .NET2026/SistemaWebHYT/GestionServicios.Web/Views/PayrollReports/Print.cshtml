@@ -1,0 +1,9 @@
+@model GestionServicios.Web.Controllers.PayrollReportPage
+@* Firma: FRANCO LARA - 10/11/2026 | Impresión A4 horizontal con la plantilla corporativa HYT. *@
+@{
+    Layout = "_ReportPrintLayout";
+    ViewData["Title"] = Model.Title;
+    ViewData["ReportSubtitle"] = $"Reporte de gestión · {Model.Title}";
+    ViewData["ReportFooter"] = "HYT · Todos los resultados de los filtros indicados. Importes separados por moneda.";
+}
+<partial name="_Results" model="Model" />

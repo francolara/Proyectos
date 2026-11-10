@@ -1,0 +1,83 @@
+@using System.Security.Claims
+@inject GestionServicios.Application.Payroll.IPayrollCatalogRepository PayrollCatalog
+@model GestionServicios.Web.Controllers.SupplierDetails
+@* Firma: FRANCO LARA - 09/11/2026 | Ficha y edición de proveedores y sus datos bancarios. Aplica el estándar HYT de grillas, filtros y formularios. Incluye CCI opcional. Ayudas de catálogo en pop-up. *@
+@{
+    var catalog = Model.CanEdit && Model.CanSeeAccount
+        ? await PayrollCatalog.CatalogAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!, Context.RequestAborted)
+        : null;
+    var input = Model.Input;
+    ViewData["Title"] = input.Id.HasValue ? "Ficha del proveedor" : "Nuevo proveedor";
+}
+<header class="hyt-page-header">
+    <div><h1>@ViewData["Title"]</h1><p>@input.Name</p></div>
+    <a asp-action="Index" class="hyt-button-secondary">Volver a proveedores</a>
+</header>
+@if (TempData["SupplierSaved"] is string message)
+{
+    <p role="status">@message</p>
+}
+@if (Model.CanEdit)
+{
+    <form asp-action="Save" asp-route-id="@input.Id" method="post" class="hyt-panel hyt-master-form hyt-payroll-form">
+        <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+        <input type="hidden" name="Version" value="@input.Version" />
+        <h2>Datos generales</h2>
+        <div class="hyt-master-fields">
+            <div class="hyt-field">
+                <label for="suppliers-taxid-1">RUC</label>
+                <input id="suppliers-taxid-1" name="TaxId" value="@input.TaxId" inputmode="numeric" pattern="[0-9]{11}" maxlength="11" required />
+            </div>
+            <div class="hyt-field">
+                <label for="suppliers-name-1">Razón social</label>
+                <input id="suppliers-name-1" name="Name" value="@input.Name" maxlength="180" required />
+            </div>
+            <div class="hyt-field">
+                <label for="suppliers-active-1">Estado</label>
+                <select id="suppliers-active-1" name="Active">
+                    <option value="true" selected="@input.Active">Activo</option>
+                    <option value="false" selected="@(!input.Active)">Inactivo</option>
+                </select>
+            </div>
+        </div>
+        @if (Model.CanSeeAccount)
+        {
+            <h2 class="hyt-payroll-group-title">Datos bancarios</h2>
+            <div class="hyt-master-fields">
+                <div class="hyt-field">
+                    <label for="suppliers-bank-1">Banco</label>
+                    <div class="hyt-catalog-field">
+                        <input id="suppliers-bank-1" name="Bank" value="@input.Bank" maxlength="80" />
+                        <partial name="_PayrollCatalogPicker" model='@(new PayrollCatalogPicker("supplier-bank-lookup", "suppliers-bank-1", "banco", catalog!.Bancos))' />
+                    </div>
+                </div>
+                <div class="hyt-field">
+                    <label for="suppliers-account-1">Número de cuenta</label>
+                    <input id="suppliers-account-1" name="Account" value="@input.Account" maxlength="34" autocomplete="off" />
+                </div>
+                <div class="hyt-field">
+                    <label for="suppliers-cci">Número de cuenta interbancaria (CCI)</label>
+                    <input id="suppliers-cci" name="Cci" value="@input.Cci" inputmode="numeric" pattern="[0-9]{20}" maxlength="20" autocomplete="off" />
+                </div>
+            </div>
+        }
+        else if (input.Bank is not null)
+        {
+            <p>@input.Bank · @input.Account</p>
+        }
+        <div class="hyt-payroll-actions"><button type="submit" class="hyt-button-primary">Guardar proveedor</button></div>
+    </form>
+}
+else
+{
+    <dl class="hyt-panel hyt-payroll-summary">
+        <dt>RUC</dt><dd>@input.TaxId</dd>
+        <dt>Estado</dt><dd>@(input.Active ? "Activo" : "Inactivo")</dd>
+        <dt>Banco</dt><dd>@(input.Bank ?? "Sin registrar")</dd>
+        <dt>Número de cuenta</dt><dd>@(input.Account ?? "Sin registrar")</dd>
+        @if (Model.CanSeeAccount)
+        {
+            <dt>CCI</dt><dd>@(input.Cci ?? "Sin registrar")</dd>
+        }
+    </dl>
+}

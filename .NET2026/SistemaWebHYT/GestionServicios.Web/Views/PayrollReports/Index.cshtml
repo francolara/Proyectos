@@ -1,0 +1,100 @@
+@model GestionServicios.Web.Controllers.PayrollReportPage
+@* Firma: FRANCO LARA - 09/11/2026 | Reporte mensual, exportación y cierre del personal. Aplica el estándar HYT de grillas, filtros y formularios. Alinea importes y cantidades en la grilla. *@
+@* Firma: FRANCO LARA - 10/11/2026 | Separa reportes por tipo con filtros, vista previa e impresión horizontal. *@
+@{
+    ViewData["Wide"] = true;
+    ViewData["Title"] = "Reportes de Planillas";
+    var filter = Model.Filter;
+}
+<link rel="stylesheet" href="~/hyt-reports.css" asp-append-version="true" />
+<header class="hyt-page-header">
+    <div><h1>Reportes de Planillas</h1><p>Consulta e imprime los resultados del mes seleccionado.</p></div>
+    @if (filter.Kind is not null)
+    {
+        <a asp-action="Print" asp-all-route-data="@filter.RouteValues()" class="hyt-button-primary"
+           target="_blank" rel="noopener">Imprimir reporte</a>
+    }
+</header>
+@if (TempData["PayrollReportMessage"] is string message) { <p role="status">@message</p> }
+@if (TempData["PayrollReportError"] is string error) { <p role="alert">@error</p> }
+@if (filter.Kind is null)
+{
+    <p class="hyt-panel hyt-grid-message">Tu perfil requiere permiso para consultar planillas, pagos a proveedores u obligaciones.</p>
+    return;
+}
+<nav class="hyt-master-related" aria-label="Tipos de reporte">
+    @foreach (var item in GestionServicios.Web.Controllers.PayrollReportPage.Titles.Where(item => Model.AllowedKinds.Contains(item.Key)))
+    {
+        var active = item.Key == filter.Kind;
+        <a asp-action="Index" asp-route-kind="@item.Key" asp-route-month="@filter.Month"
+           class="@(active ? "hyt-button-primary" : "hyt-button-secondary")"
+           aria-current="@(active ? "page" : null)">@item.Value</a>
+    }
+</nav>
+<form asp-action="Index" method="get" class="hyt-filters">
+    <input type="hidden" name="kind" value="@filter.Kind" />
+    <div class="hyt-field">
+        <label for="report-month">Mes</label>
+        <input id="report-month" type="month" name="month" value="@filter.Month" required />
+    </div>
+    @if (filter.Kind is "personal" or "obligaciones")
+    {
+        <div class="hyt-field">
+            <label for="report-type">@(filter.Kind == "personal" ? "Tipo de trabajador" : "Régimen")</label>
+            <select id="report-type" name="type">
+                <option value="">Todos</option>
+                @if (filter.Kind == "personal")
+                {
+                    <option value="PLANILLA" selected='@(filter.Type == "PLANILLA")'>En planilla</option>
+                    <option value="EXTERNO" selected='@(filter.Type == "EXTERNO")'>Externo</option>
+                }
+                else
+                {
+                    <option value="AFP" selected='@(filter.Type == "AFP")'>AFP</option>
+                    <option value="ONP" selected='@(filter.Type == "ONP")'>ONP</option>
+                }
+            </select>
+        </div>
+    }
+    @if (filter.Kind is "proveedores" or "obligaciones")
+    {
+        <div class="hyt-field">
+            <label for="report-status">Estado</label>
+            <select id="report-status" name="status">
+                <option value="">Todos</option>
+                <option value="PENDIENTE" selected='@(filter.Status == "PENDIENTE")'>Pendientes</option>
+                @if (filter.Kind == "obligaciones")
+                {
+                    <option value="VENCIDA" selected='@(filter.Status == "VENCIDA")'>Vencidas</option>
+                    <option value="PAGADA" selected='@(filter.Status == "PAGADA")'>Pagadas</option>
+                }
+                else
+                {
+                    <option value="PAGADO" selected='@(filter.Status == "PAGADO")'>Pagados</option>
+                }
+            </select>
+        </div>
+    }
+    @if (filter.SupplierId.HasValue && filter.Kind == "proveedores") { <input type="hidden" name="supplierId" value="@filter.SupplierId" /> }
+    @if (filter.BudgetId.HasValue && filter.Kind == "proveedores") { <input type="hidden" name="budgetId" value="@filter.BudgetId" /> }
+    <div class="hyt-field">
+        <label for="report-search">@(filter.Kind switch
+            { "personal" => "Nombre del trabajador", "proveedores" => "Proveedor o número de presupuesto", _ => "Entidad" })</label>
+        <input id="report-search" type="search" name="search" maxlength="180" value="@filter.Search" />
+    </div>
+    <button type="submit" class="hyt-button-primary">Consultar</button>
+    <a asp-action="Index" asp-route-kind="@filter.Kind" class="hyt-button-secondary">Limpiar</a>
+</form>
+<partial name="_Results" model="Model" />
+@if (filter.Kind is "personal" or "proveedores")
+{
+    <p><a asp-action="Export" asp-all-route-data="@filter.RouteValues()" class="hyt-button-secondary">Descargar CSV</a></p>
+}
+@if (Model.CanClose)
+{
+    <form asp-action="Close" method="post" class="hyt-filters">
+        <input type="hidden" name="month" value="@filter.Month" />
+        <label class="hyt-payroll-check"><input type="checkbox" name="confirmed" value="true" required /> Confirmo que revisé los movimientos del personal de este mes.</label>
+        <button class="hyt-button-secondary" type="submit">Cerrar mes de personal</button>
+    </form>
+}

@@ -30,7 +30,7 @@ foreach (var relative in paths)
     allText[relative] = sql;
     if (sql.Replace("\r\n", "").Contains('\n')) failures.Add($"Finales de linea no CRLF: {relative}");
     if (!ValidSignatures(sql)) failures.Add($"Firma incorrecta: {relative}");
-    parser.Parse(new StringReader(sql), out var errors);
+    var fragment = parser.Parse(new StringReader(sql), out var errors);
     failures.AddRange(errors.Select(e => $"{relative}:{e.Line}:{e.Column}: {e.Message}"));
     if (relative.StartsWith("StoreProcedure/"))
     {
@@ -43,7 +43,7 @@ foreach (var relative in paths)
     {
         var name = match.Groups[1].Value;
         var definition = match.Groups[2].Value;
-        var columns = Regex.Matches(definition, @"^        (\w+)\s+(?:N?VARCHAR|CHAR|INT|BIGINT|TINYINT|BIT|DATE|DATETIME2|DATETIMEOFFSET|DECIMAL|ROWVERSION|UNIQUEIDENTIFIER)\b", RegexOptions.Multiline | RegexOptions.IgnoreCase)
+        var columns = Regex.Matches(definition, @"^        (\w+)\s+(?:N?VARCHAR|CHAR|INT|BIGINT|SMALLINT|TINYINT|BIT|DATE|DATETIME2|DATETIMEOFFSET|DECIMAL|ROWVERSION|UNIQUEIDENTIFIER)\b", RegexOptions.Multiline | RegexOptions.IgnoreCase)
             .Select(m => m.Groups[1].Value).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (!tables.TryAdd(name, columns)) failures.Add($"Tabla duplicada: {name}");
         var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -60,8 +60,7 @@ foreach (var relative in paths)
             foreignKeys.Add((name, target, fk.Groups[1].Value.Split(',').Select(x=>x.Trim()).ToArray(), fk.Groups[3].Value.Split(',').Select(x=>x.Trim()).ToArray()));
         }
     }
-    foreach (Match addition in Regex.Matches(sql, @"ALTER TABLE dbo\.(\w+) ADD (\w+)\s", RegexOptions.IgnoreCase))
-        if (tables.TryGetValue(addition.Groups[1].Value, out var existingColumns)) existingColumns.Add(addition.Groups[2].Value);
+    fragment.Accept(new AddedColumns(tables));
 }
 // Comprueba columnas de alias que se pueden resolver sin motor SQL. Los alias
 // de OPENJSON, variables y temporales requieren comprobación manual de ejecución.
@@ -147,4 +146,13 @@ sealed class SqlReferences : TSqlFragmentVisitor
     public List<ColumnReferenceExpression> Columns { get; } = [];
     public override void ExplicitVisit(NamedTableReference node) { Tables.Add(node); base.ExplicitVisit(node); }
     public override void ExplicitVisit(ColumnReferenceExpression node) { Columns.Add(node); base.ExplicitVisit(node); }
+}
+
+sealed class AddedColumns(Dictionary<string, HashSet<string>> tables) : TSqlFragmentVisitor
+{
+    public override void ExplicitVisit(AlterTableAddTableElementStatement node)
+    {
+        if (tables.TryGetValue(node.SchemaObjectName.BaseIdentifier.Value, out var columns))
+            columns.UnionWith(node.Definition.ColumnDefinitions.Select(column => column.ColumnIdentifier.Value));
+    }
 }

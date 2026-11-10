@@ -1,0 +1,35 @@
+@model GestionServicios.Web.Controllers.PayrollObligationsPage
+@* Firma: FRANCO LARA - 09/11/2026 | Pólizas SCTR por trabajador y estado visual de vigencia. Alinea importes y cantidades en la grilla. *@
+@{
+    ViewData["Wide"] = true;
+    ViewData["Title"] = "SCTR";
+}
+<header class="hyt-page-header">
+    <div><h1>SCTR</h1><p>Consulta las pólizas, los trabajadores cubiertos y los vencimientos.</p></div>
+    @if (Model.CanEdit) { <a asp-action="SctrForm" class="hyt-button-primary">Nueva póliza</a> }
+</header>
+@if (TempData["ObligationMessage"] is string message) { <p role="status">@message</p> }
+@if (TempData["ObligationError"] is string error) { <p role="alert">@error</p> }
+@if (Model.Data.Polizas.Length == 0) { <p class="hyt-panel hyt-grid-message">No hay pólizas registradas.</p> }
+else
+{
+    <div class="hyt-panel hyt-table-wrap" tabindex="0" role="region" aria-label="Vigencia de pólizas SCTR">
+        <table class="hyt-table hyt-align-sctr-policies">
+            <thead><tr><th scope="col">Aseguradora</th><th scope="col">Póliza</th><th scope="col">Cobertura</th><th scope="col">Desde</th><th scope="col">Hasta</th><th scope="col">Trabajadores</th><th scope="col">Estado</th>@if (Model.CanEdit) { <th scope="col">Acción</th> }</tr></thead>
+            <tbody>
+            @foreach (var row in Model.Data.Polizas)
+            {
+                <tr><td>@row.Aseguradora</td><td>@row.NumeroPoliza</td><td>@(row.Cobertura == "PENSION" ? "Pensión" : "Salud")</td>
+                    <td>@row.VigenciaDesde.ToString("dd/MM/yyyy")</td><td>@row.VigenciaHasta.ToString("dd/MM/yyyy")</td>
+                    <td>@(row.Trabajadores is { Length: > 0 } ? string.Join(", ", row.Trabajadores.Select(worker => worker.Nombre)) : "Sin asignar")</td>
+                    <td><span class="hyt-sctr-status" data-status="@row.Estado">@(row.Estado switch
+                    {
+                        "POR_VENCER" => "Por vencer", "VENCIDA" => "Vencida", "VIGENTE" => "Vigente", _ => "Programada"
+                    })</span></td>
+                    @if (Model.CanEdit) { <td><a class="hyt-button-secondary hyt-action-button" asp-action="SctrForm" asp-route-policyId="@row.PolizaId">Editar póliza</a></td> }
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

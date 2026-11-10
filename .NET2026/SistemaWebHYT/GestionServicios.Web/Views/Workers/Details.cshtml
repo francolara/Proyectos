@@ -1,0 +1,183 @@
+@using System.Security.Claims
+@inject GestionServicios.Application.Payroll.IPayrollCatalogRepository PayrollCatalog
+@model GestionServicios.Web.Controllers.WorkerDetails
+@* Firma: FRANCO LARA - 09/11/2026 | Ficha HYT con datos bancarios, cargo, sueldo, horario, previsión, frecuencia y accesos a vacaciones, asistencia y estado de cuenta. Incluye CCI opcional. Ayudas de catálogo en pop-up. Horarios habituales en intervalos de media hora. Encabezado de horario y frecuencia de pago. Quita el acceso a registro horario de la ficha. *@
+@* Firma: FRANCO LARA - 10/11/2026 | Agrega el acceso a Registrar Cese. *@
+@{
+    var catalog = Model.CanEdit
+        ? await PayrollCatalog.CatalogAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!, Context.RequestAborted)
+        : null;
+    var input = Model.Input;
+    ViewData["Title"] = input.Id.HasValue ? "Ficha del trabajador" : "Nuevo trabajador";
+}
+<header class="hyt-page-header">
+    <div><h1>@ViewData["Title"]</h1><p>@input.Name</p></div>
+    <a asp-action="Index" class="hyt-button-secondary">Volver a trabajadores</a>
+</header>
+@if (input.Id.HasValue)
+{
+    <div class="hyt-master-related">
+        @if (User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "PAGOS_PERSONAL.CONSULTAR")
+            && User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "PAGOS_PERSONAL.CESES"))
+        {
+            <a asp-controller="PersonalPayments" asp-action="Termination" asp-route-id="@input.Id" class="hyt-button-secondary">Registrar Cese</a>
+        }
+        @if (User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "VACACIONES.CONSULTAR"))
+        {
+            <a asp-controller="WorkerVacations" asp-action="Index" asp-route-id="@input.Id" class="hyt-button-secondary">Vacaciones</a>
+        }
+    </div>
+}
+@if (TempData["WorkerSaved"] is string message)
+{
+    <p role="status">@message</p>
+}
+@if (Model.CanEdit)
+{
+    <form asp-action="Save" asp-route-id="@input.Id" method="post" class="hyt-panel hyt-master-form hyt-payroll-form">
+        <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+        <input type="hidden" name="Version" value="@input.Version" />
+        <h2>Datos generales</h2>
+        <div class="hyt-master-fields">
+            <div class="hyt-field">
+                <label for="workers-document-1">Documento</label>
+                <input id="workers-document-1" name="Document" value="@input.Document" maxlength="20" required />
+            </div>
+            <div class="hyt-field">
+                <label for="workers-name-1">Nombre completo</label>
+                <input id="workers-name-1" name="Name" value="@input.Name" maxlength="180" required />
+            </div>
+            <div class="hyt-field">
+                <label for="workers-kind-1">Tipo</label>
+                <select id="workers-kind-1" name="Kind">
+                    <option value="PLANILLA" selected="@(input.Kind == "PLANILLA")">En planilla</option>
+                    <option value="EXTERNO" selected="@(input.Kind == "EXTERNO")">Externo</option>
+                </select>
+            </div>
+            <div class="hyt-field">
+                <label for="workers-startdate-1">Fecha de ingreso</label>
+                <input id="workers-startdate-1" type="date" name="StartDate" value="@input.StartDate?.ToString("yyyy-MM-dd")" required />
+            </div>
+            <div class="hyt-field">
+                <label for="workers-active-1">Estado</label>
+                <select id="workers-active-1" name="Active">
+                    <option value="true" selected="@input.Active">Activo</option>
+                    <option value="false" selected="@(!input.Active)">Inactivo</option>
+                </select>
+            </div>
+        </div>
+        <h2 class="hyt-payroll-group-title">Cargo y sueldo</h2>
+        <div class="hyt-master-fields">
+            <div class="hyt-field">
+                <label for="worker-position">Cargo</label>
+                <select id="worker-position" name="CargoId">
+                    <option value="">Sin asignar</option>
+                    @foreach (var position in Model.Positions.Where(position => position.Active || position.Id == input.CargoId))
+                    {
+                        <option value="@position.Id" selected="@(position.Id == input.CargoId)">@position.Name@(position.Active ? "" : " (inactivo)")</option>
+                    }
+                </select>
+                @if (!Model.Positions.Any(position => position.Active))
+                {
+                    <small><a asp-controller="WorkerPositions" asp-action="Index">Registrar cargos</a> para habilitar la selección.</small>
+                }
+            </div>
+            <div class="hyt-field">
+                <label for="worker-salary">Sueldo base mensual (S/)</label>
+                <input id="worker-salary" name="MonthlySalary" value="@input.MonthlySalary?.ToString("0.00")" inputmode="decimal" />
+            </div>
+        </div>
+        <h2 class="hyt-payroll-group-title">Horario y frecuencia de pago</h2>
+        <div class="hyt-master-fields">
+            @foreach (var field in new[] { (Name: "Entry", Label: "Entrada habitual", Value: input.Entry), (Name: "Exit", Label: "Salida habitual", Value: input.Exit) })
+            {
+                var fieldId = "worker-" + field.Name.ToLowerInvariant();
+                <div class="hyt-field">
+                    <label for="@fieldId">@field.Label</label>
+                    <select id="@fieldId" name="@field.Name">
+                        <option value="">Sin indicar</option>
+                        @if (!GestionServicios.Web.Controllers.WorkerForm.IsHalfHour(field.Value))
+                        {
+                            <option value="@field.Value?.ToString("HH:mm:ss")" selected>@field.Value?.ToString("HH:mm:ss") (horario anterior)</option>
+                        }
+                        @for (var slot = 0; slot < 48; slot++)
+                        {
+                            var time = new TimeOnly(slot / 2, slot % 2 * 30);
+                            <option value="@time.ToString("HH:mm")" selected="@(time == field.Value)">@time.ToString("HH:mm")</option>
+                        }
+                    </select>
+                </div>
+            }
+            <div class="hyt-field">
+                <label for="worker-pension">Régimen previsional</label>
+                <select id="worker-pension" name="Pension">
+                    <option value="">Sin indicar</option>
+                    <option value="AFP" selected="@(input.Pension == "AFP")">AFP</option>
+                    <option value="ONP" selected="@(input.Pension == "ONP")">ONP</option>
+                </select>
+            </div>
+            <div class="hyt-field"><label for="worker-afp">Administradora (solo AFP)</label>
+                <div class="hyt-catalog-field">
+                    <input id="worker-afp" name="Afp" value="@input.Afp" maxlength="100" />
+                    <partial name="_PayrollCatalogPicker" model='@(new PayrollCatalogPicker("afp-lookup", "worker-afp", "AFP", catalog!.Entidades.Where(entry => entry.Regimen == "AFP").ToArray()))' />
+                </div>
+            </div>
+            <div class="hyt-field">
+                <label for="worker-frequency">Frecuencia de pago</label>
+                <select id="worker-frequency" name="Frequency">
+                    <option value="">Sin configurar</option>
+                    <option value="SEMANAL" selected="@(input.Frequency == "SEMANAL")">Semanal</option>
+                    <option value="QUINCENAL" selected="@(input.Frequency == "QUINCENAL")">Quincenal</option>
+                    <option value="MENSUAL" selected="@(input.Frequency == "MENSUAL")">Mensual</option>
+                </select>
+            </div>
+        </div>
+        @if (Model.CanSeeAccount)
+        {
+            <h2 class="hyt-payroll-group-title">Datos bancarios</h2>
+            <div class="hyt-master-fields">
+                <div class="hyt-field">
+                    <label for="workers-bank-1">Banco</label>
+                    <div class="hyt-catalog-field">
+                        <input id="workers-bank-1" name="Bank" value="@input.Bank" maxlength="80" />
+                        <partial name="_PayrollCatalogPicker" model='@(new PayrollCatalogPicker("worker-bank-lookup", "workers-bank-1", "banco", catalog!.Bancos))' />
+                    </div>
+                </div>
+                <div class="hyt-field">
+                    <label for="workers-account-1">Número de cuenta</label>
+                    <input id="workers-account-1" name="Account" value="@input.Account" maxlength="34" autocomplete="off" />
+                </div>
+                <div class="hyt-field">
+                    <label for="workers-cci">Número de cuenta interbancaria (CCI)</label>
+                    <input id="workers-cci" name="Cci" value="@input.Cci" inputmode="numeric" pattern="[0-9]{20}" maxlength="20" autocomplete="off" />
+                </div>
+            </div>
+        }
+        else if (input.Bank is not null)
+        {
+            <p>@input.Bank · @input.Account</p>
+        }
+        <div class="hyt-payroll-actions"><button type="submit" class="hyt-button-primary">Guardar trabajador</button></div>
+    </form>
+}
+else
+{
+    <dl class="hyt-panel hyt-payroll-summary">
+        <dt>Entrada habitual</dt><dd>@(input.Entry?.ToString("HH:mm") ?? "—")</dd>
+        <dt>Salida habitual</dt><dd>@(input.Exit?.ToString("HH:mm") ?? "—")</dd>
+        <dt>Régimen previsional</dt><dd>@(input.Pension ?? "—") @input.Afp</dd>
+        <dt>Frecuencia de pago</dt><dd>@(input.Frequency ?? "—")</dd>
+        <dt>Cargo</dt><dd>@(input.CargoName ?? "Sin asignar")</dd>
+        <dt>Sueldo base mensual</dt><dd>@(input.MonthlySalary is decimal salary ? $"S/ {salary:N2}" : "Sin registrar")</dd>
+        <dt>Documento</dt><dd>@input.Document</dd>
+        <dt>Tipo</dt><dd>@(input.Kind == "PLANILLA" ? "En planilla" : "Externo")</dd>
+        <dt>Fecha de ingreso</dt><dd>@input.StartDate?.ToString("dd/MM/yyyy")</dd>
+        <dt>Estado</dt><dd>@(input.Active ? "Activo" : "Inactivo")</dd>
+        <dt>Banco</dt><dd>@(input.Bank ?? "Sin registrar")</dd>
+        <dt>Número de cuenta</dt><dd>@(input.Account ?? "Sin registrar")</dd>
+        @if (Model.CanSeeAccount)
+        {
+            <dt>CCI</dt><dd>@(input.Cci ?? "Sin registrar")</dd>
+        }
+    </dl>
+}

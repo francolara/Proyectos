@@ -1,0 +1,32 @@
+@model GestionServicios.Web.Controllers.WorkerPositionForm
+@* Firma: FRANCO LARA - 09/11/2026 | Ficha independiente para registrar y editar cargos. *@
+@{
+    var input = Model;
+    ViewData["Title"] = input.Id == 0 ? "Nuevo cargo" : "Editar cargo";
+}
+<header class="hyt-page-header">
+    <div><h1>@ViewData["Title"]</h1></div>
+    <a asp-action="Index" class="hyt-button-secondary">Volver al listado</a>
+</header>
+<form method="post" asp-action="Save" class="hyt-panel hyt-master-form hyt-payroll-form">
+    <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+    <input type="hidden" name="Id" value="@input.Id" />
+    <input type="hidden" name="Version" value="@input.Version" />
+    <div class="hyt-master-fields">
+        <div class="hyt-field">
+            <label for="position-name">Nombre del cargo</label>
+            <input id="position-name" name="Name" value="@input.Name" maxlength="100" required />
+        </div>
+        <div class="hyt-field">
+            <label for="position-active">Estado</label>
+            <select id="position-active" name="Active">
+                <option value="true" selected="@input.Active">Activo</option>
+                <option value="false" selected="@(!input.Active)">Inactivo</option>
+            </select>
+        </div>
+    </div>
+    <div class="hyt-payroll-actions">
+        <button class="hyt-button-primary" type="submit">Guardar cargo</button>
+        <a asp-action="Index" class="hyt-button-secondary">Cancelar</a>
+    </div>
+</form>

@@ -1,0 +1,32 @@
+@model PayrollCatalogPicker
+@* Firma: FRANCO LARA - 09/11/2026 | Ayuda reutilizable de bancos y entidades previsionales. *@
+<button type="button" class="hyt-button-secondary" data-hyt-open="@Model.Id">Buscar @Model.Label</button>
+<dialog id="@Model.Id" class="hyt-modal" aria-labelledby="@(Model.Id + "-title")"
+        data-payroll-catalog data-target="@Model.TargetId" data-regime-field="@Model.RegimeFieldId">
+    <header class="hyt-modal-header">
+        <h2 id="@(Model.Id + "-title")">Elegir @Model.Label</h2>
+        <button type="button" class="hyt-modal-close" data-hyt-close aria-label="Cerrar ayuda">×</button>
+    </header>
+    <div class="hyt-modal-body">
+        <div class="hyt-field">
+            <label for="@(Model.Id + "-search")">Buscar por nombre</label>
+            <input id="@(Model.Id + "-search")" type="search" data-catalog-search autofocus />
+        </div>
+        <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Resultados de búsqueda">
+            <table class="hyt-table">
+                <thead><tr><th scope="col">Nombre</th><th scope="col">Acción</th></tr></thead>
+                <tbody>
+                @foreach (var entry in Model.Entries)
+                {
+                    <tr data-catalog-row data-catalog-regime="@entry.Regimen">
+                        <td>@entry.Nombre</td>
+                        <td><button type="button" class="hyt-button-secondary" data-catalog-select="@entry.Nombre"
+                            aria-label="Seleccionar @entry.Nombre">Seleccionar</button></td>
+                    </tr>
+                }
+                <tr data-catalog-empty hidden><td colspan="2" class="hyt-grid-message">No se encontraron resultados.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</dialog>

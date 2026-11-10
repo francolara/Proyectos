@@ -1,0 +1,27 @@
+@* Firma: FRANCO LARA - 09/11/2026 | Plantilla común de impresión horizontal para reportes HYT. *@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] | HYT</title>
+    <link rel="stylesheet" href="~/hyt-reports.css" asp-append-version="true" />
+</head>
+<body class="hyt-report-print">
+    <nav class="hyt-print-toolbar" aria-label="Impresión del reporte">
+        <button type="button" onclick="window.print()">Imprimir / Guardar PDF</button>
+        <span>Reporte completo · Orientación horizontal</span>
+    </nav>
+    <main class="hyt-report">
+        <header class="hyt-report-brand">
+            <img src="~/images/logo-hyt.png" alt="HYT Servicios Generales" />
+            <div>
+                <h1>H Y T Servicios Generales E.I.R.L.</h1>
+                <p>@ViewData["ReportSubtitle"]</p>
+            </div>
+        </header>
+        @RenderBody()
+        <footer class="hyt-report-footer">@ViewData["ReportFooter"]</footer>
+    </main>
+</body>
+</html>

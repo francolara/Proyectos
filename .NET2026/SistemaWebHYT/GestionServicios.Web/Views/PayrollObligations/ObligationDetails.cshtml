@@ -1,0 +1,92 @@
+@using System.Security.Claims
+@using System.Globalization
+@inject GestionServicios.Application.Payroll.IPayrollCatalogRepository PayrollCatalog
+@model GestionServicios.Web.Controllers.PayrollObligationsPage
+@* Firma: FRANCO LARA - 10/11/2026 | Ficha independiente con estimado, trabajadores incluidos y alta pendiente para programar el pago. *@
+@{
+    var catalog = await PayrollCatalog.CatalogAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!, Context.RequestAborted);
+    var obligation = Model.Obligation;
+    ViewData["Title"] = obligation is null ? "Registrar obligación" : "Editar obligación";
+}
+<header class="hyt-page-header">
+    <div><h1>@ViewData["Title"]</h1><p>Período @Model.Month</p></div>
+    <a asp-action="Index" asp-route-month="@Model.Month" class="hyt-button-secondary">Volver a obligaciones</a>
+</header>
+@if (TempData["ObligationError"] is string error) { <p role="alert">@error</p> }
+@if (obligation is null)
+{
+    <p>Estado inicial <strong>Pendiente</strong>.</p>
+    <p>El estimado usa los sueldos mensuales de los trabajadores activos en planilla. Puedes ajustar el importe antes de guardar.</p>
+}
+    <section class="hyt-panel hyt-master-form">
+        <form asp-action="SaveObligation" method="post" class="hyt-payroll-form">
+            <input type="hidden" name="month" value="@Model.Month" />
+            <input type="hidden" name="Id" value="@(obligation?.ObligacionId ?? 0)" />
+            <div class="hyt-master-fields">
+                @if (obligation is not null) { <input type="hidden" name="Version" value="@Convert.ToBase64String(obligation.VersionFila)" /> }
+                <div class="hyt-field">
+                    <label for="payrollobligations-type-1">Tipo</label>
+                    <select id="payrollobligations-type-1" name="Type"><option value="AFP" selected="@(obligation?.Tipo == "AFP")">AFP</option><option value="ONP" selected="@(obligation?.Tipo == "ONP")">ONP</option></select>
+                </div>
+                <div class="hyt-field">
+                    <label for="payrollobligations-entity-1">Entidad</label>
+                    <div class="hyt-catalog-field">
+                        <input id="payrollobligations-entity-1" name="Entity" maxlength="120" value="@obligation?.Entidad" required />
+                        <partial name="_PayrollCatalogPicker" model='@(new PayrollCatalogPicker("obligation-entity-lookup", "payrollobligations-entity-1", "entidad", catalog!.Entidades, "payrollobligations-type-1"))' />
+                    </div>
+                </div>
+                <div class="hyt-field">
+                    <label for="payrollobligations-amount-1">Importe en soles</label>
+                    <input id="payrollobligations-amount-1" name="Amount" inputmode="decimal" value="@obligation?.Importe.ToString("0.00")" class="hyt-money" required />
+                    @if (obligation is null)
+                    {
+                        <p role="status" data-obligation-estimate></p>
+                        <button type="button" class="hyt-button-secondary" data-obligation-use-estimate hidden>Usar estimado</button>
+                    }
+                </div>
+                <div class="hyt-field">
+                    <label for="payrollobligations-due-1">Vencimiento</label>
+                    <input id="payrollobligations-due-1" name="Due" type="date" value="@obligation?.Vencimiento.ToString("yyyy-MM-dd")" required />
+                </div>
+            </div>
+            <div class="hyt-payroll-actions">
+                <button class="hyt-button-primary" type="submit">Guardar obligación</button>
+                <a asp-action="Index" asp-route-month="@Model.Month" class="hyt-button-secondary">Cancelar</a>
+            </div>
+        </form>
+    </section>
+<section class="hyt-panel hyt-payroll-section" aria-labelledby="obligation-workers-title">
+    <h2 id="obligation-workers-title">Trabajadores incluidos en el estimado</h2>
+    <p>Detalle calculado con las fichas y los porcentajes vigentes. El importe guardado puede diferir de este estimado.</p>
+    <p role="status" data-obligation-workers-message>Selecciona una entidad para consultar sus trabajadores.</p>
+    @foreach (var estimate in Model.Estimates)
+    {
+        var workers = estimate.Trabajadores ?? [];
+        <div data-obligation-workers data-entity="@estimate.Entidad" data-regime="@estimate.Regimen"
+             data-rate="@estimate.Porcentaje.ToString("0.####", CultureInfo.InvariantCulture)"
+             data-base="@estimate.BaseMensual.ToString("0.00", CultureInfo.InvariantCulture)"
+             data-amount="@estimate.Estimado.ToString("0.00", CultureInfo.InvariantCulture)" hidden>
+            <p><strong>@estimate.Entidad</strong> · @workers.Length trabajadores · Tasa @estimate.Porcentaje.ToString("0.####") %</p>
+            <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Trabajadores de @estimate.Entidad">
+                <table class="hyt-table">
+                    <thead><tr><th scope="col" class="hyt-numeric">Documento</th><th scope="col">Trabajador</th>
+                        <th scope="col" class="hyt-money">Sueldo mensual (S/)</th><th scope="col" class="hyt-money">Aporte estimado (S/)</th></tr></thead>
+                    <tbody>
+                        @if (workers.Length == 0)
+                        {
+                            <tr><td colspan="4" class="hyt-grid-message">No hay trabajadores en planilla para esta entidad y período.</td></tr>
+                        }
+                        @foreach (var worker in workers)
+                        {
+                            <tr><td class="hyt-numeric">@worker.Documento</td><td>@worker.Nombre</td>
+                                <td class="hyt-money">@worker.SueldoMensual.ToString("N2")</td><td class="hyt-money">@worker.Estimado.ToString("N2")</td></tr>
+                        }
+                    </tbody>
+                    <tfoot><tr><th scope="row" colspan="2">Totales</th>
+                        <td class="hyt-money">@estimate.BaseMensual.ToString("N2")</td><td class="hyt-money">@estimate.Estimado.ToString("N2")</td></tr></tfoot>
+                </table>
+            </div>
+        </div>
+    }
+</section>
+@section Scripts { <script src="~/hyt-obligation-estimate.js" asp-append-version="true" defer></script> }

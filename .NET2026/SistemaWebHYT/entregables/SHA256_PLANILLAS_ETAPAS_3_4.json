@@ -1,0 +1,21 @@
+{
+  "Script/034_PeriodicidadPagoProveedor.sql": "4d034ddf0b8b35b4346c88acb8fc59822053f6645346603dd3d7969eadef98c1",
+  "StoreProcedure/spu_PagoProveedor_Registrar.sql": "97d768d95cf6934b2700deda9650a55f54dce79dfdd037f36f7384d48dac9878",
+  "StoreProcedure/spu_PagoProveedor_Listar.sql": "5660a61fd20504d228086c81200a679f79f94e29280030dc65af1c30308bd214",
+  "Tablas/CierrePersonalHYT.sql": "f0bd39d163379dce48bb8f4be690da8864c6e91f758333893941e139fb8faf34",
+  "Tablas/CeseTrabajadorHYT.sql": "8d496275aa19680a3d93cc0c8c5f509f35c0902bb9ac11dfe99359c20183cbee",
+  "Tablas/MovimientoPersonalHYT.sql": "370ae0b921cedabe1eb569d61f557eb02c07298f48a92d1efc07180f3687c3b3",
+  "Tablas/ObligacionPersonalHYT.sql": "fe0db867e17dbf16e2462a3ab732a28403ebb450ec72aa94014ff2334d309841",
+  "Tablas/PolizaSctrHYT.sql": "2297691539adf92501872cc73ea875309fc2ebfaae1587014e08de208a51245a",
+  "StoreProcedure/spu_MovimientoPersonalHYT_Registrar.sql": "2236f1932153168ce393627645743e2e6418ddeb4c2dec3e8e20abe20f6fb765",
+  "StoreProcedure/spu_CierrePersonalHYT_Registrar.sql": "2d0506f27255c06a1d14abd24108a84cd2128debcd4dea36ba06b13578b95780",
+  "StoreProcedure/spu_EstadoCuentaPersonalHYT_Consultar.sql": "c5d9b6537d85efca082854bc55d6df4362a69a04b57fab9c7146eec0ac74d6b0",
+  "StoreProcedure/spu_CeseTrabajadorHYT_Registrar.sql": "1f771f15edfb19a22a6141e3973857ac98ed7f64d118e70842ee244dc0702e4e",
+  "StoreProcedure/spu_ReportePlanillasHYT_Consultar.sql": "eeb77959cbfe547d02cb5592b16ad086888d107ea57ff1a13bd0f92e614773c3",
+  "Script/035_PermisosPagosPersonal.sql": "1c8b0c8e0f0bad517ad2eb26c2b9000e56fdf1fec4b21288cf3b3a7b877e59a8",
+  "StoreProcedure/spu_ObligacionesHYT_Consultar.sql": "5b709e208681906e284acc5885f48bc675a4bd63e1000ed87013316e4a405a2c",
+  "StoreProcedure/spu_ObligacionPersonalHYT_Guardar.sql": "be72d3f3df19fba7715e7f5be1524bbcdfebdc532e645fbae9d7f5ad502a19ab",
+  "StoreProcedure/spu_PolizaSctrHYT_Guardar.sql": "97bd9224a9dd73cdf27e8b285909e10d02a48de4bf7547cc928250ea7b343850",
+  "Script/036_PermisosObligaciones.sql": "f1566d243be741cf884da3f1f93700a35c8b4f5a52867028a4f4301330efca29",
+  "PLANILLAS_ETAPAS_3_4_HYT.sql": "2b399d9d2d583713bd90c92f241d140513b49adf5d582b608e662389b204f535"
+}

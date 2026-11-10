@@ -1,0 +1,8 @@
+@model GestionServicios.Web.Controllers.SupplierPaymentDetails
+@* Firma: FRANCO LARA - 10/11/2026 | Vista directa de pago pendiente. *@
+@{ ViewData["Title"] = "Registrar pago a proveedor"; }
+<header class="hyt-page-header">
+    <div><h1>Registrar pago a proveedor</h1></div>
+    <a href="@Model.ReturnUrl" class="hyt-button-secondary">Volver a pagos pendientes</a>
+</header>
+<section class="hyt-panel hyt-master-form"><partial name="_PayPending" model="Model" /></section>

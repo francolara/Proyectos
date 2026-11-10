@@ -6,6 +6,8 @@ public sealed record DatePickerModel(string Name, string Label, DateOnly? Value 
     public string Id => "date_" + System.Text.RegularExpressions.Regex.Replace(Name, "[^a-zA-Z0-9_]", "_");
 }
 public sealed record FilterChoice(string Value,string Label);
+public sealed record PayrollCatalogPicker(string Id, string TargetId, string Label,
+    IReadOnlyList<GestionServicios.Application.Payroll.PayrollCatalogEntry> Entries, string? RegimeFieldId = null);
 public sealed record FilterSelect(string Name,string Label,string Value,IReadOnlyList<FilterChoice> Choices);
 public sealed record FilterCheck(string Name,string Label,bool Checked);
 public sealed record StateKpi(string Code,string Label,long Count);

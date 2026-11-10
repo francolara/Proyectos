@@ -1,0 +1,34 @@
+@model GestionServicios.Web.Controllers.SupplierPaymentDetails
+@* Firma: FRANCO LARA - 10/11/2026 | Formulario de pago reutilizable desde el trabajo y la bandeja, sin campos de cobertura. *@
+@{ var cost = Model.Cost; }
+    <form asp-action="Save" asp-route-id="@cost.Id" method="post" class="hyt-payroll-form" data-document-form="@Model.Popup">
+        <input type="hidden" name="queue" value="@Model.Queue.ToString().ToLowerInvariant()" />
+        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+        <input type="hidden" name="popup" value="@Model.Popup.ToString().ToLowerInvariant()" />
+        <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+        <input type="hidden" name="OperationId" value="@Model.Input.OperationId" />
+        <div class="hyt-master-fields">
+            <div class="hyt-field">
+                <label for="supplierpayments-amount-1">Importe (@cost.Currency)</label>
+                <input id="supplierpayments-amount-1" name="Amount" class="hyt-money" inputmode="decimal" value="@(Model.Input.Amount == 0 ? "" : Model.Input.Amount.ToString("0.00"))" required />
+            </div>
+            <div class="hyt-field">
+                <label for="supplierpayments-date-1">Fecha del abono</label>
+                <input id="supplierpayments-date-1" type="date" name="Date" value="@Model.Input.Date?.ToString("yyyy-MM-dd")" required />
+            </div>
+            <div class="hyt-field">
+                <label for="supplierpayments-reference-1">Referencia</label>
+                <input id="supplierpayments-reference-1" name="Reference" value="@Model.Input.Reference" maxlength="100" required />
+            </div>
+            <div class="hyt-field">
+                <label for="supplierpayments-frequency-1">Frecuencia</label>
+                <select id="supplierpayments-frequency-1" name="Frequency">
+                    <option value="">Pago puntual</option>
+                    <option value="SEMANAL" selected="@(Model.Input.Frequency == "SEMANAL")">Semanal</option>
+                    <option value="QUINCENAL" selected="@(Model.Input.Frequency == "QUINCENAL")">Quincenal</option>
+                    <option value="MENSUAL" selected="@(Model.Input.Frequency == "MENSUAL")">Mensual</option>
+                </select>
+            </div>
+            <div class="hyt-payroll-actions"><button type="submit" class="hyt-button-primary">@(Model.Queue ? "Registrar pago" : "Registrar abono")</button></div>
+        </div>
+    </form>

@@ -1,0 +1,70 @@
+@* Firma: FRANCO LARA - 10/11/2026 | Actualiza el nombre del apartado Trabajos de Proveedores. Reutiliza el formulario de pago. *@
+@model GestionServicios.Web.Controllers.SupplierPaymentDetails
+@* Firma: FRANCO LARA - 09/11/2026 | Consulta de saldo y abonos con frecuencia y fechas de cobertura. Aplica el estándar HYT de grillas, filtros y formularios. Alinea importes y cantidades en la grilla. *@
+@{
+    ViewData["Title"] = "Costo y abonos";
+    var cost = Model.Cost;
+}
+<header class="hyt-page-header">
+    <div><h1>Costo y abonos</h1><p>@cost.BudgetNumber · @cost.SupplierName</p></div>
+    <a asp-action="Index" class="hyt-button-secondary">Volver a trabajos de proveedores</a>
+</header>
+<section class="hyt-panel hyt-payroll-section" aria-label="Detalle del costo">
+    <h2>@cost.Description</h2>
+    <dl class="hyt-payroll-summary">
+        <dt>Costo</dt><dd>@cost.Currency @cost.Amount.ToString("N2")</dd>
+        <dt>Pagado</dt><dd>@cost.Currency @cost.Paid.ToString("N2")</dd>
+        <dt>Saldo pendiente</dt><dd>@cost.Currency @cost.Balance.ToString("N2")</dd>
+        @if (cost.Document is not null) { <dt>Sustento</dt><dd>@cost.Document</dd> }
+        @if (cost.Bank is not null) { <dt>Banco</dt><dd>@cost.Bank</dd> }
+        @if (cost.Account is not null) { <dt>Número de cuenta</dt><dd>@cost.Account</dd> }
+    </dl>
+</section>
+@if (TempData["SupplierPaymentSaved"] is string message)
+{
+    <p role="status">@message</p>
+}
+@if (Model.CanEdit && cost.Balance > 0)
+{
+    <section class="hyt-panel hyt-master-form">
+        <h2>Registrar abono</h2>
+        <partial name="_PaymentForm" model="Model" />
+    </section>
+}
+<section aria-label="Historial de abonos">
+    <h2>Abonos registrados</h2>
+    @if (Model.Payments.Count == 0)
+    {
+        <p class="hyt-panel hyt-grid-message">No hay abonos en esta página.</p>
+    }
+    else
+    {
+        <div class="hyt-panel hyt-table-wrap" tabindex="0" role="region" aria-label="Abonos del costo">
+            <table class="hyt-table hyt-align-supplier-abonos">
+                <thead><tr><th scope="col">Fecha</th><th scope="col">Referencia</th><th scope="col">Frecuencia</th><th scope="col">Cobertura</th><th scope="col">Importe</th></tr></thead>
+                <tbody>
+                @foreach (var payment in Model.Payments)
+                {
+                    <tr>
+                        <td>@payment.Date.ToString("dd/MM/yyyy")</td><td>@payment.Reference</td>
+                        <td>@(payment.Frequency ?? "—")</td>
+                        <td>@if (payment.PeriodFrom.HasValue) { <span>@payment.PeriodFrom?.ToString("dd/MM/yyyy") al @payment.PeriodTo?.ToString("dd/MM/yyyy")</span> }</td>
+                        <td>@payment.Currency @payment.Amount.ToString("N2")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+    <nav class="hyt-pagination" aria-label="Páginas de abonos">
+        @if (Model.Page > 1)
+        {
+            <a class="hyt-button-secondary" asp-action="Details" asp-route-id="@cost.Id" asp-route-page="@(Model.Page - 1)">Anterior</a>
+        }
+        <span>Página @Model.Page</span>
+        @if (Model.Payments.Count > 0 && Model.Payments[0].Total > (long)Model.Page * 20)
+        {
+            <a class="hyt-button-secondary" asp-action="Details" asp-route-id="@cost.Id" asp-route-page="@(Model.Page + 1)">Siguiente</a>
+        }
+    </nav>
+</section>

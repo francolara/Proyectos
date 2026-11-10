@@ -30,6 +30,10 @@ jobs:
             image: ghcr.io/francolara/zonadeportiva
             context: .NET2026/SistemaControlEspaciosDeportivosWeb
             dockerfile: .NET2026/SistemaControlEspaciosDeportivosWeb/Dockerfile
+          - name: hyt
+            image: ghcr.io/francolara/hyt
+            context: .NET2026/SistemaWebHYT
+            dockerfile: .NET2026/SistemaWebHYT/Dockerfile
 
     steps:
       - name: Checkout source

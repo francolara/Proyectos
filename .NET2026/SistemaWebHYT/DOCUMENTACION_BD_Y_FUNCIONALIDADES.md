@@ -558,6 +558,12 @@ La cohorte usa registro del presupuesto u OC según fuente, no el registro de la
 
 spu_Dashboard_Obtener incorpora PresupuestosSinOC, PresupuestosSinGuia y PendientesFacturar, conciliados con los filtros nuevos. Conserva estados, totales por moneda, primeros eventos y bandeja histórica. La interfaz retira filtros comerciales visibles, presenta seis estados de presupuesto/cuatro de OC y sustituye accesos a categorías viejas por reportes integrales. MVC: ReportsController filtra/valida y usa Print para HTML autónomo, _Results compartido, ReportFilter en Application y parámetros tipados ADO.NET. Exportación y consultas validan permisos por igual. Todos los archivos son UTF-8/CRLF; SDK incluye nuevas vistas/clases automáticamente.
 
+### Estándar de impresión de reportes HYT · 09/11/2026
+
+Los nuevos reportes de gestión imprimibles deben seguir la vista de impresión de Presupuestos. Usar `Views/Shared/_ReportPrintLayout.cshtml` y `wwwroot/hyt-reports.css` para la barra superior con **Imprimir / Guardar PDF**, el logo y la razón social HYT, el resumen del reporte, la tabla con encabezado oscuro y el pie. La barra de acciones se oculta al imprimir.
+
+Mostrar en el resumen el título, los filtros o el período aplicado y el número de registros. Incluir el conjunto completo autorizado para esa consulta y sus totales cuando correspondan. Alinear los importes a la derecha y centrar cantidades, cuentas y códigos numéricos. Conservar los ceros iniciales de las cuentas. La impresión usa A4 horizontal, repite los encabezados de tabla y evita partir filas entre páginas.
+
 ## Dashboard: Confirmación del cliente y Facturado — 06/11/2026
 
 Sustituye los indicadores temporales de primeros eventos del diseño anterior. Los controles, leyendas y detalle se denominan Confirmación del cliente y Facturado. spu_Dashboard_Obtener ya no calcula MIN(FechaRegistro) ni agrupa la primera incorporación histórica por OC: #Eventos contiene confirmaciones/referencias Vigente=1 asociadas a OC no canceladas, filtradas por su propia FechaRegistro y por contexto comercial. La curva agrupa esos registros por fecha de Lima. Se mantienen claves JSON Confirmaciones/Marcados por compatibilidad de contrato; no son nombres visibles. Presupuestos/Ordenes se mantienen por su fecha de registro y concilian con sus KPI del período. El resto de estados y pendientes conserva reglas vigentes.
@@ -592,3 +598,114 @@ El primer ingreso y el ingreso posterior a un restablecimiento abren **Cambia tu
 El paquete incremental es **entregables/ADMINISTRACION_HYT.sql**. Se ejecuta sobre una base HYT actualizada a las etapas previas. Usar SQLCMD con detención al primer error para que el paquete pueda revertirse completo si falla. Las fuentes y huellas están en **Basededatos/Dbsishyt/manifest-administracion.json** y **entregables/SHA256_ADMINISTRACION.json**. Después de la base, iniciar la versión web que incluye la administración.
 
 Para comprobar en una base aislada, ejecutar Hyt.DatabaseTests con --run-local-sql --use-bundles. La suite Hyt.AccessTests verifica la sesión restringida, el cambio obligatorio y voluntario, la navegación administrativa y el detalle de auditoría.
+# Planillas · avance del 09/11/2026
+
+El manifiesto acumulado incorpora `ProveedorHYT`, `CostoProveedorPresupuesto` y `PagoProveedorHYT`. El costo se vincula al presupuesto y conserva su propia moneda. Los abonos heredan esa moneda y su suma determina el saldo.
+
+`spu_CostoProveedor_Registrar` registra un concepto para un proveedor activo. `spu_PagoProveedor_Registrar` bloquea el costo durante la comprobación del saldo y guarda el abono y su auditoría en una sola transacción. Ambas operaciones usan un identificador único y comparan los datos del reintento con los originales. `spu_CostoProveedor_Listar` filtra por presupuesto, proveedor y saldo pendiente con páginas de veinte registros.
+
+`spu_ProveedorHYT_Listar` permite buscar proveedores y consultar una ficha por identificador. Los listados muestran la cuenta enmascarada. El número completo requiere `PROVEEDORES.CUENTA` y una consulta individual. `spu_ProveedorHYT_Guardar` comprueba la versión de la ficha y audita el cambio sin guardar el número de cuenta en el evento. `spu_PagoProveedor_Listar` devuelve el historial de abonos por concepto. Los datos bancarios en el detalle de un costo requieren permiso de consulta de pagos y el número completo requiere también permiso de cuenta.
+
+`033_PermisosPlanillas.sql` registra permisos de consulta, edición y acceso bancario y concede ejecución puntual a `hyt_app_executor`. La asignación de estos permisos a perfiles corresponde a la administración de HYT.
+
+El paquete incremental `entregables/PLANILLAS_HYT.sql` se aplica después de Administración, con respaldo verificado y `sqlcmd -b -f 65001`. `manifest-planillas.json` enumera las 21 fuentes y `entregables/SHA256_PLANILLAS.json` registra sus huellas y la del paquete. `Hyt.DatabaseTests --run-local-sql --use-payroll-bundle` aplicó dos veces el paquete sobre una base temporal con el esquema previo y aprobó las 289 comprobaciones.
+
+`spu_TrabajadorHYT_Listar` busca por documento o nombre y filtra por tipo y estado. La cuenta completa solo se devuelve para una ficha individual con permiso `TRABAJADORES.CUENTA`. `spu_TrabajadorHYT_Guardar` comprueba la versión de la ficha y audita el alta o modificación dentro de la transacción sin guardar el número de cuenta en auditoría.
+
+`spu_PeriodoVacacionesHYT_Registrar` registra los días reconocidos para un período sin superposición. `spu_VacacionesHYT_Guardar` admite registros pendientes, aprobados y anulados, comprueba la versión al editar y serializa las operaciones del trabajador para impedir solapamientos o aprobaciones por encima del saldo. `spu_VacacionesHYT_Consultar` devuelve el historial y el saldo por período. Una vacación aprobada reserva el total de días registrados y se muestra como gozada cuando su fecha de fin ya pasó.
+
+`spu_JornadaHYT_Guardar` registra la entrada y permite completar la salida y los minutos extra aprobados después. Guarda la hora local de Lima, comprueba la versión al editar y rechaza jornadas superpuestas y extras mayores a la duración de la jornada. `spu_JornadaHYT_Listar` devuelve veinte jornadas por página y el total de minutos extra del intervalo, agrupado por fecha de entrada.
+
+Las pantallas de proveedores, costos, abonos, trabajadores, vacaciones y asistencia están conectadas a sus procedimientos. Las pruebas HTTP/MVC verificaron con datos de prueba el acceso desde el menú, la protección antifalsificación de los formularios, el registro de un costo y su abono, los enlaces de la ficha del trabajador y el registro y consulta de vacaciones y asistencia.
+
+Chrome verificó el alta de proveedor, el costo desde presupuesto, el abono, las vacaciones y el registro horario con el host de prueba. Ocho pantallas se comprobaron a 1366 y 390 píxeles sin desbordamiento horizontal de página.
+
+### Etapas 3 y 4 de Planillas · 09/11/2026
+
+El manifiesto acumulado incorpora `CierrePersonalHYT`, `CeseTrabajadorHYT`, `MovimientoPersonalHYT`, `ObligacionPersonalHYT` y `PolizaSctrHYT`. Los movimientos conservan el tipo de trabajador al registrarse y admiten frecuencia y rango de cobertura independientes de la fecha del movimiento. El cierre conserva el mes y el responsable. Las operaciones que registran o aplican movimientos deberán comprobar el cierre y el saldo dentro de una transacción.
+
+`034_PeriodicidadPagoProveedor.sql` añade frecuencia semanal, quincenal o mensual y fechas de cobertura a los abonos de proveedor. El formulario captura la frecuencia sin solicitar cobertura. La restricción `CK_PagoProveedorHYT_CoberturaOpcional` y `spu_PagoProveedor_Registrar` admiten el rango vacío. El historial conserva las fechas de cobertura registradas anteriormente. Los pagos puntuales y el historial anterior conservan la frecuencia vacía.
+
+`spu_MovimientoPersonalHYT_Registrar` guarda movimientos idempotentes y audita altas. Los adelantos regulares y de gratificación se registran como dinero ya entregado y reducen el saldo acumulado una sola vez. Si aún no existe una cuenta por pagar, quedan como saldo a favor de HYT en esa moneda. El procedimiento rechaza pagos y descuentos mayores al saldo a su fecha, y rechaza registrar reducciones retroactivas cuando ya existen pagos o descuentos posteriores para esa persona y moneda. El rango de cobertura es informativo y la fecha del movimiento determina el mes de registro.
+
+`spu_CierrePersonalHYT_Registrar` registra el cierre de un mes terminado. Comparte un bloqueo transaccional con el registro de movimientos y ceses, que impide alterar saldos del mes cerrado mediante movimientos retroactivos.
+
+`spu_EstadoCuentaPersonalHYT_Consultar` devuelve por moneda el saldo anterior, devengados, adelantos, descuentos, pagos y saldo final, junto con los movimientos del mes y el historial de ceses. `spu_CeseTrabajadorHYT_Registrar` guarda fecha de cese y último día trabajado, marca al trabajador como inactivo y audita ambos cambios en la misma transacción. Los movimientos posteriores pueden vincularse a ese cese y seguir apareciendo en el estado de cuenta.
+
+`035_PermisosPagosPersonal.sql` registra permisos de consulta, edición, cierre, cese y reporte. Desde la ficha del trabajador, Estado de cuenta consulta el mes y la moneda, permite guardar movimientos con frecuencia y cobertura, y registra ceses. La prueba ADO.NET en SQL Server Express verificó saldo, reintento, cierre, cese y arrastre.
+
+`spu_ReportePlanillasHYT_Consultar` concilia el personal por trabajador, tipo histórico y moneda, y los proveedores por proveedor, presupuesto y moneda. Aplica los permisos de cada fuente. Planillas → Reporte mensual permite consultar y descargar cada sección en CSV, y cerrar un mes de personal terminado con confirmación y permiso específico.
+
+Planillas → Obligaciones registra AFP y ONP por mes en soles, con vencimiento, fecha de pago y referencia. También registra las pólizas SCTR de salud y pensión. La consulta distingue pólizas programadas, vigentes, vencidas y por vencer dentro de 30 días según la fecha de Lima. Los guardados comprueban la versión y registran auditoría en la misma transacción. `036_PermisosObligaciones.sql` separa consulta y edición.
+
+SQL Server Express aprobó 302 comprobaciones, incluidas la conciliación de ambos reportes, el registro de AFP y ONP, el vencimiento de SCTR, la confirmación de pago y el rechazo de una versión antigua. El mismo conjunto aprobó al aplicar dos veces cada paquete en orden sobre una base temporal.
+
+Chrome verificó con datos de prueba un abono semanal de proveedor, un pago quincenal al personal, un cese, la descarga de ambos CSV, el cierre confirmado y el registro de AFP pagada y SCTR por vencer. Se comprobaron cuatro pantallas a 1366 y 390 píxeles sin desbordamiento horizontal de página.
+
+`entregables/PLANILLAS_ETAPAS_3_4_HYT.sql` aplica el incremento después de `PLANILLAS_HYT.sql`, con respaldo verificado y `sqlcmd -b -f 65001`. `manifest-planillas-etapas34.json` enumera 18 fuentes y `entregables/SHA256_PLANILLAS_ETAPAS_3_4.json` registra sus huellas y la del paquete. Para repetir la prueba aislada, ejecutar `Hyt.DatabaseTests --run-local-sql --use-payroll-bundle`.
+
+La prueba en SQL Server Express instaló el manifiesto en una base temporal y aprobó 289 comprobaciones. Nueve cubren reintentos de costos y abonos, rechazo del sobrepago, saldo de S/ 700 tras abonar S/ 500 a un costo de S/ 1,200, cierre del saldo, historial, ocultación de la cuenta completa y dos abonos simultáneos sobre el mismo costo. Once adicionales verifican a través de ADO.NET los tipos de trabajador y ceros iniciales, los saldos y anulaciones de vacaciones, los traslapes y el total mensual de minutos extra. La base temporal se eliminó al terminar.
+### Cargos y sueldo base · 09/11/2026
+
+Planillas → Cargos permite crear, editar y desactivar puestos con los permisos de consulta y edición de trabajadores. `037_CargosYSueldoHYT.sql` agrega el cargo y el sueldo base mensual en soles a `TrabajadorHYT`. Ambos campos admiten valores vacíos para las fichas existentes. Se permite conservar un cargo inactivo previamente asignado. El sueldo se consulta en la ficha y se registra como dato de referencia, sin generar movimientos de pago.
+
+El incremento `entregables/PLANILLAS_CARGOS_SUELDO_HYT.sql` se aplica después de los paquetes de Planillas. Se aplicó en SQL Server Express local tras verificar el respaldo. El acceso a Obligaciones, Estado de cuenta y Reporte mensual normaliza las colecciones vacías de SQL a listas vacías.
+### Planificación de pagos · 09/11/2026
+
+`039_ConfiguracionPagoTrabajador.sql` agrega entrada y salida habituales, régimen AFP u ONP, administradora AFP y frecuencia de pago al trabajador. El horario habitual se conserva separado de las marcaciones reales. Los campos admiten valores vacíos para las fichas previas.
+
+Planillas → Planificación de pagos abre la semana, quincena o mes de la fecha elegida. La precarga incluye trabajadores activos de planilla y externos con la frecuencia elegida, el sueldo mensual como base editable y los minutos extra aprobados del período. El neto es la base más el importe extra menos el descuento. `PlanPagoHYT` y `PlanPagoDetalleHYT` conservan la planificación por período con control de versión y auditoría. Guardar la planificación conserva los importes para revisión y no genera movimientos en el estado de cuenta.
+
+El incremento `entregables/PLANILLAS_PLANIFICACION_PAGOS_HYT.sql` se aplica después del incremento de cargos y sueldo.
+### Catálogos peruanos y SCTR por trabajador · 09/11/2026
+
+`BancoPeruHYT` y `EntidadPrevisionalHYT` contienen 21 bancos, cuatro AFP y ONP. `spu_CatalogosPlanillasHYT_Consultar` alimenta las sugerencias de bancos de trabajadores y proveedores, y las de previsión en las fichas correspondientes. Los valores históricos de texto se conservan.
+
+`PolizaSctrTrabajadorHYT` vincula una póliza SCTR a uno o más trabajadores. La ficha independiente en Planillas → SCTR guarda la póliza, las asignaciones y la auditoría en la misma transacción con control de versión. El listado muestra los trabajadores cubiertos y la vigencia. Verde indica vigente con más de 30 días, amarillo indica vencimiento dentro de 30 días y rojo indica vencida. Las pólizas futuras figuran como programadas.
+
+`entregables/PLANILLAS_CATALOGOS_SCTR_HYT.sql` aplica el incremento después de Planillas 3 y 4. Se ejecutó en la base local tras verificar el respaldo. SQL Server Express aprobó 311 comprobaciones en una base temporal.
+### Cuenta interbancaria · 09/11/2026
+
+`043_CuentaInterbancariaHYT.sql` agrega el CCI opcional a `ProveedorHYT` y `TrabajadorHYT` como texto de 20 dígitos. Los procedimientos de ambas fichas limitan su consulta y edición al permiso bancario correspondiente. La auditoría registra que se actualizó el CCI sin guardar su valor. El paquete `entregables/PLANILLAS_CCI_HYT.sql` se aplicó en la base local tras verificar el respaldo.
+### Ajustes y reporte de planificación · 09/11/2026
+
+`044_DetalleAjustesPlanPagoHYT.sql` agrega los registros detallados de horas extra y descuentos por trabajador y período. Cada ajuste conserva fecha, presupuesto opcional, concepto, horas completas cuando corresponden e importe. SQL valida las referencias y calcula los acumulados dentro del guardado. Los totales de planes anteriores se conservan hasta que se reemplacen con registros detallados.
+
+El botón **Imprimir Planificación** abre el reporte corporativo en otra pestaña. Muestra la frecuencia, fechas, importes y totales del plan guardado. Banco, cuenta y CCI se consultan de la ficha vigente únicamente con permiso `TRABAJADORES.CUENTA`. Se aplicó `entregables/PLANILLAS_AJUSTES_REPORTE_HYT.sql` en la base local después de verificar el respaldo.
+### Filtros de pagos a proveedores · 09/11/2026
+
+`spu_CostoProveedor_Listar` filtra por fecha de registro del costo en Lima, con extremos inclusivos, y por saldo. Pendientes incluye los costos con saldo positivo, aunque tengan abonos. La búsqueda coincide con proveedor, RUC, concepto o número de presupuesto. Los filtros se aplican antes de paginar. El procedimiento actualizado se aplicó en SQL Server Express local después de verificar el respaldo.
+### Saldo y salidas de vacaciones · 09/11/2026
+
+`spu_TrabajadorHYT_Listar` devuelve el total de días disponibles para personal en planilla con permiso `VACACIONES.CONSULTAR`. El cálculo resta las salidas aprobadas, gozadas o programadas, de los días reconocidos. Las salidas pendientes de aprobación y las anuladas no descuentan días. La ficha de Vacaciones muestra el mismo saldo y separa el registro de días reconocidos del registro de salidas. El procedimiento actualizado se aplicó en SQL Server Express local tras verificar un respaldo.
+
+### Cese y reingreso de trabajadores · 10/11/2026
+
+La ficha abre **Registrar Cese** en una pantalla independiente con historial. El estado de cuenta se abre desde el listado, que filtra Todos, Activo o Inactivo mediante el parámetro opcional `@Activo` de `spu_TrabajadorHYT_Listar` antes de paginar.
+
+`CeseTrabajadorHYT` conserva la fecha, el motivo opcional y la clave de operación del reingreso sobre el cese histórico. `spu_CeseTrabajadorHYT_Reingresar` requiere `PAGOS_PERSONAL.CESES` y registra de forma atómica la auditoría, la fecha de ingreso de la ficha y la reactivación. La fecha debe ser posterior al cese vigente y no posterior al día actual en Lima. `spu_EstadoCuentaPersonalHYT_Consultar` incluye los datos de reingreso en el historial de ceses.
+
+### Obligaciones pendientes y estimados previsionales · 10/11/2026
+
+Obligaciones muestra el listado mensual. La ficha se abre con **Registrar obligación** o desde la acción de edición. Las altas se guardan sin datos de pago y quedan pendientes. Una obligación pendiente con vencimiento pasado se identifica también como vencida. La ficha se usa para programar el pago y el listado permite confirmarlo. La edición de la ficha conserva los datos de pago históricos mediante `@ConservarPago`, sin exponer sus campos.
+
+`045_TasasPrevisionalesHYT.sql` añade `PorcentajeEstimado` a `EntidadPrevisionalHYT`. **Porcentajes AFP y ONP** permite editarlo por entidad y `spu_EntidadPrevisionalHYT_GuardarTasa` audita cada modificación. Los cambios de tasa se aplican a los nuevos estimados y conservan los importes ya guardados. Los valores iniciales son 10 % de aporte al fondo AFP y 13 % para ONP. [SBS](https://www.sbs.gob.pe/app/spp/empleadores/comisiones_spp/Paginas/comision_prima.aspx) · [SUNAT](https://orientacion.sunat.gob.pe/08-tasa-y-calculo-del-aporte-al-snp-onp).
+
+`spu_EstimadoPrevisionalHYT_Consultar` suma el sueldo mensual de las fichas activas en planilla cuyo ingreso es hasta el fin del mes seleccionado, por régimen y AFP. Aplica el porcentaje de la entidad al sueldo de cada trabajador, redondea a céntimos y suma los aportes del detalle. La ficha de alta y edición muestra los trabajadores del estimado vigente por AFP u ONP. Es una proyección con las fichas vigentes y el importe final se puede ajustar. El estimado inicial AFP cubre el aporte al fondo y el cálculo simplificado omite prima, comisiones y topes. `spu_ObligacionPersonalHYT_Guardar` valida también en SQL que las altas se registren pendientes.
+
+### Confirmación de pagos de Planillas · 10/11/2026
+
+- **Obligaciones** confirma el pago desde la fila pendiente con fecha y número de operación. Reutiliza `spu_ObligacionPersonalHYT_Guardar` y verifica la versión del registro antes de confirmar.
+- **Pagos a Proveedores** lista trabajos con saldo pendiente. Reutiliza el formulario de abono y `spu_PagoProveedor_Registrar`. Un pago parcial conserva el saldo en la bandeja. El pago total retira el trabajo de pendientes.
+- **Planificación de Planilla** confirma un período guardado con una fecha y número de operación comunes. `046_ConfirmacionPagoPlanillaHYT.sql` añade `FechaPago` y `ReferenciaPago` al encabezado. `spu_PlanPagoHYT_ConfirmarPago` registra el bruto, descuento y pago neto por trabajador con `spu_MovimientoPersonalHYT_Registrar` y cierra la planificación en una transacción. Rechaza movimientos de remuneración, servicio, descuento o pago que se superpongan a la cobertura. Si falla una fila, se revierte todo el pago. Repetir fecha y referencia del plan confirmado devuelve el mismo identificador sin volver a registrar movimientos.
+- `spu_PlanPagoHYT_Guardar` protege los períodos pagados contra ediciones. `spu_PlanPagoHYT_Consultar` expone la confirmación a la ficha y al reporte. El cierre de la planificación se limita a su período y frecuencia.
+
+### Reportes de Planillas por tipo · 10/11/2026
+
+`/Planillas/Reporte` ofrece tres consultas autorizadas por el permiso general de reportes y el permiso de cada módulo. Pagos a Proveedores filtra por mes, proveedor o número de presupuesto y saldo al cierre. Planillas filtra por mes, tipo de trabajador y nombre. Obligaciones filtra por mes de la obligación, régimen, entidad y estado, e incluye fecha y número de operación cuando el pago está confirmado.
+
+La vista previa y **Imprimir reporte** ejecutan la misma consulta con los filtros aplicados y comparten la grilla de resultados. La impresión abre el formato corporativo HYT en A4 horizontal. Se conservan los CSV de planillas y proveedores y el cierre mensual de personal.
+
+### Permisos SQL de la entrega HYT · 10/11/2026
+
+`047_PermisosEntregaPlanillas.sql` concede a `hyt_app_executor` la ejecución de los procedimientos de reingreso, estimado previsional, mantenimiento de tasas y confirmación de pago de planilla. Se ejecuta al final del manifiesto acumulado, cuando existen el rol y los procedimientos. Los permisos funcionales y la restricción de escritura directa se mantienen.

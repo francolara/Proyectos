@@ -1,0 +1,101 @@
+@{ ViewData["Wide"] = true; }
+@model GestionServicios.Web.Controllers.AttendancePage
+@* Firma: FRANCO LARA - 09/11/2026 | Registro de entradas, salidas y minutos extra aprobados. Aplica el estándar HYT de grillas, filtros y formularios. Alinea importes y cantidades en la grilla. *@
+@{
+    ViewData["Title"] = "Registro horario";
+    var shift = Model.Selected;
+    var from = Model.From.ToString("yyyy-MM-dd");
+    var to = Model.To.ToString("yyyy-MM-dd");
+}
+<header class="hyt-page-header">
+    <div><h1>Registro horario</h1><p>@Model.Worker.Name · Hora de Lima</p></div>
+    <a asp-controller="Workers" asp-action="Details" asp-route-id="@Model.Worker.Id" class="hyt-button-secondary">Volver al trabajador</a>
+</header>
+@if (TempData["AttendanceMessage"] is string message)
+{
+    <p role="status">@message</p>
+}
+<form asp-action="Index" asp-route-id="@Model.Worker.Id" method="get" class="hyt-filters">
+    <div class="hyt-field">
+        <label for="attendance-from-1">Desde</label>
+        <input id="attendance-from-1" name="from" type="date" value="@from" required />
+    </div>
+    <div class="hyt-field">
+        <label for="attendance-to-1">Hasta</label>
+        <input id="attendance-to-1" name="to" type="date" value="@to" required />
+    </div>
+    <button class="hyt-button-secondary" type="submit">Consultar período</button>
+</form>
+@if (Model.CanEdit && (Model.Worker.Active || shift is not null))
+{
+    <section class="hyt-panel hyt-payroll-section">
+        <h2>@(shift is null ? "Registrar jornada" : "Editar jornada")</h2>
+        <form asp-action="Save" asp-route-id="@Model.Worker.Id" method="post" class="hyt-payroll-form">
+            <input type="hidden" name="from" value="@from" />
+            <input type="hidden" name="to" value="@to" />
+            <div class="hyt-master-fields">
+                @if (shift is not null)
+                {
+                    <input type="hidden" name="ShiftId" value="@shift.Id" />
+                    <input type="hidden" name="Version" value="@Convert.ToBase64String(shift.Version)" />
+                }
+                <div class="hyt-field">
+                    <label for="attendance-entry-1">Entrada</label>
+                    <input id="attendance-entry-1" type="datetime-local" name="Entry" value="@shift?.Entry.ToString("yyyy-MM-ddTHH:mm")" required />
+                </div>
+                <div class="hyt-field">
+                    <label for="attendance-exit-1">Salida</label>
+                    <input id="attendance-exit-1" type="datetime-local" name="Exit" value="@shift?.Exit?.ToString("yyyy-MM-ddTHH:mm")" />
+                </div>
+                <div class="hyt-field">
+                    <label for="attendance-extraminutes-1">Minutos extra aprobados</label>
+                    <input id="attendance-extraminutes-1" type="number" name="ExtraMinutes" min="0" value="@(shift?.ExtraMinutes ?? 0)" required />
+                </div>
+            </div>
+            <div class="hyt-payroll-actions">
+                <button type="submit" class="hyt-button-primary">Guardar jornada</button>
+                @if (shift is not null)
+                {
+                    <a asp-action="Index" asp-route-id="@Model.Worker.Id" asp-route-from="@from" asp-route-to="@to" class="hyt-button-secondary">Cancelar edición</a>
+                }
+            </div>
+        </form>
+    </section>
+}
+@if (Model.Shifts.Count == 0)
+{
+    <p class="hyt-panel hyt-grid-message">No hay jornadas en esta página.</p>
+}
+else
+{
+    <p>Minutos extra aprobados en el período: <strong>@Model.Shifts[0].PeriodExtraMinutes</strong></p>
+    <div class="hyt-panel hyt-table-wrap" tabindex="0" role="region" aria-label="Jornadas del trabajador">
+        <table class="hyt-table hyt-align-attendance-hours">
+            <thead><tr><th scope="col">Entrada</th><th scope="col">Salida</th><th scope="col">Minutos extra</th>@if (Model.CanEdit) { <th scope="col">Acción</th> }</tr></thead>
+            <tbody>
+            @foreach (var item in Model.Shifts)
+            {
+                <tr>
+                    <td>@item.Entry.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>@(item.Exit?.ToString("dd/MM/yyyy HH:mm") ?? "Pendiente")</td><td>@item.ExtraMinutes</td>
+                    @if (Model.CanEdit)
+                    {
+                        <td><a class="hyt-button-secondary hyt-action-button" asp-route-id="@Model.Worker.Id" asp-route-from="@from" asp-route-to="@to" asp-route-page="@Model.Page" asp-route-shiftId="@item.Id">Editar jornada</a></td>
+                    }
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+<nav class="hyt-pagination" aria-label="Páginas de jornadas">
+    @if (Model.Page > 1)
+    {
+        <a class="hyt-button-secondary" asp-route-id="@Model.Worker.Id" asp-route-from="@from" asp-route-to="@to" asp-route-page="@(Model.Page - 1)">Anterior</a>
+    }
+    <span>Página @Model.Page</span>
+    @if (Model.Shifts.Count > 0 && Model.Shifts[0].Total > (long)Model.Page * 20)
+    {
+        <a class="hyt-button-secondary" asp-route-id="@Model.Worker.Id" asp-route-from="@from" asp-route-to="@to" asp-route-page="@(Model.Page + 1)">Siguiente</a>
+    }
+</nav>

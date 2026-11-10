@@ -22,3 +22,16 @@
 @media print{.hyt-print-toolbar{display:none!important}.hyt-report-print{background:white}.hyt-report-print .hyt-report{max-width:none;padding:0;margin:0}.hyt-report-print .hyt-report-table{font-size:10px;min-width:0}.hyt-report-print .hyt-report-table small{font-size:9px;margin-top:3px}.hyt-report-print th,.hyt-report-print td{padding:5px 4px}.hyt-report-print thead{display:table-header-group}.hyt-report-print tr{break-inside:avoid}.hyt-report-brand{margin-bottom:12px}.hyt-report-summary{break-inside:avoid}}
 
 .hyt-report-print{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+
+/* Firma: FRANCO LARA - 09/11/2026 | Alineación y totales de Planificación de Planilla en la plantilla común. */
+.hyt-report-table-region{overflow-x:auto}
+.hyt-report-print .hyt-report-pay-plan .hyt-report-money{text-align:right}
+.hyt-report-print .hyt-report-pay-plan .hyt-report-count{text-align:center;font-variant-numeric:tabular-nums}
+.hyt-report-print .hyt-report-pay-plan tbody th{background:#fff;color:inherit}
+.hyt-report-print .hyt-report-pay-plan tfoot th,.hyt-report-print .hyt-report-pay-plan tfoot td{background:#f5f5f5;color:inherit;font-weight:700}
+@media print{.hyt-report-table-region{overflow:visible}.hyt-report-pay-plan tfoot{display:table-row-group}}
+
+/* Firma: FRANCO LARA - 10/11/2026 | Alineación de importes y códigos en los reportes mensuales de Planillas. */
+.hyt-report-print .hyt-payroll-report-table .hyt-money{text-align:right;font-variant-numeric:tabular-nums}
+.hyt-report-print .hyt-payroll-report-table .hyt-numeric{text-align:center;font-variant-numeric:tabular-nums}
+@media print{.hyt-report-print .hyt-payroll-report-table{font-size:10px}}
