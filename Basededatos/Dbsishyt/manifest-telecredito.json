@@ -1,0 +1,19 @@
+{
+  "database": "SistemaWebHYT",
+  "scripts": [
+    "Tablas/TelecreditoHYT.sql",
+    "Script/057_MonedaCuentaCargoTelecreditoHYT.sql",
+    "Script/058_SeleccionPlanPagoHYT.sql",
+    "Script/054_TrabajadorTelecreditoHYT.sql",
+    "Script/056_NombresTrabajadorHYT.sql",
+    "StoreProcedure/spu_TrabajadorHYT_Listar.sql",
+    "StoreProcedure/spu_TrabajadorHYT_Guardar.sql",
+    "StoreProcedure/spu_PlanPagoHYT_Consultar.sql",
+    "StoreProcedure/spu_PlanPagoHYT_Guardar.sql",
+    "StoreProcedure/spu_PlanPagoHYT_ConfirmarPago.sql",
+    "StoreProcedure/spu_TelecreditoHYT_Obtener.sql",
+    "StoreProcedure/spu_TelecreditoHYT_Guardar.sql",
+    "StoreProcedure/spu_TelecreditoHYT_ConsultarLote.sql",
+    "Script/055_PermisosTelecreditoHYT.sql"
+  ]
+}

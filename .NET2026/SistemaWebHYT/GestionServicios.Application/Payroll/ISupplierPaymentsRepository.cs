@@ -28,7 +28,8 @@ public sealed record SupplierCost(
     string? Bank,
     string? Account,
     long Total,
-    DateTime? CostDate = null);
+    DateTime? CostDate = null,
+    string? PurchaseInvoice = null);
 
 public sealed record SupplierCostFilters(DateOnly? From, DateOnly? To, string Status, string? Search);
 

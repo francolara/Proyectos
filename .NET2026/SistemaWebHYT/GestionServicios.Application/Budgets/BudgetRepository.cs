@@ -5,7 +5,7 @@ public sealed record BudgetVersion(long BudgetId,long RevisionId,string Number,i
 public sealed record BudgetListItem(long BudgetId,string Number,string Description,string Type,long ClientId,long StoreId,long RevisionId,int RevisionNumber,
     string ClientName,string StoreName,string State,string Currency,decimal? Net,decimal? Tax,decimal? Total,DateOnly? ApprovedOn,
     DateTimeOffset CreatedAt,string CreatedBy,DateTimeOffset? UpdatedAt,string? UpdatedBy,long? PurchaseOrderId,string? CustomerOrderNumber,
-    long? GuideId,string? GuideNumber,string? GuideState,long GuideAttachments,long? ExecutionId=null);
+    long? GuideId,string? GuideNumber,string? GuideState,long GuideAttachments,long? ExecutionId=null,bool Invoiced=false,string? InvoiceReferences=null);
 public sealed record BudgetPage(IReadOnlyList<BudgetListItem> Rows,long Total,int Page,IReadOnlyDictionary<string,long>? StateCounts=null);
 public sealed record BudgetAudit(long Id,string Action,string? PreviousState,string? NewState,DateTimeOffset RecordedAt,DateOnly? EventDate,string User,string? Reason,string? Changes,string? Entity=null)
 {

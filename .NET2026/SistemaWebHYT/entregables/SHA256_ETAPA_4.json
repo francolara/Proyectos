@@ -41,11 +41,11 @@
   },
   {
     "path": "StoreProcedure/spu_MaterialTarifas_Listar.sql",
-    "sha256": "d5ce056fc187b264e035ed684e352155d15cc620d151ba1feca1df3deefbe541"
+    "sha256": "26f7db29cfb2a007091c7ffc570d9b380729cd467712a2c5d9ab4fdbbd9a2de0"
   },
   {
     "path": "StoreProcedure/spu_MaterialTarifa_Guardar.sql",
-    "sha256": "bf79e8b75d485aff731b6788098d47f215e1bde6946f7f4f9f45b9f328d41f5f"
+    "sha256": "1192bd2910c8609c4dae44a65ab7a4c42cb33a40079c546382391dc5d5390c2e"
   },
   {
     "path": "StoreProcedure/spu_MantTarifarioVersion_Publicar.sql",

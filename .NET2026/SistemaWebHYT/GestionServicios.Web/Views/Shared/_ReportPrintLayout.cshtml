@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 10/11/2026 | Barra de impresión y exportación CSV con estilo compartido. *@
 @* Firma: FRANCO LARA - 09/11/2026 | Plantilla común de impresión horizontal para reportes HYT. *@
 <!DOCTYPE html>
 <html lang="es">
@@ -6,10 +7,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@ViewData["Title"] | HYT</title>
     <link rel="stylesheet" href="~/hyt-reports.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/hyt-report-toolbar.css" asp-append-version="true" />
+    <script src="~/hyt-report-actions.js" asp-append-version="true" defer></script>
 </head>
 <body class="hyt-report-print">
     <nav class="hyt-print-toolbar" aria-label="Impresión del reporte">
-        <button type="button" onclick="window.print()">Imprimir / Guardar PDF</button>
+        <button type="button" data-report-print>Imprimir / Guardar PDF</button>
+        <button type="button" data-report-csv>Exportar CSV</button>
         <span>Reporte completo · Orientación horizontal</span>
     </nav>
     <main class="hyt-report">

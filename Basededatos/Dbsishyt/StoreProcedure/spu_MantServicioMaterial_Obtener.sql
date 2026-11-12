@@ -4,6 +4,7 @@
 -- Description:   Consulta ServicioMaterial, referencias e historial paginado.
 -- =============================================
 -- Firma: FRANCO LARA | Create date: 05/11/2026 | Códigos automáticos inalterables y retiro de posición del maestro de materiales.
+-- Firma: FRANCO LARA | Create date: 10/11/2026 | Devuelve el código de detracción configurado para el material.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_MantServicioMaterial_Obtener
@@ -26,6 +27,7 @@ BEGIN
             m.Descripcion,
             m.UnidadMedidaId,
             m.EspecialidadId,
+            m.CodigoDetraccion,
             m.Activo,
             m.VersionFila,
             m.FechaRegistro,

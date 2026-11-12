@@ -217,10 +217,16 @@ try
     Check(emptyObligations.Obligaciones.Length == 0 && emptyObligations.Polizas.Length == 0,
         "Un mes sin obligaciones ni pólizas devuelve dos listas vacías");
     var cargo = await workers.SavePositionAsync(actor, new(0, "Supervisor", true, []), default);
+    var payrollConcepts = await payroll.ConceptsAsync(actor, default);
+    var family = payrollConcepts.Single(concept => concept.Nombre == "Asignación familiar");
+    var pension = payrollConcepts.Single(concept => concept.Regimen == "AFP");
+    Check(payrollConcepts.Count == 4 && payrollConcepts.Any(concept => concept.Nombre == "Bono" && concept.Valor is null),
+        "Se siembran los cuatro conceptos con valores opcionales");
+    await payroll.SaveConceptAsync(actor, family with { Valor = 100m }, default);
     var workerId = await workers.SaveWorkerAsync(actor,
         new(null, "00001234", "Personal temporal", "PLANILLA", hireDate, true, null, true, "Banco temporal", "0000000042",
             cargo, 1500.50m, true, new(new(8, 0), new(17, 0), "AFP", "Prima AFP", "SEMANAL"),
-            "00012345678901234567", true), default);
+            "00012345678901234567", true, [family.ConceptoId]), default);
     var externalId = await workers.SaveWorkerAsync(actor,
         new(null, "EXT-01", "Externo temporal", "EXTERNO", hireDate, true, null, false, null, null,
             null, 900m, true, new(null, null, null, null, "SEMANAL")), default);
@@ -276,12 +282,76 @@ try
         "Asistencia registra la salida y consolida los minutos extra del mes");
     var planStart = new DateOnly(2026, 11, 9);
     var draftPlan = await payroll.PlanAsync(actor, "SEMANAL", planStart, default);
+    var suggested = draftPlan.Filas.Single(row => row.TrabajadorId == workerId);
+    Check(draftPlan.VerCuenta && suggested is { Banco: "Banco temporal", Cuenta: "00012345678901234567", Cci: null, Cargo: "Supervisor" },
+        "La precarga autorizada muestra banco y CCI con ceros iniciales");
+    await Execute(connection, "DELETE FROM dbo.RolPermiso WHERE RoleId=N'HYT-ADMIN' AND CodigoPermiso=N'TRABAJADORES.CUENTA';");
+    try
+    {
+        var maskedPlan = await payroll.PlanAsync(actor, "SEMANAL", planStart, default);
+        Check(!maskedPlan.VerCuenta && maskedPlan.Filas.All(row => row.Banco is null && row.Cuenta is null),
+            "El listado de planificación protege la cuenta bancaria según permisos");
+    }
+    finally
+    {
+        await Execute(connection, "INSERT INTO dbo.RolPermiso(RoleId,CodigoPermiso) VALUES (N'HYT-ADMIN',N'TRABAJADORES.CUENTA');");
+    }
+    Check(worker.Concepts?.SequenceEqual([family.ConceptoId]) == true &&
+        suggested.ImporteExtra == 100m && suggested.Descuento == 150.05m &&
+        suggested.Ajustes!.Any(adjustment => adjustment.ConceptoId == pension.ConceptoId && adjustment.Porcentaje == 10m),
+        "La planificación carga asignación familiar y calcula AFP sobre el sueldo base");
+    var alternateStart = planStart.AddDays(-7);
+    await payroll.SavePlanAsync(actor, "SEMANAL", alternateStart, null, [new()
+    {
+        TrabajadorId = workerId, Base = 800m,
+        Ajustes = [new("ABONO", alternateStart, null, family.Nombre, 0, 100m, family.ConceptoId),
+            new("DESCUENTO", alternateStart, null, pension.Nombre, 0, 99m, pension.ConceptoId, 10m)]
+    }], default);
+    var alternate = await payroll.PlanAsync(actor, "SEMANAL", alternateStart, default);
+    var alternateWorker = alternate.Filas.Single(row => row.TrabajadorId == workerId);
+    Check(alternateWorker.Neto == 820m, "SQL vuelve a calcular el porcentaje con la base de la planificación");
+    Check(alternate.PorIncorporar && alternate.Filas.Single(row => row.TrabajadorId == externalId) is { Tipo: "EXTERNO", Base: 900m },
+        "La planificación pendiente precarga al externo que falta y conserva los importes registrados");
+    await ExpectFailure(() => payroll.ConfirmPlanAsync(actor, "SEMANAL", alternateStart, alternate.VersionFila!,
+        alternateStart, "PAGO INCOMPLETO", default), "incorporar", "Confirmar el pago requiere guardar las incorporaciones");
+    await ExpectFailure(() => payroll.ReadBatchAsync(actor, alternate.PlanId!.Value, alternate.VersionFila!, "PLANILLA", default),
+        "incorporar", "Exportar requiere guardar las incorporaciones");
+    var adjustment = alternateWorker.Ajustes!;
+    await payroll.SavePlanAsync(actor, "SEMANAL", alternateStart, alternate.VersionFila, [new()
+    {
+        TrabajadorId = workerId, Base = 800m, Ajustes = [adjustment[0], adjustment[1] with { Importe = 90m, Porcentaje = null }]
+    }, new() { TrabajadorId = externalId, Base = 900m }], default);
+    var updatedAlternate = await payroll.PlanAsync(actor, "SEMANAL", alternateStart, default);
+    Check(updatedAlternate.Filas.Single(row => row.TrabajadorId == workerId).Neto == 810m,
+        "El AFP admite reemplazar el cálculo por el importe editado");
+    Check(!updatedAlternate.PorIncorporar && (await payroll.ReportPlanAsync(actor, "SEMANAL", alternateStart, default))
+        .Filas.Any(row => row.TrabajadorId == externalId && row.Base == 900m),
+        "Guardar incorpora al externo al detalle persistido del reporte");
     Check(draftPlan.Filas.Length == 2 && draftPlan.Filas.Any(row => row.Tipo == "EXTERNO" && row.Base == 900m)
         && draftPlan.Filas.Any(row => row.Tipo == "PLANILLA" && row.Base == 1500.50m && row.MinutosExtra == 0),
         "La precarga semanal incluye personal y externos con sueldo mensual");
     Check((await payroll.PlanAsync(actor, "QUINCENAL", new(2026, 11, 16), default)).Hasta == new DateOnly(2026, 11, 30)
         && (await payroll.PlanAsync(actor, "MENSUAL", new(2026, 11, 1), default)).Filas.Length == 0,
         "La planificación distingue la quincena y el mes y filtra por frecuencia");
+    var biweeklyWorkerId = await workers.SaveWorkerAsync(actor,
+        new(null, "QUINC-01", "Personal quincenal", "PLANILLA", new(2027, 2, 1), true, null, false, null, null,
+            cargo, 1600.01m, true, new(null, null, "AFP", "Prima AFP", "QUINCENAL"), Concepts: [family.ConceptoId]), default);
+    var firstHalf = await payroll.PlanAsync(actor, "QUINCENAL", new(2027, 2, 1), default);
+    var secondHalf = await payroll.PlanAsync(actor, "QUINCENAL", new(2027, 2, 16), default);
+    Check(firstHalf.Hasta == new DateOnly(2027, 2, 15) && firstHalf.Filas.Single() is
+        { Base: 800.01m, ImporteExtra: 0m, Descuento: 0m } &&
+        firstHalf.Conceptos!.All(concept => concept.ConceptoId != family.ConceptoId && concept.ConceptoId != pension.ConceptoId),
+        "La primera quincena carga media remuneración sin asignación familiar ni pensión");
+    var secondRow = secondHalf.Filas.Single();
+    Check(secondHalf.Hasta == new DateOnly(2027, 2, 28) && secondRow is
+        { Base: 800m, SueldoMensual: 1600.01m, ImporteExtra: 100m, Descuento: 160m, Neto: 740m } &&
+        secondRow.Ajustes!.Single(item => item.ConceptoId == pension.ConceptoId).BasePorcentaje == 1600.01m,
+        "La segunda quincena paga la otra mitad con asignación familiar y AFP mensual");
+    await payroll.SavePlanAsync(actor, "QUINCENAL", secondHalf.Desde, null,
+        [new() { TrabajadorId = biweeklyWorkerId, Base = 700m, Ajustes = secondRow.Ajustes }], default);
+    Check((await payroll.PlanAsync(actor, "QUINCENAL", secondHalf.Desde, default)).Filas.Single() is
+        { Base: 700m, ImporteExtra: 100m, Descuento: 160m, Neto: 640m },
+        "Editar el pago quincenal conserva la base mensual del AFP al guardar");
     var planRows = draftPlan.Filas.Select(row => new PayPlanLineInput
     {
         TrabajadorId = row.TrabajadorId, Base = 350m,
@@ -297,7 +367,8 @@ try
     var reportPlan = await payroll.ReportPlanAsync(actor, "SEMANAL", planStart, default);
     Check(reportPlan.VerCuenta && reportPlan.Filas.Single(row => row.TrabajadorId == workerId) is
         { MinutosExtra: 120, Cci: "00012345678901234567", Ajustes.Length: 2 } &&
-        savedPlan.Filas.All(row => row.Cci is null),
+        savedPlan.VerCuenta && savedPlan.Filas.Single(row => row.TrabajadorId == workerId) is
+        { Banco: "Banco temporal", Cuenta: "00012345678901234567", Cci: null },
         "El reporte concilia los ajustes y devuelve el CCI solo en modo reporte");
     await ExpectFailure(() => payroll.SavePlanAsync(actor, "SEMANAL", planStart, null, planRows, default),
         "cambio", "El plan rechaza una versión desactualizada");
@@ -422,6 +493,90 @@ try
         "La confirmación registra el neto por trabajador y queda disponible en el reporte");
     await ExpectFailure(() => payroll.SavePlanAsync(actor, "SEMANAL", planStart, confirmedPlan.VersionFila, planRows, default),
         "pagada y cerrada", "SQL bloquea la edición de una planificación pagada");
+    await ExpectFailure(() => payroll.ReadBatchAsync(actor, planId, confirmedPlan.VersionFila!, "PLANILLA", default),
+        "ya está pagada", "Telecrédito bloquea la descarga de un período pagado");
+
+    var bcpCharge = new TelecreditAccount("C", "1911000152055", "PEN");
+    Check(await payroll.GetChargeAccountAsync(actor, default) is null, "La cuenta de cargo empieza sin configurar");
+    await payroll.SaveChargeAccountAsync(actor, bcpCharge, default);
+    var configuredCharge = await payroll.GetChargeAccountAsync(actor, default);
+    Check(configuredCharge is { TipoCuenta: "C", NumeroCuenta: "1911000152055", Moneda: "PEN", VersionFila.Length: 8 },
+        "Configuración Telecrédito guarda cuenta y versión");
+    await ExpectFailure(() => payroll.SaveChargeAccountAsync(actor, bcpCharge, default), "configuración cambió",
+        "Telecrédito protege la configuración contra una edición concurrente");
+
+    await payroll.SaveChargeAccountAsync(actor, bcpCharge with
+    {
+        NumeroCuenta = "1911000152155", Moneda = "USD", VersionFila = configuredCharge!.VersionFila
+    }, default);
+    var usdCharge = await payroll.GetChargeAccountAsync(actor, default);
+    Check(usdCharge is { NumeroCuenta: "1911000152155", Moneda: "USD" },
+        "Telecrédito guarda la moneda de una cuenta de cargo en dólares");
+    var usdBatch = new TelecreditBatch(1, usdCharge, []);
+    Check(Telecredit.Generate(usdBatch, "PLANILLA", new(2027, 5, 1), new(2027, 5, 1), "PLANILLA", false)
+        .Errors.Any(error => error.Contains("esta planilla en soles")),
+        "Telecrédito informa que la cuenta en dólares es incompatible con una planilla en soles");
+    await payroll.SaveChargeAccountAsync(actor, bcpCharge with { VersionFila = usdCharge!.VersionFila }, default);
+
+    var bcpStart = new DateOnly(2027, 5, 1);
+    var bcpWorker = await workers.SaveWorkerAsync(actor, new(null, "00000042", "Texto anterior", "PLANILLA",
+        bcpStart, true, null, true, "BCP", "1910008791097",
+        PaySettings: new(null, null, null, null, "MENSUAL"), UpdateCci: true,
+        Telecredit: new("1", null, "C", "PEN"), UpdateTelecreditAccount: true,
+        GivenNames: "Ana María", Surnames: "Pérez Ñahui"), default);
+    var splitWorker = (await workers.WorkersAsync(actor, bcpWorker, null, null, 1, default)).Single();
+    Check(splitWorker is { GivenNames: "Ana María", Surnames: "Pérez Ñahui", Name: "Pérez Ñahui Ana María" }
+        && (await workers.WorkersAsync(actor, null, "Ana María Pérez Ñahui", null, 1, default)).Single().Id == bcpWorker,
+        "La ficha guarda nombres y apellidos separados y el listado encuentra ambos órdenes");
+    var externalBcp = await workers.SaveWorkerAsync(actor, new(null, "001ABC", "López Díaz", "EXTERNO",
+        bcpStart, true, null, true, "Interbank", null, PaySettings: new(null, null, null, null, "MENSUAL"),
+        Cci: "00963200000380987111", UpdateCci: true,
+        Telecredit: new("3", "002XYZ", null, "PEN"), UpdateTelecreditAccount: true), default);
+    var savedExternalBcp = (await workers.WorkersAsync(actor, externalBcp, null, null, 1, default)).Single();
+    Check(savedExternalBcp.Document == "001ABC" && savedExternalBcp.Account is null
+        && savedExternalBcp.Cci == "00963200000380987111" && savedExternalBcp.Telecredit?.Document == "002XYZ",
+        "El registro histórico conserva el documento alternativo y permite CCI sin cuenta local");
+
+    var bcpPlanId = await payroll.SavePlanAsync(actor, "MENSUAL", bcpStart, null, [
+        new() { TrabajadorId = bcpWorker, Base = 400.10m, Descuento = 25m },
+        new() { TrabajadorId = externalBcp, Base = 900.90m, Descuento = 76m }
+    ], default);
+    await workers.SaveWorkerAsync(actor, new(bcpWorker, splitWorker.Document, splitWorker.Name, splitWorker.Kind,
+        bcpStart, true, splitWorker.Version, false, null, null, GivenNames: "Ana Lucía", Surnames: "Pérez Ñahui"), default);
+    var bcpPlan = await payroll.PlanAsync(actor, "MENSUAL", bcpStart, default);
+    Check(bcpPlan.Filas.Single(row => row.TrabajadorId == bcpWorker).Nombre == "Pérez Ñahui Ana Lucía",
+        "La planificación pendiente refleja apellidos y nombres actualizados en la ficha");
+    Check(bcpPlan.Filas.Single(row => row.TrabajadorId == externalBcp).Cuenta == "00963200000380987111",
+        "La planificación toma el CCI del banco distinto a BCP sin tipo configurado");
+    var salaryBatch = await payroll.ReadBatchAsync(actor, bcpPlanId, bcpPlan.VersionFila!, "PLANILLA", default);
+    var feeBatch = await payroll.ReadBatchAsync(actor, bcpPlanId, bcpPlan.VersionFila!, "EXTERNO", default);
+    Check(salaryBatch.Abonos?.Single() is { Documento: "00000042", Nombre: "Pérez Ñahui Ana Lucía", Neto: 375.10m }
+        && feeBatch.Abonos?.Single() is { Documento: "001ABC", Neto: 824.90m }
+        && (await payroll.PlanAsync(actor, "MENSUAL", bcpStart, default)).FechaPago is null,
+        "Telecrédito separa los lotes, toma el documento principal y lee los netos sin registrar pagos");
+    await ExpectFailure(() => payroll.ReadBatchAsync(actor, bcpPlanId, confirmedPlan.VersionFila!, "PLANILLA", default),
+        "planificación cambió", "La exportación rechaza una versión obsoleta");
+    var formatSample = salaryBatch with { Abonos = [salaryBatch.Abonos!.Single(), feeBatch.Abonos!.Single()] };
+    var bcpFile = Telecredit.Generate(formatSample, "PLANILLA", bcpStart, bcpStart, "SUELDOS MAYO", false).File!;
+    var bcpLines = System.Text.Encoding.ASCII.GetString(bcpFile.Bytes).Split("\r\n");
+    Check(bcpLines.Length == 4 && bcpLines[0].Length == 113 && bcpLines[1].Length == 195 && bcpLines[2].Length == 195
+        && bcpLines[0][1..7] == "000002" && bcpLines[0][41..58] == "00000000001200.00"
+        && bcpLines[0][98..113] == "000001389930263" && bcpLines[1][23..31] == "00000042",
+        "El TXT respeta el ancho fijo, los ceros iniciales, la suma y el total de control recalculado con el ejemplo BCP adaptado a soles");
+    var badBcp = formatSample with { Abonos = [formatSample.Abonos![0] with { Cuenta = "123" }, formatSample.Abonos[1]] };
+    Check(Telecredit.Generate(badBcp, "PLANILLA", bcpStart, bcpStart, "SUELDOS MAYO", false) is
+        { File: null, Errors.Count: 1 }, "Una cuenta inválida bloquea la descarga de todo el lote");
+    await payroll.SavePlanAsync(actor, "MENSUAL", bcpStart, bcpPlan.VersionFila, [
+        new() { TrabajadorId = bcpWorker, Base = 400.10m, Descuento = 25m },
+        new() { TrabajadorId = externalBcp, Base = 900.90m, Descuento = 76m, Incluido = false }
+    ], default);
+    var selectedPlan = await payroll.PlanAsync(actor, "MENSUAL", bcpStart, default);
+    var selectedPayrollReport = await payroll.ReportPlanAsync(actor, "MENSUAL", bcpStart, default);
+    var excludedBatch = await payroll.ReadBatchAsync(actor, bcpPlanId, selectedPlan.VersionFila!, "EXTERNO", default);
+    Check(selectedPlan.Filas.Single(row => row.TrabajadorId == externalBcp) is { Incluido: false, Neto: 824.90m }
+        && selectedPayrollReport.Filas.Single().TrabajadorId == bcpWorker && excludedBatch.Abonos is not { Length: > 0 },
+        "Una exclusión guardada conserva los importes y retira al trabajador del reporte y de Telecrédito");
+
     var supplierId = Convert.ToInt64(await Scalar(connection, """
         EXEC dbo.spu_ProveedorHYT_Guardar N'sql-test-editor', '20000000001',
              N'Proveedor temporal', 1, @ActualizarCuenta = 1,
@@ -936,13 +1091,19 @@ try
     Check(sapDefaults.GetProperty("Proveedor").GetProperty("CodigoSAPProveedor").GetString()=="000SAP-B/02","Nuevo presupuesto toma SAP del cliente aunque no existan datos HYT por cliente");
     var naturalId=await MasterSave("clientes",new{TipoEntidad="NATURAL",TipoIdentificacion="DNI",NumeroIdentificacion="12345678",Nombres="Ana",Apellidos="Pérez",RazonSocial="Descartar",Activo=true});
     var storeWithClient=await MasterSave("tiendas",new{ClienteId=autoClient,Nombre="Tienda de listado",Activo=true});
-    var contactWithClient=await MasterSave("contactos",new{ClienteId=autoClient,Nombre="Contacto de listado",Activo=true});
+    await ExpectDomainFailure(()=>MasterSave("contactos",new{ClienteId=autoClient,Nombre="Contacto sin tienda",Activo=true}),
+        "Selecciona una tienda", "El contacto exige una tienda al guardar");
+    var contactWithClient=await MasterSave("contactos",new{ClienteId=autoClient,TiendaId=storeWithClient,Nombre="Contacto de listado",Activo=true});
+    var contactsByStore = await masters.ListAsync(GestionServicios.Application.Maintenance.MaintenanceDefinitions.Find("contactos")!,actor,"Tienda de listado",1);
+    Check(contactsByStore.Rows.Any(row=>row.Id==contactWithClient&&row.StoreName=="Tienda de listado"),
+        "El listado de contactos muestra y busca por tienda");
     foreach(var relatedKey in new[]{"tiendas","contactos"})
     {
         var relatedList=await masters.ListAsync(GestionServicios.Application.Maintenance.MaintenanceDefinitions.Find(relatedKey)!,actor,generatedCode,1);
         Check(relatedList.Rows.Any(row=>row.ClientCode==generatedCode&&row.ClientName=="Cliente actualizado")&&relatedList.Total==1,"Listado y búsqueda por código de cliente en "+relatedKey);
     }
-    var naturalContact=await MasterSave("contactos",new{ClienteId=naturalId,Nombre="Contacto natural",Activo=true});
+    var naturalStore=await MasterSave("tiendas",new{ClienteId=naturalId,Nombre="Tienda del cliente natural",Activo=true});
+    var naturalContact=await MasterSave("contactos",new{ClienteId=naturalId,TiendaId=naturalStore,Nombre="Contacto natural",Activo=true});
     var naturalContacts=await masters.ListAsync(GestionServicios.Application.Maintenance.MaintenanceDefinitions.Find("contactos")!,actor,"Ana Pérez",1);
     Check(naturalContacts.Rows.Any(row=>row.Id==naturalContact&&row.ClientName=="Ana Pérez"),"Contacto muestra y busca nombres/apellidos del cliente natural");
     var naturalSnapshot=(await masters.GetAsync(GestionServicios.Application.Maintenance.MaintenanceDefinitions.Find("clientes")!,actor,naturalId))!;
@@ -987,17 +1148,20 @@ try
     var serviceType=await MasterSave("tipos-servicio",new{Codigo="MANUAL",Descripcion="Tipo nuevo",Activo=true});
     var zone=await MasterSave("zonas",new{Codigo="MANUAL",Descripcion="Zona nueva",Activo=true});
     Check((await masters.GetAsync(GestionServicios.Application.Maintenance.MaintenanceDefinitions.Find("especialidades")!,actor,specialization))!.Text("Codigo").StartsWith("ESP-")&&(await masters.GetAsync(GestionServicios.Application.Maintenance.MaintenanceDefinitions.Find("tipos-servicio")!,actor,serviceType))!.Text("Codigo").StartsWith("TS-")&&(await masters.GetAsync(GestionServicios.Application.Maintenance.MaintenanceDefinitions.Find("zonas")!,actor,zone))!.Text("Codigo").StartsWith("ZON-"),"Especialidades, tipos y zonas usan numeración automática");
-    var material=await MasterSave("materiales",new{CodigoInterno="MANUAL",Posicion="NO_DEBE_GUARDAR",CodigoMaterialSAP="000SAP-A",Descripcion="Material con precios",UnidadMedidaId=unit,EspecialidadId=specialization,Activo=true,ZonaIds=new[]{zone}});
+    var material=await MasterSave("materiales",new{CodigoInterno="MANUAL",Posicion="NO_DEBE_GUARDAR",CodigoMaterialSAP="000SAP-A",CodigoDetraccion="022",Descripcion="Material con precios",UnidadMedidaId=unit,EspecialidadId=specialization,Activo=true,ZonaIds=new[]{zone}});
     var materialRecord=(await masters.GetAsync(GestionServicios.Application.Maintenance.MaintenanceDefinitions.Find("materiales")!,actor,material))!;
     Check(materialRecord.Text("CodigoInterno").StartsWith("MAT-")&&materialRecord.Text("CodigoMaterialSAP")=="000SAP-A"&&await Scalar(connection,$"SELECT Posicion FROM dbo.ServicioMaterial WHERE MaterialId={material}") is DBNull,"Material conserva SAP libre, genera código interno y no recibe posición del maestro");
     var tariff=await MasterSave("tarifarios",new{Codigo="MANUAL",Nombre="Tarifario del material",Activo=true});
     var tariffVersion=await MasterSave("versiones-tarifario",new{TarifarioId=tariff,CodigoMonedaPredeterminada="PEN",CodigoTipoIGVPredeterminado="SIN_IGV",ZonaIds=new[]{zone}});
+    Check(materialRecord.Text("CodigoDetraccion")=="022" &&
+        (await masters.CatalogsAsync(actor))["Withholding"].Any(option=>option.Code=="022"),
+        "El maestro de materiales conserva el código de detracción del catálogo");
     var price=await MasterSave("partidas-tarifario",new{VersionId=tariffVersion,MaterialId=material,Posicion="01-A",CodigoMaterialSAP="000SAP-A",TipoServicioId=serviceType,CodigoMoneda="PEN",CodigoTipoIGV="SIN_IGV",PrecioPEN=12.34m,PrecioUSD=(decimal?)null,Activo=true,ZonaIds=new[]{zone}});
     var prices=await masters.MaterialTariffsAsync(actor,material,1);
     Check(prices.Total==1&&prices.Rows.Single().GetProperty("Id").GetInt64()==price&&prices.Rows[0].GetProperty("PrecioPEN").GetDecimal()==12.34m&&prices.Rows[0].GetProperty("PrecioUSD").ValueKind==JsonValueKind.Null,"Precios de ficha recuperan moneda, zonas y USD vacío desde SQL");
     for(var priceIndex=0;priceIndex<22;priceIndex++)await MasterSave("partidas-tarifario",new{VersionId=tariffVersion,MaterialId=material,Posicion="P-"+priceIndex,CodigoMoneda="PEN",CodigoTipoIGV="SIN_IGV",PrecioPEN=10m,Activo=true,ZonaIds=Array.Empty<int>()});
     prices=await masters.MaterialTariffsAsync(actor,material,1);var nextPrices=await masters.MaterialTariffsAsync(actor,material,2);
-    Check(prices.Rows.Count==20&&nextPrices.Rows.Count==3&&prices.Total==23&&!prices.Rows.Select(row=>row.GetProperty("Id").GetInt64()).Intersect(nextPrices.Rows.Select(row=>row.GetProperty("Id").GetInt64())).Any(),"Tarifas del material se paginan en SQL de veinte sin duplicados");
+    Check(prices.Total==1&&prices.Rows.Count==1&&nextPrices.Rows.Count==0,"El listado muestra una sola tarifa por material aunque existan partidas históricas");
     await ExpectDomainFailure(()=>masters.MaterialTariffsAsync("sql-test-budget-only",material,1),"permiso","Precios del material exigen consulta de materiales y tarifarios");
     var versionRecord=(await masters.GetAsync(GestionServicios.Application.Maintenance.MaintenanceDefinitions.Find("versiones-tarifario")!,actor,tariffVersion))!;
     await masters.PublishVersionAsync(actor,tariffVersion,Convert.FromBase64String(versionRecord.Text("VersionFila")),CancellationToken.None);
@@ -1005,7 +1169,7 @@ try
     await ExpectDomainFailure(()=>MasterSave("partidas-tarifario",new{VersionId=tariffVersion,MaterialId=material,CodigoMoneda="PEN",CodigoTipoIGV="SIN_IGV",PrecioPEN=99m,Activo=true,ZonaIds=Array.Empty<int>()},price,Convert.FromBase64String(priceRecord.Text("VersionFila"))),"borrador","Precio publicado no se modifica desde ninguna ruta");
     var publishedVersion=(await masters.GetAsync(GestionServicios.Application.Maintenance.MaintenanceDefinitions.Find("versiones-tarifario")!,actor,tariffVersion))!;
     var copiedVersion=await masters.CloneVersionAsync(actor,tariffVersion,Convert.FromBase64String(publishedVersion.Text("VersionFila")),CancellationToken.None);
-    Check(copiedVersion!=tariffVersion&&(await masters.MaterialTariffsAsync(actor,material,1)).Rows.Any(row=>row.GetProperty("VersionId").GetInt64()==copiedVersion&&row.GetProperty("Estado").GetString()=="BORRADOR"),"Copiar versión deja precios borrador disponibles sin alterar el histórico");
+    Check(copiedVersion!=tariffVersion&&Convert.ToInt32(await Scalar(connection,$"SELECT COUNT(1) FROM dbo.TarifarioPartida WHERE VersionId={copiedVersion} AND MaterialId={material}"))>0,"Copiar versión conserva las partidas históricas fuera del tarifario operativo");
     var ubigeoCatalogs=await masters.CatalogsAsync(actor);
     Check(ubigeoCatalogs["Departments"].Count==25&&ubigeoCatalogs["Provinces"].Count==196&&ubigeoCatalogs["Districts"].Count==1889,"Ubigeos copiados íntegros de FralseCont en HYT");
     await Execute(connection,"UPDATE dbo.Cliente SET DireccionFiscal=N'Av. Cliente 123',CodigoUbigeo='150101' WHERE ClienteId=1; UPDATE dbo.Tienda SET Direccion=N'Av. Tienda 456',CodigoUbigeo='150132' WHERE TiendaId=1; UPDATE dbo.ConfiguracionHYT SET ConsideracionesPresupuesto=N'Condiciones de prueba configuradas' WHERE Id=1;");
@@ -1036,6 +1200,8 @@ try
     Check(directRecord.Text("EsTarifarioMaterial").Equals("true",StringComparison.OrdinalIgnoreCase)&&directRecord.Text("VersionEstado")=="VIGENTE"&&directRecord.Text("PrecioUSD")=="","Tarifario directo queda disponible sin publicación manual y permite USD vacío");
     var filteredChoice=await sapBudgets.TariffsAsync(actor,1,new DateOnly(2026,11,5),"PEN",null,1,CancellationToken.None,material,directPrice);
     Check(filteredChoice.Rows.Count==1&&filteredChoice.Rows[0].TariffLineId==directPrice,"Ayuda de tarifa filtra el material y registro elegido en SQL");
+    var defaultChoice=await sapBudgets.TariffsAsync(actor,0,new DateOnly(2026,11,5),"PEN",null,1,CancellationToken.None,material);
+    Check(defaultChoice.Total==1&&defaultChoice.Rows.Single().TariffLineId==directPrice,"Seleccionar material precarga su único tarifario directo");
     var genericChoice=await sapBudgets.TariffsAsync(actor,0,new DateOnly(2026,11,5),"PEN",null,1,CancellationToken.None,material,directPrice);
     Check(genericChoice.Rows.Count==1,"Tarifa genérica del material disponible antes de seleccionar cliente");
     var privateChoice=await sapBudgets.TariffsAsync(actor,0,new DateOnly(2026,11,5),"PEN",null,1,CancellationToken.None,1,2);
@@ -1044,6 +1210,9 @@ try
     Check(wrongChoice.Total==0,"Ayuda no devuelve tarifas de otro material");
     object NetDetail(long selectedMaterial,string tax="SIN_IGV")=>new{ClienteId=1,TiendaId=1,TipoAtencion="INVITACION",Descripcion="Detalle neto editable",DetalleNeto=true,Revision=new{FechaEmision="2026-11-05",CodigoMoneda="PEN",CodigoTipoIGV=tax},Partidas=new[]{new{MaterialId=selectedMaterial,PartidaTarifarioId=directPrice,OrigenPrecio="MANUAL",Descripcion="Material elegido",Unidad="UND",Cantidad=2.50m,PrecioManual=80m,CodigoMonedaOrigen="PEN",CodigoTipoIGVOrigen="SIN_IGV",MotivoPrecioManual="Precio editado en detalle",NumeroNecesidad="NEC-A1",TipoServicio=new string('N',100)}}};
     var netBudget=await Save(connection,NetDetail(material));
+    var byDetail=await sapBudgets.ListAsync(actor,DateTimeOffset.UtcNow.AddDays(-1),DateTimeOffset.UtcNow.AddDays(1),"Material elegido",1,null,CancellationToken.None);
+    Check(byDetail.Rows.Any(row=>row.BudgetId==netBudget.BudgetId),"El listado encuentra texto presente solo en la descripción de una partida");
+    Check(Convert.ToString(await Scalar(connection,$"SELECT NumeroCotizacionCliente FROM dbo.PresupuestoRevision WHERE RevisionId={netBudget.RevisionId}"))==netBudget.Number,"El número de cotización se asigna con el número de presupuesto");
     Check(Convert.ToDecimal(await Scalar(connection,$"SELECT BaseImponible FROM dbo.PresupuestoPartida WHERE RevisionId={netBudget.RevisionId}"))==200m&&Convert.ToDecimal(await Scalar(connection,$"SELECT Total FROM dbo.PresupuestoRevision WHERE RevisionId={netBudget.RevisionId}"))==236m,"Detalle guarda precio neto editado, subtotal cantidad por precio e IGV por separado");
     Check(Convert.ToString(await Scalar(connection,$"SELECT TipoServicio FROM dbo.PresupuestoPartida WHERE RevisionId={netBudget.RevisionId}"))==new string('N',100),"Detalle conserva el nombre completo del servicio sin truncar a sesenta caracteres");
     await ExpectFailure(()=>Save(connection,NetDetail(material,"CON_IGV")),"sin IGV","SQL exige tratamiento neto en el nuevo detalle");
@@ -1062,7 +1231,9 @@ try
     Check(allPrices.Total==0&&allPrices.Rows.Count==0,"Tarifarios unificado respeta filtro sin coincidencias");
     var unified=await masters.MaterialTariffsAsync(actor,0,1);
     Check(unified.Total>0&&unified.Rows.Any(row=>row.GetProperty("Id").GetInt64()==directPrice)&&unified.Rows.All(row=>row.GetProperty("MaterialId").GetInt64()>0),"Tarifarios unificado incluye precio creado desde material y su identidad");
-    var usdOnly=await masters.SaveMaterialTariffAsync(actor,material,null,null,"SIN_IGV",null,9.50m,true);
+    await ExpectDomainFailure(()=>masters.SaveMaterialTariffAsync(actor,material,null,null,"SIN_IGV",null,9.50m,true),"ya tiene un tarifario","Una segunda tarifa directa para el mismo material se rechaza");
+    var materialUsd=await MasterSave("materiales",new{Descripcion="Material en dólares",UnidadMedidaId=unit,EspecialidadId=specialization,Activo=true,ZonaIds=new[]{zone}});
+    var usdOnly=await masters.SaveMaterialTariffAsync(actor,materialUsd,null,null,"SIN_IGV",null,9.50m,true);
     var usdRecord=await masters.GetAsync(GestionServicios.Application.Maintenance.MaintenanceDefinitions.Find("partidas-tarifario")!,actor,usdOnly);
     Check(usdRecord!.Text("PrecioPEN")==""&&usdRecord.Text("PrecioUSD")!="","Tarifario permite solo dólares sin inventar precio en soles");
     await ExpectDomainFailure(()=>masters.SaveMaterialTariffAsync(actor,material,null,null,"SIN_IGV",null,null,true),"precio","Tarifario rechaza ambos importes vacíos");
@@ -1135,7 +1306,10 @@ try
     Check(noStoreContacts.Text("ContactosTienda")=="","Sin contactos de tienda no toma un responsable interno ni inventa nombre");
     await MasterSave("contactos",new{ClienteId=1,TiendaId=contactStore,Nombre="Encargado Tienda",Activo=true});
     await MasterSave("contactos",new{ClienteId=1,TiendaId=contactStore,Nombre="Contacto inactivo",Activo=false});
-    await MasterSave("contactos",new{ClienteId=1,Nombre="Contacto general del cliente",Activo=true});
+    await Execute(connection, """
+        INSERT INTO dbo.ContactoCliente (ClienteId, TiendaId, Nombre, Activo, UsuarioRegistro)
+        VALUES (1, NULL, N'Contacto general histórico', 1, N'sql-test-editor');
+        """);
     await MasterSave("contactos",new{ClienteId=1,TiendaId=1,Nombre="Contacto de otra tienda",Activo=true});
     var oneStoreContact=(await sapBudgets.GetAsync(actor,contactBudget.BudgetId,contactBudget.RevisionId,1,CancellationToken.None))!;
     Check(oneStoreContact.Text("ContactosTienda")=="Encargado Tienda","Presupuesto recupera solo contacto activo de su tienda y cliente");
@@ -1251,13 +1425,282 @@ try
         Check(stateReport.Rows.All(row=>row.GetProperty("Estado").GetString()==stateCode),"Reporte OC filtra estado vigente: "+stateCode);
     }
     var integralDash=await reportingRepository.DashboardAsync(actor,kpiStart,kpiEnd,CancellationToken.None);
+    var coverage = integralDash.GetProperty("CoberturaPresupuesto");
+    var acceptedRows = integralAll.Rows.Where(row => row.GetProperty("Estado").GetString() == "APROBADO").ToArray();
+    bool HasGuide(JsonElement row) => row.GetProperty("TipoGuia").GetString() == "Guía";
+    bool HasOrder(JsonElement row) => row.GetProperty("EstadoOC").GetString() is { } state && state != "CANCELADA";
+    Check(coverage.GetProperty("ConGuia").GetInt64() == acceptedRows.Count(HasGuide) &&
+        coverage.GetProperty("ConOC").GetInt64() == acceptedRows.Count(HasOrder) &&
+        coverage.GetProperty("ConAmbos").GetInt64() == acceptedRows.Count(row => HasGuide(row) && HasOrder(row)),
+        "La cobertura de Inicio cuenta guía y OC vigentes únicamente en presupuestos aceptados");
+    var restrictedCoverage = (await reportingRepository.DashboardAsync("sql-test-budget-only",kpiStart,kpiEnd,CancellationToken.None))
+        .GetProperty("CoberturaPresupuesto");
+    Check(restrictedCoverage.TryGetProperty("ConOC", out _) && !restrictedCoverage.TryGetProperty("ConGuia", out _) &&
+        !restrictedCoverage.TryGetProperty("ConAmbos", out _), "Inicio omite la cobertura de guía sin su permiso y muestra la de OC autorizada");
     var pendingOcReport=await reportingRepository.ReportAsync(actor,"PRESUPUESTO",kpiStart,kpiEnd,1,CancellationToken.None,filters:new(PendingOrder:true));
     var pendingGuideReport=await reportingRepository.ReportAsync(actor,"PRESUPUESTO",kpiStart,kpiEnd,1,CancellationToken.None,filters:new(PendingGuide:true));
     var pendingInvoiceReport=await reportingRepository.ReportAsync(actor,"OC_CLIENTE",kpiStart,kpiEnd,1,CancellationToken.None,filters:new(PendingInvoice:true));
     Check(integralDash.GetProperty("PresupuestosSinOC").GetInt64()==pendingOcReport.Total&&integralDash.GetProperty("PresupuestosSinGuia").GetInt64()==pendingGuideReport.Total&&integralDash.GetProperty("PendientesFacturar").GetInt64()==pendingInvoiceReport.Total,"Pendientes del dashboard concilian con los nuevos filtros de reportes");
     var restrictedIntegral=await reportingRepository.ReportAsync("sql-test-budget-only","PRESUPUESTO",kpiStart,kpiEnd,1,CancellationToken.None,filters:new(Search:invoiceWithoutExecutionBudget.Number));
     Check(restrictedIntegral.Rows.Single().GetProperty("Guia").ValueKind==JsonValueKind.Null&&restrictedIntegral.Rows.Single().GetProperty("NumeroComprobante").ValueKind==JsonValueKind.Null,"Reporte presupuesto oculta referencias de módulos sin permiso");
+    var selectionStart = new DateOnly(2026, 11, 1);
+    var includedWorker = await workers.SaveWorkerAsync(actor, new(null, "SEL-01", "Personal incluido", "PLANILLA",
+        selectionStart, true, null, false, null, null, MonthlySalary: 1200m, UpdatePosition: true,
+        PaySettings: new(null, null, null, null, "QUINCENAL")), default);
+    var excludedWorker = await workers.SaveWorkerAsync(actor, new(null, "SEL-02", "Personal excluido", "EXTERNO",
+        selectionStart, true, null, false, null, null, MonthlySalary: 1000m, UpdatePosition: true,
+        PaySettings: new(null, null, null, null, "QUINCENAL")), default);
+    var selectionDraft = await payroll.PlanAsync(actor, "QUINCENAL", selectionStart, default);
+    var payrollSelectionLines = selectionDraft.Filas.Select(row => new PayPlanLineInput
+    {
+        TrabajadorId = row.TrabajadorId, Base = row.Base, Ajustes = row.Ajustes, Incluido = false
+    }).ToArray();
+    var selectionPlanId = await payroll.SavePlanAsync(actor, "QUINCENAL", selectionStart, null, payrollSelectionLines, default);
+    var emptySelection = await payroll.PlanAsync(actor, "QUINCENAL", selectionStart, default);
+    await ExpectFailure(() => payroll.ConfirmPlanAsync(actor, "QUINCENAL", selectionStart, emptySelection.VersionFila!,
+        selectionStart, "SELECCION QA", default), "al menos un trabajador", "Un período sin selección queda pendiente");
+    payrollSelectionLines.Single(row => row.TrabajadorId == includedWorker).Incluido = true;
+    await payroll.SavePlanAsync(actor, "QUINCENAL", selectionStart, emptySelection.VersionFila, payrollSelectionLines, default);
+    var payableSelection = await payroll.PlanAsync(actor, "QUINCENAL", selectionStart, default);
+    await payroll.ConfirmPlanAsync(actor, "QUINCENAL", selectionStart, payableSelection.VersionFila!,
+        selectionStart, "SELECCION QA", default);
+    var paidSelection = await payroll.PlanAsync(actor, "QUINCENAL", selectionStart, default);
+    Check(paidSelection.FechaPago == selectionStart && paidSelection.PlanId == selectionPlanId
+        && paidSelection.Filas.Single(row => row.TrabajadorId == excludedWorker).Incluido == false
+        && Convert.ToInt64(await Scalar(connection, "SELECT COUNT_BIG(1) FROM dbo.MovimientoPersonalHYT WHERE Referencia=N'SELECCION QA'")) == 1
+        && Convert.ToInt64(await Scalar(connection, $"SELECT COUNT_BIG(1) FROM dbo.MovimientoPersonalHYT WHERE Referencia=N'SELECCION QA' AND TrabajadorId={includedWorker}")) == 1,
+        "Confirmar cambia el estado a pagado y genera el pago únicamente para la persona incluida");
+
     await Execute(connection, "UPDATE dbo.AspNetUsers SET PasswordHash=N'hash-fixture-admin',SecurityStamp=N'stamp-fixture-admin',ConcurrencyStamp=N'version-fixture-admin' WHERE Id=N'sql-test-editor';");
+    // Firma: FRANCO LARA - 10/11/2026 | Compras y ventas: RUC, proveedores, saldos y vínculos.
+    {
+    var commercial = new GestionServicios.Infrastructure.Billing.SqlCommercialDocumentRepository(
+        new GestionServicios.Infrastructure.SqlConnectionFactory(connection.ConnectionString));
+    var companyRuc = Convert.ToString(await Scalar(connection, "SELECT Ruc FROM dbo.ConfiguracionHYT WHERE Id=1"))!;
+    await Execute(connection,"UPDATE dbo.Cliente SET NumeroIdentificacion=N'20655555551',Activo=1 WHERE ClienteId=1;");
+    var buyerDocument = "20655555551";
+    GestionServicios.Application.Billing.CommercialDocument Purchase(string number, string ruc = "20699999991")
+        => new("01", "F001", number, new DateOnly(2026,11,10), "PEN", ruc, "Proveedor XML de prueba", "Crédito", 118m,
+            [new("ITEM-A", "Producto XML", "NIU", 1m, 100m, 100m)], 12m, "PEN", "022", null, null, []);
+    foreach (var sales in new[] { false, true })
+    {
+        var emptyList = await commercial.ReadAsync(actor,sales,null,new DateOnly(2026,11,1),new DateOnly(2026,11,30),null,"HYT-QA-SIN-COINCIDENCIAS",1,null,null,default);
+        Check(emptyList.GetProperty("Filas").GetArrayLength()==0,"La consulta sin coincidencias conserva el arreglo Filas en compras y ventas");
+    }
+    var purchaseId = await commercial.SaveAsync(actor,false,Purchase("100") with { FechaVencimiento=new DateOnly(2026,12,10) },null,default);
+    var purchaseData = await commercial.ReadAsync(actor,false,purchaseId,null,null,null,null,1,null,null,default);
+    var emptyPurchase = purchaseData.GetProperty("Documento");
+    Check(emptyPurchase.GetProperty("FechaVencimiento").GetString()=="2026-12-10","El comprobante conserva su fecha de vencimiento.");
+    Check(emptyPurchase.GetProperty("Pagos").GetArrayLength()==0 && emptyPurchase.GetProperty("Costos").GetArrayLength()==0 &&
+        emptyPurchase.GetProperty("Presupuestos").GetArrayLength()==0 && purchaseData.GetProperty("OpcionesCosto").GetArrayLength()==0,
+        "La provisión nueva conserva sus arreglos vacíos de pagos y vínculos");
+    var supplierHelp = await commercial.ReadAsync(actor,false,null,null,null,null,"20699999991",1,null,null,default);
+    Check(supplierHelp.GetProperty("OpcionesProveedor").EnumerateArray().Any(row => row.GetProperty("DocumentoTercero").GetString()=="20699999991"),
+        "La ayuda busca en el maestro al proveedor registrado");
+    var initialSupplierHelp = await commercial.ReadAsync(actor,false,null,null,null,null,"",1,null,null,default);
+    Check(initialSupplierHelp.GetProperty("OpcionesProveedor").GetArrayLength()>0,
+        "La ayuda muestra proveedores activos al abrir sin escribir un filtro");
+    Check(emptyPurchase.GetProperty("ImporteDetraccion").GetDecimal()==14.16m &&
+        emptyPurchase.GetProperty("DetraccionDocumento").GetDecimal()==14.16m &&
+        emptyPurchase.GetProperty("NombreDetraccion").GetString()=="Comisión mercantil",
+        "La compra manual calcula 12 por ciento sobre 118 y conserva el código del catálogo");
+    var providerAuto = purchaseData.GetProperty("Documento").GetProperty("ProveedorId").GetInt64();
+    Check(providerAuto>0,"La provisión crea el proveedor automáticamente");
+    var purchaseSecond = await commercial.SaveAsync(actor,false,Purchase("101"),null,default);
+    Check((await commercial.ReadAsync(actor,false,purchaseSecond,null,null,null,null,1,null,null,default))
+        .GetProperty("Documento").GetProperty("ProveedorId").GetInt64()==providerAuto,"Otra factura reutiliza el código del proveedor por RUC");
+    await ExpectDomainFailure(()=>commercial.SaveAsync(actor,false,Purchase("100"),null,default),"ya se registró","No se duplica una factura de compra");
+    var pendingWithholdings=await commercial.ReadWithholdingsAsync(actor,"PENDIENTE","20699999991",null,1,default);
+    Check(pendingWithholdings.EnumerateArray().Any(row=>row.GetProperty("ComprobanteId").GetInt64()==purchaseId),
+        "La bandeja de detracciones encuentra los pendientes del proveedor");
+    await commercial.PayAsync(actor,purchaseId,false,new DateOnly(2026,11,10),103.84m,"ABONO-1",default);
+    await commercial.PayAsync(actor,purchaseId,true,new DateOnly(2026,11,10),14.16m,"CONSTANCIA-1",default);
+    await commercial.PayAsync(actor,purchaseId,true,new DateOnly(2026,11,10),14.16m,"CONSTANCIA-1",default);
+    Check(Convert.ToInt32(await Scalar(connection,$"SELECT COUNT(1) FROM dbo.ComprobanteHYTPago WHERE ComprobanteId={purchaseId}"))==2,
+        "Pago y detracción se registran por separado y el reintento no duplica el pago");
+    await ExpectDomainFailure(()=>commercial.PayAsync(actor,purchaseId,false,new DateOnly(2026,11,10),1m,"EXCESO",default),
+        "saldo","El pago al proveedor respeta el neto de detracción");
+    var paidWithholdings=await commercial.ReadWithholdingsAsync(actor,"PAGADA","20699999991","CONSTANCIA-1",1,default);
+    Check(paidWithholdings.EnumerateArray().Any(row=>row.GetProperty("ComprobanteId").GetInt64()==purchaseId &&
+        row.GetProperty("Saldo").GetDecimal()==0),"El pago deja la detracción pagada y permite buscar por operación");
+    var commercialBudget = await Save(connection,Payload([Manual()],description:"Presupuesto vinculado a comprobantes"));
+    var commercialBudget2 = await Save(connection,Payload([Manual()],description:"Segundo presupuesto vinculado a comprobantes"));
+    var salesBudgetMatches = (await commercial.ReadAsync(actor,true,null,null,null,null,"Segundo presupuesto",1,1,null,default))
+        .GetProperty("OpcionesPresupuesto").EnumerateArray().ToArray();
+    Check(salesBudgetMatches.Length == 1 && salesBudgetMatches[0].GetProperty("PresupuestoId").GetInt64() == commercialBudget2.BudgetId,
+        "La ayuda de ventas filtra presupuestos del cliente por descripción");
+    await commercial.LinkAsync(actor,false,purchaseId,[],commercialBudget.BudgetId,"Costo desde la provisión",50m,default);
+    var commercialCostId=Convert.ToInt64(await Scalar(connection,$"SELECT CostoProveedorId FROM dbo.ComprobanteHYTCosto WHERE ComprobanteId={purchaseId}"));
+    await commercial.LinkAsync(actor,false,purchaseId,[commercialCostId],null,null,null,default);
+    Check(Convert.ToInt32(await Scalar(connection,$"SELECT COUNT(1) FROM dbo.ComprobanteHYTCosto WHERE ComprobanteId={purchaseId}"))==1,
+        "Registrar costo desde una compra deja un vínculo único");
+    await ExpectDomainFailure(()=>commercial.LinkAsync(actor,false,purchaseSecond,[commercialCostId],null,null,null,default),
+        "disponibles","Un costo ya vinculado no se asocia a otra factura");
+    var workOne=await payroll.SaveCostAsync(actor,new(Guid.NewGuid(),commercialBudget.BudgetId,providerAuto,"Trabajo ya registrado uno",40m,"PEN",null),default);
+    var workTwo=await payroll.SaveCostAsync(actor,new(Guid.NewGuid(),commercialBudget2.BudgetId,providerAuto,"Trabajo ya registrado dos",50m,"PEN",null),default);
+    var availableWork = (await commercial.ReadAsync(actor,false,purchaseSecond,null,null,null,"registrado uno",1,null,null,default))
+        .GetProperty("OpcionesCosto");
+    Check(availableWork.EnumerateArray().Single().GetProperty("CostoProveedorId").GetInt64() == workOne,
+        "La búsqueda por descripción devuelve únicamente el trabajo disponible que coincide");
+    await commercial.LinkAsync(actor,false,purchaseSecond,[workOne,workTwo],null,null,null,default);
+    foreach (var purchase in new[] { purchaseId, purchaseSecond })
+    {
+        var unavailableWork = (await commercial.ReadAsync(actor,false,purchase,null,null,null,"registrado uno",1,null,null,default))
+            .GetProperty("OpcionesCosto");
+        Check(unavailableWork.GetArrayLength() == 0, "El buscador oculta trabajos ya vinculados en cualquier factura");
+    }
+    Check(Convert.ToInt32(await Scalar(connection,$"SELECT COUNT(1) FROM dbo.ComprobanteHYTCosto WHERE ComprobanteId={purchaseSecond}"))==2,
+        "Una factura de compra se vincula con dos trabajos existentes del proveedor");
+    var foreignDepositId=await commercial.SaveAsync(actor,false,
+        Purchase("0098") with { Moneda="USD", MonedaDetraccion="PEN", ImporteDetraccion=53.5m },null,default);
+    var foreignDeposit=(await commercial.ReadAsync(actor,false,foreignDepositId,null,null,null,null,1,null,null,default)).GetProperty("Documento");
+    Check(foreignDeposit.GetProperty("ImporteDetraccion").GetDecimal()==53.5m &&
+        foreignDeposit.GetProperty("DetraccionDocumento").GetDecimal()==14.16m &&
+        foreignDeposit.GetProperty("MonedaDetraccion").GetString()=="PEN",
+        "El depósito en otra moneda conserva el equivalente calculado sobre el total de compra");
+    var salesDocument=Purchase("200") with { DocumentoTercero=buyerDocument,NombreTercero="",ImporteDetraccion=0,
+        Presupuestos=[commercialBudget.BudgetId,commercialBudget2.BudgetId] };
+    var initialClientHelp=await commercial.ReadAsync(actor,true,null,null,null,null,"",1,null,null,default);
+    Check(initialClientHelp.GetProperty("OpcionesCliente").GetArrayLength()>0,"La ayuda de ventas carga clientes activos del maestro sin filtro");
+    var clientHelp=await commercial.ReadAsync(actor,true,null,null,null,null,buyerDocument,1,null,null,default);
+    Check(clientHelp.GetProperty("OpcionesCliente").EnumerateArray().Any(row=>row.GetProperty("DocumentoTercero").GetString()==buyerDocument),
+        "La ayuda de ventas encuentra clientes del maestro por documento");
+    var customerOrderId = Convert.ToInt64(await Scalar(connection, $"""
+        INSERT INTO dbo.OrdenCompraCliente(NumeroRegistroInterno,NumeroOCCliente,PresupuestoId,RevisionId,
+            FechaEmisionOC,FechaRecepcionOC,UsuarioRegistro)
+        VALUES(N'OC-INTERNA-QA',N'OC-VENTA-QA',{commercialBudget.BudgetId},{commercialBudget.RevisionId},
+            '20261110','20261110',N'{actor}');
+        DECLARE @Orden BIGINT=SCOPE_IDENTITY();
+        INSERT INTO dbo.ConfirmacionFacturacion(OrdenCompraId,FechaConfirmacion,NumeroConfirmacion,UsuarioRegistro)
+        VALUES(@Orden,'20261110',N'CONF-VENTA-QA',N'{actor}');
+        SELECT @Orden;
+        """));
+    var orderOptions = (await commercial.ReadAsync(actor,true,null,null,null,null,"CONF-VENTA-QA",1,1,null,default,
+        orderLookup:true)).GetProperty("OpcionesOrdenCompra");
+    var otherOrders = (await commercial.ReadAsync(actor,true,null,null,null,null,"OC-VENTA-QA",1,2,null,default,
+        orderLookup:true)).GetProperty("OpcionesOrdenCompra");
+    Check(orderOptions.EnumerateArray().Single().GetProperty("OrdenCompraId").GetInt64()==customerOrderId &&
+        otherOrders.GetArrayLength()==0, "La ayuda de órdenes permite buscar por confirmación y limita los resultados al cliente");
+    var salesId=await commercial.SaveAsync(actor,true,salesDocument with { OrdenCompraId=customerOrderId },null,default);
+    var salesOrderRows = (await commercial.ReadAsync(actor,true,null,new(2026,11,1),new(2026,11,30),
+        null,null,1,null,null,default)).GetProperty("Filas");
+    Check(salesOrderRows.EnumerateArray().Single(row => row.GetProperty("ComprobanteId").GetInt64()==salesId)
+        .GetProperty("NumeroConfirmacion").GetString()=="CONF-VENTA-QA",
+        "El listado muestra la confirmación vigente de la orden vinculada al guardar");
+    var invoiceOptions = (await commercial.ReadAsync(actor,true,null,new(2026,11,1),new(2026,11,30),"01","F001-200",
+        1,1,null,default,invoiceLookup:true)).GetProperty("FacturasNotaCredito");
+    var otherInvoiceOptions = (await commercial.ReadAsync(actor,true,null,new(2026,11,1),new(2026,11,30),"01","F001-200",
+        1,2,null,default,invoiceLookup:true)).GetProperty("FacturasNotaCredito");
+    var olderInvoiceOptions = (await commercial.ReadAsync(actor,true,null,new(2026,10,1),new(2026,10,31),"01","F001-200",
+        1,1,null,default,invoiceLookup:true)).GetProperty("FacturasNotaCredito");
+    Check(invoiceOptions.EnumerateArray().Single().GetProperty("Referencia").GetString()=="F001-200" &&
+        otherInvoiceOptions.GetArrayLength()==0 && olderInvoiceOptions.GetArrayLength()==0,
+        "La ayuda de notas de crédito filtra facturas por cliente, fecha y número");
+    var manualCredit = salesDocument with { Tipo="07", Numero="NC-QA", ReferenciaNota="F001-200",
+        CodigoMotivoNota="07", Presupuestos=[] };
+    var manualCreditId = await commercial.SaveAsync(actor,true,manualCredit,null,default);
+    var savedCredit = (await commercial.ReadAsync(actor,true,manualCreditId,null,null,null,null,1,null,null,default)).GetProperty("Documento");
+    Check(savedCredit.GetProperty("CodigoMotivoNota").GetString()=="07" &&
+        savedCredit.GetProperty("MotivoNota").GetString()=="Devolución por ítem",
+        "La nota de crédito guarda el código y la descripción SUNAT del catálogo");
+    await ExpectDomainFailure(()=>commercial.SaveAsync(actor,true,manualCredit with { Numero="NC-QA-INVALIDA", ReferenciaNota="F001-000" },null,default),
+        "factura emitida", "La nota de crédito rechaza una referencia ajena al cliente");
+    var saleWithholding=await commercial.ReadAsync(actor,true,salesId,null,null,null,null,1,null,null,default);
+    Check(saleWithholding.GetProperty("Documento").GetProperty("CodigoDetraccion").GetString()=="022" &&
+        saleWithholding.GetProperty("Documento").GetProperty("ImporteDetraccion").GetDecimal()==14.16m,
+        "Una factura manual sin código de material aplicable puede usar el código elegido del catálogo");
+    await Execute(connection, """
+        INSERT INTO dbo.ServicioMaterial(CodigoInterno,CodigoMaterialSAP,Descripcion,UnidadMedidaId,UsuarioRegistro,CodigoDetraccion)
+        VALUES (N'DET-QA-LOW',NULL,N'Transporte de prueba',1,N'sql-test-editor',N'025'),
+               (N'DET-QA-HIGH',N'DET-QA-SAP',N'Servicio de prueba',1,N'sql-test-editor',N'022');
+        """);
+    var lookupWithholding = (await commercial.ReadAsync(actor, true, null, null, null, null, null, 1, null, null, default,
+        materialCodes: ["DET-QA-LOW", "DET-QA-SAP"])).GetProperty("DetraccionMaterial");
+    Check(lookupWithholding.GetProperty("Porcentaje").GetDecimal() == 12m,
+        "La ayuda de ventas toma el mayor porcentaje de los códigos internos y SAP");
+    var mixedInvoice = salesDocument with { Numero="DET-059", Importe=1180m, CodigoDetraccion="025", Presupuestos=[],
+        Detalle=[new("DET-QA-LOW","Transporte","NIU",1,600,600), new("DET-QA-SAP","Servicio","NIU",1,400,400)] };
+    await commercial.SaveAsync(actor,true,mixedInvoice,null,default);
+    var mixedRow = (await commercial.ReadAsync(actor,true,null,new(2026,11,1),new(2026,11,30),null,"DET-059",1,null,null,default))
+        .GetProperty("Filas").EnumerateArray().Single();
+    Check(mixedRow.GetProperty("Importe").GetDecimal() == 1180m &&
+        mixedRow.GetProperty("PorcentajeDetraccion").GetDecimal() == 12m &&
+        mixedRow.GetProperty("DetraccionDocumento").GetDecimal() == 141.60m,
+        "La factura manual guarda el mayor porcentaje sobre el total con IGV");
+    var importedDetraction = await commercial.SaveAsync(actor,true,mixedInvoice with { Numero="DET-XML",
+        RucHYT=companyRuc, XmlOriginal="<Invoice/>", CodigoDetraccion="025", PorcentajeDetraccion=4m,
+        ImporteDetraccion=47m, DetraccionDocumento=47m },null,default);
+    await commercial.LinkOrderAsync(actor,importedDetraction,customerOrderId,default);
+    var importedDetractionRow = (await commercial.ReadAsync(actor,true,importedDetraction,null,null,null,null,1,null,null,default)).GetProperty("Documento");
+    Check(importedDetractionRow.GetProperty("PorcentajeDetraccion").GetDecimal() == 4m &&
+        importedDetractionRow.GetProperty("DetraccionDocumento").GetDecimal() == 47m &&
+        importedDetractionRow.GetProperty("NumeroOCCliente").GetString() == "OC-VENTA-QA",
+        "Una factura importada conserva el porcentaje y el importe declarados en XML");
+    Check(Convert.ToInt32(await Scalar(connection,$"SELECT COUNT(1) FROM dbo.ComprobanteHYTPresupuesto WHERE ComprobanteId={salesId}"))==2,
+        "Un comprobante de venta se vincula a varios presupuestos");
+    Check((await sapBudgets.GetAsync(actor,commercialBudget.BudgetId,null,1,default))!.Text("FacturadoComprobante").Equals("true",StringComparison.OrdinalIgnoreCase),
+        "El presupuesto figura facturado al asociar una venta numerada");
+    var newCustomer = salesDocument with { DocumentoTercero="20655555552", NombreTercero="Cliente nuevo de lote",
+        Numero="700", RucHYT=companyRuc, XmlOriginal="<Invoice/>", Presupuestos=[] };
+    await ExpectDomainFailure(() => commercial.ImportBatchAsync(actor,true,
+        [("nuevo.xml",newCustomer),("duplicado.xml",salesDocument with { RucHYT=companyRuc, XmlOriginal="<Invoice/>" })],default),
+        "duplicado.xml","El lote de ventas identifica el archivo duplicado");
+    Check(Convert.ToInt32(await Scalar(connection,"SELECT COUNT(1) FROM dbo.Cliente WHERE NumeroIdentificacion=N'20655555552'"))==0,
+        "Un duplicado revierte también el alta automática del cliente");
+    await commercial.ImportBatchAsync(actor,true,[("nuevo.xml",newCustomer),("segundo.xml",newCustomer with { Numero="701" })],default);
+    Check(Convert.ToInt32(await Scalar(connection,"SELECT COUNT(1) FROM dbo.ComprobanteHYT WHERE EsVenta=1 AND DocumentoTercero=N'20655555552'"))==2 &&
+        Convert.ToInt32(await Scalar(connection,"SELECT COUNT(1) FROM dbo.Cliente WHERE NumeroIdentificacion=N'20655555552'"))==1,
+        "El lote válido registra los dos documentos y reutiliza el cliente nuevo");
+    await ExpectDomainFailure(() => commercial.ImportBatchAsync(actor,false,
+        [("proveedor.xml",Purchase("800","20655555553") with { RucHYT=companyRuc, XmlOriginal="<Invoice/>" }),
+         ("duplicado.xml",Purchase("100") with { RucHYT=companyRuc, XmlOriginal="<Invoice/>" })],default),
+        "duplicado.xml","El lote de compras identifica el archivo duplicado");
+    Check(Convert.ToInt32(await Scalar(connection,"SELECT COUNT(1) FROM dbo.ProveedorHYT WHERE Ruc='20655555553'"))==0,
+        "Un duplicado revierte también el alta automática del proveedor");
+    var secondFactoringInvoice = await commercial.SaveAsync(actor,true,salesDocument with {Numero="9501",Presupuestos=[]},null,default);
+    var factoringDate = new DateOnly(2026,11,10);
+    var factoring = new GestionServicios.Application.Billing.FactoringLot("Financiera de prueba",factoringDate,factoringDate.AddDays(1),
+        3.125m,"REF-001",null,Guid.NewGuid(),[salesId,secondFactoringInvoice]);
+    var factoringId = await commercial.SaveFactoringAsync(actor,factoring,default);
+    Check(await commercial.SaveFactoringAsync(actor,factoring,default)==factoringId,"Reintentar el registro de factoring conserva un solo lote");
+    var factoringDetail=await commercial.ReadFactoringAsync(actor,factoringId,null,null,null,1,false,default);
+    Check(factoringDetail.GetProperty("Lote").GetProperty("Facturas").GetArrayLength()==2,"El reporte de factoring recupera todas las facturas del lote");
+    var withoutFactoring=await commercial.ReadAsync(actor,true,null,factoringDate.AddDays(-30),factoringDate,null,null,1,null,null,default,true);
+    Check(withoutFactoring.GetProperty("Filas").EnumerateArray().All(row=>row.GetProperty("ComprobanteId").GetInt64()!=salesId && row.GetProperty("ComprobanteId").GetInt64()!=secondFactoringInvoice),
+        "El filtro Sin factoring excluye ambas facturas negociadas");
+    var linkedSales = (await commercial.ReadAsync(actor, true, null, factoringDate.AddDays(-30), factoringDate,
+        "01", null, 1, null, null, default, hasFactoring: true)).GetProperty("Filas").EnumerateArray().ToArray();
+    Check(linkedSales.Length == 2 && linkedSales.All(row => row.GetProperty("LoteId").GetInt64() == factoringId &&
+        row.GetProperty("FactoringFechaDesembolso").GetString() == "2026-11-11"),
+        "El filtro Factoring Sí devuelve las dos ventas vinculadas con el lote y su fecha de desembolso");
+    var unlinkedSales = (await commercial.ReadAsync(actor, true, null, factoringDate.AddDays(-30), factoringDate,
+        null, null, 1, null, null, default, hasFactoring: false)).GetProperty("Filas").EnumerateArray().ToArray();
+    Check(unlinkedSales.Length > 0 && unlinkedSales.All(row => !row.TryGetProperty("LoteId", out _)),
+        "El filtro Factoring No devuelve ventas sin lote");
+    await ExpectDomainFailure(()=>commercial.SaveFactoringAsync(actor,factoring with {OperacionId=Guid.NewGuid()},default),
+        "otro lote","Una factura solo puede pertenecer a un lote de factoring");
+    await ExpectDomainFailure(()=>commercial.SaveFactoringAsync(actor,factoring with {OperacionId=Guid.NewGuid(),Facturas=[purchaseId]},default),
+        "facturas emitidas","No se permite incorporar provisiones de compra a factoring");
+    var draftDocument=salesDocument with {Serie=null,Numero=null,Presupuestos=[],OperacionId=Guid.NewGuid(),OrdenCompraId=customerOrderId};
+    var draftId=await commercial.SaveAsync(actor,true,draftDocument,null,default);
+    Check(await commercial.SaveAsync(actor,true,draftDocument,null,default)==draftId,"Reintentar un borrador no duplica el comprobante");
+    var wrongCompany=Purchase("201","20699999992") with { RucHYT=companyRuc=="20100000001"?"20100000002":"20100000001",XmlOriginal="<Invoice/>" };
+    await ExpectDomainFailure(()=>commercial.SaveAsync(actor,false,wrongCompany,null,default),"RUC",
+        "Se rechaza XML de compra con RUC receptor distinto del configurado");
+    Check(Convert.ToInt32(await Scalar(connection,"SELECT COUNT(1) FROM dbo.ProveedorHYT WHERE Ruc='20699999992'"))==0,
+        "El rechazo del RUC no crea un proveedor huérfano");
+    var parsed=salesDocument with {Numero="300",XmlOriginal="<Invoice/>",RucHYT=companyRuc,Presupuestos=[]};
+    await commercial.SaveAsync(actor,true,parsed,draftId,default);
+    Check((await commercial.ReadAsync(actor,true,draftId,null,null,null,null,1,null,null,default)).GetProperty("Documento").GetProperty("Importado").GetBoolean(),
+        "Un borrador de venta se completa con el XML externo");
+    await ExpectDomainFailure(()=>commercial.SaveAsync(actor,true,parsed with{Numero="301"},draftId,default),
+        "borrador","Un documento importado conserva sus datos originales");
+    var credit=parsed with {Tipo="07",Numero="400",ReferenciaNota="F001-300",MotivoNota="Devolución",Presupuestos=[commercialBudget.BudgetId]};
+    await commercial.SaveAsync(actor,true,credit,null,default);
+    var filteredSales=await commercial.ReadAsync(actor,true,null,new DateOnly(2026,11,1),new DateOnly(2026,11,30),"07",null,1,null,null,default);
+    Check(filteredSales.GetProperty("Filas").EnumerateArray().All(row=>row.GetProperty("Tipo").GetString()=="07"),
+        "El listado de comprobantes filtra las notas de crédito");
+    }
     var securityConnections = new GestionServicios.Infrastructure.SqlConnectionFactory(connection.ConnectionString);
     var security = new SqlSecurityAdministrationRepository(securityConnections);
     var access = new SqlAccessRepository(securityConnections);

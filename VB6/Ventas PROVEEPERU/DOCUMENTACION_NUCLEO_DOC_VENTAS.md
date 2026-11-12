@@ -259,6 +259,8 @@ El modo agrupado conserva su funcionamiento histórico porque, al combinar produ
 
 Para pedidos (`40`), la orden de compra (`94`) se conserva como documento anexo. El recálculo y la validación de cantidades importadas excluyen esa referencia. La anulación de la orden de compra tampoco devuelve cantidades ni cambia el estado del pedido.
 
+Las guías de remisión (`86`) descuentan del pedido cuando están vigentes y su motivo de traslado es Venta (`06090001`). Los traslados por otros motivos conservan la referencia al pedido y dejan disponible la cantidad para una guía de venta.
+
 ### 11.6 Archivos VB6 modificados
 
 | Archivo | Cambio |

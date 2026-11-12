@@ -23,7 +23,7 @@ body{color:var(--hyt-text);background:var(--hyt-background)}
 @media print{:root[data-hyt-theme],:root{--hyt-surface:#fff;--hyt-surface-alt:#f5f5f5;--hyt-input:#fff;--hyt-text:#181818;--hyt-muted:#626262;--hyt-border:#dedede;--hyt-background:#fff;--hyt-hover:#fff;--hyt-subtle:#fff;--hyt-link:#a81019;--hyt-chart-ink:#181818;--hyt-chart-muted:#969696;color-scheme:light;background:white;color:#181818}.hyt-theme-toggle{display:none!important}.hyt-page-header,.hyt-page-heading{background:white;box-shadow:none}.hyt-trace-summary{break-inside:avoid}}
 
 .app-date-picker-control,.app-date-picker-display,.app-date-picker-trigger{background:var(--hyt-input);color:var(--hyt-text)}.app-date-picker-title strong,.app-date-picker-day{color:var(--hyt-text)}.app-date-picker-nav{background:var(--hyt-surface-alt);color:var(--hyt-text);border-color:var(--hyt-border)}.app-date-picker-day.is-other-month{color:var(--hyt-muted);opacity:.7}.app-date-picker-day:hover,.app-date-picker-day:focus,.app-date-picker-day.is-today{color:var(--hyt-link);background:var(--hyt-hover)}.app-date-picker-day.is-selected{background:var(--hyt-red);color:white;box-shadow:none}.app-date-picker-control.is-disabled{background:var(--hyt-disabled)}.app-date-picker-banner{margin:-.9rem -.9rem 12px;border-radius:1.1rem 1.1rem 0 0}.app-date-picker-nav,.app-date-picker-footer button{min-height:44px;min-width:44px}
-.hyt-field input,.hyt-field select,.hyt-field textarea,.hyt-budget-table input,.hyt-budget-table select,.hyt-budget-table textarea{color:var(--hyt-text);background:var(--hyt-input)}
+.hyt-field input,.hyt-field select,.hyt-field textarea,.hyt-budget-table input,.hyt-budget-table select,.hyt-budget-table textarea,.hyt-commercial-detail :is(input,textarea){color:var(--hyt-text);background:var(--hyt-input)}
 .hyt-table th{background:var(--hyt-surface-alt);color:var(--hyt-text)}.hyt-button-secondary{background:var(--hyt-surface);color:var(--hyt-text);border-color:var(--hyt-control-border)}a{color:var(--hyt-link)}.hyt-button-primary{color:white}.hyt-modal-header .hyt-button-secondary{background:transparent;color:white;border-color:#ffffff80}
 
 .app-date-picker-panel{max-height:calc(100dvh - 24px);overflow:auto;padding:12px}.app-date-picker-banner{margin:-12px -12px 12px}.app-date-picker-grid{gap:4px}.app-date-picker-day{min-height:44px}
@@ -177,9 +177,8 @@ dl.hyt-panel.hyt-payroll-summary { padding: 24px; }
 .hyt-sctr-status[data-status="VIGENTE"] { color: #125831; background: #ddf5e5; }
 .hyt-sctr-status[data-status="POR_VENCER"] { color: #674500; background: #fff0b8; }
 .hyt-sctr-status[data-status="VENCIDA"] { color: #8b2027; background: #fce1e3; }
-.hyt-pay-plan-table input:not([type=hidden]) {
-    width: 100%;
-    min-width: 100px;
+.hyt-pay-plan-table [data-plan-base] {
+    width: 8rem;
     min-height: 44px;
     border: 1px solid var(--hyt-control-border);
     border-radius: 6px;
@@ -200,7 +199,6 @@ dl.hyt-panel.hyt-payroll-summary { padding: 24px; }
 .hyt-money,
 .hyt-payroll-form input[inputmode="decimal"],
 .hyt-pay-plan-table [data-plan-base],
-.hyt-pay-plan-table tr > :is(th, td):is(:nth-child(3), :nth-child(n+5):nth-child(-n+7)),
 .hyt-align-supplier-payments .hyt-table tr > :is(th, td):nth-child(n+5):nth-child(-n+7),
 .hyt-align-budget-costs tr > :is(th, td):nth-child(n+5),
 .hyt-align-supplier-abonos tr > :is(th, td):nth-child(5),
@@ -215,7 +213,6 @@ dl.hyt-panel.hyt-payroll-summary { padding: 24px; }
 .hyt-table .hyt-numeric,
 .hyt-numeric,
 .hyt-payroll-form input[type="number"],
-.hyt-pay-plan-table tr > :is(th, td):nth-child(4),
 .hyt-align-supplier-payments .hyt-table tr > :is(th, td):nth-child(2),
 .hyt-align-suppliers .hyt-table tr > :is(th, td):is(:first-child, :nth-child(4)),
 .hyt-align-workers .hyt-table tr > :is(th, td):is(:first-child, :nth-child(7), :nth-child(9):not(:last-child)),
@@ -230,4 +227,187 @@ dl.hyt-panel.hyt-payroll-summary { padding: 24px; }
 @media (max-width: 620px) {
     .hyt-payroll-section { padding: 16px; }
     .hyt-payroll-form .hyt-master-fields { grid-template-columns: minmax(0, 1fr); }
+}
+
+.hyt-commercial-party { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+.hyt-commercial-party .hyt-catalog-field { flex-wrap: nowrap; }
+.hyt-commercial-party .hyt-catalog-field > input { flex-basis: 0; }
+.hyt-commercial-payment { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 760px) {
+    .hyt-commercial-party { grid-template-columns: minmax(0, 1fr); }
+    .hyt-commercial-payment { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 440px) {
+    .hyt-commercial-payment { grid-template-columns: minmax(0, 1fr); }
+}
+
+.hyt-commercial-detail { width: 100%; min-width: 820px; table-layout: fixed; }
+.hyt-commercial-detail .hyt-commercial-item { width: 48px; }
+.hyt-commercial-detail .hyt-commercial-code { width: 10.5%; }
+.hyt-commercial-detail .hyt-commercial-compact { width: 7.5%; }
+.hyt-commercial-detail .hyt-commercial-action { width: 64px; }
+.hyt-commercial-detail tr > :is(th, td):is(:first-child, :nth-child(n+4)) { padding-inline: 6px; }
+.hyt-commercial-detail tr > :first-child { text-align: center; font-variant-numeric: tabular-nums; }
+.hyt-commercial-detail td { vertical-align: top; }
+.hyt-commercial-detail :is(input, textarea) { box-sizing: border-box; font: inherit; }
+.hyt-commercial-detail textarea { display: block; height: 44px; resize: vertical; }
+.hyt-commercial-detail input[type=number] { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Firma: FRANCO LARA - 11/11/2026 | Desglosa ajustes y cobertura debajo de su fila, distingue los abonos en verde y destaca los totales y el período de planilla. Asegura el ancho del listado de ventas y compacta las acciones Ver y Editar con iconos y unifica su altura con las demás acciones del grupo. Redistribuye el ancho de las partidas de comprobantes para ampliar la descripción y ordena los datos del tercero y las condiciones de pago en compras y ventas, alinea la búsqueda y amplía la descripción de las partidas. Alinea y uniforma los botones de cada obligación. */
+.hyt-commercial-sales { min-width: 1360px; }
+.hyt-internal-code.hyt-plan-period-card {
+    width: fit-content;
+    align-items: flex-start;
+    margin-block: 0 16px;
+}
+.hyt-plan-period-card output { font-size: 1.25rem; }
+.hyt-pay-plan-table {
+    --hyt-pay-plan-credit: #125831;
+    --hyt-pay-plan-credit-bg: #e7f6ed;
+}
+:root[data-hyt-theme="dark"] .hyt-pay-plan-table {
+    --hyt-pay-plan-credit: #8ce3ab;
+    --hyt-pay-plan-credit-bg: #22382b;
+}
+.hyt-row-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px;
+    padding: 4px 8px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--hyt-link);
+    cursor: pointer;
+    white-space: nowrap;
+}
+.hyt-row-toggle:is(:hover, [aria-expanded="true"]) {
+    border-color: var(--hyt-border);
+    background: var(--hyt-hover);
+}
+.hyt-row-toggle::after {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-right: 1px solid currentColor;
+    border-bottom: 1px solid currentColor;
+    transform: rotate(45deg);
+}
+.hyt-row-toggle[aria-expanded="true"]::after { transform: rotate(225deg); }
+.hyt-table .hyt-row-detail > td {
+    padding: 8px 16px 12px;
+    background: var(--hyt-surface-alt);
+}
+.hyt-row-detail-content {
+    contain: inline-size;
+    max-width: 58rem;
+    padding: 12px 16px;
+    border-inline-start: 3px solid var(--hyt-red);
+    border-radius: 0 6px 6px 0;
+    background: var(--hyt-hover);
+    overflow-wrap: anywhere;
+}
+.hyt-row-toggle:has([data-plan-total="abonos"]) {
+    color: var(--hyt-pay-plan-credit);
+}
+.hyt-row-toggle:has([data-plan-total="abonos"]):is(:hover, [aria-expanded="true"]),
+.hyt-row-detail-content:has([data-plan-inline-list="abonos"]) {
+    background: var(--hyt-pay-plan-credit-bg);
+}
+.hyt-row-detail-content:has([data-plan-inline-list="abonos"]) {
+    border-inline-start-color: var(--hyt-pay-plan-credit);
+}
+.hyt-row-detail-content:has([data-plan-inline-list="abonos"]) strong {
+    color: var(--hyt-pay-plan-credit);
+}
+.hyt-plan-detail-list,
+.hyt-sctr-detail-list { margin: 8px 0 0; }
+.hyt-sctr-detail-list { padding-inline-start: 18px; }
+.hyt-sctr-detail-list > li + li { margin-top: 4px; }
+.hyt-plan-detail-list { padding: 0; list-style: none; }
+.hyt-plan-detail-list > li {
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 2fr) minmax(0, 1fr) minmax(5.5rem, max-content);
+    gap: 12px;
+    align-items: baseline;
+    padding-block: 6px;
+    border-top: 1px solid var(--hyt-border);
+}
+.hyt-plan-detail-list > li:only-child:not(:has(strong)) { display: block; }
+.hyt-plan-detail-list > li > :first-child { color: var(--hyt-muted); }
+.hyt-plan-totals tr > :is(th, td) {
+    background: var(--hyt-surface-alt);
+    border-top: 2px solid var(--hyt-border);
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+
+:is(a, button)[data-hyt-record-action],
+.hyt-table :is(a, button)[data-hyt-record-action] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    height: auto;
+    min-height: 34px;
+    max-height: none;
+    flex: 0 0 auto;
+    padding: 5px 9px;
+    white-space: nowrap;
+}
+[data-hyt-record-action="view"] {
+    --hyt-record-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z'/%3E%3Ccircle cx='12' cy='12' r='2.5'/%3E%3C/svg%3E");
+}
+[data-hyt-record-action="edit"] {
+    --hyt-record-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 16 12-12a2.8 2.8 0 0 1 4 4L8 20l-5 1 1-5Zm10-10 4 4'/%3E%3C/svg%3E");
+}
+[data-hyt-record-action]::before {
+    content: "";
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    background-color: currentColor;
+    mask: var(--hyt-record-icon) center / contain no-repeat;
+}
+:is(a, button):is(.hyt-button-primary, .hyt-button-secondary, .hyt-action-button):not([data-hyt-record-action]) ~ [data-hyt-record-action],
+[data-hyt-record-action]:has(~ :is(a, button):is(.hyt-button-primary, .hyt-button-secondary, .hyt-action-button):not([data-hyt-record-action])) {
+    min-height: 44px;
+}
+.hyt-table :is(.hyt-grid-actions, .hyt-price-row-actions):has(> [data-hyt-record-action]) {
+    grid-template-columns: repeat(2, max-content);
+    grid-auto-rows: 1fr;
+    width: max-content;
+    min-width: 0;
+    max-width: none;
+}
+.hyt-table :is(.hyt-grid-actions, .hyt-price-row-actions) > [data-hyt-record-action] {
+    align-self: stretch;
+}
+.hyt-table :is(.hyt-grid-actions, .hyt-price-row-actions):has(> [data-hyt-record-action]:only-child) {
+    grid-template-columns: max-content;
+}
+.hyt-obligation-row-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    width: max-content;
+    margin-inline-start: auto;
+    gap: 8px;
+}
+.hyt-table .hyt-obligation-row-actions > :is(a, button) {
+    min-height: 44px;
+    padding: 8px 12px;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+@media (pointer: coarse) {
+    :is(a, button)[data-hyt-record-action],
+    .hyt-table :is(a, button)[data-hyt-record-action] {
+        min-height: 44px;
+        min-width: 44px;
+    }
 }

@@ -17,7 +17,7 @@
   },
   {
     "path": "StoreProcedure/spu_Presupuesto_AyudaTarifario.sql",
-    "sha256": "eeb41d67de99778d4ced1ecb3fadd886ad4f9b0ea1d3a0f6f823349959895cb7"
+    "sha256": "2b53579aace58d89e828a19a1dc6572c4c1877ec46c96cd3a419f9eb3e659123"
   },
   {
     "path": "StoreProcedure/spu_Presupuesto_CambiarEstado.sql",
@@ -29,11 +29,11 @@
   },
   {
     "path": "StoreProcedure/spu_Presupuesto_Guardar.sql",
-    "sha256": "b56ed4ad08dd73c2ca3f41e58e0d1675eef6eb8d7b2a8c4f40519bc8bd3a7e5d"
+    "sha256": "f3f23aab790f64cdb81630793ae71c9105a8727c84c8e4e4640541c06ca11e90"
   },
   {
     "path": "StoreProcedure/spu_Presupuesto_Listar.sql",
-    "sha256": "1bb2ed634b371d88af5fa162612b72a10aaf53450777690f176c00b0dc262a5d"
+    "sha256": "a3980abfaba3551ec048236c8f6ee6b0b4d4aea739293e864c1b281226588e98"
   },
   {
     "path": "StoreProcedure/spu_Presupuesto_ListarImpresiones.sql",
@@ -41,7 +41,7 @@
   },
   {
     "path": "StoreProcedure/spu_Presupuesto_Obtener.sql",
-    "sha256": "d6d74e8602a5113480c05497c2a02dcf8b0347688b88d194607452660af9f11a"
+    "sha256": "cd08039f8af4a3f032a834acc1f5718da40142873ef86270c64200837bbb3edc"
   },
   {
     "path": "StoreProcedure/spu_Presupuesto_ObtenerImpresion.sql",

@@ -1,0 +1,19 @@
+{
+  "database": "SistemaWebHYT",
+  "scripts": [
+    "Tablas/ConceptoPlanillaHYT.sql",
+    "Tablas/TrabajadorConceptoHYT.sql",
+    "StoreProcedure/spu_ConceptoPlanillaHYT_Listar.sql",
+    "StoreProcedure/spu_ConceptoPlanillaHYT_Guardar.sql",
+    "Script/053_AsignacionFamiliarQuincenaHYT.sql",
+    "Script/052_ConceptosPlanillaHYT.sql",
+    "Script/054_TrabajadorTelecreditoHYT.sql",
+    "Script/056_NombresTrabajadorHYT.sql",
+    "Script/058_SeleccionPlanPagoHYT.sql",
+    "StoreProcedure/spu_TrabajadorHYT_Listar.sql",
+    "StoreProcedure/spu_TrabajadorHYT_Guardar.sql",
+    "StoreProcedure/spu_PlanPagoHYT_Consultar.sql",
+    "StoreProcedure/spu_PlanPagoHYT_Guardar.sql",
+    "StoreProcedure/spu_PlanPagoHYT_ConfirmarPago.sql"
+  ]
+}

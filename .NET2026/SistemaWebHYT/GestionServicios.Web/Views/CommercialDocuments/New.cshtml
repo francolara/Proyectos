@@ -1,0 +1,245 @@
+@* Firma: FRANCO LARA - 10/11/2026 | Registro manual, carga UBL y precarga desde presupuesto con controles y acciones de HYT, carga por lote, ayuda de terceros y cálculo automático de subtotal, IGV y total. Las ayudas cargan clientes y proveedores activos al abrir. Incluye fecha de vencimiento y campos de detracción exclusivamente en compras. *@
+@* Firma: FRANCO LARA - 11/11/2026 | Muestra la detracción y el saldo de facturas de venta durante el registro manual y vincula una orden de compra del cliente y precarga partidas desde la ayuda de presupuestos y reorganiza las columnas del detalle con un correlativo de ítem. Ordena los datos del cliente o proveedor y calcula el vencimiento de compras y ventas según la forma de pago. Alinea la ayuda de terceros y usa los controles de formulario estándar en las condiciones de pago. Agrega la ayuda de facturas emitidas, los motivos SUNAT y las sugerencias de unidad. *@
+@using GestionServicios.Web.ViewModels.Billing
+@using GestionServicios.Application.Billing
+@using GestionServicios.Web.Security
+@model CommercialForm
+@{
+    ViewData["Title"] = Model.Sales ? "Nuevo comprobante" : "Nueva provisión";
+    var template = ("__index__", new CommercialLine(null, "", "", 1, 0, 0));
+    var canPickBudget = Model.Sales && Model.ClientId is > 0 && Model.Data.TryGetProperty("Cliente", out var client)
+        && client.ValueKind == System.Text.Json.JsonValueKind.Object && User.HasClaim(AccessService.PermissionClaim, "PRESUPUESTOS.CONSULTAR");
+}
+<header class="hyt-page-header"><div><h1>@ViewData["Title"]</h1><p>RUC HYT @CommercialPage.Text(Model.Data,"RucHYT")</p></div><a class="hyt-button-secondary" asp-action="Index" asp-route-scope="@Model.Scope">Volver al listado</a></header>
+<section class="hyt-panel hyt-master-form"><h2>Importar XML</h2>
+<form method="post" enctype="multipart/form-data" asp-action="Import" asp-route-scope="@Model.Scope" class="hyt-filters">
+<div class="hyt-field"><label for="commercial-xml">Archivos XML</label><input id="commercial-xml" type="file" name="xml" accept=".xml,application/xml,text/xml" multiple required /></div><button class="hyt-button-primary" type="submit">Importar y registrar</button>
+<p>Selecciona uno o varios XML. Hasta 25 archivos, 2 MB por archivo y 24 MB en total.</p>
+</form></section>
+<section class="hyt-panel hyt-master-form"><h2>Registro manual</h2>
+<form method="post" asp-action="Save" asp-route-scope="@Model.Scope" data-commercial-form
+      data-commercial-tax-url="@Url.Action("TaxRate",new{scope=Model.Scope})"
+      data-commercial-withholding-url="@(Model.Sales ? Url.Action("MaterialWithholding", new { scope = Model.Scope }) : null)"
+      data-commercial-tax-rate="@Model.TaxRate?.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+<div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+<input asp-for="Input.OperacionId" type="hidden" />
+<input type="hidden" name="clienteId" value="@Model.ClientId" /><input type="hidden" name="presupuestoId" value="@Model.BudgetId" />
+@foreach(var id in Model.Input.Presupuestos){<input type="hidden" name="Input.Presupuestos" value="@id" />}
+<div class="hyt-master-fields hyt-commercial-party">
+    <div class="hyt-field">
+        <label asp-for="Input.NombreTercero">@(Model.Sales ? "Cliente" : "Razón social del proveedor")</label>
+        <input asp-for="Input.NombreTercero" maxlength="180" readonly required />
+    </div>
+    <div class="hyt-field">
+        <label asp-for="Input.DocumentoTercero">@(Model.Sales ? "Documento del cliente" : "RUC del proveedor")</label>
+        <div class="hyt-catalog-field">
+            <input asp-for="Input.DocumentoTercero" maxlength="@(Model.Sales ? 30 : 11)" readonly required />
+            <button type="button" class="hyt-button-secondary" data-commercial-party-open aria-haspopup="dialog"
+                    aria-controls="commercial-party-lookup">@(Model.Sales ? "Buscar cliente" : "Buscar proveedor")</button>
+        </div>
+    </div>
+</div>
+@if (canPickBudget)
+{
+    var selectedBudget = Model.Data.GetProperty("OpcionesPresupuesto").EnumerateArray()
+        .FirstOrDefault(budget => budget.GetProperty("PresupuestoId").GetInt64() == Model.BudgetId);
+    <div class="hyt-filters">
+        <div class="hyt-field">
+            <label for="commercial-budget-label">Presupuesto para precargar</label>
+            <div class="hyt-catalog-field">
+                <input id="commercial-budget-label" value="@CommercialPage.Text(selectedBudget, "NumeroPresupuesto")"
+                       type="text" readonly placeholder="Sin presupuesto seleccionado" />
+                <button type="button" class="hyt-button-secondary" data-commercial-budget-open
+                        aria-haspopup="dialog" aria-controls="commercial-budget-lookup">Buscar presupuesto</button>
+            </div>
+        </div>
+    </div>
+}
+<div class="hyt-master-fields">
+<div class="hyt-field"><label asp-for="Input.Tipo">Tipo de documento</label><select asp-for="Input.Tipo"><option value="01">Factura</option><option value="03">Boleta</option><option value="07">Nota de crédito</option></select></div>
+<div class="hyt-field"><label asp-for="Input.Serie">Serie</label><input asp-for="Input.Serie" maxlength="30" required="@(!Model.Sales)" /></div>
+<div class="hyt-field"><label asp-for="Input.Numero">Número</label><input asp-for="Input.Numero" maxlength="50" required="@(!Model.Sales)" /></div>
+<div class="hyt-field"><label asp-for="Input.Moneda">Moneda</label><select asp-for="Input.Moneda"><option>PEN</option><option>USD</option></select></div>
+</div>
+<div class="hyt-master-fields hyt-commercial-payment" data-commercial-payment>
+    <div class="hyt-field"><label asp-for="Input.Fecha">Fecha de emisión</label><input asp-for="Input.Fecha" type="date" asp-format="{0:yyyy-MM-dd}" max="9999-12-31" required /></div>
+    <div class="hyt-field"><label asp-for="Input.FormaPago">Forma de pago</label><select asp-for="Input.FormaPago"><option>Contado</option><option>Crédito</option></select></div>
+    <div class="hyt-field">
+        <label asp-for="Input.PlazoPagoDias">Plazo de pago</label>
+        <select asp-for="Input.PlazoPagoDias" disabled="@(Model.Input.FormaPago != "Crédito")" required="@(Model.Input.FormaPago == "Crédito")">
+            <option value="">Selecciona el plazo</option>
+            @foreach (var days in CommercialInput.CreditTerms)
+            {
+                <option value="@days">@days días</option>
+            }
+        </select>
+    </div>
+    <div class="hyt-field">
+        <label for="commercial-due-date">Fecha de vencimiento</label>
+        <input id="commercial-due-date" value="@Model.Input.DueDate?.ToString("dd/MM/yyyy")" type="text" readonly />
+    </div>
+</div>
+@if (Model.Sales)
+{
+    <partial name="_OrderPicker" model='(Model.ClientId, Model.Input.OrdenCompraId, (string?)null, "Input.OrdenCompraId")' />
+}
+<fieldset class="hyt-budget-fieldset" data-commercial-note hidden="@(Model.Input.Tipo != "07")">
+    <legend>Comprobante que modifica la nota de crédito</legend>
+    <div class="hyt-master-fields">
+        <div class="hyt-field">
+            <label asp-for="Input.ReferenciaNota">@(Model.Sales ? "Factura emitida" : "Serie y número del original")</label>
+            @if (Model.Sales)
+            {
+                <div class="hyt-catalog-field">
+                    <input asp-for="Input.ReferenciaNota" maxlength="100" readonly data-credit-note-reference />
+                    <button type="button" class="hyt-button-secondary" data-credit-invoice-open aria-haspopup="dialog"
+                            aria-controls="commercial-invoice-lookup" disabled="@(Model.ClientId is null)">Buscar factura</button>
+                </div>
+            }
+            else
+            {
+                <input asp-for="Input.ReferenciaNota" maxlength="100" data-note-required />
+            }
+        </div>
+        <div class="hyt-field">
+            @if (Model.Sales)
+            {
+                <label asp-for="Input.CodigoMotivoNota">Motivo SUNAT</label>
+                <select asp-for="Input.CodigoMotivoNota" data-note-required>
+                    <option value="">Selecciona un motivo</option>
+                    @if (Model.Data.TryGetProperty("MotivosNotaCredito", out var motives))
+                    {
+                        @foreach (var motive in motives.EnumerateArray())
+                        {
+                            var code = CommercialPage.Text(motive, "Codigo");
+                            <option value="@code">@code · @CommercialPage.Text(motive, "Descripcion")</option>
+                        }
+                    }
+                </select>
+            }
+            else
+            {
+                <label asp-for="Input.MotivoNota">Motivo</label>
+                <input asp-for="Input.MotivoNota" maxlength="300" data-note-required />
+            }
+        </div>
+    </div>
+</fieldset>
+<datalist id="commercial-units">
+    @if (Model.Data.TryGetProperty("OpcionesUnidad", out var units))
+    {
+        @foreach (var unit in units.EnumerateArray())
+        {
+            var sunat = CommercialPage.Text(unit, "CodigoSunat");
+            var description = CommercialPage.Text(unit, "Descripcion");
+            <option value="@CommercialPage.Text(unit, "Codigo")" label="@(sunat.Length > 0 ? $"{description} · SUNAT {sunat}" : description)"></option>
+        }
+    }
+</datalist>
+<partial name="_DetraccionPicker" model="Model" />
+<section class="hyt-budget-lines">
+<h2>Detalle</h2>
+<div class="hyt-master-related"><button class="hyt-button-primary" type="button" data-commercial-add>Agregar ítem</button></div>
+<div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Partidas del comprobante">
+<table class="hyt-table hyt-commercial-detail">
+<colgroup>
+    <col class="hyt-commercial-item" />
+    <col class="hyt-commercial-code" />
+    <col />
+    <col class="hyt-commercial-compact" span="4" />
+    <col class="hyt-commercial-action" />
+</colgroup>
+<thead><tr><th scope="col">Ítem</th><th scope="col">Código</th><th scope="col">Descripción</th><th scope="col">Unidad</th><th scope="col">Cantidad</th><th scope="col">Precio sin IGV</th><th scope="col">Importe</th><th scope="col">Acción</th></tr></thead>
+<tbody data-commercial-lines>
+@for(var i=0;i<Model.Input.Detalle.Count;i++){<partial name="_Line" model="(i.ToString(),Model.Input.Detalle[i])" />}
+</tbody></table></div>
+</section>
+<template data-commercial-line-template><partial name="_Line" model="@template" /></template>
+<section class="hyt-panel hyt-master-form hyt-budget-totals" aria-labelledby="commercial-totals-heading">
+    <h2 id="commercial-totals-heading">Totales del comprobante</h2>
+    <p role="status" data-commercial-tax-status></p>
+    <dl>
+        <dt>Subtotal</dt><dd><output data-commercial-lines-total>—</output></dd>
+        <dt data-commercial-tax-label>IGV</dt><dd><output data-commercial-tax>—</output></dd>
+        <dt><strong>Total</strong></dt><dd><strong><output data-commercial-total>—</output></strong></dd>
+        <dt>@(Model.Sales ? "Detracción" : "Detracción por pagar")</dt><dd><output data-commercial-withholding>—</output></dd>
+        <dt>@(Model.Sales ? "Saldo pendiente" : "Saldo proveedor")</dt><dd><output data-commercial-supplier-balance>—</output></dd>
+    </dl>
+</section>
+<div class="hyt-master-related"><button class="hyt-button-primary" type="submit" disabled="@(Model.Sales&&Model.ClientId is null)">Guardar registro</button></div>
+@if(Model.Sales){<p>Deja serie y número vacíos para guardar un borrador y completarlo después con el XML emitido.</p>}
+</form></section>
+@if (canPickBudget)
+{
+    <dialog id="commercial-budget-lookup" class="hyt-modal" aria-labelledby="commercial-budget-title"
+            data-budget-url="@Url.Action("SalesBudgets", new { scope = Model.Scope, clienteId = Model.ClientId })"
+            data-budget-new-url="@Url.Action("New", new { scope = Model.Scope, clienteId = Model.ClientId })">
+        <div class="hyt-modal-header">
+            <h2 id="commercial-budget-title">Ayuda de presupuestos</h2>
+            <button type="button" class="hyt-modal-close" data-hyt-close aria-label="Cerrar ayuda">×</button>
+        </div>
+        <div class="hyt-modal-body">
+            <form class="hyt-filters" data-sales-budget-search>
+                <div class="hyt-field">
+                    <label for="commercial-budget-query">Número o descripción del presupuesto</label>
+                    <input id="commercial-budget-query" type="search" maxlength="150" autofocus />
+                </div>
+                <button type="submit" class="hyt-button-primary">Buscar</button>
+            </form>
+            <p role="status" data-sales-budget-status></p>
+            <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Presupuestos del cliente">
+                <table class="hyt-table">
+                    <thead><tr><th>Presupuesto</th><th>Descripción</th><th>Acción</th></tr></thead>
+                    <tbody data-sales-budget-results></tbody>
+                </table>
+            </div>
+        </div>
+    </dialog>
+}
+@if (Model.Sales && Model.ClientId is long invoiceClient)
+{
+    <dialog id="commercial-invoice-lookup" class="hyt-modal" aria-labelledby="commercial-invoice-title"
+            data-invoice-url="@Url.Action("IssuedInvoices", new { scope = Model.Scope, clienteId = invoiceClient })">
+        <div class="hyt-modal-header">
+            <h2 id="commercial-invoice-title">Facturas emitidas del cliente</h2>
+            <button type="button" class="hyt-modal-close" data-hyt-close aria-label="Cerrar ayuda">×</button>
+        </div>
+        <div class="hyt-modal-body">
+            <form class="hyt-filters" data-credit-invoice-search>
+                <div class="hyt-field"><label for="credit-invoice-from">Desde</label>
+                    <input type="date" id="credit-invoice-from" value="@Model.Today.AddMonths(-1).ToString("yyyy-MM-dd")" required /></div>
+                <div class="hyt-field"><label for="credit-invoice-to">Hasta</label>
+                    <input type="date" id="credit-invoice-to" value="@Model.Today.ToString("yyyy-MM-dd")" required /></div>
+                <div class="hyt-field"><label for="credit-invoice-query">Serie o número</label>
+                    <input type="search" id="credit-invoice-query" maxlength="150" autofocus /></div>
+                <button type="submit" class="hyt-button-primary">Buscar</button>
+            </form>
+            <p role="status" data-credit-invoice-status></p>
+            <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Resultados de facturas emitidas">
+                <table class="hyt-table">
+                    <thead><tr><th>Factura</th><th>Fecha de emisión</th><th>Importe</th><th>Acción</th></tr></thead>
+                    <tbody data-credit-invoice-results></tbody>
+                </table>
+            </div>
+        </div>
+    </dialog>
+}
+<dialog id="commercial-party-lookup" class="hyt-modal" aria-labelledby="commercial-party-title"
+        data-commercial-parties-url="@Url.Action("Parties", new { scope = Model.Scope })"
+        data-commercial-new-url="@Url.Action("New", new { scope = Model.Scope })" data-sales="@(Model.Sales ? "true" : "false")">
+    <div class="hyt-modal-header">
+        <h2 id="commercial-party-title">@(Model.Sales ? "Ayuda de clientes" : "Ayuda de proveedores")</h2>
+        <button class="hyt-modal-close" type="button" data-hyt-close aria-label="Cerrar">×</button>
+    </div>
+    <div class="hyt-modal-body">
+        <form class="hyt-filters" data-commercial-party-search>
+            <div class="hyt-field"><label for="commercial-party-query">@(Model.Sales ? "Nombre, código o número de documento" : "RUC o razón social")</label><input id="commercial-party-query" type="search" maxlength="150" autofocus /></div>
+            <button class="hyt-button-primary" type="submit">Buscar</button>
+        </form>
+        <p role="status" data-commercial-party-status>@(Model.Sales ? "Cargando clientes…" : "Cargando proveedores…")</p>
+        <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Resultados de la búsqueda">
+            <table class="hyt-table"><thead><tr><th>Documento</th><th>Nombre</th><th>Acción</th></tr></thead><tbody data-commercial-party-results></tbody></table>
+        </div>
+    </div>
+</dialog>
+<script type="module" src="~/hyt-commercial-documents.js" asp-append-version="true"></script>

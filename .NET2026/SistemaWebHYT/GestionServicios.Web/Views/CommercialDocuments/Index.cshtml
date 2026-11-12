@@ -1,0 +1,97 @@
+@* Firma: FRANCO LARA - 10/11/2026 | Listado de compras y ventas con filtros, pagos y controles compartidos de HYT y fecha de vencimiento. Filtra facturas sin factoring y permite vincular trabajos o presupuestos desde el listado. *@
+@* Firma: FRANCO LARA - 11/11/2026 | Agrega el filtro Sí/No de factoring y muestra el estado y lote de factoring, detracción, total, saldo pendiente, orden de compra y confirmación en el listado de ventas. *@
+@using GestionServicios.Web.ViewModels.Billing
+@using GestionServicios.Web.Security
+@model CommercialPage
+@{
+    ViewData["Title"]=Model.Title; ViewData["Wide"]=true;
+    var canLink = Model.CanEdit && (Model.Sales || User.HasClaim(AccessService.PermissionClaim,"COSTOS_PROVEEDOR.CONSULTAR")
+        && User.HasClaim(AccessService.PermissionClaim,"COSTOS_PROVEEDOR.EDITAR"));
+    var returnUrl = Context.Request.PathBase + Context.Request.Path + Context.Request.QueryString;
+    var rows=Model.Data.GetProperty("Filas").EnumerateArray().ToArray();
+    var total=rows.Length==0 ? 0 : rows[0].GetProperty("TotalFilas").GetInt64();
+}
+<header class="hyt-page-header"><div><h1>@Model.Title</h1><p>RUC HYT @CommercialPage.Text(Model.Data,"RucHYT")</p></div>
+@if(Model.CanEdit){<a class="hyt-button-primary" asp-action="New" asp-route-scope="@Model.Scope">Nuevo registro</a>}
+</header>
+@if(TempData["CommercialNotice"] is string notice){<p role="status">@notice</p>}
+<form method="get" asp-action="Index" asp-route-scope="@Model.Scope" class="hyt-filters">
+<partial name="_DatePicker" model="@(new DatePickerModel("desde", "Desde", Model.From, Required:true))" />
+<partial name="_DatePicker" model="@(new DatePickerModel("hasta", "Hasta", Model.To, Required:true))" />
+<div class="hyt-field"><label for="commercial-tipo">Tipo</label><select id="commercial-tipo" name="tipo"><option value="">Todos</option>@foreach(var type in new[]{"01","03","07"}){<option value="@type" selected="@(type==Model.Type)">@CommercialPage.TypeLabel(type)</option>}</select></div>
+<div class="hyt-field"><label for="commercial-buscar">Buscar</label><input id="commercial-buscar" name="buscar" type="search" value="@Model.Search" maxlength="150" placeholder="Tercero o comprobante" /></div>
+@if (Model.Sales)
+{
+    <div class="hyt-field">
+        <label for="commercial-factoring">Factoring</label>
+        <select id="commercial-factoring" name="factoring">
+            <option value="">Todos</option>
+            <option value="true" selected="@(Model.HasFactoring == true)">Sí</option>
+            <option value="false" selected="@(Model.HasFactoring == false || Model.WithoutFactoring)">No</option>
+        </select>
+    </div>
+}
+<div class="hyt-filters-actions"><button type="submit" class="hyt-button-primary">Consultar</button><a class="hyt-button-secondary" asp-action="Index" asp-route-scope="@Model.Scope">Restablecer</a></div>
+</form>
+<section class="hyt-panel" aria-label="@Model.Title">
+<div class="hyt-table-wrap" tabindex="0" role="region" aria-label="@Model.Title"><table class="hyt-table @(Model.Sales ? "hyt-commercial-sales" : "")">
+<thead><tr><th>Fecha de emisión</th><th>Fecha de vencimiento</th><th>Tipo</th><th>Comprobante</th><th>@(Model.Sales?"Cliente":"Proveedor")</th><th>@(Model.Sales ? "Total" : "Importe")</th>
+@if(Model.Sales){<th>Afecto a detracción</th><th class="hyt-money">Porcentaje</th><th class="hyt-money">Detracción</th><th class="hyt-money">Saldo pendiente</th><th>Orden de compra</th><th>N.º de confirmación</th><th>Estado SUNAT</th><th>Estado de factoring</th>}else{<th>Pagado al proveedor</th><th>Detracción pagada / total</th><th>Estado de pago</th>}<th>Acciones</th></tr></thead>
+<tbody>
+@if(rows.Length==0){<tr><td class="hyt-grid-message" colspan="@(Model.Sales?15:10)">No se encontraron documentos para los filtros seleccionados.</td></tr>}
+@foreach(var row in rows){
+var id=row.GetProperty("ComprobanteId").GetInt64();
+var currency=CommercialPage.Text(row,"Moneda"); var dc=CommercialPage.Text(row,"MonedaDetraccion");
+var amount=CommercialPage.Amount(row,"Importe");var paid=CommercialPage.Amount(row,"Pagado");
+var det=CommercialPage.Amount(row,"ImporteDetraccion");var dp=CommercialPage.Amount(row,"Detraido");
+var balance=amount-paid-CommercialPage.Amount(row,"DetraccionDocumento");
+<tr><td>@CommercialPage.Date(CommercialPage.Text(row,"Fecha"))</td><td>@(CommercialPage.Text(row,"FechaVencimiento") is { Length: > 0 } due ? CommercialPage.Date(due) : "—")</td><td>@CommercialPage.TypeLabel(CommercialPage.Text(row,"Tipo"))</td><td>@CommercialPage.Number(row)</td>
+<td>@CommercialPage.Text(row,"NombreTercero")</td><td>@currency @CommercialPage.Money(amount)</td>
+@if (Model.Sales)
+{
+    var lot = CommercialPage.Text(row, "LoteId");
+    var disbursement = CommercialPage.Text(row, "FactoringFechaDesembolso");
+    var rate = CommercialPage.Amount(row, "PorcentajeDetraccion");
+    var withheld = CommercialPage.Amount(row, "DetraccionDocumento");
+    var affected = rate > 0 || withheld > 0;
+    <td>@(affected ? "Sí" : "No")</td>
+    <td class="hyt-money">@(affected ? $"{rate:0.####}%" : "—")</td>
+    <td class="hyt-money">@(affected ? $"{currency} {CommercialPage.Money(withheld)}" : "—")</td>
+    <td class="hyt-money">@currency @CommercialPage.Money(amount - withheld)</td>
+    <td>@(CommercialPage.Text(row,"NumeroOCCliente") is { Length: > 0 } order ? order : "—")</td>
+    <td>@(CommercialPage.Text(row,"NumeroConfirmacion") is { Length: > 0 } confirmation ? confirmation : "—")</td>
+    <td>@CommercialPage.Text(row,"EstadoSunat")</td>
+    <td>
+        @if (lot.Length == 0)
+        {
+            <span>Sin factoring</span>
+        }
+        else
+        {
+            <strong>@(disbursement.Length == 0 ? "Negociado" : "Con fecha de desembolso")</strong>
+            <div class="hyt-muted">
+                <span>Lote @lot</span>
+                @if (disbursement.Length > 0) { <text> · @CommercialPage.Date(disbursement)</text> }
+            </div>
+        }
+    </td>
+}
+else
+{
+<td>@currency @CommercialPage.Money(paid)</td><td>@(det>0?$"{dc} {CommercialPage.Money(dp)} / {CommercialPage.Money(det)}":"—")</td>
+<td>@(CommercialPage.Text(row,"Tipo")=="07"?"Nota de crédito":balance<=0&&dp>=det?"Pagado":paid>0||dp>0?"Pago parcial":"Pendiente")</td>}
+<td><div class="hyt-grid-actions"><a class="hyt-button-secondary hyt-action-button hyt-record-action" asp-action="Details" asp-route-scope="@Model.Scope" asp-route-id="@id">Ver</a>
+@if(canLink){
+<a class="hyt-button-secondary hyt-action-button" asp-action="LinkForm" asp-route-scope="@Model.Scope" asp-route-id="@id"
+   asp-route-retorno="@returnUrl" data-document-open>@(Model.Sales ? "Vincular presupuestos" : "Vincular trabajos")</a>
+}
+</div></td></tr>
+}
+</tbody></table></div>
+<nav class="hyt-pagination" aria-label="Paginación"><span>Página @Model.Page · @total registros</span>
+@foreach(var destination in new[]{Model.Page-1,Model.Page+1}){
+if(destination<1||destination>Model.Page&&Model.Page*20>=total){continue;}
+<a class="hyt-button-secondary" asp-action="Index" asp-route-scope="@Model.Scope" asp-route-desde="@Model.From?.ToString("yyyy-MM-dd")" asp-route-hasta="@Model.To?.ToString("yyyy-MM-dd")" asp-route-tipo="@Model.Type" asp-route-buscar="@Model.Search" asp-route-factoring="@Model.HasFactoring?.ToString().ToLowerInvariant()" asp-route-sinFactoring="@(Model.WithoutFactoring ? "true" : null)" asp-route-pagina="@destination">@(destination<Model.Page?"Anterior":"Siguiente")</a>
+}
+</nav>
+</section>

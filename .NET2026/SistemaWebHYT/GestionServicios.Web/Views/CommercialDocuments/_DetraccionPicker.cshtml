@@ -1,0 +1,84 @@
+@* Firma: FRANCO LARA - 10/11/2026 | Ayuda de detracciones del catálogo FralseCont para compras con importe automático, moneda de depósito y equivalente. *@
+@* Firma: FRANCO LARA - 11/11/2026 | Presenta la detracción automática por material y la selección de respaldo en facturas de venta. *@
+@using System.Globalization
+@using GestionServicios.Web.ViewModels.Billing
+@model CommercialForm
+@{
+    var catalog = Model.Data.GetProperty("CatalogoDetracciones");
+}
+<fieldset class="hyt-budget-fieldset" data-commercial-withholding-fields>
+    <legend>Detracción</legend>
+    @if (Model.Sales)
+    {
+        <p>Se aplica el mayor porcentaje de las partidas con detracción. Puedes elegir un código si las partidas no tienen uno asignado.</p>
+        <p role="status" data-commercial-material-withholding-status hidden></p>
+    }
+    <div class="hyt-field">
+        <label for="commercial-withholding-name">Código y nombre</label>
+        <div class="hyt-catalog-field">
+            <input asp-for="Input.CodigoDetraccion" id="commercial-withholding-code" type="hidden" />
+            <input id="commercial-withholding-name" type="text" readonly placeholder="Sin detracción" />
+            <button type="button" class="hyt-button-secondary" data-hyt-open="commercial-withholding-lookup">Buscar detracción</button>
+            <button type="button" class="hyt-button-secondary" data-commercial-clear-withholding>Quitar</button>
+        </div>
+    </div>
+    <div class="hyt-master-fields">
+        @if (Model.Sales)
+        {
+            <div class="hyt-field">
+                <label for="commercial-withholding-rate">Porcentaje</label>
+                <input id="commercial-withholding-rate" type="text" readonly />
+            </div>
+        }
+        <div class="hyt-field">
+            <label for="commercial-withholding-amount">Importe de la detracción</label>
+            <input id="commercial-withholding-amount" type="text" readonly />
+        </div>
+        @if (!Model.Sales)
+        {
+            <div class="hyt-field">
+                <label asp-for="Input.MonedaDetraccion">Moneda del depósito</label>
+                <select asp-for="Input.MonedaDetraccion"><option value="">Moneda del comprobante</option><option>PEN</option><option>USD</option></select>
+            </div>
+            <div class="hyt-field" data-commercial-foreign-withholding hidden>
+                <label asp-for="Input.ImporteDetraccion">Importe a depositar en la otra moneda</label>
+                <input asp-for="Input.ImporteDetraccion" type="number" step="0.01" min="0.01" />
+            </div>
+            <div class="hyt-field" data-commercial-withholding-equivalent hidden>
+                <label for="commercial-withholding-equivalent">Equivalente en moneda del comprobante</label>
+                <input id="commercial-withholding-equivalent" type="text" readonly />
+            </div>
+        }
+    </div>
+    <dialog id="commercial-withholding-lookup" class="hyt-modal" aria-labelledby="commercial-withholding-title"
+            data-payroll-catalog data-target="commercial-withholding-code">
+        <header class="hyt-modal-header">
+            <h2 id="commercial-withholding-title">Ayuda de detracciones</h2>
+            <button type="button" class="hyt-modal-close" data-hyt-close aria-label="Cerrar ayuda">×</button>
+        </header>
+        <div class="hyt-modal-body">
+            <div class="hyt-field"><label for="commercial-withholding-search">Buscar por código o nombre</label>
+                <input id="commercial-withholding-search" type="search" data-catalog-search autofocus />
+            </div>
+            <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Códigos de detracción">
+                <table class="hyt-table">
+                    <thead><tr><th>Código</th><th>Nombre</th><th>Porcentaje</th><th>Acción</th></tr></thead>
+                    <tbody>
+                    @foreach(var row in catalog.EnumerateArray())
+                    {
+                        var code = CommercialPage.Text(row,"Codigo");
+                        var name = CommercialPage.Text(row,"Nombre");
+                        var rate = CommercialPage.Amount(row,"Porcentaje");
+                        <tr data-catalog-row>
+                            <td>@code</td><td>@name</td><td>@rate.ToString("0.####")%</td>
+                            <td><button type="button" class="hyt-button-secondary" data-catalog-select="@code"
+                                data-catalog-label="@($"{code} · {name}")" data-withholding-rate="@rate.ToString(CultureInfo.InvariantCulture)">Seleccionar</button></td>
+                        </tr>
+                    }
+                    <tr data-catalog-empty hidden><td colspan="4" class="hyt-grid-message">No se encontraron códigos.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </dialog>
+</fieldset>

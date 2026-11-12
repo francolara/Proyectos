@@ -2,7 +2,8 @@
 @inject GestionServicios.Application.Payroll.IPayrollCatalogRepository PayrollCatalog
 @model GestionServicios.Web.Controllers.WorkerDetails
 @* Firma: FRANCO LARA - 09/11/2026 | Ficha HYT con datos bancarios, cargo, sueldo, horario, previsión, frecuencia y accesos a vacaciones, asistencia y estado de cuenta. Incluye CCI opcional. Ayudas de catálogo en pop-up. Horarios habituales en intervalos de media hora. Encabezado de horario y frecuencia de pago. Quita el acceso a registro horario de la ficha. *@
-@* Firma: FRANCO LARA - 10/11/2026 | Agrega el acceso a Registrar Cese. *@
+@* Firma: FRANCO LARA - 10/11/2026 | Agrega el acceso a Registrar Cese y permite asociar conceptos habituales de planilla y registrar identidad y cuenta de abono para Telecrédito. *@
+@* Firma: FRANCO LARA - 11/11/2026 | El tipo de cuenta solo se selecciona para BCP. Los demás bancos usan el CCI registrado. El combo BCP ofrece Ahorros y Corriente. La ficha registra nombres y apellidos por separado y reúne tipo y número de documento en los datos generales. *@
 @{
     var catalog = Model.CanEdit
         ? await PayrollCatalog.CatalogAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!, Context.RequestAborted)
@@ -37,15 +38,29 @@
     <form asp-action="Save" asp-route-id="@input.Id" method="post" class="hyt-panel hyt-master-form hyt-payroll-form">
         <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
         <input type="hidden" name="Version" value="@input.Version" />
+        <input type="hidden" name="EditTelecredit" value="true" />
         <h2>Datos generales</h2>
         <div class="hyt-master-fields">
             <div class="hyt-field">
-                <label for="workers-document-1">Documento</label>
+                <label for="workers-document-1">N.º Documento</label>
                 <input id="workers-document-1" name="Document" value="@input.Document" maxlength="20" required />
             </div>
             <div class="hyt-field">
-                <label for="workers-name-1">Nombre completo</label>
-                <input id="workers-name-1" name="Name" value="@input.Name" maxlength="180" required />
+                <label for="worker-bcp-document-type">Tipo de documento</label>
+                <select id="worker-bcp-document-type" name="BcpDocumentType">
+                    <option value="">Sin configurar</option>
+                    <option value="1" selected="@(input.BcpDocumentType == "1")">DNI</option>
+                    <option value="3" selected="@(input.BcpDocumentType == "3")">Carné de extranjería</option>
+                    <option value="4" selected="@(input.BcpDocumentType == "4")">Pasaporte</option>
+                </select>
+            </div>
+            <div class="hyt-field">
+                <label for="workers-given-names">Nombres</label>
+                <input id="workers-given-names" name="GivenNames" value="@input.GivenNames" maxlength="179" autocomplete="given-name" required />
+            </div>
+            <div class="hyt-field">
+                <label for="workers-surnames">Apellidos</label>
+                <input id="workers-surnames" name="Surnames" value="@input.Surnames" maxlength="179" autocomplete="family-name" required />
             </div>
             <div class="hyt-field">
                 <label for="workers-kind-1">Tipo</label>
@@ -112,8 +127,8 @@
                 <label for="worker-pension">Régimen previsional</label>
                 <select id="worker-pension" name="Pension">
                     <option value="">Sin indicar</option>
-                    <option value="AFP" selected="@(input.Pension == "AFP")">AFP</option>
-                    <option value="ONP" selected="@(input.Pension == "ONP")">ONP</option>
+                    <option value="AFP" selected="@(input.Pension == "AFP")">Sistema de pensiones (AFP)</option>
+                    <option value="ONP" selected="@(input.Pension == "ONP")">Sistema de pensiones (ONP)</option>
                 </select>
             </div>
             <div class="hyt-field"><label for="worker-afp">Administradora (solo AFP)</label>
@@ -132,6 +147,17 @@
                 </select>
             </div>
         </div>
+        <fieldset class="hyt-master-zones">
+            <legend>Conceptos habituales de planilla</legend>
+            <input type="hidden" name="EditConcepts" value="true" />
+            <div data-zone-values>
+                @foreach (var concept in Model.Concepts.Where(item => item.Regimen is null && (item.Activo || input.Concepts.Contains(item.ConceptoId))))
+                {
+                    <label><input type="checkbox" name="Concepts" value="@concept.ConceptoId" checked="@input.Concepts.Contains(concept.ConceptoId)" />
+                        @concept.Nombre · @(concept.Naturaleza == "ABONO" ? "Abono" : "Cargo")@(concept.Activo ? "" : " (inactivo)")</label>
+                }
+            </div>
+        </fieldset>
         @if (Model.CanSeeAccount)
         {
             <h2 class="hyt-payroll-group-title">Datos bancarios</h2>
@@ -146,6 +172,28 @@
                 <div class="hyt-field">
                     <label for="workers-account-1">Número de cuenta</label>
                     <input id="workers-account-1" name="Account" value="@input.Account" maxlength="34" autocomplete="off" />
+                </div>
+                <div class="hyt-field">
+                    <label for="worker-bcp-account-type">Tipo de cuenta (solo BCP)</label>
+                    @{ var replaceMasterAccount = input.BcpAccountType == "M" && GestionServicios.Application.Payroll.Telecredit.IsBcp(input.Bank); }
+                    <select id="worker-bcp-account-type" name="BcpAccountType" required="@replaceMasterAccount">
+                        <option value="">@(replaceMasterAccount ? "Selecciona" : "Sin configurar")</option>
+                        <option value="A" selected="@(input.BcpAccountType == "A")">Ahorros BCP</option>
+                        <option value="C" selected="@(input.BcpAccountType == "C")">Corriente BCP</option>
+                    </select>
+                    @if (replaceMasterAccount)
+                    {
+                        <small>Tipo guardado: Maestra. Selecciona otro tipo solo si corresponde a la cuenta que vas a registrar.</small>
+                    }
+                    <small>Para otro banco, registra el CCI. El TXT lo tratará como interbancario.</small>
+                </div>
+                <div class="hyt-field">
+                    <label for="worker-bcp-currency">Moneda de la cuenta de abono</label>
+                    <select id="worker-bcp-currency" name="BcpCurrency">
+                        <option value="">Sin configurar</option>
+                        <option value="PEN" selected="@(input.BcpCurrency == "PEN")">Soles</option>
+                        <option value="USD" selected="@(input.BcpCurrency == "USD")">Dólares</option>
+                    </select>
                 </div>
                 <div class="hyt-field">
                     <label for="workers-cci">Número de cuenta interbancaria (CCI)</label>
@@ -166,10 +214,14 @@ else
         <dt>Entrada habitual</dt><dd>@(input.Entry?.ToString("HH:mm") ?? "—")</dd>
         <dt>Salida habitual</dt><dd>@(input.Exit?.ToString("HH:mm") ?? "—")</dd>
         <dt>Régimen previsional</dt><dd>@(input.Pension ?? "—") @input.Afp</dd>
+        <dt>Conceptos habituales</dt><dd>@(input.Concepts.Length == 0 ? "—" :
+            string.Join(", ", Model.Concepts.Where(item => input.Concepts.Contains(item.ConceptoId)).Select(item => item.Nombre)))</dd>
         <dt>Frecuencia de pago</dt><dd>@(input.Frequency ?? "—")</dd>
         <dt>Cargo</dt><dd>@(input.CargoName ?? "Sin asignar")</dd>
         <dt>Sueldo base mensual</dt><dd>@(input.MonthlySalary is decimal salary ? $"S/ {salary:N2}" : "Sin registrar")</dd>
-        <dt>Documento</dt><dd>@input.Document</dd>
+        <dt>N.º Documento</dt><dd>@input.Document</dd>
+        <dt>Tipo de documento</dt><dd>@(input.BcpDocumentType switch
+            { "1" => "DNI", "3" => "Carné de extranjería", "4" => "Pasaporte", _ => "Sin configurar" })</dd>
         <dt>Tipo</dt><dd>@(input.Kind == "PLANILLA" ? "En planilla" : "Externo")</dd>
         <dt>Fecha de ingreso</dt><dd>@input.StartDate?.ToString("dd/MM/yyyy")</dd>
         <dt>Estado</dt><dd>@(input.Active ? "Activo" : "Inactivo")</dd>
@@ -178,6 +230,12 @@ else
         @if (Model.CanSeeAccount)
         {
             <dt>CCI</dt><dd>@(input.Cci ?? "Sin registrar")</dd>
+            var accountType = GestionServicios.Application.Payroll.Telecredit.IsBcp(input.Bank)
+                ? input.BcpAccountType switch
+                    { "A" => "Ahorros BCP", "C" => "Corriente BCP", "M" => "Maestra BCP", _ => "Sin configurar" }
+                : (string.IsNullOrWhiteSpace(input.Bank) ? "Sin configurar" : "Interbancaria (CCI)");
+            <dt>Cuenta de abono para Telecrédito</dt><dd>@accountType
+                @input.BcpCurrency</dd>
         }
     </dl>
 }

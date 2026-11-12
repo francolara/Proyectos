@@ -360,6 +360,7 @@ GO
 -- Create date:   09/11/2026
 -- Description:   Consulta costos, saldos y datos de pago segun los permisos de Planillas.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 11/11/2026 | Agrega el comprobante de compra vinculado cuando está disponible el módulo de compras.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_CostoProveedor_Listar
@@ -368,7 +369,12 @@ CREATE OR ALTER PROCEDURE dbo.spu_CostoProveedor_Listar
     @ProveedorId BIGINT = NULL,
     @SoloPendientes BIT = 0,
     @Pagina INT = 1,
-    @CostoProveedorId BIGINT = NULL
+    @CostoProveedorId BIGINT = NULL,
+    @Desde DATE = NULL,
+    @Hasta DATE = NULL,
+    @EstadoFiltro VARCHAR(10) = NULL,
+    @Buscar NVARCHAR(180) = NULL
+WITH EXECUTE AS OWNER
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -381,11 +387,20 @@ BEGIN
 
         IF @Pagina IS NULL OR @Pagina < 1
             THROW 51000, N'Pagina no valida.', 1;
+        IF @Desde > @Hasta OR @Hasta = '99991231'
+           OR (@EstadoFiltro IS NOT NULL AND @EstadoFiltro NOT IN ('PENDIENTES', 'PAGADOS', 'TODOS'))
+            THROW 51000, N'Revise el rango de fechas y el estado.', 1;
+
+        DECLARE @DesdeUtc DATETIME2(0) = DATEADD(HOUR, 5, CONVERT(DATETIME2(0), @Desde));
+        DECLARE @HastaUtc DATETIME2(0) = DATEADD(HOUR, 5, DATEADD(DAY, 1, CONVERT(DATETIME2(0), @Hasta)));
+        SET @Buscar = NULLIF(TRIM(@Buscar), N'');
 
         DECLARE @VerCuenta BIT = dbo.fn_HYTPermiso(@UsuarioId, N'PROVEEDORES.CUENTA');
         DECLARE @VerPago BIT = dbo.fn_HYTPermiso(@UsuarioId, N'PAGOS_PROVEEDOR.CONSULTAR');
 
-        SELECT costo.CostoProveedorId, costo.PresupuestoId, presupuesto.NumeroInterno,
+        SELECT costo.CostoProveedorId, costo.PresupuestoId,
+               COALESCE(presupuesto.NumeroPresupuesto, presupuesto.NumeroInterno) AS NumeroInterno,
+               CONVERT(DATE, DATEADD(HOUR, -5, costo.FechaRegistro)) AS FechaCosto,
                costo.ProveedorId, proveedor.RazonSocial, costo.Descripcion, costo.MonedaCodigo,
                CASE WHEN @CostoProveedorId IS NOT NULL AND @VerPago = 1
                     THEN proveedor.Banco END AS Banco,
@@ -395,7 +410,9 @@ BEGIN
                costo.Importe - saldo.Pagado AS Pendiente,
                CASE WHEN saldo.Pagado = 0 THEN N'PENDIENTE'
                     WHEN saldo.Pagado = costo.Importe THEN N'PAGADO' ELSE N'PARCIAL' END AS Estado,
-               COUNT_BIG(1) OVER () AS Total
+               COUNT_BIG(1) OVER () AS Total,
+               CAST(NULL AS NVARCHAR(70)) AS FacturaCompra
+        INTO #Pagina
         FROM dbo.CostoProveedorPresupuesto AS costo
         INNER JOIN dbo.Presupuesto AS presupuesto ON presupuesto.PresupuestoId = costo.PresupuestoId
         INNER JOIN dbo.ProveedorHYT AS proveedor ON proveedor.ProveedorId = costo.ProveedorId
@@ -407,11 +424,39 @@ BEGIN
         WHERE (@PresupuestoId IS NULL OR costo.PresupuestoId = @PresupuestoId)
           AND (@ProveedorId IS NULL OR costo.ProveedorId = @ProveedorId)
           AND (@CostoProveedorId IS NULL OR costo.CostoProveedorId = @CostoProveedorId)
-          AND (@SoloPendientes = 0 OR saldo.Pagado < costo.Importe)
+          AND (@DesdeUtc IS NULL OR costo.FechaRegistro >= @DesdeUtc)
+          AND (@HastaUtc IS NULL OR costo.FechaRegistro < @HastaUtc)
+          AND (@Buscar IS NULL
+               OR CHARINDEX(@Buscar, proveedor.RazonSocial COLLATE Latin1_General_100_CI_AI) > 0
+               OR CHARINDEX(@Buscar, proveedor.Ruc) > 0
+               OR CHARINDEX(@Buscar, costo.Descripcion COLLATE Latin1_General_100_CI_AI) > 0
+               OR CHARINDEX(@Buscar, presupuesto.NumeroPresupuesto) > 0
+               OR CHARINDEX(@Buscar, presupuesto.NumeroInterno) > 0)
+          AND (@EstadoFiltro = 'TODOS'
+               OR (@EstadoFiltro = 'PAGADOS' AND saldo.Pagado = costo.Importe)
+               OR (@EstadoFiltro = 'PENDIENTES' AND saldo.Pagado < costo.Importe)
+               OR (@EstadoFiltro IS NULL AND (@SoloPendientes = 0 OR saldo.Pagado < costo.Importe)))
         ORDER BY costo.CostoProveedorId DESC
         OFFSET (CONVERT(BIGINT, @Pagina) - 1) * 20 ROWS FETCH NEXT 20 ROWS ONLY;
+
+        IF @VerPago=1 AND OBJECT_ID(N'dbo.ComprobanteHYTCosto',N'U') IS NOT NULL
+            AND OBJECT_ID(N'dbo.ComprobanteHYT',N'U') IS NOT NULL
+        BEGIN
+            UPDATE pagina SET FacturaCompra=CONCAT(compra.Serie,N'-',compra.Numero)
+            FROM #Pagina AS pagina
+            INNER JOIN dbo.ComprobanteHYTCosto AS vinculo ON vinculo.CostoProveedorId=pagina.CostoProveedorId
+            INNER JOIN dbo.ComprobanteHYT AS compra ON compra.ComprobanteId=vinculo.ComprobanteId
+            WHERE compra.EsVenta=0 AND compra.Serie IS NOT NULL AND compra.Numero IS NOT NULL;
+        END;
+
+        SELECT pagina.CostoProveedorId,pagina.PresupuestoId,pagina.NumeroInterno,pagina.FechaCosto,
+            pagina.ProveedorId,pagina.RazonSocial,pagina.Descripcion,pagina.MonedaCodigo,pagina.Banco,pagina.NumeroCuenta,
+            pagina.DocumentoSustento,pagina.Importe,pagina.Pagado,pagina.Pendiente,pagina.Estado,pagina.Total,pagina.FacturaCompra
+        FROM #Pagina AS pagina ORDER BY pagina.CostoProveedorId DESC;
+        DROP TABLE #Pagina;
     END TRY
     BEGIN CATCH
+        IF OBJECT_ID(N'tempdb..#Pagina',N'U') IS NOT NULL DROP TABLE #Pagina;
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
         SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
         RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);

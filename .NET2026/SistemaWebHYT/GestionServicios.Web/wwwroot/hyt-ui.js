@@ -56,11 +56,22 @@ function initializeNavigation() {
     });
 }
 
+// Firma: FRANCO LARA - 11/11/2026 | Sincroniza la visibilidad de las filas de detalle con sus botones.
 function initialize() {
 if(runtime.initialized)return;
 runtime.initialized=true;
 initializeNavigation();
 document.addEventListener('click',event=>{
+    const toggle = event.target.closest('[data-hyt-row-toggle]');
+    if (toggle) {
+        const detail = document.getElementById(toggle.getAttribute('aria-controls'));
+        if (detail) {
+            const expanded = detail.hidden;
+            detail.hidden = !expanded;
+            toggle.setAttribute('aria-expanded', String(expanded));
+        }
+        return;
+    }
     const opener=event.target.closest('[data-hyt-open]');
     if(opener)setDialog(document.getElementById(opener.dataset.hytOpen),true);
     const closer=event.target.closest('[data-hyt-close]');

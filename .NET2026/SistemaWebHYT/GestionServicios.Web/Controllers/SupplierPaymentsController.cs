@@ -2,12 +2,15 @@ using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using GestionServicios.Application.Payroll;
 using GestionServicios.Web.Security;
+using GestionServicios.Web.ViewModels.Reporting;
+using GestionServicios.Application.Maintenance;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 
 namespace GestionServicios.Web.Controllers;
 
+// Firma: FRANCO LARA - 11/11/2026 | Imprime los trabajos de proveedores con totales por moneda y filtros del listado.
 [Authorize(Policy = "perm:PAGOS_PROVEEDOR.CONSULTAR")]
 [Route("Planillas/PagosProveedores")]
 public sealed class SupplierPaymentsController(ISupplierPaymentsRepository repository) : Controller
@@ -18,7 +21,7 @@ public sealed class SupplierPaymentsController(ISupplierPaymentsRepository repos
     [HttpGet("")]
     public async Task<IActionResult> Index(long? budgetId, long? supplierId, bool all = false,
         int page = 1, DateOnly? from = null, DateOnly? to = null, string? status = null,
-        string? search = null, CancellationToken ct = default)
+        string? search = null, CancellationToken ct = default, bool print = false)
     {
         status ??= all ? "TODOS" : "PENDIENTES";
         if (!ModelState.IsValid || page < 1 || budgetId is <= 0 || supplierId is <= 0
@@ -27,7 +30,33 @@ public sealed class SupplierPaymentsController(ISupplierPaymentsRepository repos
             return BadRequest();
 
         var filters = new SupplierCostFilters(from, to, status, search?.Trim());
-        var costs = await repository.CostsAsync(Actor, budgetId, supplierId, null, false, page, ct, filters);
+        Task<IReadOnlyList<SupplierCost>> Load(int number) => repository.CostsAsync(Actor, budgetId, supplierId, null, false, number, ct, filters);
+        if (print)
+        {
+            if (!User.HasClaim(AccessService.PermissionClaim, "REPORTES.IMPRIMIR")) return Forbid();
+            try
+            {
+                var rows = await ListingReport.AllAsync(async number =>
+                {
+                    var result = await Load(number);
+                    return (result, result.FirstOrDefault()?.Total ?? 0);
+                }, (SupplierCost row) => row.Id);
+                var summary = new List<string> { ListingReport.Range(from, to), ListingReport.Filter("Buscar", filters.Search),
+                    ListingReport.Filter("Estado", status) };
+                if (budgetId.HasValue) summary.Add(ListingReport.Filter("Presupuesto", rows.FirstOrDefault()?.BudgetNumber ?? budgetId.ToString()));
+                if (supplierId.HasValue) summary.Add(ListingReport.Filter("Proveedor", rows.FirstOrDefault()?.SupplierName ?? supplierId.ToString()));
+                return View("ListingReport", new ListingReport("Trabajos de proveedores", summary, rows.Count,
+                    new(null, ["Fecha", "Proveedor", "Presupuesto", "Trabajo", "Documento de sustento / factura", "Moneda", "Importe", "Pagado", "Saldo", "Estado"],
+                        rows.Select(row => new[] { ListingReport.Date(row.CostDate), row.SupplierName, row.BudgetNumber, row.Description,
+                            string.Join("\n", new[] { row.Document, row.PurchaseInvoice }.Where(value => !string.IsNullOrWhiteSpace(value)).Distinct()), row.Currency, ListingReport.Money(row.Amount), ListingReport.Money(row.Paid),
+                            ListingReport.Money(row.Balance), row.Status })),
+                    new("Totales por moneda", ["Moneda", "Importe", "Pagado", "Saldo"],
+                        rows.GroupBy(row => row.Currency).Select(group => new[] { group.Key, ListingReport.Money(group.Sum(row => row.Amount)),
+                            ListingReport.Money(group.Sum(row => row.Paid)), ListingReport.Money(group.Sum(row => row.Balance)) }))));
+            }
+            catch (MaintenanceException error) { return Conflict(error.Message); }
+        }
+        var costs = await Load(page);
         return View(new SupplierPaymentsList(costs, budgetId, supplierId, filters, page));
     }
 

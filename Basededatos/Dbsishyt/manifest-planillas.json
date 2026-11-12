@@ -15,6 +15,7 @@
     "StoreProcedure/spu_ProveedorHYT_Listar.sql",
     "StoreProcedure/spu_ProveedorHYT_Guardar.sql",
     "StoreProcedure/spu_PagoProveedor_Listar.sql",
+    "Script/056_NombresTrabajadorHYT.sql",
     "StoreProcedure/spu_TrabajadorHYT_Listar.sql",
     "StoreProcedure/spu_TrabajadorHYT_Guardar.sql",
     "StoreProcedure/spu_VacacionesHYT_Consultar.sql",

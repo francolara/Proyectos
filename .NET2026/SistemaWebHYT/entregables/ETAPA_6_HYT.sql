@@ -821,6 +821,14 @@ END;
 GO
 
 -- Fuente: StoreProcedure/spu_SeguimientoGUIA_Listar.sql
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   03/11/2026
+-- Description:   Lista Guia (Acta de conformidad) por fecha/búsqueda, adjuntos y confirmación; veinte por página.
+-- =============================================
+-- Firma: FRANCO LARA | Create date: 05/11/2026 | Filtros cliente y tienda conservados desde dashboard.
+-- Firma: FRANCO LARA | Create date: 06/11/2026 | Numeración visible del presupuesto por año/mes de registro en Lima y correlativo mensual.
+-- Firma: FRANCO LARA | Create date: 11/11/2026 | Incluye la OC vinculada al imprimir guías, con permiso de consulta.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_SeguimientoGUIA_Listar
@@ -841,6 +849,8 @@ BEGIN
             fuente.CodigoMoneda,CONVERT(DECIMAL(19,2),NULL) AS Importe,
             documento.FechaRegistro,creador.Nombres AS UsuarioRegistro,documento.FechaActualizacion,editor.Nombres AS UsuarioActualizacion,CONVERT(BINARY(8),documento.VersionFila) AS VersionFila,
             CONVERT(BINARY(8),p.VersionFila) AS VersionPadre,(SELECT COUNT_BIG(1) FROM dbo.GuiaArchivo AS vinculo INNER JOIN dbo.ArchivoAdjunto AS archivo ON archivo.ArchivoId=vinculo.ArchivoId AND archivo.Retirado=0 WHERE vinculo.GuiaId=documento.GuiaId) AS Adjuntos,(SELECT MIN(archivo.ArchivoId) FROM dbo.GuiaArchivo AS vinculo INNER JOIN dbo.ArchivoAdjunto AS archivo ON archivo.ArchivoId=vinculo.ArchivoId AND archivo.Retirado=0 WHERE vinculo.GuiaId=documento.GuiaId) AS PrimerArchivoId,
+            CASE WHEN EXISTS(SELECT 1 FROM dbo.AspNetUserRoles AS rolOC INNER JOIN dbo.RolPermiso AS permisoOC ON permisoOC.RoleId=rolOC.RoleId
+                WHERE rolOC.UserId=@UsuarioId AND permisoOC.CodigoPermiso=N'OC_CLIENTE.CONSULTAR') THEN oc.NumeroOCCliente END AS NumeroOCCliente,
             confirmacion.ConfirmacionId,confirmacion.NumeroConfirmacion,confirmacion.FechaConfirmacion,
             (SELECT COUNT_BIG(1) FROM dbo.ConfirmacionArchivo AS vinculo INNER JOIN dbo.ArchivoAdjunto AS archivo ON archivo.ArchivoId=vinculo.ArchivoId AND archivo.Retirado=0 WHERE vinculo.ConfirmacionId=confirmacion.ConfirmacionId) AS AdjuntosConfirmacion,CONVERT(NVARCHAR(MAX),NULL) AS Facturado
         INTO #Pagina FROM dbo.GuiaConformidad AS documento
@@ -853,7 +863,7 @@ BEGIN
             AND (@Confirmada IS NULL OR (@Confirmada=1 AND confirmacion.ConfirmacionId IS NOT NULL) OR (@Confirmada=0 AND confirmacion.ConfirmacionId IS NULL));
         SELECT (SELECT pagina.Id,pagina.PadreId,pagina.PresupuestoId,pagina.PresupuestoNumero,pagina.TipoAtencion,pagina.ClienteNombre,pagina.TiendaNombre,pagina.NumeroInterno,pagina.NumeroDocumento,
             pagina.Estado,pagina.FechaDocumento,pagina.CodigoMoneda,pagina.Importe,pagina.FechaRegistro,pagina.UsuarioRegistro,pagina.FechaActualizacion,pagina.UsuarioActualizacion,pagina.VersionFila,pagina.VersionPadre,pagina.Adjuntos,pagina.PrimerArchivoId,
-            pagina.ConfirmacionId,pagina.NumeroConfirmacion,pagina.FechaConfirmacion,pagina.AdjuntosConfirmacion,JSON_QUERY(pagina.Facturado) AS Facturado
+            pagina.NumeroOCCliente,pagina.ConfirmacionId,pagina.NumeroConfirmacion,pagina.FechaConfirmacion,pagina.AdjuntosConfirmacion,JSON_QUERY(pagina.Facturado) AS Facturado
             FROM #Pagina AS pagina ORDER BY pagina.FechaRegistro DESC,pagina.Id DESC OFFSET (CONVERT(BIGINT,@Pagina)-1)*20 ROWS FETCH NEXT 20 ROWS ONLY FOR JSON PATH,INCLUDE_NULL_VALUES) AS Datos;
         SELECT COUNT_BIG(1) AS Total FROM #Pagina AS pagina;
         DROP TABLE #Pagina;

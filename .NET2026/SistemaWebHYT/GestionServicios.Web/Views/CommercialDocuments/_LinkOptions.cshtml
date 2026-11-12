@@ -1,0 +1,21 @@
+@* Firma: FRANCO LARA - 11/11/2026 | Filas compartidas del selector de trabajos y presupuestos. *@
+@using GestionServicios.Web.ViewModels.Billing
+@model CommercialPage
+@{
+    var record = Model.Data.GetProperty("Documento");
+    var idKey = Model.Sales ? "PresupuestoId" : "CostoProveedorId";
+    var linkedIds = record.GetProperty(Model.Sales ? "Presupuestos" : "Costos").EnumerateArray()
+        .Select(row => row.GetProperty(idKey).GetInt64()).ToHashSet();
+    var options = Model.Data.GetProperty(Model.Sales ? "OpcionesPresupuesto" : "OpcionesCosto").EnumerateArray()
+        .Where(row => !linkedIds.Contains(row.GetProperty(idKey).GetInt64()));
+}
+@foreach (var item in options)
+{
+    var number = CommercialPage.Text(item, "NumeroPresupuesto");
+    <tr>
+        <td><input name="ids" type="checkbox" value="@CommercialPage.Text(item,idKey)" aria-label="Seleccionar @number @CommercialPage.Text(item,"Descripcion")" /></td>
+        <td>@number</td>
+        <td>@CommercialPage.Text(item,"Descripcion")</td>
+        <td>@CommercialPage.Text(Model.Sales ? item : record,Model.Sales ? "CodigoMoneda" : "Moneda") @CommercialPage.Money(CommercialPage.Amount(item,Model.Sales ? "Total" : "Importe"))</td>
+    </tr>
+}

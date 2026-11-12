@@ -1,5 +1,6 @@
 @model GestionServicios.Web.Controllers.PayPlanAdjustmentField
 @* Firma: FRANCO LARA - 09/11/2026 | Captura individual de horas completas o descuentos con ayuda de presupuestos. *@
+@* Firma: FRANCO LARA - 10/11/2026 | Selección de conceptos y edición de abonos y cargos con importes o porcentajes sugeridos. Identifica la base mensual en la segunda quincena. *@
 @{
     var row = Model.Value;
     var prefix = Model.Prefix;
@@ -8,8 +9,9 @@
 <div class="hyt-master-fields hyt-plan-adjustment" data-plan-adjustment>
     <label class="hyt-field">Tipo
         <select name="@(prefix + ".Tipo")" data-adjustment-field="Tipo">
-            <option value="EXTRA" selected="@(row?.Tipo == "EXTRA")">Horas extra</option>
-            <option value="DESCUENTO" selected="@(row?.Tipo == "DESCUENTO")">Descuento</option>
+            <option value="ABONO">Abono</option>
+            <option value="DESCUENTO">Cargo</option>
+            <option value="EXTRA" hidden>Horas extra (anterior)</option>
         </select>
     </label>
     <label class="hyt-field">Fecha
@@ -26,11 +28,24 @@
                     aria-haspopup="dialog" aria-controls="pay-plan-budget">Buscar presupuesto</button>
         }
     </div>
-    <label class="hyt-field">Concepto u observación
+    <label class="hyt-field" data-plan-concept>Concepto
+        <select data-adjustment-field="ConceptoId">
+            <option value="">Selecciona un concepto</option>
+            @foreach (var concept in Model.Concepts)
+            {
+                <option value="@concept.ConceptoId" data-kind="@(concept.Naturaleza == "ABONO" ? "ABONO" : "DESCUENTO")"
+                        data-calculation="@concept.Calculo" data-monthly-basis="@(concept.BaseMensual ? "true" : null)" data-value="@concept.Valor?.ToString(System.Globalization.CultureInfo.InvariantCulture)">@concept.Nombre</option>
+            }
+        </select>
+    </label>
+    <label class="hyt-field" data-plan-description>Concepto u observación
         <input name="@(prefix + ".Concepto")" data-adjustment-field="Concepto" maxlength="300" value="@row?.Concepto" />
     </label>
     <label class="hyt-field" data-plan-hours>Horas completas
         <input name="@(prefix + ".Horas")" data-adjustment-field="Horas" class="hyt-numeric" type="number" min="0" max="24" step="1" value="@(row?.Horas ?? 1)" required />
+    </label>
+    <label class="hyt-field" data-plan-rate hidden><span data-plan-rate-label>Porcentaje sobre la base (opcional)</span>
+        <input type="number" min="0" max="100" step="0.0001" data-adjustment-field="Porcentaje" />
     </label>
     <label class="hyt-field">Importe (S/)
         <input name="@(prefix + ".Importe")" data-adjustment-field="Importe" class="hyt-money" inputmode="decimal" value="@(row?.Importe.ToString("0.00") ?? "0.00")" required />

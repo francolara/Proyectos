@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Security.Claims;
 using GestionServicios.Application.Budgets;
 using GestionServicios.Application.Payroll;
@@ -16,14 +18,23 @@ public sealed class PayPlanningController(IPayPlanningRepository repository, IBu
     private string Actor => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
     private bool CanEdit => User.HasClaim(AccessService.PermissionClaim, "PAGOS_PERSONAL.EDITAR");
 
+    // Firma: FRANCO LARA - 11/11/2026 | Carga la quincena actual por defecto en Planificación de Planilla.
     [HttpGet("")]
-    public async Task<IActionResult> Index(string frequency = "SEMANAL", DateOnly? from = null, CancellationToken ct = default)
+    public async Task<IActionResult> Index(string frequency = "QUINCENAL", DateOnly? from = null,
+        string? month = null, int? half = null, CancellationToken ct = default)
     {
         var now = TimeZoneInfo.ConvertTime(clock.GetUtcNow(), TimeZoneInfo.FindSystemTimeZoneById("America/Lima"));
         var today = DateOnly.FromDateTime(now.DateTime);
         if (!ModelState.IsValid || !ValidFrequency(frequency) || from > new DateOnly(9999, 12, 24)) return BadRequest();
 
         var period = Start(frequency, from ?? today);
+        if (frequency == "QUINCENAL" && (month is not null || half.HasValue))
+        {
+            if (half is not (1 or 2) || !DateOnly.TryParseExact(month + "-01", "yyyy-MM-dd",
+                    CultureInfo.InvariantCulture, DateTimeStyles.None, out var monthStart))
+                return BadRequest();
+            period = half == 1 ? monthStart : monthStart.AddDays(15);
+        }
         var plan = await repository.PlanAsync(Actor, frequency, period, ct);
         return View(new PayPlanningPage(plan, CanEdit && plan.FechaPago is null));
     }
@@ -60,13 +71,16 @@ public sealed class PayPlanningController(IPayPlanningRepository repository, IBu
         {
             if (!line.AjustesDetallados && line.Ajustes is null) continue;
             line.Ajustes ??= [];
-            if (line.Ajustes.Length > 250 || !line.Ajustes.All(ValidAdjustment))
+            if (!ValidAmount(line.Base) || line.Ajustes.Length > 250 || !line.Ajustes.All(ValidAdjustment))
             {
-                ModelState.AddModelError("", "Revisa la fecha, el concepto, las horas completas y el importe de cada ajuste.");
+                ModelState.AddModelError("", "Revisa la fecha, el concepto y el importe de cada ajuste.");
                 continue;
             }
+            line.Ajustes = line.Ajustes.Select(adjustment => adjustment.Porcentaje is decimal rate
+                ? adjustment with { Importe = BudgetAmounts.Round((adjustment.BasePorcentaje ?? line.Base) * rate / 100) }
+                : adjustment).ToArray();
             line.MinutosExtra = line.Ajustes.Sum(adjustment => adjustment.Horas) * 60;
-            line.ImporteExtra = line.Ajustes.Where(adjustment => adjustment.Tipo == "EXTRA").Sum(adjustment => adjustment.Importe);
+            line.ImporteExtra = line.Ajustes.Where(adjustment => adjustment.Tipo is "EXTRA" or "ABONO").Sum(adjustment => adjustment.Importe);
             line.Descuento = line.Ajustes.Where(adjustment => adjustment.Tipo == "DESCUENTO").Sum(adjustment => adjustment.Importe);
         }
 
@@ -86,7 +100,7 @@ public sealed class PayPlanningController(IPayPlanningRepository repository, IBu
         }
         else
         {
-            ModelState.AddModelError("", "Revisa los importes. El descuento debe ser menor o igual al importe base más las horas extra.");
+            ModelState.AddModelError("", "Revisa los importes. El descuento debe ser menor o igual al importe base más los abonos.");
         }
 
         var plan = await repository.PlanAsync(Actor, input.Frequency, from, ct);
@@ -96,7 +110,7 @@ public sealed class PayPlanningController(IPayPlanningRepository repository, IBu
         {
             plan = plan with { Filas = plan.Filas.Select(row => submitted.TryGetValue(row.TrabajadorId, out var line)
                 ? row with { Base = line.Base, MinutosExtra = line.MinutosExtra, ImporteExtra = line.ImporteExtra,
-                    Descuento = line.Descuento, Ajustes = line.Ajustes }
+                    Descuento = line.Descuento, Ajustes = line.Ajustes, Incluido = line.Incluido }
                 : row).ToArray() };
         }
         return View("Index", new PayPlanningPage(plan, CanEdit && plan.FechaPago is null));
@@ -132,6 +146,50 @@ public sealed class PayPlanningController(IPayPlanningRepository repository, IBu
         return RedirectToAction(nameof(Index), new { frequency, from = from.ToString("yyyy-MM-dd") });
     }
 
+    [HttpPost("Telecredito")]
+    [Authorize(Policy = "perm:PAGOS_PERSONAL.EDITAR")]
+    [Authorize(Policy = "perm:TRABAJADORES.CUENTA")]
+    public async Task<IActionResult> ExportTelecredit(TelecreditExportForm input, [FromServices] ITelecreditRepository telecredit,
+        CancellationToken ct)
+    {
+        if (!ValidFrequency(input.Frequency) || input.From > new DateOnly(9999, 12, 24)
+            || Start(input.Frequency, input.From) != input.From || input.PlanId <= 0
+            || input.Kind is not ("PLANILLA" or "EXTERNO"))
+            return BadRequest();
+
+        byte[] version;
+        try { version = Convert.FromBase64String(input.Version ?? ""); }
+        catch (FormatException) { return BadRequest(); }
+        if (version.Length != 8) return BadRequest();
+
+        IReadOnlyList<string> errors;
+        if (!ModelState.IsValid || input.ProcessDate is not DateOnly processDate)
+        {
+            errors = ["Completa la fecha de proceso y la referencia del lote."];
+        }
+        else
+        {
+            var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.GetUtcNow(),
+                TimeZoneInfo.FindSystemTimeZoneById("America/Lima")).DateTime);
+            try
+            {
+                var batch = await telecredit.ReadBatchAsync(Actor, input.PlanId, version, input.Kind, ct);
+                var result = Telecredit.Generate(batch, input.Kind, processDate, today, input.Reference, input.ValidateIdentity);
+                if (result.File is { } file)
+                    return File(file.Bytes, "text/plain", file.Name);
+                errors = result.Errors;
+            }
+            catch (SqlException error) when (error.Number == 50000)
+            {
+                errors = ["Vuelve a abrir el período y revisa que la planificación siga guardada y pendiente."];
+            }
+        }
+
+        var plan = await repository.PlanAsync(Actor, input.Frequency, input.From, ct);
+        Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
+        return View("Index", new PayPlanningPage(plan, CanEdit && plan.FechaPago is null, errors, input));
+    }
+
     private static bool ValidFrequency(string frequency) => frequency is "SEMANAL" or "QUINCENAL" or "MENSUAL";
 
     [HttpGet("Reporte")]
@@ -146,10 +204,15 @@ public sealed class PayPlanningController(IPayPlanningRepository repository, IBu
     private static bool ValidAdjustment(PayPlanAdjustment adjustment)
         => adjustment.Fecha.HasValue && adjustment.Presupuesto?.Length is null or <= 40
             && adjustment.Concepto?.Length is null or <= 300 && ValidAmount(adjustment.Importe)
-            && (adjustment.Tipo == "EXTRA" && adjustment.Horas is >= 1 and <= 24
+            && (adjustment.BasePorcentaje is null || adjustment.ConceptoId > 0 && ValidAmount(adjustment.BasePorcentaje.Value))
+            && (adjustment.Porcentaje is null ||
+                adjustment.ConceptoId > 0 && adjustment.Porcentaje is >= 0 and <= 100 &&
+                decimal.Round(adjustment.Porcentaje.Value, 4) == adjustment.Porcentaje)
+            && (adjustment.Tipo == "EXTRA" && adjustment.ConceptoId is null && adjustment.Horas is >= 1 and <= 24
                 && (!string.IsNullOrWhiteSpace(adjustment.Presupuesto) || !string.IsNullOrWhiteSpace(adjustment.Concepto))
-                || adjustment.Tipo == "DESCUENTO" && adjustment.Horas == 0 && adjustment.Importe > 0
-                && !string.IsNullOrWhiteSpace(adjustment.Concepto));
+                || adjustment.Tipo == "ABONO" && adjustment.ConceptoId > 0 && adjustment.Horas == 0
+                || adjustment.Tipo == "DESCUENTO" && adjustment.Horas == 0
+                && (adjustment.ConceptoId > 0 || adjustment.Importe > 0 && !string.IsNullOrWhiteSpace(adjustment.Concepto)));
 
     private static DateOnly Start(string frequency, DateOnly date) => frequency switch
     {
@@ -166,8 +229,22 @@ public sealed class PayPlanningController(IPayPlanningRepository repository, IBu
         => amount is >= 0 and <= 9999999999999999.99m && decimal.Round(amount, 2) == amount;
 }
 
-public sealed record PayPlanningPage(PayPlan Plan, bool CanEdit);
-public sealed record PayPlanAdjustmentField(string Prefix, PayPlanAdjustment? Value, DateOnly From, DateOnly To);
+public sealed record PayPlanningPage(PayPlan Plan, bool CanEdit,
+    IReadOnlyList<string>? TelecreditErrors = null, TelecreditExportForm? TelecreditInput = null);
+
+public sealed class TelecreditExportForm
+{
+    public long PlanId { get; set; }
+    public string Frequency { get; set; } = "";
+    public DateOnly From { get; set; }
+    public string? Version { get; set; }
+    public string Kind { get; set; } = "";
+    [Required] public DateOnly? ProcessDate { get; set; }
+    [Required, StringLength(40)] public string? Reference { get; set; }
+    public bool ValidateIdentity { get; set; }
+}
+public sealed record PayPlanAdjustmentField(string Prefix, PayPlanAdjustment? Value, DateOnly From, DateOnly To,
+    IReadOnlyList<PayPlanConcept> Concepts);
 
 public sealed class PayPlanForm
 {

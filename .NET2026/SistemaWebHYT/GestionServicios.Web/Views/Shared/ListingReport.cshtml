@@ -1,0 +1,33 @@
+@using GestionServicios.Web.ViewModels.Reporting
+@model ListingReport
+@* Firma: FRANCO LARA - 11/11/2026 | Reportes completos de los listados con filtros, impresión horizontal y exportación CSV. *@
+@{
+    Layout = "_ReportPrintLayout";
+    ViewData["Title"] = Model.Title;
+    ViewData["ReportSubtitle"] = $"Reporte de listado · {Model.Title}";
+    ViewData["ReportFooter"] = "HYT · Todos los registros que coinciden con los filtros aplicados.";
+}
+<section class="hyt-report-summary">
+    <h2>@Model.Title</h2>
+    <p>@string.Join(" · ", Model.Filters)</p>
+    <p><strong>@Model.Count.ToString("N0") registros</strong></p>
+</section>
+@foreach (var table in Model.Tables)
+{
+    @if (table.Title is not null) { <h3>@table.Title</h3> }
+    <div class="hyt-table-wrap hyt-listing-report-wrap">
+        <table class="hyt-table hyt-listing-report-table">
+            <thead><tr>@foreach (var header in table.Headers) { <th scope="col" class="@(header is "Descripción" or "Trabajo" or "Seguimiento" ? "hyt-listing-report-wide" : null)">@header</th> }</tr></thead>
+            <tbody>
+            @foreach (var row in table.Rows)
+            {
+                <tr>@foreach (var cell in row) { <td>@(string.IsNullOrWhiteSpace(cell) ? "—" : cell)</td> }</tr>
+            }
+            @if (Model.Count == 0 && table.Title is null)
+            {
+                <tr class="new-empty-row"><td colspan="@table.Headers.Length">No se encontraron registros con los filtros aplicados.</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

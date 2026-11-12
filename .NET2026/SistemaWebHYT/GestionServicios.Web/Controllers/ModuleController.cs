@@ -18,6 +18,8 @@ public sealed class ModuleController(IAuthorizationService authorization) : Cont
         if (GestionServicios.Application.Maintenance.MaintenanceDefinitions.Find(code) is not null)
             return RedirectToAction("Index", "Master", new { entity = code });
         if (code == "configuracion") return RedirectToAction("Index", "Company");
+        if (code is "provisiones-compras" or "emision-comprobantes")
+            return RedirectToAction("Index", "CommercialDocuments", new { scope = code == "provisiones-compras" ? "compras" : "ventas" });
         if (code == "presupuestos") return RedirectToAction("Index", "Budget");
         if (code is "oc-cliente" or "guias") return RedirectToAction("Index", "Followup", new { kind = code });
         if (code == "reportes") return RedirectToAction("Index", "Reports");
@@ -26,10 +28,13 @@ public sealed class ModuleController(IAuthorizationService authorization) : Cont
         if (entry.Code == "proveedores") return RedirectToAction("Index", "Suppliers");
         if (entry.Code == "trabajadores") return RedirectToAction("Index", "Workers");
         if (entry.Code == "planificacion-pagos") return RedirectToAction("Index", "PayPlanning");
+        if (entry.Code == "conceptos-planilla") return RedirectToAction("Index", "PayrollConcepts");
         if (entry.Code == "cargos") return RedirectToAction("Index", "WorkerPositions");
         if (entry.Code == "reporte-planillas") return RedirectToAction("Index", "PayrollReports");
         if (entry.Code == "obligaciones-planillas") return RedirectToAction("Index", "PayrollObligations");
         if (entry.Code == "sctr") return RedirectToAction("Sctr", "PayrollObligations");
+        if (code == "pago-detracciones") return RedirectToAction("Index", "WithholdingPayments");
+        if (code == "factoring") return RedirectToAction("Index", "Factoring");
         if (code == "usuarios") return RedirectToAction("Index", "Users");
         if (code == "auditoria") return RedirectToAction("Index", "Audit");
         return View(entry);

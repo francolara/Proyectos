@@ -1,9 +1,11 @@
 // Firma: FRANCO LARA - 06/11/2026 | Encabezados Dirección y Cliente simplificados.
+// Firma: FRANCO LARA - 11/11/2026 | Identifica la homologación SUNAT en unidades y muestra Cliente y Tienda en contactos. Agrega reporte filtrado de materiales y servicios.
 using System.Security.Claims;
 using GestionServicios.Application.Maintenance;
 using GestionServicios.Application.Security;
 using GestionServicios.Web.Security;
 using GestionServicios.Web.ViewModels.Maintenance;
+using GestionServicios.Web.ViewModels.Reporting;
 using GestionServicios.Web.ViewModels.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,8 +26,9 @@ public sealed class MasterController(IMaintenanceRepository repository, ILogger<
     private static bool ValidPage(int page) => page is >= 1 and <= 100000000;
 
     [HttpGet("")]
-    public async Task<IActionResult> Index(string entity, string? search, int page = 1, long? parentId = null, CancellationToken ct = default)
+    public async Task<IActionResult> Index(string entity, string? search, int page = 1, long? parentId = null, CancellationToken ct = default, bool print = false)
     {
+        if (print && entity != "materiales") return NotFound();
         if(entity=="tarifarios")return RedirectToAction("IndexGlobal","MaterialTariff",new{search,page});
         if(entity=="proveedor-cliente")return parentId is >0
             ? RedirectToAction(nameof(Details),new{entity="clientes",id=parentId.Value})
@@ -34,6 +37,12 @@ public sealed class MasterController(IMaintenanceRepository repository, ILogger<
         if (definition is null) return NotFound();
         if (!Allowed(definition, "CONSULTAR")) return Forbid();
         if (!ValidPage(page) || search?.Length > 200 || parentId <= 0) return BadRequest();
+        if (print)
+        {
+            if (!User.HasClaim(AccessService.PermissionClaim, "REPORTES.IMPRIMIR")) return Forbid();
+            try { return await MaterialListingReport(definition, search, parentId, ct); }
+            catch (MaintenanceException ex) { return BadRequest(ex.Message); }
+        }
         MaintenancePage data = new([], 0, page);
         string? error = null;
         try { data = await repository.ListAsync(definition, Actor, search, page, parentId, cancellationToken: ct); }
@@ -43,19 +52,65 @@ public sealed class MasterController(IMaintenanceRepository repository, ILogger<
         if (parentId.HasValue) query["parentId"] = parentId.Value.ToString();
         var returnUrl = Url.Action(nameof(Index), new { entity, search, page, parentId })!;
         var canEdit = Allowed(definition, "MODIFICAR");
-        var showClient = entity is "tiendas" or "contactos";
+        var showStore = entity == "contactos";
+        var showClient = showStore || entity == "tiendas";
         return View(new MaintenanceListModel
         {
             Entity = definition, Search = search ?? "", ParentId = parentId, CanEdit = Allowed(definition, "CREAR"),
             Grid = new GridModel
             {
                 Label = definition.Title, Controller = "Master", Query = query, RowQuery = new() { ["entity"] = entity, ["returnUrl"] = returnUrl },
-                Headers = (entity=="unidades"?new[]{"Código interno","Abreviatura"}:new[]{entity=="versiones-tarifario"?"Versión":entity=="partidas-tarifario"?"Posición":"Código interno"}).Concat(new[]{"Descripción"}).Concat(showClient?new[]{"Código de cliente",entity=="tiendas"?"Cliente":"Cliente: nombres / razón social"}:Array.Empty<string>()).Concat(new[]{"Estado",entity is "clientes" or "tiendas"?"Dirección":"Información","Registro","Registrado por","Actualización","Actualizado por"}).ToArray(),
-                Rows = data.Rows.Select(row => new GridRow(row.Id.ToString(), (entity=="unidades"?new[]{row.Id.ToString()}:Array.Empty<string>()).Concat(new[]{row.Code, row.Description}).Concat(showClient?new[]{row.ClientCode??"—",row.ClientName??"—"}:Array.Empty<string>()).Concat(new[]{row.Status, row.Extra ?? "", PeruDate.Display(row.CreatedAt), row.CreatedBy,
+                Headers = (entity=="unidades"?new[]{"Código interno","Abreviatura"}:new[]{entity=="versiones-tarifario"?"Versión":entity=="partidas-tarifario"?"Posición":"Código interno"}).Concat(new[]{"Descripción"}).Concat(showClient ? ["Código de cliente", "Cliente"] : Array.Empty<string>()).Concat(showStore ? ["Tienda"] : Array.Empty<string>()).Concat(new[]{"Estado",entity=="unidades"?"Código SUNAT":entity is "clientes" or "tiendas"?"Dirección":"Información","Registro","Registrado por","Actualización","Actualizado por"}).ToArray(),
+                Rows = data.Rows.Select(row => new GridRow(row.Id.ToString(), (entity=="unidades"?new[]{row.Id.ToString()}:Array.Empty<string>()).Concat(new[]{row.Code, row.Description}).Concat(showClient ? [row.ClientCode ?? "—", row.ClientName ?? "—"] : Array.Empty<string>()).Concat(showStore ? [row.StoreName ?? "Sin tienda"] : Array.Empty<string>()).Concat(new[]{row.Status, row.Extra ?? "", PeruDate.Display(row.CreatedAt), row.CreatedBy,
                     row.UpdatedAt.HasValue ? PeruDate.Display(row.UpdatedAt.Value) : "—", row.UpdatedBy ?? "—"}).ToArray(), true, canEdit)).ToArray(),
                 TotalRecords = data.Total, Page = page, Error = error
             }
         });
+    }
+
+    private async Task<IActionResult> MaterialListingReport(EntityDefinition definition, string? search, long? parentId, CancellationToken ct)
+    {
+        var materials = await ListingReport.AllAsync(async page =>
+        {
+            var data = await repository.ListAsync(definition, Actor, search, page, parentId, cancellationToken: ct);
+            return (data.Rows, data.Total);
+        }, row => row.Id);
+        var canSeeTariff = User.HasClaim(AccessService.PermissionClaim, "TARIFARIOS.CONSULTAR");
+        var canSeeUnits = User.HasClaim(AccessService.PermissionClaim, "UNIDADES.CONSULTAR");
+        var headers = new List<string> { "Código interno", "Código SAP", "Descripción", "Unidad" };
+        if (canSeeUnits) headers.Add("Código SUNAT");
+        headers.AddRange(["Especialidad", "Detracción", "Zonas", "Estado"]);
+        if (canSeeTariff) headers.AddRange(["Tarifa PEN", "Tarifa USD"]);
+
+        var units = new Dictionary<long, string>();
+        var rows = new List<string[]>();
+        foreach (var material in materials)
+        {
+            var record = await repository.GetAsync(definition, Actor, material.Id, cancellationToken: ct)
+                ?? throw new MaintenanceException("Un material cambió mientras se preparaba el reporte. Vuelve a generarlo.");
+            var cells = new List<string> { material.Code, record.Text("CodigoMaterialSAP"), material.Description, record.Text("UnidadMedidaIdLabel") };
+            if (canSeeUnits)
+            {
+                var sunatCode = "";
+                if (long.TryParse(record.Text("UnidadMedidaId"), out var unitId) && !units.TryGetValue(unitId, out sunatCode))
+                {
+                    var unit = await repository.GetAsync(MaintenanceDefinitions.Find("unidades")!, Actor, unitId, cancellationToken: ct);
+                    units[unitId] = sunatCode = unit?.Text("CodigoSunat") ?? "";
+                }
+                cells.Add(sunatCode ?? "");
+            }
+            cells.AddRange([record.Text("EspecialidadIdLabel"), record.Text("CodigoDetraccion"), material.Extra ?? "", material.Status]);
+            if (canSeeTariff)
+            {
+                var tariffs = await repository.MaterialTariffsAsync(Actor, material.Id, 1, ct);
+                var tariff = tariffs.Rows.FirstOrDefault();
+                cells.Add(ListingReport.Money(ListingReport.Amount(tariff, "PrecioPEN")));
+                cells.Add(ListingReport.Money(ListingReport.Amount(tariff, "PrecioUSD")));
+            }
+            rows.Add(cells.ToArray());
+        }
+        return View("ListingReport", new ListingReport(definition.Title, [ListingReport.Filter("Buscar", search)], rows.Count,
+            new ListingTable(null, headers.ToArray(), rows)));
     }
 
     [HttpGet("Nuevo")]

@@ -1,0 +1,67 @@
+@* Firma: FRANCO LARA - 10/11/2026 | Selección múltiple de trabajos o presupuestos desde listado y ficha. *@
+@* Firma: FRANCO LARA - 11/11/2026 | Busca trabajos disponibles por presupuesto o descripción y conserva la selección múltiple. *@
+@using GestionServicios.Web.ViewModels.Billing
+@model (CommercialPage Page, bool Popup, string? ReturnUrl)
+@{
+    var documentPage = Model.Page;
+    var record = documentPage.Data.GetProperty("Documento");
+    var id = record.GetProperty("ComprobanteId").GetInt64();
+    var idKey = documentPage.Sales ? "PresupuestoId" : "CostoProveedorId";
+    var title = documentPage.Sales ? "Vincular presupuestos" : "Vincular trabajos de proveedor";
+    var linked = record.GetProperty(documentPage.Sales ? "Presupuestos" : "Costos").EnumerateArray().ToArray();
+    var linkedIds = linked.Select(row => row.GetProperty(idKey).GetInt64()).ToHashSet();
+    var options = documentPage.Data.GetProperty(documentPage.Sales ? "OpcionesPresupuesto" : "OpcionesCosto").EnumerateArray()
+        .Where(row => !linkedIds.Contains(row.GetProperty(idKey).GetInt64())).ToArray();
+}
+<form method="post" asp-action="Link" asp-route-scope="@documentPage.Scope" asp-route-id="@id"
+      data-document-form data-document-title="@title"
+      data-cost-options-url="@(documentPage.Sales ? null : Url.Action("AvailableSupplierWork", new { scope = documentPage.Scope, id }))">
+    <input name="popup" type="hidden" value="@(Model.Popup ? "true" : "false")" />
+    <input name="retorno" type="hidden" value="@Model.ReturnUrl" />
+    @if (Model.Popup)
+    {
+        <p><strong>@CommercialPage.Number(record)</strong> · @CommercialPage.Text(record,"NombreTercero")</p>
+        @if (linked.Length > 0)
+        {
+            <details class="hyt-master-related">
+                <summary>@linked.Length @(documentPage.Sales ? "presupuestos vinculados" : "trabajos vinculados")</summary>
+                <ul>
+                @foreach (var item in linked)
+                {
+                    <li>@CommercialPage.Text(item,"NumeroPresupuesto") @CommercialPage.Text(item,"Descripcion")</li>
+                }
+                </ul>
+            </details>
+        }
+    }
+    @if (!documentPage.Sales)
+    {
+        <div class="hyt-filters">
+            <div class="hyt-field">
+                <label for="commercial-work-search-@id">Presupuesto o descripción del trabajo</label>
+                <input id="commercial-work-search-@id" type="search" maxlength="150" data-cost-options-query />
+            </div>
+            <button class="hyt-button-secondary" type="button" data-cost-options-search>Buscar</button>
+        </div>
+        <p role="status" data-cost-options-status>@(options.Length == 0
+            ? "No hay trabajos disponibles de este proveedor en la moneda del comprobante."
+            : options.Length == 100 ? "Se muestran hasta 100 trabajos. Usa la búsqueda para acotar los resultados." : "")</p>
+    }
+    @if (documentPage.Sales && options.Length == 0)
+    {
+        <p class="hyt-grid-message">No hay presupuestos disponibles de este cliente.</p>
+    }
+    else
+    {
+        <p>@(documentPage.Sales ? "Selecciona uno o más presupuestos del cliente." : "Selecciona uno o más trabajos del proveedor.")</p>
+        <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="@title">
+            <table class="hyt-table">
+                <thead><tr><th scope="col">Seleccionar</th><th scope="col">Presupuesto</th><th scope="col">Descripción</th><th scope="col">Importe</th></tr></thead>
+                <tbody data-cost-options-rows="@(!documentPage.Sales ? "true" : null)">
+                    <partial name="_LinkOptions" model="documentPage" />
+                </tbody>
+            </table>
+        </div>
+        <div class="hyt-master-related"><button class="hyt-button-primary" type="submit" disabled="@(options.Length == 0)" data-cost-options-submit>@title</button></div>
+    }
+</form>

@@ -1,11 +1,12 @@
 namespace GestionServicios.Application.Payroll;
 
 public sealed record PayPlan(long? PlanId, byte[]? VersionFila, string Frecuencia, DateOnly Desde,
-    DateOnly Hasta, PayPlanRow[] Filas, bool VerCuenta = false, DateOnly? FechaPago = null, string? ReferenciaPago = null);
+    DateOnly Hasta, PayPlanRow[] Filas, bool VerCuenta = false, DateOnly? FechaPago = null, string? ReferenciaPago = null, PayPlanConcept[]? Conceptos = null,
+    bool PorIncorporar = false);
 
 public sealed record PayPlanRow(long TrabajadorId, string Nombre, string Tipo, decimal Base,
     int MinutosExtra, decimal ImporteExtra, decimal Descuento, PayPlanAdjustment[]? Ajustes = null,
-    string? Banco = null, string? Cuenta = null, string? Cci = null)
+    string? Banco = null, string? Cuenta = null, string? Cci = null, decimal? SueldoMensual = null, string? Cargo = null, bool Incluido = true)
 {
     public decimal Neto => Base + ImporteExtra - Descuento;
 }
@@ -19,10 +20,11 @@ public sealed class PayPlanLineInput
     public decimal Descuento { get; set; }
     public PayPlanAdjustment[]? Ajustes { get; set; }
     public bool AjustesDetallados { get; set; }
+    public bool Incluido { get; set; } = true;
 }
 
 public sealed record PayPlanAdjustment(string Tipo, DateOnly? Fecha, string? Presupuesto, string? Concepto,
-    int Horas, decimal Importe);
+    int Horas, decimal Importe, long? ConceptoId = null, decimal? Porcentaje = null, decimal? BasePorcentaje = null);
 
 public interface IPayPlanningRepository
 {

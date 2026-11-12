@@ -1,0 +1,60 @@
+@* Firma: FRANCO LARA - 10/11/2026 | Detracciones pendientes y pagadas con filtros y pago en diálogo y datos de la última operación. *@
+@using GestionServicios.Web.ViewModels.Billing
+@model GestionServicios.Web.Controllers.WithholdingList
+@{
+    ViewData["Title"] = "Pago de detracciones";
+    ViewData["Wide"] = true;
+    var rows = Model.Rows.EnumerateArray().ToArray();
+    var total = rows.Length == 0 ? 0 : rows[0].GetProperty("TotalFilas").GetInt64();
+    var returnUrl = Context.Request.PathBase + Context.Request.Path + Context.Request.QueryString;
+}
+<header class="hyt-page-header"><div><h1>@ViewData["Title"]</h1></div></header>
+@if (TempData["WithholdingNotice"] is string notice) { <p role="status">@notice</p> }
+<form method="get" asp-action="Index" class="hyt-filters">
+    <div class="hyt-field"><label for="withholding-state">Estado</label>
+        <select id="withholding-state" name="estado">
+        @foreach (var state in new[] { ("PENDIENTE", "Pendientes"), ("PAGADA", "Pagadas"), ("TODOS", "Todos") })
+        { <option value="@state.Item1" selected="@(state.Item1 == Model.State)">@state.Item2</option> }
+        </select>
+    </div>
+    <div class="hyt-field"><label for="withholding-supplier">Proveedor</label><input id="withholding-supplier" name="proveedor" type="search" value="@Model.Supplier" maxlength="150" placeholder="RUC o razón social" /></div>
+    <div class="hyt-field"><label for="withholding-search">Buscar</label><input id="withholding-search" name="buscar" type="search" value="@Model.Search" maxlength="150" placeholder="Comprobante, código o número de operación" /></div>
+    <div class="hyt-filters-actions"><button class="hyt-button-primary" type="submit">Consultar</button><a class="hyt-button-secondary" asp-action="Index">Restablecer</a></div>
+</form>
+<section class="hyt-panel" aria-label="Detracciones">
+    <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Listado de detracciones">
+        <table class="hyt-table">
+            <thead><tr><th>Emisión</th><th>Comprobante</th><th>Proveedor</th><th>RUC</th><th>Moneda</th><th>Detracción</th><th>Pagado</th><th>Saldo</th><th>Último pago</th><th>N.º de operación</th><th>Estado</th><th>Acción</th></tr></thead>
+            <tbody>
+            @if (rows.Length == 0) { <tr><td colspan="12" class="hyt-grid-message">No hay detracciones para los filtros seleccionados.</td></tr> }
+            @foreach (var row in rows)
+            {
+                var balance = CommercialPage.Amount(row, "Saldo");
+                <tr>
+                    <td>@CommercialPage.Date(CommercialPage.Text(row, "Fecha"))</td><td>@CommercialPage.Number(row)</td>
+                    <td>@CommercialPage.Text(row, "NombreTercero")</td><td>@CommercialPage.Text(row, "DocumentoTercero")</td>
+                    <td>@CommercialPage.Text(row, "MonedaDetraccion")</td>
+                    <td>@CommercialPage.Money(CommercialPage.Amount(row, "ImporteDetraccion"))</td><td>@CommercialPage.Money(CommercialPage.Amount(row, "Pagado"))</td>
+                    <td>@CommercialPage.Money(balance)</td>
+                    <td>@(CommercialPage.Text(row,"FechaUltimoPago") is { Length: > 0 } date ? CommercialPage.Date(date) : "—")</td>
+                    <td>@(CommercialPage.Text(row,"UltimaOperacion") is { Length: > 0 } operation ? operation : "—")</td>
+                    <td>@(balance <= 0 ? "Pagada" : CommercialPage.Amount(row,"Pagado") > 0 ? "Pago parcial" : "Pendiente")</td>
+                    <td>@if (Model.CanPay && balance > 0) {
+                        <a class="hyt-button-secondary hyt-action-button" asp-action="Payment" asp-route-id="@CommercialPage.Text(row,"ComprobanteId")"
+                           asp-route-retorno="@returnUrl" data-document-open>Registrar pago</a>
+                    }</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    <nav class="hyt-pagination" aria-label="Paginación">
+        <span>Página @Model.Page · @total detracciones</span>
+        @foreach (var destination in new[] { Model.Page-1, Model.Page+1 })
+        {
+            if (destination < 1 || destination > Model.Page && Model.Page*20 >= total) { continue; }
+            <a class="hyt-button-secondary" asp-action="Index" asp-route-estado="@Model.State" asp-route-proveedor="@Model.Supplier"
+               asp-route-buscar="@Model.Search" asp-route-pagina="@destination">@(destination < Model.Page ? "Anterior" : "Siguiente")</a>
+        }
+    </nav>
+</section>

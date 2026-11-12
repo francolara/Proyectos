@@ -3,12 +3,14 @@ using System.Globalization;
 using System.Security.Claims;
 using GestionServicios.Application.Payroll;
 using GestionServicios.Web.Security;
+using GestionServicios.Web.ViewModels.Reporting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 
 namespace GestionServicios.Web.Controllers;
 
+// Firma: FRANCO LARA - 11/11/2026 | Reportes de obligaciones mensuales y cobertura SCTR.
 [Authorize(Policy = "perm:OBLIGACIONES.CONSULTAR")]
 [Route("Planillas/Obligaciones")]
 public sealed class PayrollObligationsController(IPayrollObligationsRepository repository, TimeProvider clock) : Controller
@@ -17,10 +19,10 @@ public sealed class PayrollObligationsController(IPayrollObligationsRepository r
     private bool CanEdit => User.HasClaim(AccessService.PermissionClaim, "OBLIGACIONES.EDITAR");
 
     [HttpGet("")]
-    public Task<IActionResult> Index(string? month, long? obligationId, CancellationToken ct)
+    public Task<IActionResult> Index(string? month, long? obligationId, CancellationToken ct, bool print = false)
         => obligationId.HasValue
             ? Task.FromResult<IActionResult>(RedirectToAction(nameof(ObligationDetails), new { month, obligationId }))
-            : ShowAsync(month, null, null, "Index", ct);
+            : ShowAsync(month, null, null, print ? "ListingReport" : "Index", ct);
 
     [HttpGet("Ficha/{obligationId:long?}")]
     [Authorize(Policy = "perm:OBLIGACIONES.EDITAR")]
@@ -59,8 +61,36 @@ public sealed class PayrollObligationsController(IPayrollObligationsRepository r
     }
 
     [HttpGet("/Planillas/SCTR")]
-    public Task<IActionResult> Sctr(CancellationToken ct)
-        => ShowAsync(null, null, null, "Sctr", ct);
+    public async Task<IActionResult> Sctr(string? estado, string? trabajador, CancellationToken ct, bool print = false)
+    {
+        if (!ModelState.IsValid || estado is not (null or "VIGENTE" or "POR_VENCER" or "VENCIDA" or "PROGRAMADA") ||
+            trabajador?.Length > 150) return BadRequest("Revisa los filtros de SCTR.");
+
+        if (print && !User.HasClaim(AccessService.PermissionClaim, "REPORTES.IMPRIMIR")) return Forbid();
+        var today = TimeZoneInfo.ConvertTime(clock.GetUtcNow(), TimeZoneInfo.FindSystemTimeZoneById("America/Lima"));
+        var data = await repository.ObligationsAsync(Actor, new DateOnly(today.Year, today.Month, 1), ct);
+        var search = trabajador?.Trim() ?? "";
+        var comparer = CultureInfo.GetCultureInfo("es-PE").CompareInfo;
+        var policies = data.Polizas.Where(policy =>
+            (estado is null || policy.Estado == estado) &&
+            (search.Length == 0 || policy.Trabajadores?.Any(worker =>
+                comparer.IndexOf(worker.Nombre, search, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) >= 0) == true))
+            .ToArray();
+        if (print)
+        {
+            bool Matches(SctrWorker worker) => search.Length > 0 &&
+                comparer.IndexOf(worker.Nombre, search, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) >= 0;
+            return View("ListingReport", new ListingReport("SCTR", [ListingReport.Filter("Estado", estado),
+                ListingReport.Filter("Trabajador", search)], policies.Length,
+                new(null, ["Aseguradora", "Póliza", "Cobertura", "Desde", "Hasta", "Estado", "Trabajadores"],
+                    policies.Select(row => new[] { row.Aseguradora, row.NumeroPoliza, row.Cobertura, ListingReport.Date(row.VigenciaDesde),
+                        ListingReport.Date(row.VigenciaHasta), row.Estado.Replace('_', ' '), (row.Trabajadores?.Length ?? 0).ToString() })),
+                new("Trabajadores cubiertos", ["Aseguradora", "Póliza", "Código de trabajador", "Trabajador", "Coincide con búsqueda"],
+                    policies.SelectMany(row => (row.Trabajadores ?? []).Select(worker => new[] { row.Aseguradora, row.NumeroPoliza,
+                        worker.TrabajadorId.ToString(), worker.Nombre, search.Length == 0 ? "" : Matches(worker) ? "Sí" : "No" })))));
+        }
+        return View(new SctrList(policies, CanEdit, estado, search));
+    }
 
     [HttpGet("/Planillas/SCTR/Ficha/{policyId:long?}")]
     [Authorize(Policy = "perm:OBLIGACIONES.EDITAR")]
@@ -74,7 +104,21 @@ public sealed class PayrollObligationsController(IPayrollObligationsRepository r
         if (!ModelState.IsValid || month is not null && !TryMonth(month, out period)) return BadRequest();
         if (!CanEdit && (obligationId.HasValue || policyId.HasValue)) return Forbid();
 
+        if (view == "ListingReport" && !User.HasClaim(AccessService.PermissionClaim, "REPORTES.IMPRIMIR")) return Forbid();
         var data = await repository.ObligationsAsync(Actor, period, ct);
+        if (view == "ListingReport")
+        {
+            var rows = data.Obligaciones;
+            return View(view, new ListingReport("Obligaciones AFP y ONP",
+                [ListingReport.Filter("Mes", period.ToString("MMMM yyyy", CultureInfo.GetCultureInfo("es-PE")))], rows.Length,
+                new(null, ["Tipo", "Entidad", "Vencimiento", "Importe (PEN)", "Estado", "Fecha de pago", "Referencia de pago"],
+                    rows.Select(row => new[] { row.Tipo, row.Entidad, ListingReport.Date(row.Vencimiento), ListingReport.Money(row.Importe),
+                        row.Estado.Replace('_', ' '), ListingReport.Date(row.FechaPago), row.ReferenciaPago ?? "" })),
+                new("Totales", ["Moneda", "Pendiente", "Pagado", "Total"],
+                    new[] { new[] { "PEN", ListingReport.Money(rows.Where(row => row.FechaPago is null).Sum(row => row.Importe)),
+                        ListingReport.Money(rows.Where(row => row.FechaPago is not null).Sum(row => row.Importe)),
+                        ListingReport.Money(rows.Sum(row => row.Importe)) } })));
+        }
         var obligation = data.Obligaciones.FirstOrDefault(item => item.ObligacionId == obligationId);
         var policy = data.Polizas.FirstOrDefault(item => item.PolizaId == policyId);
         if (obligationId.HasValue && obligation is null || policyId.HasValue && policy is null) return NotFound();
@@ -195,6 +239,8 @@ public sealed class PayrollObligationsController(IPayrollObligationsRepository r
     private static bool TryMonth(string? month, out DateOnly result)
         => DateOnly.TryParseExact(month + "-01", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out result);
 }
+
+public sealed record SctrList(SctrPolicy[] Policies, bool CanEdit, string? Status, string Worker);
 
 public sealed record PayrollObligationsPage(PayrollObligations Data, string Month,
     PayrollObligation? Obligation, SctrPolicy? Policy, bool CanEdit, IReadOnlyList<PensionEstimate> Estimates);

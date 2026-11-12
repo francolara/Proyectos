@@ -1,3 +1,4 @@
+// Firma: FRANCO LARA - 10/11/2026 | Abre el comprobante emitido vinculado desde la acción Facturado de OC.
 // Firma: FRANCO LARA - 06/11/2026 | OC enlazada automáticamente a la revisión de presupuesto asociada, sin selector editable. Listado OC sin columnas de registro, actualización ni responsable/fecha del marcado facturado. Consulta de comprobante y adjuntos OC/confirmación/Guía desde celdas. Estado OC en pop-up con trazabilidad y tarjetas enlazadas a presupuesto/Guía. Confirmación compacta en una sola columna abre consulta con fecha, datos y adjuntos. Nuevas cargas en carpetas de tipo y número de documento. Columna Facturado retirada; borde de confirmación/facturado según registro vigente. Guía compacta Sí/- abre consulta de registro y adjuntos. Guía sin estados, misma ficha en consulta bloqueada y edición. KPI OC y filtros de pendientes; adjuntos de Guía consultables desde grilla. Retira botón duplicado Ver confirmación, conservando consulta en la celda del número. Guía/Ejecución reutilizan ficha de consulta y edición en popup; consulta permite abrir edición.
 using System.Security.Claims;
 using GestionServicios.Web.Services;
@@ -7,11 +8,13 @@ using GestionServicios.Application.Maintenance;
 using GestionServicios.Web.Security;
 using GestionServicios.Web.ViewModels.Followup;
 using GestionServicios.Web.ViewModels.Shared;
+using GestionServicios.Web.ViewModels.Reporting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 namespace GestionServicios.Web.Controllers;
 // Firma: FRANCO LARA - 03/11/2026 | Listados, consulta, registro y edición documental con permisos, versiones, adjuntos privados y auditoría.
 // Firma: FRANCO LARA - 05/11/2026 | Consulta por cliente, tienda y estado con navegación desde el panel.
+// Firma: FRANCO LARA - 11/11/2026 | Reportes de OC y guías con los mismos filtros del listado.
 [Authorize]
 [Route("Seguimiento/{kind}")]
 public sealed class FollowupController(IDocumentRepository repository,IDocumentFileRepository fileRepository,IDocumentFileStore files,TimeProvider clock):Controller
@@ -19,7 +22,7 @@ public sealed class FollowupController(IDocumentRepository repository,IDocumentF
     private string Actor=>User.FindFirstValue(ClaimTypes.NameIdentifier)!;
     private DocumentKind? Allowed(string key)=>DocumentKind.All.FirstOrDefault(item=>item.Key==key&&User.HasClaim(AccessService.PermissionClaim,item.Permission+".CONSULTAR"));
     [HttpGet("")]
-    public async Task<IActionResult> Index(string kind,string? search,DateOnly? from,DateOnly? to,int page=1,bool? confirmed=null,string? client=null,string? store=null,string? state=null,bool pendingConfirmation=false,bool pendingInvoice=false,CancellationToken ct=default)
+    public async Task<IActionResult> Index(string kind,string? search,DateOnly? from,DateOnly? to,int page=1,bool? confirmed=null,string? client=null,string? store=null,string? state=null,bool pendingConfirmation=false,bool pendingInvoice=false,CancellationToken ct=default,bool print=false)
     {
         var definition=Allowed(kind);if(definition is null)return Forbid();
         if(pendingInvoice&&!User.HasClaim(AccessService.PermissionClaim,"FACTURADO.CONSULTAR"))return Forbid();
@@ -30,7 +33,40 @@ public sealed class FollowupController(IDocumentRepository repository,IDocumentF
         if(!ModelState.IsValid||client?.Length>200||store?.Length>200||state?.Length>40||page is <1 or >100000000||search?.Length>200||first>last||last==DateOnly.MaxValue)return BadRequest("Revisa los filtros.");
         var start=new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(first.ToDateTime(TimeOnly.MinValue),lima));
         var end=new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(last.AddDays(1).ToDateTime(TimeOnly.MinValue),lima));
-        DocumentPage data;try{data=await repository.ListAsync(definition,Actor,start,end,search,page,state,definition.Code=="OC"?confirmed:null,ct,client,store,pendingConfirmation,pendingInvoice);}catch(MaintenanceException error){return Conflict(error.Message);}
+        Task<DocumentPage> Load(int number) => repository.ListAsync(definition,Actor,start,end,search,number,state,
+            definition.Code=="OC"?confirmed:null,ct,client,store,pendingConfirmation,pendingInvoice);
+        DocumentPage data;
+        try
+        {
+            if (print)
+            {
+                if (definition.Code is not ("OC" or "GUIA")) return NotFound();
+                if (!User.HasClaim(AccessService.PermissionClaim, "REPORTES.IMPRIMIR")) return Forbid();
+                var rows = await ListingReport.AllAsync(async number =>
+                {
+                    var result = await Load(number);
+                    return (result.Rows, result.Total);
+                }, (System.Text.Json.JsonElement row) => row.GetProperty("Id").GetInt64());
+                var summary = new List<string> { ListingReport.Range(first, last), ListingReport.Filter("Buscar", search) };
+                if (state is not null) summary.Add(ListingReport.Filter("Estado", ReportDisplay.State(state)));
+                if (client is not null) summary.Add(ListingReport.Filter("Cliente", client));
+                if (store is not null) summary.Add(ListingReport.Filter("Tienda", store));
+                if (definition.Code == "OC" && confirmed is bool confirmation) summary.Add(confirmation ? "Confirmadas" : "Sin confirmar");
+                if (pendingConfirmation) summary.Add("Pendiente de confirmación");
+                if (pendingInvoice) summary.Add("Pendiente de facturar");
+                var table = DocumentReport(definition, rows);
+                if (definition.Code == "GUIA")
+                    return View("ListingReport", new ListingReport(definition.Title, summary, rows.Count, table));
+                var totals = rows.Where(row => ListingReport.Text(row, "CodigoMoneda").Length > 0)
+                    .GroupBy(row => ListingReport.Text(row, "CodigoMoneda"))
+                    .Select(group => new[] { group.Key, group.Count().ToString(),
+                        ListingReport.Money(group.Sum(row => ListingReport.Amount(row, "Importe"))) });
+                return View("ListingReport", new ListingReport(definition.Title, summary, rows.Count, table,
+                    new ListingTable("Totales por moneda", ["Moneda", "Órdenes", "Importe"], totals)));
+            }
+            data = await Load(page);
+        }
+        catch (MaintenanceException error) { return Conflict(error.Message); }
         var states=definition.Code switch{"OC"=>new[]{"REGISTRADA","TRABAJO_COMPLETADO","CERRADA_OPERATIVAMENTE","CANCELADA"},"GUIA"=>["REGISTRADA","ENVIADA","OBSERVADA","ACEPTADA","ANULADA"],"EJECUCION"=>["PENDIENTE","PROGRAMADA","EN_EJECUCION","TERMINADA","CANCELADA"],_=>["VIGENTE","RETIRADA"]};
         var stateFilter=new FilterSelect("state","Estado",state??"",new[]{new FilterChoice("","Todos")}.Concat(states.Select(value=>new FilterChoice(value,value.Replace('_',' ').ToLowerInvariant()))).ToArray());
         var query=new Dictionary<string,string>{["pendingConfirmation"]=pendingConfirmation.ToString().ToLowerInvariant(),["pendingInvoice"]=pendingInvoice.ToString().ToLowerInvariant(),["client"]=client??"",["store"]=store??"",["state"]=state??"",["kind"]=kind,["search"]=search??"",["from"]=first.ToString("yyyy-MM-dd"),["to"]=last.ToString("yyyy-MM-dd"),["confirmed"]=confirmed?.ToString().ToLowerInvariant()??""};
@@ -40,6 +76,41 @@ public sealed class FollowupController(IDocumentRepository repository,IDocumentF
             Rows=data.Rows.Select(row=>BuildRow(definition,row)).ToArray()
         },new FilterModel{Texts=definition.Code is "OC" or "GUIA"?[]:[new("client","Cliente (nombre)",client??""),new("store","Tienda (nombre)",store??"")],Checks=definition.Code=="OC"?new[]{new FilterCheck("pendingConfirmation","Pendiente de confirmación del cliente",pendingConfirmation)}.Concat(User.HasClaim(AccessService.PermissionClaim,"FACTURADO.CONSULTAR")?[new FilterCheck("pendingInvoice","Pendiente de facturar",pendingInvoice)]:[]).ToArray():[],Controller="Followup",WithDates=true,From=first,To=last,Search=search??"",Placeholder="Número, presupuesto, cliente o tienda",Selects=definition.Code=="OC"?[stateFilter,new("confirmed","Confirmación del cliente",confirmed?.ToString().ToLowerInvariant()??"",[new("","Todas"),new("true","Confirmadas"),new("false","Sin confirmar")])]:(definition.Code=="GUIA"?[]:[stateFilter])},definition.Code=="OC"?new[]{("REGISTRADA","Registrada"),("TRABAJO_COMPLETADO","Trabajo completado"),("CERRADA_OPERATIVAMENTE","Cerrada operativamente"),("CANCELADA","Cancelada")}.Select(item=>new StateKpi(item.Item1,item.Item2,data.StateCounts?.GetValueOrDefault(item.Item1)??0)).ToArray():[]));
     }
+    private ListingTable DocumentReport(DocumentKind kind, IReadOnlyList<System.Text.Json.JsonElement> rows)
+    {
+        bool Has(string permission) => User.HasClaim(AccessService.PermissionClaim, permission + ".CONSULTAR");
+        var guide = Has("GUIAS");
+        var order = Has("OC_CLIENTE");
+        var confirmation = Has("CONFIRMACIONES");
+        var billed = Has("FACTURADO");
+        if (kind.Code == "GUIA")
+            return new(null, ["Guía / acta", "Fecha de guía", "Presupuesto", "Cliente", "Tienda", "OC del cliente", "Adjuntos"],
+                rows.Select(row => new[] { ListingReport.Text(row,"NumeroDocumento"), ListingReport.Date(row,"FechaDocumento"),
+                    ListingReport.Text(row,"PresupuestoNumero"), ListingReport.Text(row,"ClienteNombre"), ListingReport.Text(row,"TiendaNombre"),
+                    order ? ListingReport.Text(row,"NumeroOCCliente") : "", ListingReport.Text(row,"Adjuntos") }));
+
+        return new(null, ["OC del cliente", "Emisión", "Recepción", "Presupuesto", "Cliente", "Tienda", "Estado", "Moneda", "Importe", "Seguimiento"],
+            rows.Select(row =>
+            {
+                row.TryGetProperty("Facturado", out var invoice);
+                var references = new List<string>();
+                void Add(string label, string value) { if (value.Length > 0) references.Add(label + " " + value); }
+                if (guide) Add("Guía", ListingReport.Text(row,"NumeroGuia"));
+                if (confirmation) Add("Confirmación", ListingReport.Text(row,"NumeroConfirmacion"));
+                if (billed)
+                {
+                    var series = ListingReport.Text(invoice,"Serie");
+                    var number = ListingReport.Text(invoice,"NumeroDocumento");
+                    Add("Comprobante emitido", ListingReport.Text(row,"NumeroComprobante"));
+                    if (number.Length > 0) Add("Comprobante", series.Length > 0 ? $"{series}-{number}" : number);
+                }
+                return new[] { ListingReport.Text(row,"NumeroDocumento"), ListingReport.Date(row,"FechaDocumento"), ListingReport.Date(row,"FechaRecepcionOC"),
+                    ListingReport.Text(row,"PresupuestoNumero"), ListingReport.Text(row,"ClienteNombre"), ListingReport.Text(row,"TiendaNombre"),
+                    ReportDisplay.State(ListingReport.Text(row,"Estado")), ListingReport.Text(row,"CodigoMoneda"),
+                    ListingReport.Money(ListingReport.Amount(row,"Importe")), string.Join("\n", references) };
+            }));
+    }
+
     [HttpGet("{id:long}/CambiarEstado")]
     public async Task<IActionResult> StatePopup(string kind,long id,string? returnUrl=null,CancellationToken ct=default)
     {
@@ -183,7 +254,12 @@ public sealed class FollowupController(IDocumentRepository repository,IDocumentF
         if(kind.Code=="OC"&&User.HasClaim(AccessService.PermissionClaim,"CONFIRMACIONES.CONSULTAR")&&User.HasClaim(AccessService.PermissionClaim,hasConfirmation?"CONFIRMACIONES.MODIFICAR":"CONFIRMACIONES.CREAR"))
             actions.Add(new("Confirmación del cliente",Url.Action(nameof(Register),new{kind="confirmaciones",parentId=id,returnUrl=Request.Path+Request.QueryString,popup=true})!,true,HasRecord:long.TryParse(BudgetRecord.Text(row,"ConfirmacionId"),out _)));
         if(kind.Code=="OC"&&User.HasClaim(AccessService.PermissionClaim,"FACTURADO.CONSULTAR"))
-            actions.Add(new("Facturado",Url.Action("Index","InvoiceMark",new{orderId=id,returnUrl=Request.Path+Request.QueryString,popup=true})!,true,HasRecord:row.TryGetProperty("Facturado",out var marked)&&marked.ValueKind==System.Text.Json.JsonValueKind.Object));
+        {
+            if(long.TryParse(BudgetRecord.Text(row,"ComprobanteId"),out var invoiceId))
+                actions.Add(new("Facturado",Url.Action("Details","CommercialDocuments",new{scope="ventas",id=invoiceId})!,false,HasRecord:true));
+            else
+                actions.Add(new("Facturado",Url.Action("Index","InvoiceMark",new{orderId=id,returnUrl=Request.Path+Request.QueryString,popup=true})!,true,HasRecord:row.TryGetProperty("Facturado",out var marked)&&marked.ValueKind==System.Text.Json.JsonValueKind.Object));
+        }
         return actions;
     }    [HttpGet("Archivos/{fileId:long}")]
     public async Task<IActionResult> FileDocument(string kind,long fileId,bool download=false,CancellationToken ct=default)

@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 11/11/2026 | Agrega la impresión del listado filtrado. *@
 @{ ViewData["Wide"] = true; }
 @model GestionServicios.Web.Controllers.WorkersList
 @* Firma: FRANCO LARA - 09/11/2026 | Búsqueda y consulta del maestro de trabajadores. Aplica el estándar HYT de grillas, filtros y formularios. Muestra el saldo de vacaciones por trabajador. Alinea importes y números en la grilla. *@
@@ -5,10 +6,18 @@
 @{ ViewData["Title"] = "Trabajadores"; }
 <header class="hyt-page-header">
     <div><h1>Trabajadores</h1><p>Consulta al personal en planilla y a los trabajadores externos.</p></div>
+<div class="hyt-master-related">
+@if (User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "REPORTES.IMPRIMIR"))
+{
+    <a class="hyt-button-secondary" asp-action="Index" asp-route-search="@Model.Search" asp-route-kind="@Model.Kind" asp-route-active="@(Model.Active?.ToString().ToLowerInvariant())" asp-route-print="true" target="_blank" rel="noopener">Imprimir listado</a>
+}
+
     @if (Model.CanEdit)
     {
         <a asp-action="Details" class="hyt-button-primary">Nuevo trabajador</a>
     }
+
+</div>
 </header>
 <form method="get" asp-action="Index" class="hyt-filters">
     <div class="hyt-field">

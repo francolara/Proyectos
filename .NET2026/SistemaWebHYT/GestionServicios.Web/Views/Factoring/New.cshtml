@@ -1,0 +1,65 @@
+@* Firma: FRANCO LARA - 10/11/2026 | Selección de facturas y datos de negociación del lote con ayuda de financieras en ventana emergente. *@
+@using GestionServicios.Application.Payroll
+@using GestionServicios.Web.ViewModels.Billing
+@model FactoringForm
+@{
+    ViewData["Title"] = "Nuevo lote de factoring";
+    ViewData["Wide"] = true;
+    var invoices = Model.Data.GetProperty("Facturas");
+    var banks = Model.Data.GetProperty("Financieras").EnumerateArray()
+        .Select(bank => new PayrollCatalogEntry(CommercialPage.Text(bank, "Nombre"), null)).ToArray();
+}
+<header class="hyt-page-header">
+    <div><h1>@ViewData["Title"]</h1></div>
+    <a class="hyt-button-secondary" asp-action="Index">Volver al listado</a>
+</header>
+<form method="get" asp-action="New" class="hyt-filters">
+    <partial name="_DatePicker" model="@(new DatePickerModel("desde", "Facturas desde", Model.Filter.From, Required:true))" />
+    <partial name="_DatePicker" model="@(new DatePickerModel("hasta", "Facturas hasta", Model.Filter.To, Required:true))" />
+    <div class="hyt-field"><label for="factoring-invoice-search">Cliente o número de factura</label><input id="factoring-invoice-search" name="buscar" type="search" maxlength="150" value="@Model.Filter.Search" /></div>
+    <div class="hyt-filters-actions"><button class="hyt-button-primary" type="submit">Buscar facturas</button></div>
+</form>
+<form method="post" asp-action="Save" class="hyt-panel hyt-master-form">
+    <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+    <input asp-for="Input.OperacionId" type="hidden" />
+    <input name="desde" type="hidden" value="@Model.Filter.From.ToString("yyyy-MM-dd")" />
+    <input name="hasta" type="hidden" value="@Model.Filter.To.ToString("yyyy-MM-dd")" />
+    <input name="buscar" type="hidden" value="@Model.Filter.Search" />
+    <div class="hyt-master-fields">
+        <div class="hyt-field">
+            <label for="factoring-financial-entity">Entidad financiera</label>
+            <div class="hyt-catalog-field">
+                <input asp-for="Input.Financiera" id="factoring-financial-entity" maxlength="150" required />
+                <partial name="_PayrollCatalogPicker" model='@(new PayrollCatalogPicker("factoring-bank-lookup", "factoring-financial-entity", "entidad financiera", banks))' />
+            </div>
+            <small>Puedes escribir el nombre si la financiera no figura en el catálogo.</small>
+        </div>
+        <div class="hyt-field"><label asp-for="Input.Porcentaje">Porcentaje negociado (%)</label><input asp-for="Input.Porcentaje" type="number" min="0.0001" max="100" step="0.0001" required /></div>
+        <div class="hyt-field"><label asp-for="Input.FechaNegociacion">Fecha de negociación</label><input asp-for="Input.FechaNegociacion" type="date" asp-format="{0:yyyy-MM-dd}" required /></div>
+        <div class="hyt-field"><label asp-for="Input.FechaDesembolso">Fecha de desembolso</label><input asp-for="Input.FechaDesembolso" type="date" asp-format="{0:yyyy-MM-dd}" /></div>
+        <div class="hyt-field"><label asp-for="Input.Referencia">Referencia de la financiera</label><input asp-for="Input.Referencia" maxlength="100" /></div>
+        <div class="hyt-field"><label asp-for="Input.Observaciones">Observaciones</label><input asp-for="Input.Observaciones" maxlength="500" /></div>
+    </div>
+    <h2>Facturas sin factoring</h2>
+    <p>Selecciona una o más facturas de la misma moneda para el lote.</p>
+    <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Facturas sin factoring">
+        <table class="hyt-table">
+            <thead><tr><th>Seleccionar</th><th>Factura</th><th>Cliente</th><th>Emisión</th><th>Vencimiento</th><th>Importe</th></tr></thead>
+            <tbody>
+            @if (invoices.GetArrayLength() == 0) { <tr><td class="hyt-grid-message" colspan="6">No hay facturas disponibles para los filtros seleccionados.</td></tr> }
+            @foreach (var invoice in invoices.EnumerateArray())
+            {
+                var id = invoice.GetProperty("ComprobanteId").GetInt64();
+                <tr>
+                    <td><input type="checkbox" name="Input.Facturas" value="@id" checked="@Model.Input.Facturas.Contains(id)" aria-label="Seleccionar @CommercialPage.Number(invoice)" /></td>
+                    <td>@CommercialPage.Number(invoice)</td><td>@CommercialPage.Text(invoice,"NombreTercero")</td>
+                    <td>@CommercialPage.Date(CommercialPage.Text(invoice,"Fecha"))</td>
+                    <td>@(CommercialPage.Text(invoice,"FechaVencimiento") is { Length: > 0 } date ? CommercialPage.Date(date) : "—")</td>
+                    <td>@CommercialPage.Text(invoice,"Moneda") @CommercialPage.Money(CommercialPage.Amount(invoice,"Importe"))</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    <div class="hyt-master-related"><button class="hyt-button-primary" type="submit" disabled="@(invoices.GetArrayLength() == 0)">Guardar lote</button></div>
+</form>

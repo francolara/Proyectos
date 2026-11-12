@@ -1,0 +1,19 @@
+@* Firma: FRANCO LARA - 10/11/2026 | Registra la constancia de detracción desde el listado. *@
+@using System.Globalization
+@using GestionServicios.Web.ViewModels.Billing
+@model GestionServicios.Web.Controllers.WithholdingPayment
+@{ var id = Model.Document.GetProperty("ComprobanteId").GetInt64(); }
+<form method="post" asp-action="Pay" asp-route-id="@id" data-document-form data-document-title="Registrar pago de detracción">
+    <input name="retorno" type="hidden" value="@Model.ReturnUrl" />
+    <p><strong>@CommercialPage.Number(Model.Document)</strong> · @CommercialPage.Text(Model.Document,"NombreTercero")</p>
+    <p>Saldo pendiente @CommercialPage.Text(Model.Document,"MonedaDetraccion") @CommercialPage.Money(Model.Balance)</p>
+    <div class="hyt-master-fields">
+        <partial name="_DatePicker" model="@(new DatePickerModel("fecha", "Fecha de pago", Model.Today, Required:true, Max:Model.Today))" />
+        <div class="hyt-field"><label for="withholding-amount">Importe en @CommercialPage.Text(Model.Document,"MonedaDetraccion")</label>
+            <input id="withholding-amount" name="importe" type="number" step="0.01" min="0.01"
+                   max="@Model.Balance.ToString(CultureInfo.InvariantCulture)" value="@Model.Balance.ToString(CultureInfo.InvariantCulture)" required />
+        </div>
+        <div class="hyt-field"><label for="withholding-operation">Número de operación / constancia</label><input id="withholding-operation" name="operacion" maxlength="100" required /></div>
+    </div>
+    <div class="hyt-master-related"><button class="hyt-button-primary" type="submit">Registrar pago</button></div>
+</form>

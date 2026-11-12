@@ -1,0 +1,46 @@
+@model GestionServicios.Web.Controllers.PayrollConceptsPage
+@* Firma: FRANCO LARA - 10/11/2026 | Listado de conceptos de planilla con búsqueda, filtros y paginación. *@
+@{ ViewData["Title"] = "Conceptos de planilla"; }
+<header class="hyt-page-header">
+    <h1>Conceptos de planilla</h1>
+    @if (Model.CanEdit) { <a asp-action="Details" class="hyt-button-primary">Nuevo concepto</a> }
+</header>
+<form asp-action="Index" method="get" class="hyt-filters">
+    <div class="hyt-field"><label for="concept-search">Buscar</label><input id="concept-search" name="search" type="search" value="@Model.Search" maxlength="100" /></div>
+    <div class="hyt-field"><label for="concept-nature">Naturaleza</label><select id="concept-nature" name="nature">
+        <option value="">Todas</option><option value="ABONO" selected="@(Model.Nature == "ABONO")">Abono</option>
+        <option value="CARGO" selected="@(Model.Nature == "CARGO")">Cargo</option>
+    </select></div>
+    <div class="hyt-field"><label for="concept-active">Estado</label><select id="concept-active" name="active">
+        <option value="">Todos</option><option value="true" selected="@(Model.Active == true)">Activo</option>
+        <option value="false" selected="@(Model.Active == false)">Inactivo</option>
+    </select></div>
+    <button type="submit" class="hyt-button-primary">Buscar</button>
+    <a asp-action="Index" class="hyt-button-secondary">Limpiar</a>
+</form>
+<div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Conceptos de planilla">
+    <table class="hyt-table">
+        <thead><tr><th>Concepto</th><th>Naturaleza</th><th>Cálculo</th><th>Valor</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody>
+        @foreach (var concept in Model.Concepts)
+        {
+            <tr>
+                <th scope="row">@concept.Nombre</th>
+                <td>@(concept.Naturaleza == "ABONO" ? "Abono" : "Cargo")</td>
+                <td>@(concept.Calculo == "IMPORTE" ? "Importe" : "Porcentaje")</td>
+                <td>@(concept.Valor is not decimal value ? "—" : concept.Calculo == "IMPORTE" ? $"S/ {value:N2}" : $"{value:0.####}%")</td>
+                <td>@(concept.Activo ? "Activo" : "Inactivo")</td>
+                <td><a asp-action="Details" asp-route-id="@concept.ConceptoId" class="hyt-button-secondary">@(Model.CanEdit ? "Editar" : "Ver")</a></td>
+            </tr>
+        }
+        @if (Model.Concepts.Count == 0) { <tr><td colspan="6" class="hyt-grid-message">No se encontraron conceptos.</td></tr> }
+        </tbody>
+    </table>
+</div>
+<nav class="hyt-master-related" aria-label="Páginas de conceptos">
+    <span>Página @Model.Page · @Model.Total registros</span>
+    @if (Model.Page > 1)
+    { <a class="hyt-button-secondary" asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-search="@Model.Search" asp-route-nature="@Model.Nature" asp-route-active="@Model.Active">Anterior</a> }
+    @if (Model.Page * 20 < Model.Total)
+    { <a class="hyt-button-secondary" asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-search="@Model.Search" asp-route-nature="@Model.Nature" asp-route-active="@Model.Active">Siguiente</a> }
+</nav>

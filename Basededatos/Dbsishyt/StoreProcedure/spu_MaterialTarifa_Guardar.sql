@@ -1,3 +1,4 @@
+-- Firma: FRANCO LARA | Create date: 10/11/2026 | Impide duplicar el tarifario directo de un material bajo el bloqueo de creación.
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   05/11/2026
@@ -69,6 +70,8 @@ BEGIN
             END;
             SELECT @VersionId=version.VersionId FROM dbo.TarifarioVersion AS version WHERE version.TarifarioId=@TarifarioId AND version.NumeroVersion=1;
             IF @VersionId IS NULL THROW 51227,N'[HYT_VALIDACION] No se pudo preparar el tarifario.',1;
+            IF EXISTS(SELECT 1 FROM dbo.TarifarioPartida AS partida WITH(UPDLOCK,HOLDLOCK) WHERE partida.VersionId=@VersionId AND partida.MaterialId=@MaterialId)
+                THROW 51227,N'[HYT_VALIDACION] El material ya tiene un tarifario. Edita el registro existente.',1;
             INSERT INTO dbo.TarifarioPartida(VersionId,MaterialId,CodigoMoneda,CodigoTipoIGV,PrecioPEN,PrecioUSD,CodigoMaterialSAP,Activo,UsuarioRegistro)
             VALUES(@VersionId,@MaterialId,N'PEN',@CodigoTipoIGV,@PrecioPEN,@PrecioUSD,@CodigoSAP,@Activo,@UsuarioId);
             SET @Id=CONVERT(BIGINT,SCOPE_IDENTITY());

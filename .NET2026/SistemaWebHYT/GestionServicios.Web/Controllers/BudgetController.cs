@@ -7,6 +7,7 @@ using GestionServicios.Application.Maintenance;
 using GestionServicios.Web.Security;
 using GestionServicios.Web.ViewModels.Budgets;
 using GestionServicios.Web.ViewModels.Shared;
+using GestionServicios.Web.ViewModels.Reporting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,6 +15,7 @@ namespace GestionServicios.Web.Controllers;
 
 // Firma: FRANCO LARA - 03/11/2026 | Presupuestos MVC con filtros UTC, ayudas, validación y acciones auditadas.
 // Firma: FRANCO LARA - 05/11/2026 | Consulta por cliente, tienda y estado con navegación desde el panel. Direcciones completas y consideraciones predeterminadas al crear presupuesto. Detalle neto editable y ayuda de tarifas por material.
+// Firma: FRANCO LARA - 11/11/2026 | Imprime todos los presupuestos de la consulta activa.
 [Authorize(Policy="perm:PRESUPUESTOS.CONSULTAR")]
 [Route("Presupuestos")]
 public sealed class BudgetController(IBudgetRepository repository,TimeProvider clock):Controller
@@ -28,23 +30,57 @@ public sealed class BudgetController(IBudgetRepository repository,TimeProvider c
     private static string Money(decimal? amount)=>amount?.ToString("N2",CultureInfo.GetCultureInfo("es-PE"))??"Precio pendiente";
 
     [HttpGet("")]
-    public async Task<IActionResult> Index(string? search,DateOnly? from,DateOnly? to,int page=1,string? client=null,string? store=null,string? state=null,string? type=null,bool pendingGuide=false,bool pendingOrder=false,CancellationToken ct=default)
+    public async Task<IActionResult> Index(string? search,DateOnly? from,DateOnly? to,int page=1,string? client=null,string? store=null,string? state=null,string? type=null,bool pendingGuide=false,bool pendingOrder=false,CancellationToken ct=default,bool print=false)
     {
         var first=from??Today.AddMonths(-1);var last=to??Today;
         if(type is not (null or "INVITACION" or "EMERGENCIA"))return BadRequest("Tipo de atención no válido.");
         if(!ModelState.IsValid||(state is not (null or "BORRADOR" or "ENVIADO" or "OBSERVADO" or "APROBADO" or "RECHAZADO" or "CANCELADO"))||client?.Length>200||store?.Length>200||state?.Length>40||page is <1 or >100000000||search?.Length>200||first>last||last==DateOnly.MaxValue)return BadRequest("Revisa los filtros.");
         var start=new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(first.ToDateTime(TimeOnly.MinValue),Lima));
         var end=new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(last.AddDays(1).ToDateTime(TimeOnly.MinValue),Lima));
-        var data=await repository.ListAsync(Actor,start,end,search,page,state,ct,client,store,type,pendingGuide,pendingOrder);
+        Task<BudgetPage> Load(int number) => repository.ListAsync(Actor,start,end,search,number,state,ct,client,store,type,pendingGuide,pendingOrder);
+        if (print)
+        {
+            if (!Has("REPORTES.IMPRIMIR")) return Forbid();
+            try
+            {
+                var rows = await ListingReport.AllAsync(async number =>
+                {
+                    var result = await Load(number);
+                    return (result.Rows, result.Total);
+                }, (BudgetListItem row) => row.BudgetId);
+                var summary = new List<string> { ListingReport.Range(first, last), ListingReport.Filter("Buscar", search),
+                    ListingReport.Filter("Tipo", type), ListingReport.Filter("Estado", state is null ? null : BudgetStates.Label(state)) };
+                if (client is not null) summary.Add(ListingReport.Filter("Cliente", client));
+                if (store is not null) summary.Add(ListingReport.Filter("Tienda", store));
+                if (pendingGuide) summary.Add("Pendiente de guía");
+                if (pendingOrder) summary.Add("Pendiente de OC del cliente");
+                return View("ListingReport", new ListingReport("Presupuestos", summary, rows.Count,
+                    new(null, ["Presupuesto", "Registro", "Cliente", "Tienda", "Descripción", "Tipo / estado", "Moneda", "Total", "Seguimiento"],
+                        rows.Select(row => new[] { row.Number, PeruDate.Display(row.CreatedAt), row.ClientName, row.StoreName, row.Description,
+                            $"{row.Type}\n{BudgetStates.Label(row.State)}", row.Currency,
+                            row.Total.HasValue ? ListingReport.Money(row.Total) : "Precio pendiente",
+                            string.Join("\n", new[] {
+                                row.CustomerOrderNumber is null ? null : "OC " + row.CustomerOrderNumber,
+                                row.GuideNumber is null ? null : "Guía " + row.GuideNumber,
+                                row.ApprovedOn is null ? null : "Aceptación " + ListingReport.Date(row.ApprovedOn),
+                                Has("FACTURADO.CONSULTAR") && row.Invoiced ? (row.InvoiceReferences is null ? "Facturado" : "Comprobante " + row.InvoiceReferences) : null
+                            }.Where(item => item is not null)) })),
+                    new("Totales por moneda", ["Moneda", "Presupuestos", "Total", "Precios pendientes"],
+                        rows.GroupBy(row => row.Currency).Select(group => new[] { group.Key, group.Count().ToString(),
+                            ListingReport.Money(group.Sum(row => row.Total)), group.Count(row => row.Total is null).ToString() }))));
+            }
+            catch (MaintenanceException error) { return Conflict(error.Message); }
+        }
+        var data=await Load(page);
         var returnUrl=Url.Action(nameof(Index),new {search,client,store,state,type,pendingGuide,pendingOrder,from=first.ToString("yyyy-MM-dd"),to=last.ToString("yyyy-MM-dd"),page})!;
         return View(new BudgetListModel(new GridModel
         {
             Label="Presupuestos",Controller="Budget",Page=page,TotalRecords=data.Total,
-            Headers=["Presupuesto","Cliente / tienda","Tipo","Estado","Moneda","Total","OC cliente","Guía","Aceptación"],
+            Headers=["Presupuesto","Cliente / tienda","Tipo","Estado","Moneda","Total","OC cliente","Guía","Aceptación","Facturado"],
             Rows=data.Rows.Select(row=>new GridRow(row.BudgetId.ToString(),[row.Number,row.ClientName+" / "+row.StoreName,row.Type,BudgetStates.Label(row.State),row.Currency,Money(row.Total),row.CustomerOrderNumber??"Sin OC",row.GuideNumber??"Sin guía",
-                row.ApprovedOn?.ToString("dd/MM/yyyy")??"—"],true,CanEdit&&(row.State is "BORRADOR" or "OBSERVADO")&&!row.PurchaseOrderId.HasValue,DocumentActions(row,returnUrl))).ToArray(),
+                row.ApprovedOn?.ToString("dd/MM/yyyy")??"—",Has("FACTURADO.CONSULTAR")?(row.Invoiced?"Sí":"Pendiente"):"—"],true,CanEdit&&(row.State is "BORRADOR" or "OBSERVADO")&&!row.PurchaseOrderId.HasValue,DocumentActions(row,returnUrl))).ToArray(),
             Query=new() { ["type"]=type??"",["pendingGuide"]=pendingGuide.ToString().ToLowerInvariant(),["pendingOrder"]=pendingOrder.ToString().ToLowerInvariant(),["client"]=client??"",["store"]=store??"",["state"]=state??"",["search"]=search??"",["from"]=first.ToString("yyyy-MM-dd"),["to"]=last.ToString("yyyy-MM-dd") },RowQuery=new() { ["returnUrl"]=returnUrl }
-        },new FilterModel { Checks=[new("pendingGuide","Pendiente de guía",pendingGuide),new("pendingOrder","Pendiente de OC del cliente",pendingOrder)],Selects=[new("type","Tipo",type??"",[new("","Todos"),new("INVITACION","Invitación"),new("EMERGENCIA","Emergencia")]),new("state","Estado",state??"",new[]{new FilterChoice("","Todos"),new("BORRADOR","Registrado"),new("ENVIADO","Enviado"),new("OBSERVADO","Observado"),new("APROBADO","Aceptada"),new("RECHAZADO","Rechazada"),new("CANCELADO","Cancelado")})],Controller="Budget",Search=search??"",WithDates=true,From=first,To=last,Placeholder="Número, descripción, cliente o tienda" },Has("PRESUPUESTOS.CREAR"),new[]{"BORRADOR","ENVIADO","OBSERVADO","APROBADO","RECHAZADO","CANCELADO"}.Select(code=>new StateKpi(code,BudgetStates.Label(code),data.StateCounts?.GetValueOrDefault(code)??0)).ToArray()));
+        },new FilterModel { Checks=[new("pendingGuide","Pendiente de guía",pendingGuide),new("pendingOrder","Pendiente de OC del cliente",pendingOrder)],Selects=[new("type","Tipo",type??"",[new("","Todos"),new("INVITACION","Invitación"),new("EMERGENCIA","Emergencia")]),new("state","Estado",state??"",new[]{new FilterChoice("","Todos"),new("BORRADOR","Registrado"),new("ENVIADO","Enviado"),new("OBSERVADO","Observado"),new("APROBADO","Aceptada"),new("RECHAZADO","Rechazada"),new("CANCELADO","Cancelado")})],Controller="Budget",Search=search??"",WithDates=true,From=first,To=last,Placeholder="Número, descripción, partida, cliente o tienda" },Has("PRESUPUESTOS.CREAR"),new[]{"BORRADOR","ENVIADO","OBSERVADO","APROBADO","RECHAZADO","CANCELADO"}.Select(code=>new StateKpi(code,BudgetStates.Label(code),data.StateCounts?.GetValueOrDefault(code)??0)).ToArray()));
     }
 
     [HttpGet("Nuevo")]

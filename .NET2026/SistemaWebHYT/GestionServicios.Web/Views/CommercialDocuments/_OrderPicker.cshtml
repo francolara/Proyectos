@@ -1,0 +1,36 @@
+@* Firma: FRANCO LARA - 11/11/2026 | Ayuda de órdenes de compra del cliente para registrar y vincular ventas. *@
+@model (long? ClientId, long? OrderId, string? OrderNumber, string Field)
+<div class="hyt-field" data-commercial-order-picker
+     data-order-url="@(Model.ClientId is long clientId ? Url.Action("PurchaseOrders", new { scope = "ventas", clienteId = clientId }) : null)">
+    <label for="commercial-order-number">Orden de compra del cliente</label>
+    <div class="hyt-catalog-field">
+        <input type="hidden" name="@Model.Field" value="@Model.OrderId" data-order-id />
+        <input id="commercial-order-number" value="@(Model.OrderNumber ?? (Model.OrderId is long id ? $"Orden #{id}" : ""))"
+               type="text" readonly placeholder="Sin orden asociada" data-order-label />
+        <button type="button" class="hyt-button-secondary" data-order-open aria-haspopup="dialog"
+                aria-controls="commercial-order-lookup" disabled="@(Model.ClientId is null)">Buscar orden</button>
+        <button type="button" class="hyt-button-secondary" data-order-clear disabled="@(Model.OrderId is null)">Quitar</button>
+    </div>
+    <dialog id="commercial-order-lookup" class="hyt-modal" aria-labelledby="commercial-order-title">
+        <header class="hyt-modal-header">
+            <h2 id="commercial-order-title">Órdenes de compra del cliente</h2>
+            <button type="button" class="hyt-modal-close" data-hyt-close aria-label="Cerrar ayuda">×</button>
+        </header>
+        <div class="hyt-modal-body">
+            <div class="hyt-filters">
+                <div class="hyt-field">
+                    <label for="commercial-order-query">Orden, presupuesto o confirmación</label>
+                    <input id="commercial-order-query" type="search" maxlength="150" autofocus />
+                </div>
+                <button type="button" class="hyt-button-primary" data-order-search>Buscar</button>
+            </div>
+            <p role="status" data-order-status></p>
+            <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Órdenes de compra">
+                <table class="hyt-table">
+                    <thead><tr><th>Orden de compra</th><th>Presupuesto</th><th>Confirmación</th><th>Acción</th></tr></thead>
+                    <tbody data-order-results></tbody>
+                </table>
+            </div>
+        </div>
+    </dialog>
+</div>

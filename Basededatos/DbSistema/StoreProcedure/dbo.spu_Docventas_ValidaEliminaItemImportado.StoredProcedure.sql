@@ -1,4 +1,4 @@
-﻿
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -13,6 +13,11 @@ GO
 -- Author:        FRANCO LARA
 -- Create date:   10/11/2026
 -- Description:   Excluye la orden de compra anexa de las cantidades importadas del pedido.
+-- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   11/11/2026
+-- Description:   Solo considera guias de venta para la cantidad importada del pedido.
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.spu_Docventas_ValidaEliminaItemImportado
     @IdEmpresa VARCHAR(10),
@@ -70,6 +75,12 @@ BEGIN
                 AND destino.IdDocVentasImp = @IdDocVentasOrigen
                 AND ISNULL(cabeceraDestino.EstDocVentas, '') <> 'ANU'
                 AND (@IdDocumentoOrigen <> '40' OR destino.IdDocumento <> '94')
+                AND
+                (
+                    @IdDocumentoOrigen <> '40'
+                    OR destino.IdDocumento <> '86'
+                    OR cabeceraDestino.IdMotivoTraslado = '06090001'
+                )
         )
         SELECT
             origen.Item,

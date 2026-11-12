@@ -70,6 +70,7 @@ public static partial class MaintenanceInput
                     {
                         "Currency" => text is "PEN" or "USD",
                         "TaxTreatment" => text is "CON_IGV" or "SIN_IGV",
+                        "Withholding" => text.Length == 3 && text.All(char.IsAsciiDigit),
                         "EntityType" => text is "JURIDICA" or "NATURAL",
                         _ => false
                     };

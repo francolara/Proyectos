@@ -70,7 +70,8 @@ public sealed class SqlMaintenanceRepository(SqlConnectionFactory connections) :
             var rows = new List<MaintenanceRow>();
             while (await reader.ReadAsync(cancellationToken))
                 rows.Add(new(Convert.ToInt64(reader.GetValue(0)), reader.GetString(1), reader.GetString(2), reader.GetString(3), Text(reader, 4),
-                    Utc(reader, 5), reader.GetString(6), reader.IsDBNull(7) ? null : Utc(reader, 7), Text(reader, 8), entity.Key is "tiendas" or "contactos" ? Text(reader,9) : null, entity.Key is "tiendas" or "contactos" ? Text(reader,10) : null));
+                    Utc(reader, 5), reader.GetString(6), reader.IsDBNull(7) ? null : Utc(reader, 7), Text(reader, 8), entity.Key is "tiendas" or "contactos" ? Text(reader,9) : null, entity.Key is "tiendas" or "contactos" ? Text(reader,10) : null,
+                    entity.Key == "contactos" && reader.FieldCount > 11 ? Text(reader, 11) : null));
             await reader.NextResultAsync(cancellationToken);
             var total = await reader.ReadAsync(cancellationToken) ? reader.GetInt64(0) : 0;
             return new MaintenancePage(rows, total, page);
@@ -115,7 +116,7 @@ public sealed class SqlMaintenanceRepository(SqlConnectionFactory connections) :
         {
             var result = new Dictionary<string, IReadOnlyList<CatalogOption>>();
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-            foreach (var name in new[] { "Currency", "TaxTreatment", "Departments", "Provinces", "Districts" })
+            foreach (var name in new[] { "Currency", "TaxTreatment", "Departments", "Provinces", "Districts", "Withholding" })
             {
                 var options = new List<CatalogOption>();
                 while (await reader.ReadAsync(cancellationToken)) options.Add(new(reader.GetString(0), reader.GetString(1)));

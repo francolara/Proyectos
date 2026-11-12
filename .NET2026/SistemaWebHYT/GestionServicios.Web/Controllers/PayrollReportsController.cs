@@ -91,32 +91,43 @@ public sealed class PayrollReportsController(IPersonalPaymentsRepository reposit
                 (Matches(row.RazonSocial, filter.Search) || Matches(row.NumeroInterno, filter.Search))
                 && (filter.Status is null || (filter.Status == "PENDIENTE" ? row.Pendiente > 0 : row.Pendiente == 0))).ToArray() };
 
+    // Firma: FRANCO LARA - 10/11/2026 | CSV para Excel con título, filtros y columnas del reporte HTML.
     [HttpGet("Exportar/{kind}")]
     public async Task<IActionResult> Export(string kind, PayrollReportFilter filter, CancellationToken ct)
     {
         if (!ModelState.IsValid || !TryMonth(filter.Month, out var period) || filter.SupplierId is <= 0 || filter.BudgetId is <= 0
             || filter.Search?.Length > 180 || kind is not ("personal" or "proveedores") || !ValidFilters(kind, filter)) return BadRequest();
 
-        var report = await repository.ReportAsync(Actor, period, filter.SupplierId, filter.BudgetId, ct);
+        var report = await repository.ReportAsync(Actor, period, kind == "proveedores" ? filter.SupplierId : null,
+            kind == "proveedores" ? filter.BudgetId : null, ct);
         if (kind == "personal" ? !report.VerPersonal : !report.VerProveedores) return Forbid();
 
+        filter.Kind = kind;
+        filter.Month = period.ToString("yyyy-MM", CultureInfo.InvariantCulture);
         filter.Search = filter.Search?.Trim();
         report = FilterRows(report, kind, filter);
-        var csv = new StringBuilder();
+        var page = new PayrollReportPage(filter, [], report, [], false);
+        var csv = new StringBuilder("sep=;\r\n");
+        void AddRow(params string[] cells) => csv.AppendJoin(';', cells).Append("\r\n");
+
+        AddRow(Cell(page.Title));
+        AddRow(Cell(page.FilterSummary));
         if (kind == "personal")
         {
-            csv.AppendLine("Trabajador;Tipo;Moneda;Saldo anterior;Devengado;Adelantado;Descontado;Pagado;Saldo final");
+            AddRow(Cell($"{page.Count} registros"), Cell(report.Cerrado ? "Mes cerrado" : "Mes abierto"));
+            AddRow("Trabajador", "Tipo", "Moneda", "Saldo anterior", "Devengado", "Adelantos", "Descuentos", "Pagado", "Saldo final");
             foreach (var row in report.Personal)
-                csv.AppendLine(string.Join(';', Cell(row.NombreCompleto), Cell(row.TipoTrabajador), Cell(row.MonedaCodigo),
+                AddRow(Cell(row.NombreCompleto), Cell(row.TipoTrabajador == "PLANILLA" ? "En planilla" : "Externo"), Cell(row.MonedaCodigo),
                     Amount(row.SaldoAnterior), Amount(row.Devengado), Amount(row.Adelantado), Amount(row.Descontado),
-                    Amount(row.Pagado), Amount(row.Saldo)));
+                    Amount(row.Pagado), Amount(row.Saldo));
         }
         else
         {
-            csv.AppendLine("Proveedor;Presupuesto;Moneda;Costo;Pagado en el mes;Pagado acumulado;Pendiente");
+            AddRow(Cell($"{page.Count} registros"));
+            AddRow("Proveedor", "Presupuesto", "Moneda", "Costo", "Pagado en el mes", "Pagado acumulado", "Pendiente");
             foreach (var row in report.Proveedores)
-                csv.AppendLine(string.Join(';', Cell(row.RazonSocial), Cell(row.NumeroInterno), Cell(row.MonedaCodigo),
-                    Amount(row.Costo), Amount(row.PagadoMes), Amount(row.PagadoAcumulado), Amount(row.Pendiente)));
+                AddRow(Cell(row.RazonSocial), Cell(row.NumeroInterno), Cell(row.MonedaCodigo),
+                    Amount(row.Costo), Amount(row.PagadoMes), Amount(row.PagadoAcumulado), Amount(row.Pendiente));
         }
 
         return File(Encoding.UTF8.GetBytes("\uFEFF" + csv), "text/csv; charset=utf-8",

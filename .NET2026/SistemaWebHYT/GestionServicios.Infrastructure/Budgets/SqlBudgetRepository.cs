@@ -57,7 +57,7 @@ public sealed class SqlBudgetRepository(SqlConnectionFactory connections) : IBud
             await using var reader=await command.ExecuteReaderAsync(ct);var rows=new List<BudgetListItem>();
             while(await reader.ReadAsync(ct)) rows.Add(new(reader.GetInt64(0),reader.GetString(1),reader.GetString(2),reader.GetString(3),reader.GetInt64(4),reader.GetInt64(5),reader.GetInt64(6),reader.GetInt32(7),
                 reader.GetString(8),reader.GetString(9),reader.GetString(10),reader.GetString(11),Money(reader,12),Money(reader,13),Money(reader,14),reader.IsDBNull(15)?null:DateOnly.FromDateTime(reader.GetDateTime(15)),
-                Timestamp(reader,16),reader.GetString(17),reader.IsDBNull(18)?null:Timestamp(reader,18),Text(reader,19),Id(reader,20),Text(reader,21),Id(reader,22),Text(reader,23),Text(reader,24),reader.GetInt64(25),Id(reader,26)));
+                Timestamp(reader,16),reader.GetString(17),reader.IsDBNull(18)?null:Timestamp(reader,18),Text(reader,19),Id(reader,20),Text(reader,21),Id(reader,22),Text(reader,23),Text(reader,24),reader.GetInt64(25),Id(reader,26),reader.FieldCount>27&&reader.GetBoolean(27),reader.FieldCount>28?Text(reader,28):null));
             await reader.NextResultAsync(ct);await reader.ReadAsync(ct);var total=reader.GetInt64(0);
             var counts=new Dictionary<string,long>();
             if(await reader.NextResultAsync(ct))while(await reader.ReadAsync(ct))counts[reader.GetString(0)]=reader.GetInt64(1);

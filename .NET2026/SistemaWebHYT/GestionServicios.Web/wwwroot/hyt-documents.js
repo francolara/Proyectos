@@ -3,6 +3,7 @@
 // Firma: FRANCO LARA - 05/11/2026 | Mantiene la espera común en el retorno tras guardar documentos.
 import {setDialog} from './hyt-ui.js';
 // Firma: FRANCO LARA - 09/11/2026 | Búsqueda y paginación dentro del pop-up de costos de proveedor.
+// Firma: FRANCO LARA - 11/11/2026 | Busca trabajos disponibles y conserva la selección al actualizar el selector.
 const dialog=document.querySelector('#document-dialog');
 const body=dialog?.querySelector('[data-document-body]');
 let loading=false;
@@ -56,4 +57,62 @@ document.addEventListener('submit',async event=>{
         const result=await response.json();const destination=new URL(result.redirect,location.href);if(destination.origin!==location.origin)throw new Error('Retorno no válido.');globalThis.hytLoading?.navigation("Cargando listado…");location.assign(destination.href);
     }catch(error){let message=form.querySelector('[data-document-error]');if(!message){message=document.createElement('p');message.dataset.documentError='';message.setAttribute('role','alert');form.prepend(message);}message.textContent=error.message;}
     finally{delete form.dataset.documentBusy;buttons.forEach(button=>button.disabled=false);setDialog(dialog,true,false);}
+});
+
+const workSearchRequests = new WeakMap();
+
+async function searchSupplierWork(form) {
+    if (form.dataset.documentBusy === 'true') return;
+    workSearchRequests.get(form)?.abort();
+    const request = new AbortController();
+    workSearchRequests.set(form, request);
+    const query = form.querySelector('[data-cost-options-query]');
+    const results = form.querySelector('[data-cost-options-rows]');
+    const status = form.querySelector('[data-cost-options-status]');
+    const submit = form.querySelector('[data-cost-options-submit]');
+    status.textContent = 'Buscando trabajos…';
+    submit.disabled = true;
+    try {
+        const url = new URL(form.dataset.costOptionsUrl, location.href);
+        url.searchParams.set('buscar', query.value.trim());
+        const response = await fetch(url, { signal: request.signal });
+        if (!response.ok || response.redirected) throw new Error();
+        const template = document.createElement('template');
+        template.innerHTML = await response.text();
+        if (request.signal.aborted || !form.isConnected) return;
+        const selected = new Map([...results.querySelectorAll('input:checked')]
+            .map(input => [input.value, input.closest('tr')]));
+        const matches = [...template.content.children];
+        for (const row of matches) {
+            const checkbox = row.querySelector('input[name="ids"]');
+            if (checkbox) checkbox.checked = selected.delete(checkbox.value);
+        }
+        for (const row of selected.values()) row.dataset.costOptionRetained = '';
+        results.replaceChildren(...selected.values(), ...matches);
+        const summary = matches.length === 100 ? 'Se muestran hasta 100 trabajos.'
+            : matches.length ? 'Resultados actualizados.' : 'No se encontraron trabajos disponibles para esta búsqueda.';
+        status.textContent = selected.size ? summary + ' Se mantienen los trabajos que marcaste antes.' : summary;
+    } catch {
+        if (!request.signal.aborted) status.textContent = 'No se pudo buscar. Vuelve a intentarlo.';
+    } finally {
+        if (!request.signal.aborted) submit.disabled = results.rows.length === 0;
+    }
+}
+
+document.addEventListener('click', event => {
+    const button = event.target.closest('[data-cost-options-search]');
+    if (button) void searchSupplierWork(button.form);
+});
+document.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' || !event.target.matches('[data-cost-options-query]')) return;
+    event.preventDefault();
+    void searchSupplierWork(event.target.form);
+});
+document.addEventListener('change', event => {
+    const checkbox = event.target;
+    if (!checkbox.matches('[data-cost-option-retained] input[name="ids"]') || checkbox.checked) return;
+    const form = checkbox.form;
+    checkbox.closest('tr').remove();
+    if (form.querySelector('[data-cost-options-rows]').rows.length === 0)
+        form.querySelector('[data-cost-options-submit]').disabled = true;
 });

@@ -3,6 +3,7 @@
 -- Create date:   09/11/2026
 -- Description:   PlanPagoDetalleHYT
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 11/11/2026 | Agrega la selección de cada trabajador en la instalación inicial.
 USE [SistemaWebHYT];
 GO
 IF OBJECT_ID(N'dbo.PlanPagoDetalleHYT', N'U') IS NULL
@@ -17,6 +18,7 @@ BEGIN
         MinutosExtra INT NOT NULL,
         ImporteExtra DECIMAL(18,2) NOT NULL,
         Descuento DECIMAL(18,2) NOT NULL,
+        Incluido BIT NOT NULL CONSTRAINT DF_PlanPagoDetalleHYT_Incluido DEFAULT (1),
         CONSTRAINT PK_PlanPagoDetalleHYT PRIMARY KEY (PlanId, TrabajadorId),
         CONSTRAINT CK_PlanPagoDetalleHYT_Importes CHECK (Base >= 0 AND MinutosExtra >= 0
             AND ImporteExtra >= 0 AND Descuento >= 0 AND Descuento <= Base + ImporteExtra)

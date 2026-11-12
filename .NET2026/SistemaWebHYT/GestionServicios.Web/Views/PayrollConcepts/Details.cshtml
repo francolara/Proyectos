@@ -1,0 +1,31 @@
+@model GestionServicios.Web.Controllers.PayrollConceptForm
+@* Firma: FRANCO LARA - 10/11/2026 | Ficha de alta, consulta y edición de conceptos de planilla. *@
+@{ ViewData["Title"] = Model.Id == 0 ? "Nuevo concepto" : "Concepto de planilla"; }
+<header class="hyt-page-header">
+    <h1>@ViewData["Title"]</h1>
+    <a asp-action="Index" class="hyt-button-secondary">Volver al listado</a>
+</header>
+@if (TempData["PayrollConceptSaved"] is string message) { <p role="status">@message</p> }
+<form asp-action="Save" method="post" class="hyt-panel hyt-master-form">
+    <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+    <input asp-for="Id" type="hidden" />
+    <input asp-for="Version" type="hidden" />
+    <fieldset class="hyt-budget-fieldset" disabled="@Model.ReadOnly">
+        <legend>Datos del concepto</legend>
+        <div class="hyt-master-fields">
+            <div class="hyt-field"><label asp-for="Name">Nombre</label><input asp-for="Name" maxlength="100" required /></div>
+            <div class="hyt-field"><label asp-for="Nature">Naturaleza</label>
+                @if (Model.Pension) { <input type="hidden" name="Nature" value="CARGO" /> }
+                <select asp-for="Nature" disabled="@Model.Pension"><option value="ABONO">Abono</option><option value="CARGO">Cargo</option></select>
+            </div>
+            <div class="hyt-field"><label asp-for="Calculation">Cálculo</label><select asp-for="Calculation">
+                <option value="IMPORTE">Importe</option><option value="PORCENTAJE">Porcentaje</option></select></div>
+            <div class="hyt-field"><label asp-for="Value">Valor por defecto (opcional)</label><input asp-for="Value" type="text" inputmode="decimal" />
+                @if (Model.Pension) { <small>Para un porcentaje sin valor, la planificación toma la tasa de la entidad previsional configurada.</small> }
+            </div>
+            <div class="hyt-field"><label asp-for="Active">Estado</label><select asp-for="Active">
+                <option value="true">Activo</option><option value="false">Inactivo</option></select></div>
+        </div>
+    </fieldset>
+    @if (!Model.ReadOnly) { <button type="submit" class="hyt-button-primary">Guardar concepto</button> }
+</form>

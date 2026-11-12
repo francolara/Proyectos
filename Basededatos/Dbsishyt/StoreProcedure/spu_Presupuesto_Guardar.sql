@@ -1,3 +1,4 @@
+-- Firma: FRANCO LARA | Create date: 10/11/2026 | Asigna el número de presupuesto como número de cotización al guardar.
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   03/11/2026
@@ -212,7 +213,7 @@ BEGIN
             SET @RevisionId=CONVERT(BIGINT,SCOPE_IDENTITY());
         END;
         UPDATE dbo.PresupuestoRevision SET FechaEmision=@Emision,ClienteNombre=@ClienteNombre,ClienteDocumento=@ClienteDocumento,ClienteDireccion=@ClienteDireccion,TiendaNombre=@TiendaNombre,TiendaDireccion=@TiendaDireccion,TiendaCodigo=@TiendaCodigo,
-            NumeroCotizacionCliente=JSON_VALUE(@Datos,N'$.Revision.NumeroCotizacionCliente'),FechaEjecucion=TRY_CONVERT(DATE,JSON_VALUE(@Datos,N'$.Revision.FechaEjecucion'),23),Trimestre=JSON_VALUE(@Datos,N'$.Revision.Trimestre'),
+            NumeroCotizacionCliente=(SELECT p.NumeroPresupuesto FROM dbo.Presupuesto AS p WHERE p.PresupuestoId=@PresupuestoId),FechaEjecucion=TRY_CONVERT(DATE,JSON_VALUE(@Datos,N'$.Revision.FechaEjecucion'),23),Trimestre=JSON_VALUE(@Datos,N'$.Revision.Trimestre'),
             VigenciaTexto=JSON_VALUE(@Datos,N'$.Revision.VigenciaTexto'),CodigoSAPProveedor=JSON_VALUE(@Datos,N'$.Revision.CodigoSAPProveedor'),ContratoMarco=JSON_VALUE(@Datos,N'$.Revision.ContratoMarco'),Especialidad=JSON_VALUE(@Datos,N'$.Revision.Especialidad'),
             Coordinador=JSON_VALUE(@Datos,N'$.Revision.Coordinador'),Encargado=JSON_VALUE(@Datos,N'$.Revision.Encargado'),Consideraciones=(SELECT dato.value FROM OPENJSON(@Datos,N'$.Revision') AS dato WHERE dato.[key]=N'Consideraciones'),
             Firmante=JSON_VALUE(@Datos,N'$.Revision.Firmante'),CargoFirmante=JSON_VALUE(@Datos,N'$.Revision.CargoFirmante'),ZonaTexto=JSON_VALUE(@Datos,N'$.Revision.ZonaTexto'),EmpresaSnapshotJson=@Empresa,DescripcionTrabajo=@Descripcion,

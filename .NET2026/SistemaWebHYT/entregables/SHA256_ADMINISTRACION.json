@@ -45,15 +45,27 @@
   },
   {
     "path": "StoreProcedure/spu_MantContactoCliente_Guardar.sql",
-    "sha256": "235eb3664bdbaf70ae97d8b42ff252113e2b6d84584eac3e0fd6f1186fb0497e"
+    "sha256": "26cbc63fc2bc08a1f9228c89888f3b69ae2f64b26632ea3f5851fee83fb8206f"
   },
   {
     "path": "StoreProcedure/spu_MantProveedorCliente_Guardar.sql",
     "sha256": "25b6142eb03dbf25549dc4922d7564193553186ca5b248e71094c0893af7ec47"
   },
   {
+    "path": "Script/061_HomologacionUnidadesHYT.sql",
+    "sha256": "07f431a0491e0ca914aa38ea20858c484deced16381911986b24c628e8532431"
+  },
+  {
+    "path": "StoreProcedure/spu_MantUnidadMedida_Listar.sql",
+    "sha256": "cb9dac141690ee5734f797d89177d9c0e02e0abf1dc7061bf918992804f06e1a"
+  },
+  {
+    "path": "StoreProcedure/spu_MantUnidadMedida_Obtener.sql",
+    "sha256": "81f807fc730f38b77c0b2e94bf62499e1d26e28f29d3b05b4ad25bd32186b8ed"
+  },
+  {
     "path": "StoreProcedure/spu_MantUnidadMedida_Guardar.sql",
-    "sha256": "92e1dc2be174ad948521c7e3c69f93d60b1fb71c92de5e05fd6ba5152a24b498"
+    "sha256": "6dd476e454d0be7122c102272039a93d62da26fcf0480afb27e0c6c527f545b2"
   },
   {
     "path": "StoreProcedure/spu_MantZona_Guardar.sql",
@@ -68,8 +80,20 @@
     "sha256": "66783eb3209931670c2d1348b616a290f59588138fae8411b9bfc0b7898dc442"
   },
   {
+    "path": "Tablas/DetraccionCatalogoHYT.sql",
+    "sha256": "7565014437a55f797d06178fa84a9b19ec862c1dc31acdfa7883120cc4497c20"
+  },
+  {
+    "path": "Script/050_CatalogoDetraccionesHYT.sql",
+    "sha256": "aa7530a120794cd955d1507a7d97a7bcd07b9cdad3eb004429a4c3a0e3e20c64"
+  },
+  {
+    "path": "Script/051_DetraccionMaterialHYT.sql",
+    "sha256": "24cfca07c76be3597c1e3b72396bcbf4e14b3b768bf6fc4c378115cb2251c969"
+  },
+  {
     "path": "StoreProcedure/spu_MantServicioMaterial_Guardar.sql",
-    "sha256": "d17e2d66315c917063d0f1453b09703c88f44e3cfba4866800ae8e6391bea349"
+    "sha256": "acdc8550f3a0c2b472bbeaf24b5f05e54468fef0ea5aba17d647575193a718af"
   },
   {
     "path": "StoreProcedure/spu_MantTarifario_Guardar.sql",
@@ -85,7 +109,7 @@
   },
   {
     "path": "StoreProcedure/spu_MaterialTarifa_Guardar.sql",
-    "sha256": "535de7d2897a4e52b36b7ea68d3a5544025c21e39509aea0260f76a719b113c3"
+    "sha256": "1192bd2910c8609c4dae44a65ab7a4c42cb33a40079c546382391dc5d5390c2e"
   },
   {
     "path": "StoreProcedure/spu_MantTarifarioVersion_Publicar.sql",
@@ -101,7 +125,7 @@
   },
   {
     "path": "StoreProcedure/spu_Presupuesto_Guardar.sql",
-    "sha256": "2c00da22ccb6f76f881b40c2573014b9ee04aa33d1ee29666a04869bec0bf4c1"
+    "sha256": "f3f23aab790f64cdb81630793ae71c9105a8727c84c8e4e4640541c06ca11e90"
   },
   {
     "path": "StoreProcedure/spu_Presupuesto_ObtenerImpresion.sql",
@@ -149,7 +173,7 @@
   },
   {
     "path": "StoreProcedure/spu_Reporte_Listar.sql",
-    "sha256": "25c1bb93afd0d5ad5d2c23e44867486be25b34c0e2d078bb4496f0c7cd7df456"
+    "sha256": "0ae804e4600ef65e578974d0826df10968d8ffb604e5cd68a67ba076d5654abf"
   },
   {
     "path": "StoreProcedure/spu_Usuarios_Listar.sql",
@@ -197,6 +221,6 @@
   },
   {
     "path": "ADMINISTRACION_HYT.sql",
-    "sha256": "7f5d28e6b1f842126870f9fb6e02755532745a672381f0f3ff0e2e92e633b8d9"
+    "sha256": "a99301ec6017cd8dcd4b519005da70eec1ccfad35e9e30654e24daaa5be80064"
   }
 ]

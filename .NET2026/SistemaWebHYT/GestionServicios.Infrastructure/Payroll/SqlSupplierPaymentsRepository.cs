@@ -6,7 +6,7 @@ using Microsoft.Data.SqlClient;
 namespace GestionServicios.Infrastructure.Payroll;
 
 public sealed class SqlSupplierPaymentsRepository(SqlConnectionFactory connections) :
-    ISupplierPaymentsRepository, IWorkersRepository, IPersonalPaymentsRepository, IPayrollObligationsRepository, IPayPlanningRepository, IPayrollCatalogRepository
+    ISupplierPaymentsRepository, IWorkersRepository, IPersonalPaymentsRepository, IPayrollObligationsRepository, IPayPlanningRepository, IPayrollCatalogRepository, IPayrollConceptRepository, ITelecreditRepository
 {
     public Task<IReadOnlyList<Worker>> WorkersAsync(string actor, long? workerId, string? search, string? kind, int page, CancellationToken ct, bool? active = null)
         => ReadAsync("spu_TrabajadorHYT_Listar", actor, command =>
@@ -32,7 +32,32 @@ public sealed class SqlSupplierPaymentsRepository(SqlConnectionFactory connectio
             new WorkerPaySettings(WorkerTime(reader, "HoraEntradaHabitual"), WorkerTime(reader, "HoraSalidaHabitual"),
                 OptionalText(reader, "RegimenPrevisional"), OptionalText(reader, "AdministradoraAFP"),
                 OptionalText(reader, "FrecuenciaPago")), OptionalText(reader, "CuentaInterbancaria"),
-            reader["VacacionesPendientes"] as long?), ct);
+            reader["VacacionesPendientes"] as long?,
+            OptionalText(reader, "Conceptos") is string concepts
+                ? JsonSerializer.Deserialize<WorkerConcept[]>(concepts)?.Select(item => item.ConceptoId).ToArray() : null,
+            new WorkerTelecredit(OptionalText(reader, "TipoDocumentoBcp"), OptionalText(reader, "DocumentoBcp"),
+                OptionalText(reader, "TipoCuentaBcp"), OptionalText(reader, "MonedaCuentaBcp")),
+            OptionalText(reader, "Nombres"), OptionalText(reader, "Apellidos")), ct);
+
+    private sealed record WorkerConcept(long ConceptoId);
+
+    public Task<IReadOnlyList<PayrollConcept>> ConceptsAsync(string actor, CancellationToken ct)
+        => ReadAsync("spu_ConceptoPlanillaHYT_Listar", actor, _ => { }, reader =>
+            new PayrollConcept(reader.GetInt64(0), reader.GetString(1), reader.GetString(2), reader.GetString(3),
+                reader["Valor"] as decimal?, OptionalText(reader, "Regimen"), reader.GetBoolean(6),
+                reader.GetFieldValue<byte[]>(7)), ct);
+
+    public Task<long> SaveConceptAsync(string actor, PayrollConcept concept, CancellationToken ct)
+        => WriteAsync("spu_ConceptoPlanillaHYT_Guardar", actor, command =>
+        {
+            Add(command, "@ConceptoId", SqlDbType.BigInt, concept.ConceptoId == 0 ? null : concept.ConceptoId);
+            Add(command, "@Nombre", SqlDbType.NVarChar, concept.Nombre, 100);
+            Add(command, "@Naturaleza", SqlDbType.VarChar, concept.Naturaleza, 5);
+            Add(command, "@Calculo", SqlDbType.VarChar, concept.Calculo, 10);
+            Add(command, "@Valor", SqlDbType.Decimal, concept.Valor);
+            Add(command, "@Activo", SqlDbType.Bit, concept.Activo);
+            Add(command, "@VersionFila", SqlDbType.Binary, concept.ConceptoId == 0 ? null : concept.VersionFila, 8);
+        }, ct);
 
     private static TimeOnly? WorkerTime(SqlDataReader reader, string column)
         => reader[column] is TimeSpan value ? TimeOnly.FromTimeSpan(value) : null;
@@ -57,6 +82,11 @@ public sealed class SqlSupplierPaymentsRepository(SqlConnectionFactory connectio
             Add(command, "@TrabajadorId", SqlDbType.BigInt, input.Id);
             Add(command, "@Documento", SqlDbType.NVarChar, input.Document, 20);
             Add(command, "@NombreCompleto", SqlDbType.NVarChar, input.Name, 180);
+            if (input.GivenNames is not null || input.Surnames is not null)
+            {
+                Add(command, "@Nombres", SqlDbType.NVarChar, input.GivenNames, 180);
+                Add(command, "@Apellidos", SqlDbType.NVarChar, input.Surnames, 180);
+            }
             Add(command, "@Tipo", SqlDbType.VarChar, input.Kind, 10);
             Add(command, "@FechaIngreso", SqlDbType.Date, input.StartDate.ToDateTime(TimeOnly.MinValue));
             Add(command, "@Activo", SqlDbType.Bit, input.Active);
@@ -75,7 +105,38 @@ public sealed class SqlSupplierPaymentsRepository(SqlConnectionFactory connectio
             Add(command, "@AdministradoraAFP", SqlDbType.NVarChar, input.PaySettings?.Afp, 100);
             Add(command, "@FrecuenciaPago", SqlDbType.VarChar, input.PaySettings?.Frequency, 10);
             Add(command, "@ActualizarPlanificacion", SqlDbType.Bit, input.PaySettings is not null);
+            if (input.Concepts is not null)
+                Add(command, "@Conceptos", SqlDbType.NVarChar, JsonSerializer.Serialize(input.Concepts), -1);
+            if (input.Telecredit is { } telecredit)
+            {
+                Add(command, "@ActualizarIdentidadBcp", SqlDbType.Bit, true);
+                Add(command, "@TipoDocumentoBcp", SqlDbType.Char, telecredit.DocumentType, 1);
+                Add(command, "@DocumentoBcp", SqlDbType.VarChar, telecredit.Document, 40);
+                Add(command, "@ActualizarAbonoBcp", SqlDbType.Bit, input.UpdateTelecreditAccount);
+                Add(command, "@TipoCuentaBcp", SqlDbType.Char, telecredit.AccountType, 1);
+                Add(command, "@MonedaCuentaBcp", SqlDbType.Char, telecredit.Currency, 3);
+            }
         }, ct);
+
+    public Task<TelecreditAccount?> GetChargeAccountAsync(string actor, CancellationToken ct)
+        => ReadJsonAsync<TelecreditAccount>("spu_TelecreditoHYT_Obtener", actor, _ => { }, ct);
+
+    public Task<long> SaveChargeAccountAsync(string actor, TelecreditAccount account, CancellationToken ct)
+        => WriteAsync("spu_TelecreditoHYT_Guardar", actor, command =>
+        {
+            Add(command, "@TipoCuenta", SqlDbType.Char, account.TipoCuenta, 1);
+            Add(command, "@NumeroCuenta", SqlDbType.VarChar, account.NumeroCuenta, 30);
+            Add(command, "@Moneda", SqlDbType.Char, account.Moneda, 3);
+            Add(command, "@VersionFila", SqlDbType.Binary, account.VersionFila, 8);
+        }, ct);
+
+    public async Task<TelecreditBatch> ReadBatchAsync(string actor, long planId, byte[] version, string kind, CancellationToken ct)
+        => await ReadJsonAsync<TelecreditBatch>("spu_TelecreditoHYT_ConsultarLote", actor, command =>
+        {
+            Add(command, "@PlanId", SqlDbType.BigInt, planId);
+            Add(command, "@VersionFila", SqlDbType.Binary, version, 8);
+            Add(command, "@Tipo", SqlDbType.VarChar, kind, 10);
+        }, ct) ?? throw new InvalidOperationException("SQL no devolvió la planificación para Telecrédito.");
 
     public Task<IReadOnlyList<Supplier>> SuppliersAsync(string actor, long? supplierId, string? search, bool activeOnly, int page, CancellationToken ct)
         => ReadAsync("spu_ProveedorHYT_Listar", actor, command =>
@@ -122,7 +183,7 @@ public sealed class SqlSupplierPaymentsRepository(SqlConnectionFactory connectio
             reader.GetFieldValue<string>(reader.GetOrdinal("Estado")),
             OptionalText(reader, "Banco"),
             OptionalText(reader, "NumeroCuenta"),
-            reader.GetFieldValue<long>(reader.GetOrdinal("Total")), OptionalDate(reader, "FechaCosto")), ct);
+            reader.GetFieldValue<long>(reader.GetOrdinal("Total")), OptionalDate(reader, "FechaCosto"), reader.FieldCount > 16 ? OptionalText(reader, "FacturaCompra") : null), ct);
 
     public Task<IReadOnlyList<SupplierPayment>> PaymentsAsync(string actor, long costId, int page, CancellationToken ct)
         => ReadAsync("spu_PagoProveedor_Listar", actor, command =>

@@ -5,6 +5,7 @@
 -- =============================================
 -- Firma: FRANCO LARA | Create date: 05/11/2026 | Códigos automáticos inalterables y retiro de posición del maestro de materiales.
 -- Firma: FRANCO LARA | Create date: 07/11/2026 | Valida permisos específicos de alta, edición y activación del maestro.
+-- Firma: FRANCO LARA | Create date: 10/11/2026 | Guarda y audita el código de detracción opcional del catálogo.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_MantServicioMaterial_Guardar
@@ -38,6 +39,9 @@ BEGIN
         IF JSON_VALUE(@Datos,N'$.UnidadMedidaId') IS NOT NULL AND @UnidadMedidaId IS NULL THROW 51206,N'[HYT_VALIDACION] Formato no válido: UnidadMedidaId.',1;
         DECLARE @EspecialidadId INT = TRY_CONVERT(INT,JSON_VALUE(@Datos,N'$.EspecialidadId'));
         IF JSON_VALUE(@Datos,N'$.EspecialidadId') IS NOT NULL AND @EspecialidadId IS NULL THROW 51206,N'[HYT_VALIDACION] Formato no válido: EspecialidadId.',1;
+        DECLARE @CodigoDetraccion NVARCHAR(4000)=NULLIF(TRIM(JSON_VALUE(@Datos,N'$.CodigoDetraccion')),N'');
+        IF @CodigoDetraccion IS NOT NULL AND LEN(@CodigoDetraccion)<>3
+            THROW 51206,N'[HYT_VALIDACION] Código de detracción inválido.',1;
         DECLARE @Activo BIT = TRY_CONVERT(BIT,CASE JSON_VALUE(@Datos,N'$.Activo') WHEN N'true' THEN N'1' WHEN N'false' THEN N'0' ELSE JSON_VALUE(@Datos,N'$.Activo') END);
         IF @Activo IS NULL THROW 51205,N'[HYT_VALIDACION] Dato obligatorio: Activo.',1;
         IF JSON_VALUE(@Datos,N'$.Activo') IS NOT NULL AND @Activo IS NULL THROW 51206,N'[HYT_VALIDACION] Formato no válido: Activo.',1;
@@ -46,7 +50,7 @@ BEGIN
         DECLARE @Anterior NVARCHAR(MAX), @Posterior NVARCHAR(MAX), @EstadoAnterior NVARCHAR(40), @EstadoNuevo NVARCHAR(40);
         IF @Id IS NOT NULL
         BEGIN
-            SELECT @Anterior=(SELECT anterior.CodigoInterno, anterior.CodigoMaterialSAP, anterior.Descripcion, anterior.UnidadMedidaId, anterior.EspecialidadId, anterior.Activo, JSON_QUERY((SELECT z.ZonaId AS Id FROM dbo.MaterialZona AS z WHERE z.MaterialId=anterior.MaterialId FOR JSON PATH)) AS Zonas FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)
+            SELECT @Anterior=(SELECT anterior.CodigoInterno, anterior.CodigoMaterialSAP, anterior.Descripcion, anterior.UnidadMedidaId, anterior.EspecialidadId, anterior.CodigoDetraccion, anterior.Activo, JSON_QUERY((SELECT z.ZonaId AS Id FROM dbo.MaterialZona AS z WHERE z.MaterialId=anterior.MaterialId FOR JSON PATH)) AS Zonas FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)
             FROM dbo.ServicioMaterial AS anterior WITH (UPDLOCK,HOLDLOCK)
             WHERE anterior.MaterialId=@Id AND anterior.VersionFila=@VersionOriginal;
             IF @Id IS NOT NULL AND @Activo <> TRY_CONVERT(BIT, JSON_VALUE(@Anterior,N'$.Activo'))
@@ -54,6 +58,12 @@ BEGIN
                 THROW 51700,N'[HYT_PERMISO] No tiene permiso para activar o desactivar este registro.',1;
             IF @Anterior IS NULL THROW 51209,N'[HYT_CONCURRENCIA] El registro cambió o ya no existe. Vuelve a consultarlo.',1;
         END;
+        IF NOT EXISTS (SELECT 1 FROM OPENJSON(@Datos) AS campo WHERE campo.[key]=N'CodigoDetraccion')
+            SET @CodigoDetraccion=JSON_VALUE(@Anterior,N'$.CodigoDetraccion');
+        IF @CodigoDetraccion IS NOT NULL AND @CodigoDetraccion<>COALESCE(JSON_VALUE(@Anterior,N'$.CodigoDetraccion'),N'')
+            AND NOT EXISTS (SELECT 1 FROM dbo.DetraccionCatalogoHYT AS catalogo WITH (HOLDLOCK)
+                WHERE catalogo.Codigo=@CodigoDetraccion AND catalogo.Activo=1)
+            THROW 51212,N'[HYT_VALIDACION] Selecciona un código de detracción activo.',1;
         IF @UnidadMedidaId IS NOT NULL AND (@Id IS NULL OR COALESCE(TRY_CONVERT(BIGINT,JSON_VALUE(@Anterior,N'$.UnidadMedidaId')),-1)<>@UnidadMedidaId) AND NOT EXISTS (SELECT 1 FROM dbo.UnidadMedida AS destino WITH (HOLDLOCK) WHERE destino.Id=@UnidadMedidaId AND destino.Activo = 1) THROW 51212,N'[HYT_VALIDACION] Referencia inexistente o no disponible: UnidadMedidaId.',1;
         IF @EspecialidadId IS NOT NULL AND (@Id IS NULL OR COALESCE(TRY_CONVERT(BIGINT,JSON_VALUE(@Anterior,N'$.EspecialidadId')),-1)<>@EspecialidadId) AND NOT EXISTS (SELECT 1 FROM dbo.Especialidad AS destino WITH (HOLDLOCK) WHERE destino.Id=@EspecialidadId AND destino.Activo = 1) THROW 51212,N'[HYT_VALIDACION] Referencia inexistente o no disponible: EspecialidadId.',1;
         IF JSON_QUERY(@Datos,N'$.ZonaIds') IS NULL OR LEFT(LTRIM(JSON_QUERY(@Datos,N'$.ZonaIds')),1)<>N'[' THROW 51220,N'[HYT_VALIDACION] Indica las zonas, incluso si la selección está vacía.',1;
@@ -75,19 +85,19 @@ BEGIN
         END;
         IF @Id IS NULL
         BEGIN
-            INSERT INTO dbo.ServicioMaterial (CodigoInterno, CodigoMaterialSAP, Descripcion, UnidadMedidaId, EspecialidadId, Activo, UsuarioRegistro)
-            VALUES (@CodigoInterno, @CodigoMaterialSAP, @Descripcion, @UnidadMedidaId, @EspecialidadId, @Activo, @UsuarioId);
+            INSERT INTO dbo.ServicioMaterial (CodigoInterno, CodigoMaterialSAP, Descripcion, UnidadMedidaId, EspecialidadId, CodigoDetraccion, Activo, UsuarioRegistro)
+            VALUES (@CodigoInterno, @CodigoMaterialSAP, @Descripcion, @UnidadMedidaId, @EspecialidadId, @CodigoDetraccion, @Activo, @UsuarioId);
             SET @Id=CONVERT(BIGINT,SCOPE_IDENTITY());
         END
         ELSE
         BEGIN
-            UPDATE dbo.ServicioMaterial SET CodigoInterno=@CodigoInterno, CodigoMaterialSAP=@CodigoMaterialSAP, Descripcion=@Descripcion, UnidadMedidaId=@UnidadMedidaId, EspecialidadId=@EspecialidadId, Activo=@Activo,
+            UPDATE dbo.ServicioMaterial SET CodigoInterno=@CodigoInterno, CodigoMaterialSAP=@CodigoMaterialSAP, Descripcion=@Descripcion, UnidadMedidaId=@UnidadMedidaId, EspecialidadId=@EspecialidadId, CodigoDetraccion=@CodigoDetraccion, Activo=@Activo,
                 FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE MaterialId=@Id;
         END;
         DELETE FROM dbo.MaterialZona WHERE MaterialId=@Id;
         INSERT INTO dbo.MaterialZona (MaterialId,ZonaId)
         SELECT @Id,CONVERT(INT,seleccion.value) FROM OPENJSON(@Datos,N'$.ZonaIds') AS seleccion GROUP BY CONVERT(INT,seleccion.value);
-        SELECT @Posterior=(SELECT posterior.CodigoInterno, posterior.CodigoMaterialSAP, posterior.Descripcion, posterior.UnidadMedidaId, posterior.EspecialidadId, posterior.Activo, JSON_QUERY((SELECT z.ZonaId AS Id FROM dbo.MaterialZona AS z WHERE z.MaterialId=posterior.MaterialId FOR JSON PATH)) AS Zonas FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)
+        SELECT @Posterior=(SELECT posterior.CodigoInterno, posterior.CodigoMaterialSAP, posterior.Descripcion, posterior.UnidadMedidaId, posterior.EspecialidadId, posterior.CodigoDetraccion, posterior.Activo, JSON_QUERY((SELECT z.ZonaId AS Id FROM dbo.MaterialZona AS z WHERE z.MaterialId=posterior.MaterialId FOR JSON PATH)) AS Zonas FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)
         FROM dbo.ServicioMaterial AS posterior WHERE posterior.MaterialId=@Id;
         SET @EstadoAnterior=JSON_VALUE(@Anterior,N'$.Activo');
         SET @EstadoNuevo=JSON_VALUE(@Posterior,N'$.Activo');

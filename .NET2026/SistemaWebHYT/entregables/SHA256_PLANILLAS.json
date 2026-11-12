@@ -8,7 +8,7 @@
   "Tablas/JornadaHYT.sql": "89ff4d1408475103c46ea95d9285a810dfac63fcd245c9caf58252dbc84ba02e",
   "StoreProcedure/spu_CostoProveedor_Registrar.sql": "e313e5a4cc8ddc56f1031d41227c0e55961f0a500e9e8b86e4704a7189d03af9",
   "StoreProcedure/spu_PagoProveedor_Registrar.sql": "2a59587f1e7f8bc38e99e435688eb859e65ce60cfc52fc7714bc555087b2f1fc",
-  "StoreProcedure/spu_CostoProveedor_Listar.sql": "f298a543ec894b17aae99a60657d6d15a130be70cb89425efae30d96fdb83d57",
+  "StoreProcedure/spu_CostoProveedor_Listar.sql": "96e8ac9a23b86db3f8b149487039a3950057a05122768f2cbf8c313d267aac05",
   "StoreProcedure/spu_ProveedorHYT_Listar.sql": "d64027d1ac72568380b924da4a69f0ce19ab6c07200778caecd66efbdcd70c56",
   "StoreProcedure/spu_ProveedorHYT_Guardar.sql": "a430134bb20db9a63920a51c4a931022cb2eaf003d96018695d24bbbefe6a996",
   "StoreProcedure/spu_PagoProveedor_Listar.sql": "ed3cf8c34fd2723bd266f42f0ca351c1f6695ae955d338537bdd11b22ab74e3e",

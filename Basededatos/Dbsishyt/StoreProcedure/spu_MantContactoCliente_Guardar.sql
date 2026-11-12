@@ -4,6 +4,7 @@
 -- Description:   Guarda ContactoCliente con permisos, concurrencia, referencias y auditoría.
 -- =============================================
 -- Firma: FRANCO LARA | Create date: 07/11/2026 | Valida permisos específicos de alta, edición y activación del maestro.
+-- Firma: FRANCO LARA | Create date: 11/11/2026 | Exige seleccionar una tienda del cliente al guardar el contacto.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_MantContactoCliente_Guardar
@@ -31,6 +32,7 @@ BEGIN
         IF JSON_VALUE(@Datos,N'$.ClienteId') IS NOT NULL AND @ClienteId IS NULL THROW 51206,N'[HYT_VALIDACION] Formato no válido: ClienteId.',1;
         DECLARE @TiendaId BIGINT = TRY_CONVERT(BIGINT,JSON_VALUE(@Datos,N'$.TiendaId'));
         IF JSON_VALUE(@Datos,N'$.TiendaId') IS NOT NULL AND @TiendaId IS NULL THROW 51206,N'[HYT_VALIDACION] Formato no válido: TiendaId.',1;
+        IF @TiendaId IS NULL THROW 51205,N'[HYT_VALIDACION] Selecciona una tienda para el contacto.',1;
         IF EXISTS (SELECT 1 FROM OPENJSON(@Datos) AS dato WHERE dato.[key]=N'Nombre' AND LEN(dato.value)>150) THROW 51204,N'[HYT_VALIDACION] Texto demasiado largo: Nombre.',1;
         DECLARE @Nombre NVARCHAR(150) = NULLIF(LTRIM(RTRIM(JSON_VALUE(@Datos,N'$.Nombre'))),N'');
         IF @Nombre IS NULL THROW 51205,N'[HYT_VALIDACION] Dato obligatorio: Nombre.',1;

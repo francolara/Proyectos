@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 10/11/2026 | Retira la ayuda de tarifa y el campo manual de número de cotización. Muestra la facturación por comprobante vinculado. *@
 @* Firma: FRANCO LARA - 07/11/2026 | Acciones visibles según los permisos del perfil. *@
 @* Firma: FRANCO LARA - 06/11/2026 | Estados comerciales y edición directa de observado; retira revisiones y cambio de estado de consulta/edición, disponible solo desde listado.  Número visible del presupuesto en tarjeta con borde superior rojo. Columnas de SAP y U.M; elimina confirmación de moneda. Impresión de ambos formatos en subtarjeta del encabezado, sin acceso a impresiones conservadas. *@
 @using GestionServicios.Application.Budgets
@@ -18,6 +19,7 @@
     }
     var dateParsed=DateOnly.TryParseExact(Header("FechaEmision"),"yyyy-MM-dd",CultureInfo.InvariantCulture,DateTimeStyles.None,out var initialDate)?initialDate:(DateOnly?)null;
 }
+@if(record?.Text("FacturadoComprobante").Equals("true",StringComparison.OrdinalIgnoreCase)==true){<p class="hyt-status" role="status">Facturado · Comprobante de venta vinculado</p>}
 <header class="hyt-page-header hyt-budget-header"><div><h1>@(record is null?"Nuevo presupuesto":"Presupuesto")</h1><p>@(input.NewRevision?"Nueva revisión a partir de la anterior":record is null?"Registrado":("Revisión "+BudgetRecord.Text(record.Revision,"NumeroRevision")+" · "+BudgetStates.Label(state)))</p></div><div class="hyt-master-heading-actions"><a class="hyt-button-secondary" href="@input.ReturnUrl">Volver al listado</a><div class="hyt-internal-code"><span>Número de presupuesto</span><output id="budget-record-number">@(record?.Text("NumeroInterno")??"Se asigna al guardar")</output></div></div>
 @if(record is not null&&!input.NewRevision&&User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim,"REPORTES.CONSULTAR") && User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim,"PRESUPUESTOS.IMPRIMIR"))
 {
@@ -80,7 +82,7 @@
 <section class="hyt-budget-lines"><h2>Detalle</h2><p>Precios unitarios sin IGV. El subtotal se calcula con la cantidad ingresada; el IGV se muestra en el resumen.</p>
 <p class="hyt-budget-scroll-hint">Desplaza la tabla horizontalmente para consultar todas las columnas.</p>
 @if(!Model.ReadOnly){<div class="hyt-master-related"><button type="button" class="hyt-button-primary" data-manual-line>Agregar ítem</button></div>}
-<div class="hyt-table-wrap" tabindex="0" aria-label="Partidas del presupuesto"><table class="hyt-table hyt-budget-table"><thead><tr><th class="hyt-col-item">Ítem</th><th class="hyt-col-material">Material / servicio</th><th class="hyt-col-sap">Código Material SAP</th><th class="hyt-col-tariff">Tarifa</th><th class="hyt-col-need">N° necesidad</th><th class="hyt-col-service">Tipo de servicio</th><th class="hyt-col-unit">U.M</th><th class="hyt-col-quantity">Cantidad</th><th class="hyt-col-price">Precio sin IGV</th><th class="hyt-col-subtotal">Subtotal</th><th class="hyt-col-action">Acción</th></tr></thead><tbody data-budget-lines>
+<div class="hyt-table-wrap" tabindex="0" aria-label="Partidas del presupuesto"><table class="hyt-table hyt-budget-table"><thead><tr><th class="hyt-col-item">Ítem</th><th class="hyt-col-material">Material / servicio</th><th class="hyt-col-sap">Código Material SAP</th><th class="hyt-col-need">N° necesidad</th><th class="hyt-col-service">Tipo de servicio</th><th class="hyt-col-unit">U.M</th><th class="hyt-col-quantity">Cantidad</th><th class="hyt-col-price">Precio sin IGV</th><th class="hyt-col-subtotal">Subtotal</th><th class="hyt-col-action">Acción</th></tr></thead><tbody data-budget-lines>
 @for(var index=0;index<input.Draft.Partidas.Count;index++){
     var stored=record is not null&&index<record.Data.GetProperty("Partidas").GetArrayLength()?record.Data.GetProperty("Partidas")[index]:default;
     string? Amount(string key)=>stored.ValueKind==JsonValueKind.Object&&stored.GetProperty(key).ValueKind!=JsonValueKind.Null?stored.GetProperty(key).GetDecimal().ToString("N2",CultureInfo.GetCultureInfo("es-PE")):null;

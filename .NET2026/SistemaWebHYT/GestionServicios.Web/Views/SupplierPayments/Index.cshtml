@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 11/11/2026 | Agrega la impresión del listado filtrado. *@
 @* Firma: FRANCO LARA - 10/11/2026 | Actualiza el nombre del apartado Trabajos de Proveedores. Incluye bandeja de saldos pendientes y pago directo. *@
 @{ ViewData["Wide"] = true; }
 @model GestionServicios.Web.Controllers.SupplierPaymentsList
@@ -8,6 +9,12 @@
 }
 <header class="hyt-page-header">
     <div><h1>@ViewData["Title"]</h1><p>Consulta los saldos de los costos registrados por presupuesto.</p></div>
+<div class="hyt-master-related">
+@if (!Model.PendingQueue && User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "REPORTES.IMPRIMIR"))
+{
+    <a class="hyt-button-secondary" asp-action="Index" asp-route-from='@(Model.Filters.From?.ToString("yyyy-MM-dd"))' asp-route-to='@(Model.Filters.To?.ToString("yyyy-MM-dd"))' asp-route-status="@Model.Filters.Status" asp-route-search="@Model.Filters.Search" asp-route-budgetId="@Model.BudgetId" asp-route-supplierId="@Model.SupplierId" asp-route-print="true" target="_blank" rel="noopener">Imprimir listado</a>
+}
+
     @if (!Model.PendingQueue && new[] { "PRESUPUESTOS.CONSULTAR", "COSTOS_PROVEEDOR.CONSULTAR", "COSTOS_PROVEEDOR.EDITAR", "PROVEEDORES.CONSULTAR" }
         .All(permission => User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, permission)))
     {
@@ -15,6 +22,8 @@
            asp-route-returnUrl="@(Context.Request.Path + Context.Request.QueryString)"
            class="hyt-button-primary" data-document-open>Nuevo costo</a>
     }
+
+</div>
 </header>
 @if (TempData["SupplierPaymentSaved"] is string paymentMessage) { <p role="status">@paymentMessage</p> }
 @if (TempData["SupplierCostSaved"] is string message) { <p role="status">@message</p> }

@@ -1,19 +1,39 @@
 @model GestionServicios.Web.Controllers.PayPlanningPage
+@inject TimeProvider PayPlanningClock
 @* Firma: FRANCO LARA - 09/11/2026 | Planificación por período con listado y edición de ajustes en pop-up con selector de presupuestos e impresión de la planificación. *@
-@* Firma: FRANCO LARA - 10/11/2026 | Confirma el pago de la planificación y presenta el período cerrado en solo lectura. *@
+@* Firma: FRANCO LARA - 10/11/2026 | Confirma el pago de la planificación y presenta el período cerrado en solo lectura. Precarga y permite editar abonos y cargos por concepto. Agrega selector de quincena, base de media remuneración y columnas de banco y cuenta según permisos. Descarga TXT de Telecrédito para planilla y honorarios. *@
+@* Firma: FRANCO LARA - 11/11/2026 | Distingue el período cargado e incorpora correlativo, cargo del trabajador, totales y desglose de ajustes debajo de cada fila. Explica en un pop-up la validación IDC al exportar para BCP y avisa de incorporaciones pendientes y muestra número, período y estado en una tarjeta, permite seleccionar trabajadores y distingue los abonos en verde. *@
 @{
     ViewData["Title"] = "Planificación de Planilla";
     ViewData["Wide"] = true;
     var plan = Model.Plan;
+    var workerColumns = plan.VerCuenta ? 7 : 5;
+    var includedRows = plan.Filas.Where(row => row.Incluido).ToArray();
+    var hasIncluded = includedRows.Length > 0;
+    var adjustmentGroups = new[] { (Key: "abonos", Label: "Abonos", Charge: false), (Key: "cargos", Label: "Cargos", Charge: true) };
     var start = plan.Desde.ToString("yyyy-MM-dd");
-    var canConfirm = Model.CanEdit && plan.PlanId.HasValue && ViewData.ModelState.IsValid;
+    var quincenal = plan.Frecuencia == "QUINCENAL";
+    var firstHalf = plan.Desde.Day <= 15;
+    var canConfirm = Model.CanEdit && hasIncluded && plan.PlanId.HasValue && !plan.PorIncorporar && ViewData.ModelState.IsValid;
+    var canExport = Model.CanEdit && hasIncluded && plan.PlanId.HasValue && !plan.PorIncorporar && plan.VersionFila is not null &&
+        User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "TRABAJADORES.CUENTA");
+    var exportKinds = new[] { (Code: "PLANILLA", Name: "Planilla", Reference: "PAGO DE SUELDOS"),
+        (Code: "EXTERNO", Name: "Honorarios", Reference: "PAGO HONORARIOS") };
 }
 <header class="hyt-page-header">
     <div><h1>Planificación de Planilla</h1><p>Prepara los importes del personal y los externos antes de registrar sus pagos.</p></div>
-    @if (plan.PlanId.HasValue)
+    @if (plan.PlanId.HasValue && hasIncluded && !plan.PorIncorporar)
     {
-        <div class="hyt-master-related">
-            <a asp-action="Report" asp-route-frequency="@plan.Frecuencia" asp-route-from="@start" class="hyt-button-secondary" target="_blank" rel="noopener">Imprimir Planificación</a>
+        <div class="hyt-master-related" data-plan-period-results>
+            <a asp-action="Report" asp-route-frequency="@plan.Frecuencia" asp-route-from="@start" class="hyt-button-secondary" target="_blank" rel="noopener" data-plan-print>Imprimir Planificación</a>
+            @if (canExport)
+            {
+                @foreach (var kind in exportKinds)
+                {
+                    <button type="button" class="hyt-button-secondary" data-plan-export
+                            data-hyt-open="@("pay-plan-bcp-" + kind.Code)">Exportar BCP – @kind.Name</button>
+                }
+            }
             @if (canConfirm)
             {
                 <button type="button" class="hyt-button-primary" data-hyt-open="pay-plan-confirm" data-plan-confirm-button>Confirmar pago</button>
@@ -21,7 +41,7 @@
         </div>
     }
 </header>
-<form asp-action="Index" method="get" class="hyt-filters">
+<form asp-action="Index" method="get" class="hyt-filters" data-plan-period data-loaded-frequency="@plan.Frecuencia" data-loaded-from="@start">
     <div class="hyt-field">
         <label for="plan-frequency">Frecuencia de pago</label>
         <select id="plan-frequency" name="frequency">
@@ -30,26 +50,66 @@
             <option value="MENSUAL" selected="@(plan.Frecuencia == "MENSUAL")">Mensual</option>
         </select>
     </div>
-    <div class="hyt-field">
+    <div class="hyt-field" data-plan-date-field hidden="@quincenal">
         <label for="plan-date">Fecha dentro del período</label>
         <input id="plan-date" name="from" type="date" value="@start" max="9999-12-24" required />
+    </div>
+    <div class="hyt-field" data-plan-half-field hidden="@(!quincenal)">
+        <label for="plan-month">Mes de pago</label>
+        <input id="plan-month" name="month" type="month" value="@plan.Desde.ToString("yyyy-MM")"
+               max="9999-12" pattern="[0-9]{4}-[0-9]{2}" required disabled="@(!quincenal)" />
+    </div>
+    <div class="hyt-field" data-plan-half-field hidden="@(!quincenal)">
+        <label for="plan-half">Quincena</label>
+        <select id="plan-half" name="half" disabled="@(!quincenal)">
+            <option value="1" selected="@firstHalf">Primera quincena (1 al 15)</option>
+            <option value="2" selected="@(!firstHalf)">Segunda quincena (16 al fin de mes)</option>
+        </select>
     </div>
     <button type="submit" class="hyt-button-primary">Cargar período</button>
 </form>
 @if (TempData["PayPlanSaved"] is string message) { <p role="status">@message</p> }
 @if (TempData["PayPlanPaymentError"] is string paymentError) { <p class="hyt-validation" role="alert">@paymentError</p> }
-<h2>@plan.Desde.ToString("dd/MM/yyyy") al @plan.Hasta.ToString("dd/MM/yyyy")</h2>
+@if (Model.TelecreditErrors is { Count: > 0 } errors)
+{
+    <div class="hyt-validation validation-summary-errors" role="alert">
+        <strong>Revisa los datos para exportar a Telecrédito BCP.</strong>
+        <ul>@foreach (var error in errors) { <li>@error</li> }</ul>
+    </div>
+}
+<p data-plan-period-pending role="status" hidden>Pulsa <strong>Cargar período</strong> para ver y editar las fechas de la selección.</p>
+<div data-plan-period-results>
+<section class="hyt-internal-code hyt-plan-period-card" aria-labelledby="pay-plan-period-heading">
+    <h2 id="pay-plan-period-heading">@(quincenal ? (firstHalf ? "Primera quincena · " : "Segunda quincena · ") : "")@plan.Desde.ToString("dd/MM/yyyy") al @plan.Hasta.ToString("dd/MM/yyyy")</h2>
+    <span>N.º de planificación</span>
+    <output id="pay-plan-number">@(plan.PlanId?.ToString("D6") ?? "Sin guardar")</output>
+    <span class="hyt-status">@(plan.FechaPago.HasValue ? "PAGADA" : "PENDIENTE")</span>
+</section>
 @if (plan.FechaPago is DateOnly paid)
 {
-    <p><strong>Pagada y cerrada</strong> · @paid.ToString("dd/MM/yyyy") · Operación @plan.ReferenciaPago</p>
+    <p>Pagada y cerrada el @paid.ToString("dd/MM/yyyy") · Operación @plan.ReferenciaPago</p>
 }
 else
 {
-    <p>@(plan.PlanId.HasValue ? "Planificación guardada" : "Precarga sin guardar")</p>
+    @if (plan.PorIncorporar)
+    {
+        <p role="status">Hay trabajadores por incorporar. Guarda la planificación para incluirlos en el reporte, la exportación y el pago.</p>
+    }
+    else
+    {
+        <p>@(plan.PlanId.HasValue ? "Planificación guardada" : "Precarga sin guardar")</p>
+    }
     @if (Model.CanEdit)
     {
-        <p data-plan-confirm-warning role="status" hidden>Guarda los cambios antes de confirmar el pago.</p>
-        <p>La precarga usa el sueldo mensual de la ficha. Ajusta el importe base al período elegido antes de guardar. Si falta un sueldo, la precarga muestra S/ 0.</p>
+        <p data-plan-confirm-warning role="status" hidden>Guarda los cambios antes de imprimir, exportar o confirmar el pago.</p>
+        @if (plan.PlanId is null && quincenal)
+        {
+            <p>La precarga divide el sueldo mensual en dos pagos. La asignación familiar y el descuento AFP u ONP se aplican en la segunda quincena.</p>
+        }
+        else if (plan.PlanId is null)
+        {
+            <p>La precarga usa el sueldo mensual de la ficha. Puedes ajustar el importe base al período antes de guardar.</p>
+        }
     }
 }
 @if (plan.Filas.Length == 0)
@@ -65,35 +125,65 @@ else
         <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
         <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Importes planificados">
             <table class="hyt-table hyt-pay-plan-table">
-                <thead><tr><th scope="col">Trabajador</th><th scope="col">Tipo</th><th scope="col">Base (S/)</th><th scope="col">Horas extra</th><th scope="col">Importe extra (S/)</th><th scope="col">Descuento (S/)</th><th scope="col">Neto (S/)</th><th scope="col">Acciones</th></tr></thead>
+                <thead><tr><th scope="col" class="hyt-numeric">N.º Ítem</th><th scope="col" class="hyt-numeric">Incluir</th><th scope="col">Trabajador</th><th scope="col">Cargo</th><th scope="col">Tipo</th>
+                    @if (plan.VerCuenta)
+                    {
+                        <th scope="col">Banco</th><th scope="col" class="hyt-numeric">N.º de cuenta</th>
+                    }
+                    <th scope="col" class="hyt-money">Sueldo base (S/)</th><th scope="col" class="hyt-money">Abonos (S/)</th><th scope="col" class="hyt-money">Cargos (S/)</th><th scope="col" class="hyt-money">Neto a pagar (S/)</th><th scope="col">Acciones</th></tr></thead>
                 <tbody>
                 @for (var index = 0; index < plan.Filas.Length; index++)
                 {
                     var row = plan.Filas[index];
                     var prefix = $"Lines[{index}]";
                     <tr data-plan-summary="@index" data-plan-worker-name="@row.Nombre"
+                        data-plan-included="@(row.Incluido ? "true" : "false")"
+                        data-plan-base="@row.Base.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                        data-plan-monthly-salary="@row.SueldoMensual?.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                         data-plan-legacy-minutes="@row.MinutosExtra"
                         data-plan-legacy-extra="@row.ImporteExtra.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                         data-plan-legacy-discount="@row.Descuento.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                         data-plan-adjustments="@System.Text.Json.JsonSerializer.Serialize(row.Ajustes)">
+                        <td class="hyt-numeric">@(index + 1)</td>
+                        <td class="hyt-numeric">
+                            <input type="checkbox" name="@(prefix + ".Incluido")" value="true" checked="@row.Incluido"
+                                   disabled="@(!Model.CanEdit)" aria-label="Incluir a @row.Nombre en la planificación" data-plan-include />
+                            @if (Model.CanEdit)
+                            {
+                                <input type="hidden" name="@(prefix + ".Incluido")" value="false" />
+                            }
+                        </td>
                         <th scope="row">@row.Nombre<input type="hidden" name="@(prefix + ".TrabajadorId")" value="@row.TrabajadorId" /></th>
+                        <td>@(row.Cargo ?? "—")</td>
                         <td>@(row.Tipo == "PLANILLA" ? "En planilla" : "Externo")</td>
-                        <td>
+                        @if (plan.VerCuenta)
+                        {
+                            <td>@(row.Banco ?? "—")</td>
+                            <td class="hyt-numeric">@(row.Cuenta ?? "—")</td>
+                        }
+                        <td class="hyt-money">
                             @if (Model.CanEdit)
                             {
                                 <input data-plan-base aria-label="Base de @row.Nombre" name="@(prefix + ".Base")" inputmode="decimal" value="@row.Base.ToString("0.00")" required />
                             }
                             else { @row.Base.ToString("N2") }
                         </td>
-                        <td data-plan-hours-total>@((row.MinutosExtra / 60m).ToString("0.##"))</td>
-                        <td data-plan-extra-total>@row.ImporteExtra.ToString("N2")</td>
-                        <td data-plan-discount-total>@row.Descuento.ToString("N2")</td>
-                        <td data-plan-net>@row.Neto.ToString("N2")</td>
+                        @foreach (var group in adjustmentGroups)
+                        {
+                            <td class="hyt-money">
+                                <button type="button" class="hyt-row-toggle" data-hyt-row-toggle aria-expanded="false"
+                                        aria-controls="plan-@group.Key-@index">
+                                    <span class="hyt-sr-only">@group.Label de @row.Nombre</span>
+                                    <span data-plan-total="@group.Key">@((group.Charge ? row.Descuento : row.ImporteExtra).ToString("N2"))</span>
+                                </button>
+                            </td>
+                        }
+                        <td class="hyt-money" data-plan-net>@row.Neto.ToString("N2")</td>
                         <td>
                             @if (Model.CanEdit || row.Ajustes is { Length: > 0 })
                             {
                                 <button type="button" class="hyt-button-secondary hyt-action-button" data-plan-open
-                                        aria-label="Horas extra y descuentos de @row.Nombre">Ver ajustes</button>
+                                        aria-label="Abonos y cargos de @row.Nombre">Ver ajustes</button>
                             }
                             @if (Model.CanEdit)
                             {
@@ -110,6 +200,9 @@ else
                                         <input type="hidden" name="@(key + ".Fecha")" value="@adjustment.Fecha?.ToString("yyyy-MM-dd")" />
                                         <input type="hidden" name="@(key + ".Presupuesto")" value="@adjustment.Presupuesto" />
                                         <input type="hidden" name="@(key + ".Concepto")" value="@adjustment.Concepto" />
+                                        <input type="hidden" name="@(key + ".ConceptoId")" value="@adjustment.ConceptoId" />
+                                        <input type="hidden" name="@(key + ".Porcentaje")" value="@adjustment.Porcentaje?.ToString("0.####")" />
+                                        <input type="hidden" name="@(key + ".BasePorcentaje")" value="@adjustment.BasePorcentaje?.ToString("0.00")" />
                                         <input type="hidden" name="@(key + ".Horas")" value="@adjustment.Horas" />
                                         <input type="hidden" name="@(key + ".Importe")" value="@adjustment.Importe.ToString("0.00")" />
                                     }
@@ -117,8 +210,41 @@ else
                             }
                         </td>
                     </tr>
+                    @foreach (var group in adjustmentGroups)
+                    {
+                        var adjustments = row.Ajustes?.Where(adjustment => (adjustment.Tipo == "DESCUENTO") == group.Charge).ToArray() ?? [];
+                        <tr class="hyt-row-detail" id="plan-@group.Key-@index" hidden>
+                            <td colspan="@(workerColumns + 5)">
+                                <div class="hyt-row-detail-content">
+                                    <strong>@group.Label</strong>
+                                    <ul class="hyt-plan-detail-list" data-plan-inline-list="@group.Key">
+                                        @foreach (var adjustment in adjustments)
+                                        {
+                                            <li>
+                                                <span>@(adjustment.Fecha?.ToString("dd/MM/yyyy") ?? "—")</span>
+                                                <span>@(adjustment.Concepto ?? (adjustment.Tipo == "EXTRA" ? "Horas extra" : "—"))</span>
+                                                <span class="hyt-muted">@(string.IsNullOrWhiteSpace(adjustment.Presupuesto) ? "" : $"Presupuesto {adjustment.Presupuesto}")</span>
+                                                <strong class="hyt-money">S/ @adjustment.Importe.ToString("N2")</strong>
+                                            </li>
+                                        }
+                                        @if (adjustments.Length == 0) { <li>Sin detalle registrado</li> }
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    }
                 }
                 </tbody>
+                <tfoot class="hyt-plan-totals">
+                    <tr>
+                        <th scope="row" colspan="@workerColumns">Totales</th>
+                        <td class="hyt-money" data-plan-footer="base">@includedRows.Sum(row => row.Base).ToString("N2")</td>
+                        <td class="hyt-money" data-plan-footer="abonos">@includedRows.Sum(row => row.ImporteExtra).ToString("N2")</td>
+                        <td class="hyt-money" data-plan-footer="cargos">@includedRows.Sum(row => row.Descuento).ToString("N2")</td>
+                        <td class="hyt-money" data-plan-footer="neto">@includedRows.Sum(row => row.Neto).ToString("N2")</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
         @if (Model.CanEdit)
@@ -128,11 +254,13 @@ else
     </form>
 }
 
+</div>
+
 @if (plan.Filas.Length > 0)
 {
     <dialog id="pay-plan-adjustments" class="hyt-modal" aria-labelledby="pay-plan-adjustments-title">
         <header class="hyt-modal-header">
-            <h2 id="pay-plan-adjustments-title">Horas extra y descuentos</h2>
+            <h2 id="pay-plan-adjustments-title">Abonos y cargos</h2>
             <button type="button" class="hyt-modal-close" data-hyt-close aria-label="Cerrar ajustes">×</button>
         </header>
         <div class="hyt-modal-body">
@@ -148,12 +276,12 @@ else
             {
                 <p>Los cambios se conservan al guardar la planificación.</p>
                 <div class="hyt-payroll-actions">
-                    <button type="button" class="hyt-button-primary" data-plan-add="EXTRA">Agregar horas extra</button>
-                    <button type="button" class="hyt-button-secondary" data-plan-add="DESCUENTO">Agregar descuento</button>
+                    <button type="button" class="hyt-button-primary" data-plan-add="ABONO">Agregar abono</button>
+                    <button type="button" class="hyt-button-secondary" data-plan-add="DESCUENTO">Agregar cargo</button>
                 </div>
                 <form data-plan-adjustment-editor hidden>
                     <h3 data-plan-editor-title></h3>
-                    <partial name="_Adjustment" model='@(new GestionServicios.Web.Controllers.PayPlanAdjustmentField("", null, plan.Desde, plan.Hasta))' />
+                    <partial name="_Adjustment" model='@(new GestionServicios.Web.Controllers.PayPlanAdjustmentField("", null, plan.Desde, plan.Hasta, plan.Conceptos ?? []))' />
                     <div class="hyt-payroll-actions">
                         <button type="submit" class="hyt-button-primary">Aplicar ajuste</button>
                         <button type="button" class="hyt-button-secondary" data-plan-cancel-edit>Cancelar</button>
@@ -193,13 +321,76 @@ else
         </header>
         <div class="hyt-modal-body">
             <p>Se registrarán los importes de la planificación guardada y el período quedará cerrado.</p>
-            <p>Total neto <strong>S/ @plan.Filas.Sum(row => row.Neto).ToString("N2")</strong></p>
+            <p>Total neto <strong>S/ @includedRows.Sum(row => row.Neto).ToString("N2")</strong></p>
             <form asp-action="ConfirmPayment" method="post" class="hyt-payroll-form">
                 <input type="hidden" name="frequency" value="@plan.Frecuencia" />
                 <input type="hidden" name="from" value="@start" />
                 <input type="hidden" name="Version" value="@Convert.ToBase64String(plan.VersionFila!)" />
                 <partial name="_PaymentConfirmationFields" model='"pay-plan-confirm"' />
             </form>
+        </div>
+    </dialog>
+}
+
+@if (canExport)
+{
+    var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(PayPlanningClock.GetUtcNow(),
+        TimeZoneInfo.FindSystemTimeZoneById("America/Lima")).DateTime);
+    @foreach (var kind in exportKinds)
+    {
+        var dialogId = "pay-plan-bcp-" + kind.Code;
+        var previous = Model.TelecreditInput?.Kind == kind.Code ? Model.TelecreditInput : null;
+        <dialog id="@dialogId" class="hyt-modal" aria-labelledby="@(dialogId + "-title")">
+            <header class="hyt-modal-header">
+                <h2 id="@(dialogId + "-title")">Exportar BCP – @kind.Name</h2>
+                <button type="button" class="hyt-modal-close" data-hyt-close aria-label="Cerrar">×</button>
+            </header>
+            <div class="hyt-modal-body">
+                <form asp-action="ExportTelecredit" method="post" class="hyt-payroll-form" data-hyt-no-loading>
+                    <input type="hidden" name="PlanId" value="@plan.PlanId" />
+                    <input type="hidden" name="Frequency" value="@plan.Frecuencia" />
+                    <input type="hidden" name="From" value="@start" />
+                    <input type="hidden" name="Version" value="@Convert.ToBase64String(plan.VersionFila!)" />
+                    <input type="hidden" name="Kind" value="@kind.Code" />
+                    <div class="hyt-master-fields">
+                        <div class="hyt-field">
+                            <label for="@(dialogId + "-date")">Fecha de proceso</label>
+                            <input id="@(dialogId + "-date")" name="ProcessDate" type="date"
+                                   value="@((previous?.ProcessDate ?? today).ToString("yyyy-MM-dd"))" min="@today.ToString("yyyy-MM-dd")" required />
+                        </div>
+                        <div class="hyt-field">
+                            <label for="@(dialogId + "-reference")">Referencia del lote</label>
+                            <input id="@(dialogId + "-reference")" name="Reference" maxlength="40"
+                                   value="@(previous?.Reference ?? kind.Reference)" required />
+                            <small>Hasta 40 caracteres, sin números.</small>
+                        </div>
+                    </div>
+                    <label><input type="checkbox" name="ValidateIdentity" value="true" checked="@(previous?.ValidateIdentity == true)" />
+                        Validar titularidad de la cuenta con el BCP (IDC)</label>
+                    <button type="button" class="hyt-button-secondary hyt-action-button" data-hyt-open="pay-plan-bcp-idc"
+                            aria-haspopup="dialog" aria-controls="pay-plan-bcp-idc">¿Qué es IDC?</button>
+                    <div class="hyt-payroll-actions">
+                        <button type="submit" class="hyt-button-primary">Descargar TXT</button>
+                    </div>
+                </form>
+            </div>
+        </dialog>
+    }
+    <dialog id="pay-plan-bcp-idc" class="hyt-modal" aria-labelledby="pay-plan-bcp-idc-title">
+        <header class="hyt-modal-header">
+            <h2 id="pay-plan-bcp-idc-title">Validación de titularidad (IDC)</h2>
+            <button type="button" class="hyt-modal-close" data-hyt-close aria-label="Cerrar ayuda de IDC">×</button>
+        </header>
+        <div class="hyt-modal-body">
+            <p>Al procesar el TXT, el BCP puede verificar si el documento de identidad del trabajador corresponde al titular de la cuenta de abono.</p>
+            <ul>
+                <li><strong>Casilla marcada.</strong> El TXT solicita al BCP que verifique la titularidad de cada cuenta.</li>
+                <li><strong>Casilla desmarcada.</strong> El TXT se genera sin solicitar esa comprobación de titularidad.</li>
+            </ul>
+            <p class="hyt-muted">HYT revisa el formato de las cuentas al exportar en ambos casos.</p>
+            <div class="hyt-payroll-actions">
+                <button type="button" class="hyt-button-secondary" data-hyt-close>Volver a la exportación</button>
+            </div>
         </div>
     </dialog>
 }

@@ -8,6 +8,7 @@ using Microsoft.Data.SqlClient;
 
 namespace GestionServicios.Web.Controllers;
 
+// Firma: FRANCO LARA - 11/11/2026 | Separa consulta y edición del proveedor y conserva el retorno al listado.
 [Authorize(Policy = "perm:PROVEEDORES.CONSULTAR")]
 [Route("Proveedores")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
@@ -27,11 +28,19 @@ public sealed class SuppliersController(ISupplierPaymentsRepository repository) 
     }
 
     [HttpGet("Ficha/{id:long?}")]
-    public async Task<IActionResult> Details(long? id, CancellationToken ct)
+    public Task<IActionResult> Details(long? id, string? returnUrl, CancellationToken ct)
     {
-        if (id is null)
-            return CanEdit ? Show(new SupplierForm { Active = true }) : Forbid();
+        if (id is long supplierId) return Load(supplierId, false, returnUrl, ct);
+        return Task.FromResult<IActionResult>(CanEdit ? Show(new SupplierForm { Active = true }, true, returnUrl) : Forbid());
+    }
 
+    [HttpGet("Ficha/{id:long}/Editar")]
+    [Authorize(Policy = "perm:PROVEEDORES.EDITAR")]
+    public Task<IActionResult> Edit(long id, string? returnUrl, CancellationToken ct)
+        => Load(id, true, returnUrl, ct);
+
+    private async Task<IActionResult> Load(long id, bool editing, string? returnUrl, CancellationToken ct)
+    {
         if (id <= 0) return NotFound();
         var records = await repository.SuppliersAsync(Actor, id, null, false, 1, ct);
         if (records.Count == 0) return NotFound();
@@ -43,12 +52,12 @@ public sealed class SuppliersController(ISupplierPaymentsRepository repository) 
             Bank = supplier.Bank, Account = CanSeeAccount ? supplier.Account : supplier.MaskedAccount,
             Cci = CanSeeAccount ? supplier.Cci : null,
             Version = Convert.ToBase64String(supplier.Version)
-        });
+        }, editing, returnUrl);
     }
 
     [HttpPost("Ficha/{id:long?}")]
     [Authorize(Policy = "perm:PROVEEDORES.EDITAR")]
-    public async Task<IActionResult> Save(long? id, SupplierForm input, CancellationToken ct)
+    public async Task<IActionResult> Save(long? id, SupplierForm input, string? returnUrl, CancellationToken ct)
     {
         if (id is <= 0) return NotFound();
         input.Id = id;
@@ -75,7 +84,7 @@ public sealed class SuppliersController(ISupplierPaymentsRepository repository) 
                         CanSeeAccount ? input.Bank : null, CanSeeAccount ? input.Account : null,
                         CanSeeAccount ? input.Cci : null, CanSeeAccount), ct);
                 TempData["SupplierSaved"] = "Proveedor guardado.";
-                return RedirectToAction(nameof(Details), new { id = savedId });
+                return RedirectToAction(nameof(Details), new { id = savedId, returnUrl = LocalReturn(returnUrl) });
             }
             catch (SqlException error) when (error.Number is 2601 or 2627)
             {
@@ -94,14 +103,17 @@ public sealed class SuppliersController(ISupplierPaymentsRepository repository) 
             input.Bank = null;
         }
 
-        return Show(input);
+        return Show(input, true, returnUrl);
     }
 
-    private ViewResult Show(SupplierForm input) => View("Details", new SupplierDetails(input, CanEdit, CanSeeAccount));
+    private string? LocalReturn(string? returnUrl) => Url.IsLocalUrl(returnUrl) ? returnUrl : null;
+
+    private ViewResult Show(SupplierForm input, bool editing, string? returnUrl)
+        => View("Details", new SupplierDetails(input, CanEdit, CanSeeAccount, editing, LocalReturn(returnUrl)));
 }
 
 public sealed record SuppliersList(IReadOnlyList<Supplier> Suppliers, string? Search, int Page, bool CanEdit);
-public sealed record SupplierDetails(SupplierForm Input, bool CanEdit, bool CanSeeAccount);
+public sealed record SupplierDetails(SupplierForm Input, bool CanEdit, bool CanSeeAccount, bool Editing, string? ReturnUrl);
 
 public sealed class SupplierForm
 {

@@ -1,0 +1,70 @@
+@using System.Globalization
+@using System.Text.Json
+@model JsonElement
+@* Firma: FRANCO LARA - 11/11/2026 | Gráfico de aceptación y cobertura documental de presupuestos. *@
+@{
+    var total = Model.GetProperty("Presupuestos").GetInt64();
+    var accepted = Model.GetProperty("EstadosPresupuesto").EnumerateArray()
+        .Where(row => row.GetProperty("Estado").GetString() == "APROBADO")
+        .Sum(row => row.GetProperty("Cantidad").GetInt64());
+    var coverage = Model.TryGetProperty("CoberturaPresupuesto", out var value) ? value : default;
+    long? Count(string name) => coverage.ValueKind == JsonValueKind.Object &&
+        coverage.TryGetProperty(name, out var count) && count.ValueKind == JsonValueKind.Number ? count.GetInt64() : null;
+    var views = new List<(string Key, string Label, long Total, (string Label, long Count, string Color)[] Bars)>
+    {
+        ("acceptance", "Aceptación", total, [("Aceptados", accepted, "green"), ("Otros estados", total - accepted, "blue")])
+    };
+    var guide = Count("ConGuia");
+    var order = Count("ConOC");
+    if (guide is long withGuide)
+        views.Add(("guide", "Guía", accepted, [("Con guía", withGuide, "green"), ("Sin guía", accepted - withGuide, "amber")]));
+    if (order is long withOrder)
+        views.Add(("order", "OC del cliente", accepted, [("Con OC del cliente", withOrder, "green"), ("Sin OC del cliente", accepted - withOrder, "amber")]));
+    if (guide is long guideCount && order is long orderCount && Count("ConAmbos") is long both)
+        views.Add(("both", "Guía y OC", accepted, [
+            ("Con guía y OC", both, "green"), ("Solo con guía", guideCount - both, "blue"),
+            ("Solo con OC", orderCount - both, "blue"), ("Sin guía ni OC", accepted - guideCount - orderCount + both, "amber")
+        ]));
+}
+<section class="hyt-panel hyt-dashboard-chart hyt-budget-coverage" aria-labelledby="budget-coverage-title" data-budget-coverage>
+    <h2 id="budget-coverage-title">Seguimiento de presupuestos</h2>
+    @if (views.Count > 1)
+    {
+        <div class="hyt-budget-coverage-controls" role="group" aria-label="Indicador de presupuestos">
+            @foreach (var view in views)
+            {
+                <button type="button" class="hyt-button-secondary" data-coverage-select="@view.Key"
+                        aria-controls="budget-coverage-@view.Key"
+                        aria-pressed="@(view.Key == "acceptance" ? "true" : "false")">@view.Label</button>
+            }
+        </div>
+    }
+    @foreach (var view in views)
+    {
+        <div id="budget-coverage-@view.Key" data-coverage-view="@view.Key" hidden="@(view.Key != "acceptance")">
+            <p>@view.Total.ToString("N0") @(view.Key == "acceptance" ? "presupuestos del período" : "presupuestos aceptados del período")</p>
+            @if (view.Total == 0)
+            {
+                <p>@(view.Key == "acceptance" ? "No hay presupuestos en el período seleccionado." : "No hay presupuestos aceptados en el período seleccionado.")</p>
+            }
+            else
+            {
+                <dl class="hyt-budget-coverage-bars">
+                    @foreach (var bar in view.Bars)
+                    {
+                        var ratio = (decimal)bar.Count / view.Total;
+                        <div class="hyt-budget-coverage-row">
+                            <dt>@bar.Label</dt>
+                            <dd>
+                                <span class="hyt-budget-coverage-track" aria-hidden="true">
+                                    <span class="hyt-budget-coverage-fill" data-color="@bar.Color" style="--hyt-coverage-ratio:@ratio.ToString(CultureInfo.InvariantCulture)"></span>
+                                </span>
+                                <span>@bar.Count.ToString("N0") · @ratio.ToString("P0")</span>
+                            </dd>
+                        </div>
+                    }
+                </dl>
+            }
+        </div>
+    }
+</section>

@@ -3,6 +3,7 @@
 -- Create date:   09/11/2026
 -- Description:   Consulta costos, saldos y datos de pago con filtros de fecha, estado y busqueda.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 11/11/2026 | Agrega el comprobante de compra vinculado cuando está disponible el módulo de compras.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_CostoProveedor_Listar
@@ -16,6 +17,7 @@ CREATE OR ALTER PROCEDURE dbo.spu_CostoProveedor_Listar
     @Hasta DATE = NULL,
     @EstadoFiltro VARCHAR(10) = NULL,
     @Buscar NVARCHAR(180) = NULL
+WITH EXECUTE AS OWNER
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -51,7 +53,9 @@ BEGIN
                costo.Importe - saldo.Pagado AS Pendiente,
                CASE WHEN saldo.Pagado = 0 THEN N'PENDIENTE'
                     WHEN saldo.Pagado = costo.Importe THEN N'PAGADO' ELSE N'PARCIAL' END AS Estado,
-               COUNT_BIG(1) OVER () AS Total
+               COUNT_BIG(1) OVER () AS Total,
+               CAST(NULL AS NVARCHAR(70)) AS FacturaCompra
+        INTO #Pagina
         FROM dbo.CostoProveedorPresupuesto AS costo
         INNER JOIN dbo.Presupuesto AS presupuesto ON presupuesto.PresupuestoId = costo.PresupuestoId
         INNER JOIN dbo.ProveedorHYT AS proveedor ON proveedor.ProveedorId = costo.ProveedorId
@@ -77,8 +81,25 @@ BEGIN
                OR (@EstadoFiltro IS NULL AND (@SoloPendientes = 0 OR saldo.Pagado < costo.Importe)))
         ORDER BY costo.CostoProveedorId DESC
         OFFSET (CONVERT(BIGINT, @Pagina) - 1) * 20 ROWS FETCH NEXT 20 ROWS ONLY;
+
+        IF @VerPago=1 AND OBJECT_ID(N'dbo.ComprobanteHYTCosto',N'U') IS NOT NULL
+            AND OBJECT_ID(N'dbo.ComprobanteHYT',N'U') IS NOT NULL
+        BEGIN
+            UPDATE pagina SET FacturaCompra=CONCAT(compra.Serie,N'-',compra.Numero)
+            FROM #Pagina AS pagina
+            INNER JOIN dbo.ComprobanteHYTCosto AS vinculo ON vinculo.CostoProveedorId=pagina.CostoProveedorId
+            INNER JOIN dbo.ComprobanteHYT AS compra ON compra.ComprobanteId=vinculo.ComprobanteId
+            WHERE compra.EsVenta=0 AND compra.Serie IS NOT NULL AND compra.Numero IS NOT NULL;
+        END;
+
+        SELECT pagina.CostoProveedorId,pagina.PresupuestoId,pagina.NumeroInterno,pagina.FechaCosto,
+            pagina.ProveedorId,pagina.RazonSocial,pagina.Descripcion,pagina.MonedaCodigo,pagina.Banco,pagina.NumeroCuenta,
+            pagina.DocumentoSustento,pagina.Importe,pagina.Pagado,pagina.Pendiente,pagina.Estado,pagina.Total,pagina.FacturaCompra
+        FROM #Pagina AS pagina ORDER BY pagina.CostoProveedorId DESC;
+        DROP TABLE #Pagina;
     END TRY
     BEGIN CATCH
+        IF OBJECT_ID(N'tempdb..#Pagina',N'U') IS NOT NULL DROP TABLE #Pagina;
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
         SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
         RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);

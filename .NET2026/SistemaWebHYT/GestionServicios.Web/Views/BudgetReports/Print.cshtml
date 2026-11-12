@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 10/11/2026 | Ajusta la nota del documento a las acciones de la vista. *@
 @* Firma: FRANCO LARA - 06/11/2026 | Estados comerciales; nuevo formato fiel al PDF sin metadatos internos y firma desde R2. Subtítulo centrado desde configuración HYT. Ambos formatos sin metadatos internos ni despedidas duplicadas. *@
 @using GestionServicios.Web.ViewModels.Budgets
 @model BudgetPrintModel
@@ -5,6 +6,6 @@
 @{Layout=null;}
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>@Model.Record.Text("NumeroInterno") · @Model.Text("ClienteNombre")</title><style>@Html.Raw(Model.Css)</style></head>
-<body class="@(Model.Format=="NUEVO"?"report-new":"report-old")"><aside class="report-screen-note">Documento conservado de la revisión @Model.Text("NumeroRevision"). Para imprimir o guardar como PDF utiliza la impresión del navegador (Ctrl+P).</aside>
+<body class="@(Model.Format=="NUEVO"?"report-new":"report-old")"><aside class="report-screen-note">Documento conservado de la revisión @Model.Text("NumeroRevision").</aside>
 @if(Model.Format=="NUEVO"){<partial name="_New" model="Model" />}else{<partial name="_Previous" model="Model" />}
 </body></html>

@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 11/11/2026 | Agrega la impresión del listado filtrado. *@
 @* Firma: FRANCO LARA - 06/11/2026 | Estado desde listado y columnas de auditoría solo en consulta. KPI compactos bajo el título y filtros de tipo/pendientes. *@
 @{ViewData["Wide"]=true;}
 @using GestionServicios.Web.ViewModels.Budgets
@@ -5,7 +6,15 @@
 @* Firma: FRANCO LARA - 03/11/2026 | Listado de presupuestos con rango del último mes y trazabilidad. *@
 @* Firma: FRANCO LARA - 05/11/2026 | Listado al ancho disponible y acciones uniformes. *@
 @{ ViewData["Title"]="Presupuestos"; }
-<header class="hyt-page-header"><div><h1>Presupuestos</h1><p>Última revisión, importes y seguimiento por cliente y tienda.</p></div>@if(Model.CanEdit){<a class="hyt-button-primary" asp-action="New" asp-route-returnUrl="@(Context.Request.Path+Context.Request.QueryString)">Nuevo presupuesto</a>}</header>
+<header class="hyt-page-header"><div><h1>Presupuestos</h1><p>Última revisión, importes y seguimiento por cliente y tienda.</p></div>
+<div class="hyt-master-related">
+@if (User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "REPORTES.IMPRIMIR"))
+{
+    <a class="hyt-button-secondary" asp-action="Index" asp-all-route-data="@Model.Grid.Query" asp-route-print="true" target="_blank" rel="noopener">Imprimir listado</a>
+}
+@if(Model.CanEdit){<a class="hyt-button-primary" asp-action="New" asp-route-returnUrl="@(Context.Request.Path+Context.Request.QueryString)">Nuevo presupuesto</a>}
+</div>
+</header>
 @if(Model.Kpis is {Count:>0}){<partial name="_StateKpis" model="Model.Kpis" />}
 @if(TempData["Notice"] is string notice){<p role="status">@notice</p>}
 <partial name="_Filters" model="Model.Filter" /><partial name="_Grid" model="Model.Grid" />

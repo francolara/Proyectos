@@ -1,0 +1,54 @@
+@* Firma: FRANCO LARA - 10/11/2026 | Consulta del lote e impresión HTML con exportación CSV. *@
+@using System.Text.Json
+@using GestionServicios.Web.ViewModels.Billing
+@model JsonElement
+@{
+    var print = ViewData["IsPrint"] is true;
+    var id = Model.GetProperty("LoteId").GetInt64();
+    var invoices = Model.GetProperty("Facturas");
+    var currency = CommercialPage.Text(Model,"Moneda");
+    var total = invoices.EnumerateArray().Sum(row => CommercialPage.Amount(row,"Importe"));
+    ViewData["Title"] = $"Lote de factoring {id}";
+    if (print)
+    {
+        Layout = "_ReportPrintLayout";
+        ViewData["ReportSubtitle"] = "Negociación de Factoring";
+    }
+}
+<header class="hyt-page-header">
+    <div><h1>@ViewData["Title"]</h1></div>
+    @if (!print)
+    {
+        <div class="hyt-grid-actions">
+            <a class="hyt-button-secondary" asp-action="Index">Volver al listado</a>
+            <a class="hyt-button-primary" asp-action="Details" asp-route-id="@id" asp-route-print="true" target="_blank" rel="noopener">Imprimir / exportar</a>
+        </div>
+    }
+</header>
+<section class="@(print ? "hyt-panel" : "hyt-panel hyt-master-form")" aria-label="Datos de la negociación">
+    <table class="hyt-table">
+        <tbody>
+            <tr><th scope="row">Entidad financiera</th><td>@CommercialPage.Text(Model,"Financiera")</td><th scope="row">Referencia</th><td>@CommercialPage.Text(Model,"Referencia")</td></tr>
+            <tr><th scope="row">Fecha de negociación</th><td>@CommercialPage.Date(CommercialPage.Text(Model,"FechaNegociacion"))</td><th scope="row">Fecha de desembolso</th><td>@CommercialPage.Date(CommercialPage.Text(Model,"FechaDesembolso"))</td></tr>
+            <tr><th scope="row">Porcentaje negociado</th><td>@CommercialPage.Amount(Model,"Porcentaje").ToString("0.####")%</td><th scope="row">Moneda</th><td>@currency</td></tr>
+        </tbody>
+    </table>
+    @if (CommercialPage.Text(Model,"Observaciones") is { Length: > 0 } note) { <p><strong>Observaciones</strong> @note</p> }
+</section>
+<section class="@(print ? "hyt-panel" : "hyt-panel hyt-master-form")" aria-label="Detalle del lote">
+    <h2>Facturas del lote</h2>
+    <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Facturas del lote">
+        <table class="hyt-table">
+            <thead><tr><th>Factura</th><th>Cliente</th><th>Documento</th><th>Emisión</th><th>Vencimiento</th><th>Importe</th></tr></thead>
+            <tbody>
+            @foreach (var row in invoices.EnumerateArray())
+            {
+                <tr><td>@CommercialPage.Number(row)</td><td>@CommercialPage.Text(row,"NombreTercero")</td><td>@CommercialPage.Text(row,"DocumentoTercero")</td>
+                    <td>@CommercialPage.Date(CommercialPage.Text(row,"Fecha"))</td><td>@CommercialPage.Date(CommercialPage.Text(row,"FechaVencimiento"))</td>
+                    <td>@CommercialPage.Money(CommercialPage.Amount(row,"Importe"))</td></tr>
+            }
+            </tbody>
+            <tfoot><tr><th scope="row" colspan="5">Total de @invoices.GetArrayLength() facturas</th><td><strong>@currency @CommercialPage.Money(total)</strong></td></tr></tfoot>
+        </table>
+    </div>
+</section>

@@ -18,6 +18,13 @@ sealed class TestBudgetRepository : IBudgetRepository
     public Task<BudgetPage> ListAsync(string actor,DateTimeOffset from,DateTimeOffset until,string? search,int page,string? state,CancellationToken ct,string? client=null,string? store=null,string? type=null,bool pendingGuide=false,bool pendingOrder=false)
     {
         RequestedPage=page;From=from;Until=until;LastType=type;PendingGuide=pendingGuide;PendingOrder=pendingOrder;
+        if (search == "prueba-reporte")
+        {
+            var rows = Enumerable.Range(1, 21).Skip((page - 1) * 20).Take(20).Select(id =>
+                new BudgetListItem(id, $"REPORTE-{id}", "Servicio", "INVITACION", 1, 1, id, 1, "Cliente", "Tienda",
+                    "APROBADO", "PEN", 100, 18, 118, null, from, "Operador", null, null, null, null, null, null, null, 0)).ToArray();
+            return Task.FromResult(new BudgetPage(rows, 21, page));
+        }
         return Task.FromResult(new BudgetPage([new(1,"PPTO-1","Servicio","INVITACION",1,1,1,1,"Cliente <prueba>","Tienda Centro","BORRADOR","PEN",100,18,118,null,DateTimeOffset.UtcNow,"Operador",null,null,RegisteredDocuments?1:null,RegisteredDocuments?"OC-1":null,RegisteredDocuments?1:null,RegisteredDocuments?"GUIA-1":null,RegisteredDocuments?"REGISTRADA":null,0,RegisteredDocuments?1:null)],41,page,new Dictionary<string,long>{{"BORRADOR",41}}));
     }
     public Task<BudgetRecord?> GetAsync(string actor,long id,long? revisionId,int auditPage,CancellationToken ct)

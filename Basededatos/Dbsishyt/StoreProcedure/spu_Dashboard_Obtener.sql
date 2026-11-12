@@ -1,3 +1,4 @@
+-- Firma: FRANCO LARA | Create date: 10/11/2026 | Incluye comprobantes de venta vinculados en los indicadores de facturación. Consolida los eventos de facturación por OC sin duplicados.
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   03/11/2026
@@ -9,6 +10,7 @@
 -- Description:   Filtros comerciales, primeros eventos, resultados vacíos y pendientes históricos paginados.
 -- =============================================
 -- Firma: FRANCO LARA | Create date: 06/11/2026 | Numeración visible del presupuesto por año/mes de registro en Lima y correlativo mensual. Guía sin flujo de estados. OC con trabajo completado acredita término para indicadores de facturación. Panel operativo por estados actuales y pendientes de OC, guía, confirmación y facturación. Curvas de Confirmación del cliente y Facturado por registro vigente; elimina cálculo de primeros eventos históricos.
+-- Firma: FRANCO LARA | Create date: 11/11/2026 | Resume la cobertura de guías y OC vigentes en presupuestos aceptados según permisos.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_Dashboard_Obtener
@@ -20,8 +22,9 @@ BEGIN
         IF NOT EXISTS(SELECT 1 FROM dbo.AspNetUsers AS usuario INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId=usuario.Id INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId WHERE usuario.Id=@UsuarioId AND usuario.Activo=1 AND permiso.CodigoPermiso=N'REPORTES.CONSULTAR')
             THROW 51600,N'[HYT_PERMISO] No tiene permiso para consultar indicadores o reportes.',1;
         IF @Desde IS NULL OR @HastaExclusiva IS NULL OR @HastaExclusiva<=@Desde THROW 51601,N'[HYT_VALIDACION] Revisa el rango de fechas.',1;
-        DECLARE @VerPresupuesto BIT=0,@VerOC BIT=0;
-        SELECT @VerPresupuesto=MAX(CASE WHEN permiso.CodigoPermiso=N'PRESUPUESTOS.CONSULTAR' THEN 1 ELSE 0 END),@VerOC=MAX(CASE WHEN permiso.CodigoPermiso=N'OC_CLIENTE.CONSULTAR' THEN 1 ELSE 0 END)
+        DECLARE @VerPresupuesto BIT=0,@VerOC BIT=0,@VerGuia BIT=0;
+        SELECT @VerPresupuesto=MAX(CASE WHEN permiso.CodigoPermiso=N'PRESUPUESTOS.CONSULTAR' THEN 1 ELSE 0 END),@VerOC=MAX(CASE WHEN permiso.CodigoPermiso=N'OC_CLIENTE.CONSULTAR' THEN 1 ELSE 0 END),
+            @VerGuia=MAX(CASE WHEN permiso.CodigoPermiso=N'GUIAS.CONSULTAR' THEN 1 ELSE 0 END)
         FROM dbo.AspNetUserRoles AS rol INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId WHERE rol.UserId=@UsuarioId;
         SELECT p.PresupuestoId,p.NumeroPresupuesto AS NumeroInterno,p.FechaRegistro,p.TipoAtencion,revision.RevisionId,revision.NumeroRevision,revision.ClienteNombre,revision.TiendaNombre,revision.Estado,revision.CodigoMoneda,revision.Total
         INTO #Presupuestos FROM dbo.Presupuesto AS p CROSS APPLY(SELECT TOP(1) r.RevisionId,r.NumeroRevision,r.ClienteNombre,r.TiendaNombre,r.Estado,r.CodigoMoneda,r.Total FROM dbo.PresupuestoRevision AS r WHERE r.PresupuestoId=p.PresupuestoId ORDER BY r.NumeroRevision DESC) AS revision
@@ -32,11 +35,21 @@ BEGIN
         LEFT JOIN dbo.GuiaConformidad AS guia ON guia.PresupuestoId=oc.PresupuestoId
         LEFT JOIN dbo.Ejecucion AS ejecucion ON ejecucion.PresupuestoId=oc.PresupuestoId
         LEFT JOIN dbo.ConfirmacionFacturacion AS confirmacion ON confirmacion.OrdenCompraId=oc.OrdenCompraId AND confirmacion.Vigente=1
-        LEFT JOIN dbo.ReferenciaComprobanteExterno AS referencia ON referencia.OrdenCompraId=oc.OrdenCompraId AND referencia.Vigente=1
+        OUTER APPLY (
+            SELECT TOP (1) origen.ReferenciaId,origen.CodigoTipoDocumento,origen.Serie,origen.NumeroDocumento,origen.FechaDocumento,origen.FechaRegistro
+            FROM (
+                SELECT r.ReferenciaId,r.CodigoTipoDocumento,r.Serie,r.NumeroDocumento,r.FechaDocumento,r.FechaRegistro
+                FROM dbo.ReferenciaComprobanteExterno AS r WHERE r.OrdenCompraId=oc.OrdenCompraId AND r.Vigente=1
+                UNION ALL
+                SELECT -c.ComprobanteId,c.Tipo,c.Serie,c.Numero,c.Fecha,c.FechaRegistro
+                FROM dbo.ComprobanteHYTPresupuesto AS v INNER JOIN dbo.ComprobanteHYT AS c ON c.ComprobanteId=v.ComprobanteId
+                WHERE v.PresupuestoId=p.PresupuestoId AND c.EsVenta=1 AND c.Tipo IN('01','03') AND c.Serie IS NOT NULL
+            ) AS origen ORDER BY origen.FechaRegistro DESC,origen.ReferenciaId
+        ) AS referencia
         WHERE @VerOC=1 AND oc.FechaRegistro>=@Desde AND oc.FechaRegistro<@HastaExclusiva AND (@Cliente IS NULL OR revision.ClienteNombre LIKE N'%'+@Cliente+N'%') AND (@Tienda IS NULL OR revision.TiendaNombre LIKE N'%'+@Tienda+N'%');
         IF @PaginaPendientes<1 OR @PaginaPendientes>100000000 THROW 51601,N'[HYT_VALIDACION] Página no válida.',1;
         DECLARE @VerPendientes BIT=0;
-        IF @VerPresupuesto=1 AND @VerOC=1 AND EXISTS(SELECT 1 FROM dbo.AspNetUserRoles AS rol INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId WHERE rol.UserId=@UsuarioId AND permiso.CodigoPermiso=N'GUIAS.CONSULTAR') SET @VerPendientes=1;
+        IF @VerPresupuesto=1 AND @VerOC=1 AND @VerGuia=1 SET @VerPendientes=1;
         SELECT p.PresupuestoId AS Id,p.NumeroPresupuesto AS Numero,p.FechaRegistro,p.TipoAtencion,revision.ClienteNombre,revision.TiendaNombre,
             CONVERT(BIT,CASE WHEN oc.OrdenCompraId IS NULL THEN 1 ELSE 0 END) AS SinOC,CONVERT(BIT,CASE WHEN guia.GuiaId IS NULL THEN 1 ELSE 0 END) AS SinGuia,
             CONVERT(BIT,CASE WHEN p.TipoAtencion=N'EMERGENCIA' AND revision.Estado<>N'APROBADO' THEN 1 ELSE 0 END) AS EmergenciaPorRegularizar,
@@ -50,7 +63,14 @@ BEGIN
             AND (oc.OrdenCompraId IS NULL OR guia.GuiaId IS NULL OR (p.TipoAtencion=N'EMERGENCIA' AND revision.Estado<>N'APROBADO'));
         SELECT evento.FechaRegistro,evento.Tipo INTO #Eventos
         FROM (SELECT confirmacion.OrdenCompraId,confirmacion.FechaRegistro,N'CONFIRMACION' AS Tipo FROM dbo.ConfirmacionFacturacion AS confirmacion WHERE confirmacion.Vigente=1
-            UNION ALL SELECT referencia.OrdenCompraId,referencia.FechaRegistro,N'FACTURADO' FROM dbo.ReferenciaComprobanteExterno AS referencia WHERE referencia.Vigente=1) AS evento
+            UNION ALL SELECT ocFactura.OrdenCompraId,MAX(origen.FechaRegistro),N'FACTURADO'
+            FROM dbo.OrdenCompraCliente AS ocFactura
+            CROSS APPLY (
+                SELECT r.FechaRegistro FROM dbo.ReferenciaComprobanteExterno AS r WHERE r.OrdenCompraId=ocFactura.OrdenCompraId AND r.Vigente=1
+                UNION ALL
+                SELECT c.FechaRegistro FROM dbo.ComprobanteHYTPresupuesto AS v INNER JOIN dbo.ComprobanteHYT AS c ON c.ComprobanteId=v.ComprobanteId
+                WHERE v.PresupuestoId=ocFactura.PresupuestoId AND c.EsVenta=1 AND c.Tipo IN('01','03') AND c.Serie IS NOT NULL
+            ) AS origen GROUP BY ocFactura.OrdenCompraId) AS evento
         INNER JOIN dbo.OrdenCompraCliente AS oc ON oc.OrdenCompraId=evento.OrdenCompraId
         INNER JOIN dbo.PresupuestoRevision AS revision ON revision.RevisionId=oc.RevisionId
         WHERE @VerOC=1 AND oc.Estado<>N'CANCELADA' AND evento.FechaRegistro>=@Desde AND evento.FechaRegistro<@HastaExclusiva
@@ -63,6 +83,15 @@ BEGIN
             JSON_QUERY(COALESCE((SELECT orden.Estado,COUNT_BIG(1) AS Cantidad FROM #Ordenes AS orden GROUP BY orden.Estado FOR JSON PATH),N'[]')) AS EstadosOC,
             (SELECT COUNT_BIG(1) FROM #Presupuestos) AS Presupuestos,
             (SELECT COUNT_BIG(1) FROM #Ordenes) AS Ordenes,
+            JSON_QUERY((SELECT
+                CASE WHEN @VerGuia=1 THEN COUNT_BIG(guia.GuiaId) END AS ConGuia,
+                CASE WHEN @VerOC=1 THEN COUNT_BIG(oc.OrdenCompraId) END AS ConOC,
+                CASE WHEN @VerGuia=1 AND @VerOC=1 THEN COUNT_BIG(CASE WHEN guia.GuiaId IS NOT NULL AND oc.OrdenCompraId IS NOT NULL THEN 1 END) END AS ConAmbos
+                FROM #Presupuestos AS presupuesto
+                LEFT JOIN dbo.GuiaConformidad AS guia ON @VerGuia=1 AND guia.PresupuestoId=presupuesto.PresupuestoId
+                LEFT JOIN dbo.OrdenCompraCliente AS oc ON @VerOC=1 AND oc.PresupuestoId=presupuesto.PresupuestoId AND oc.Estado<>N'CANCELADA'
+                WHERE presupuesto.Estado=N'APROBADO'
+                FOR JSON PATH,WITHOUT_ARRAY_WRAPPER)) AS CoberturaPresupuesto,
             (SELECT COUNT_BIG(1) FROM #Presupuestos AS presupuesto WHERE NOT EXISTS(SELECT 1 FROM dbo.OrdenCompraCliente AS oc WHERE oc.PresupuestoId=presupuesto.PresupuestoId)) AS PresupuestosSinOC,
             (SELECT COUNT_BIG(1) FROM #Presupuestos AS presupuesto WHERE NOT EXISTS(SELECT 1 FROM dbo.GuiaConformidad AS guia WHERE guia.PresupuestoId=presupuesto.PresupuestoId)) AS PresupuestosSinGuia,
             (SELECT COUNT_BIG(1) FROM #Ordenes AS orden WHERE orden.Estado<>N'CANCELADA' AND orden.ReferenciaId IS NULL) AS PendientesFacturar,

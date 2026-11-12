@@ -9,7 +9,7 @@ public sealed record BudgetPrintGroup(string Name,IReadOnlyList<JsonElement> Lin
 public sealed record BudgetPrintHistory(BudgetRecord Record,BudgetPrintPage Data);
 public sealed class BudgetPrintModel
 {
-    public const string Version="HYT-2026.10";
+    public const string Version="HYT-2026.11";
     public required BudgetRecord Record {get;init;}
     public required string Format {get;init;}
     public required JsonElement Company {get;init;}

@@ -1,3 +1,4 @@
+-- Firma: FRANCO LARA | Create date: 11/11/2026 | Homologa unidades con el catálogo SUNAT y actualiza el mantenimiento. Exige tienda y la muestra en el maestro de contactos.
 -- Firma: FRANCO LARA | Create date: 07/11/2026 | Usuarios, contraseñas, perfiles de acceso y auditoría.
 -- Paquete incremental. Ejecutar con sqlcmd -b después de las etapas previas.
 USE [SistemaWebHYT];
@@ -7,6 +8,7 @@ SET QUOTED_IDENTIFIER ON;
 SET XACT_ABORT ON;
 BEGIN TRANSACTION;
 GO
+-- Firma: FRANCO LARA | Create date: 10/11/2026 | Catálogo de detracciones y código opcional por material.
 
 -- Fuente: Script/031_UsuariosPerfilesAuditoria.sql
 USE [SistemaWebHYT];
@@ -606,6 +608,7 @@ BEGIN
         IF JSON_VALUE(@Datos,N'$.ClienteId') IS NOT NULL AND @ClienteId IS NULL THROW 51206,N'[HYT_VALIDACION] Formato no válido: ClienteId.',1;
         DECLARE @TiendaId BIGINT = TRY_CONVERT(BIGINT,JSON_VALUE(@Datos,N'$.TiendaId'));
         IF JSON_VALUE(@Datos,N'$.TiendaId') IS NOT NULL AND @TiendaId IS NULL THROW 51206,N'[HYT_VALIDACION] Formato no válido: TiendaId.',1;
+        IF @TiendaId IS NULL THROW 51205,N'[HYT_VALIDACION] Selecciona una tienda para el contacto.',1;
         IF EXISTS (SELECT 1 FROM OPENJSON(@Datos) AS dato WHERE dato.[key]=N'Nombre' AND LEN(dato.value)>150) THROW 51204,N'[HYT_VALIDACION] Texto demasiado largo: Nombre.',1;
         DECLARE @Nombre NVARCHAR(150) = NULLIF(LTRIM(RTRIM(JSON_VALUE(@Datos,N'$.Nombre'))),N'');
         IF @Nombre IS NULL THROW 51205,N'[HYT_VALIDACION] Dato obligatorio: Nombre.',1;
@@ -752,6 +755,160 @@ END;
 GO
 
 
+-- Fuente: Script/061_HomologacionUnidadesHYT.sql
+USE [SistemaWebHYT];
+GO
+IF COL_LENGTH(N'dbo.UnidadMedida',N'CodigoSunat') IS NULL
+    ALTER TABLE dbo.UnidadMedida ADD CodigoSunat NVARCHAR(3) NULL;
+GO
+SET XACT_ABORT ON;
+BEGIN TRANSACTION;
+
+DECLARE @Origen TABLE (Codigo NVARCHAR(30) PRIMARY KEY, Descripcion NVARCHAR(150), CodigoSunat NVARCHAR(3), Alternativo NVARCHAR(30));
+INSERT INTO @Origen (Codigo,Descripcion,CodigoSunat,Alternativo) VALUES
+(N'CTO',N'Ciento',N'CEN',NULL),
+(N'Mil',N'Millar',N'MIL',NULL),
+(N'UND',N'Unidad',N'NIU',NULL),
+(N'M2',N'M2',N'MTK',NULL),
+(N'BAL',N'Balde',N'NIU',NULL),
+(N'KL',N'Kilo',N'KGM',NULL),
+(N'M3',N'Metro Cubico',N'MTQ',NULL),
+(N'PAR',N'Pares',N'PR',NULL),
+(N'GLO',N'Paquete',N'PK',NULL),
+(N'MT',N'Metros',N'MTR',NULL),
+(N'CAJ',N'Caja',N'BX',N'CAJA'),
+(N'ROL',N'Rollo',N'RO',NULL),
+(N'PLA',N'Plancha',N'NIU',NULL),
+(N'PIE',N'Pieza',N'NIU',NULL),
+(N'LIS',N'Lister',N'NIU',NULL),
+(N'BOL',N'Bolsa',N'BG',N'BLS'),
+(N'KG',N'Kilogramo',N'KGM',NULL),
+(N'k',N'otro',N'NIU',NULL),
+(N'GL',N'GALON',N'GLL',NULL),
+(N'FCO',N'FRASCO',N'NIU',NULL),
+(N'JGO',N'JUEGO',N'KT',NULL),
+(N'P2',N'PIE CUADRADO',N'FOT',NULL),
+(N'LT',N'LITRO',N'LTR',NULL),
+(N'KIT',N'KIT',N'KT',NULL),
+(N'PAQ',N'PAQUETES',N'PK',NULL); -- Misma unidad comercial que Paquete en el origen.
+
+DECLARE @Actor NVARCHAR(128);
+SELECT TOP (1) @Actor=usuario.Id
+FROM dbo.AspNetUsers AS usuario
+WHERE usuario.Activo=1 AND EXISTS (
+    SELECT 1 FROM dbo.AspNetUserRoles AS rol
+    INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId
+    WHERE rol.UserId=usuario.Id AND permiso.CodigoPermiso=N'UNIDADES.EDITAR')
+ORDER BY usuario.Id;
+
+UPDATE unidad SET CodigoSunat=origen.CodigoSunat,
+    FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=COALESCE(@Actor,unidad.UsuarioRegistro)
+FROM dbo.UnidadMedida AS unidad
+INNER JOIN @Origen AS origen ON unidad.Codigo IN (origen.Codigo,origen.Alternativo)
+WHERE NULLIF(TRIM(unidad.CodigoSunat),N'') IS NULL;
+
+IF @Actor IS NOT NULL
+    INSERT INTO dbo.UnidadMedida (Codigo,Descripcion,CodigoSunat,Activo,UsuarioRegistro)
+    SELECT origen.Codigo,origen.Descripcion,origen.CodigoSunat,1,@Actor
+    FROM @Origen AS origen
+    WHERE NOT EXISTS (SELECT 1 FROM dbo.UnidadMedida AS unidad WITH (UPDLOCK,HOLDLOCK)
+        WHERE unidad.Codigo IN (origen.Codigo,origen.Alternativo));
+
+COMMIT TRANSACTION;
+GO
+
+-- Fuente: StoreProcedure/spu_MantUnidadMedida_Listar.sql
+USE [SistemaWebHYT];
+GO
+CREATE OR ALTER PROCEDURE dbo.spu_MantUnidadMedida_Listar
+    @UsuarioId NVARCHAR(128), @Pagina INT = 1, @Busqueda NVARCHAR(200) = NULL,
+    @PadreId BIGINT = NULL, @SoloActivos BIT = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        IF NOT EXISTS
+        (
+            SELECT 1 FROM dbo.AspNetUsers AS usuario
+            INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId = usuario.Id
+            INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId = rol.RoleId
+            WHERE usuario.Id = @UsuarioId AND usuario.Activo = 1 AND permiso.CodigoPermiso = N'UNIDADES.CONSULTAR'
+        ) THROW 51200, N'[HYT_PERMISO] No tiene permiso para esta operación.', 1;
+        IF @Pagina < 1 OR @Pagina > 100000000 THROW 51201, N'[HYT_VALIDACION] Página no válida.', 1;
+        DECLARE @Patron NVARCHAR(410) = NULL;
+        SET @Busqueda = NULLIF(LTRIM(RTRIM(@Busqueda)), N'');
+        IF @Busqueda IS NOT NULL SET @Patron = N'%' + REPLACE(REPLACE(REPLACE(REPLACE(@Busqueda,N'~',N'~~'),N'%',N'~%'),N'_',N'~_'),N'[',N'~[') + N'%';
+        SELECT m.Id AS Id, m.Codigo AS Codigo, m.Descripcion AS Descripcion, CASE WHEN m.Activo = 1 THEN N'ACTIVO' ELSE N'INACTIVO' END AS Estado,
+            COALESCE(m.CodigoSunat,N'') AS Informacion, m.FechaRegistro, creador.Nombres AS UsuarioRegistro,
+            m.FechaActualizacion, editor.Nombres AS UsuarioActualizacion
+        INTO #Pagina FROM dbo.UnidadMedida AS m
+        INNER JOIN dbo.AspNetUsers AS creador ON creador.Id = m.UsuarioRegistro
+        LEFT JOIN dbo.AspNetUsers AS editor ON editor.Id = m.UsuarioActualizacion
+        WHERE (@Patron IS NULL OR m.Codigo LIKE @Patron ESCAPE N'~' OR m.Descripcion LIKE @Patron ESCAPE N'~' OR m.CodigoSunat LIKE @Patron ESCAPE N'~' OR CONVERT(NVARCHAR(40),m.Id) LIKE @Patron ESCAPE N'~') AND (@SoloActivos = 0 OR m.Activo = 1);
+        SELECT p.Id, p.Codigo, p.Descripcion, p.Estado, p.Informacion,
+            p.FechaRegistro, p.UsuarioRegistro, p.FechaActualizacion, p.UsuarioActualizacion
+        FROM #Pagina AS p ORDER BY p.Codigo, p.Id
+        OFFSET (CONVERT(BIGINT,@Pagina)-1)*20 ROWS FETCH NEXT 20 ROWS ONLY;
+        SELECT COUNT_BIG(1) AS Total FROM #Pagina AS p;
+        DROP TABLE #Pagina;
+    END TRY
+    BEGIN CATCH
+        IF OBJECT_ID(N'tempdb..#Pagina') IS NOT NULL DROP TABLE #Pagina;
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END;
+GO
+
+-- Fuente: StoreProcedure/spu_MantUnidadMedida_Obtener.sql
+USE [SistemaWebHYT];
+GO
+CREATE OR ALTER PROCEDURE dbo.spu_MantUnidadMedida_Obtener
+    @UsuarioId NVARCHAR(128), @Id BIGINT, @PaginaAuditoria INT = 1
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        IF NOT EXISTS
+        (
+            SELECT 1 FROM dbo.AspNetUsers AS usuario
+            INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId = usuario.Id
+            INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId = rol.RoleId
+            WHERE usuario.Id = @UsuarioId AND usuario.Activo = 1 AND permiso.CodigoPermiso = N'UNIDADES.CONSULTAR'
+        ) THROW 51200, N'[HYT_PERMISO] No tiene permiso para esta operación.', 1;
+        IF @PaginaAuditoria < 1 OR @PaginaAuditoria > 100000000 THROW 51201, N'[HYT_VALIDACION] Página no válida.', 1;
+        SELECT (SELECT m.Id AS Id,
+            m.Codigo,
+            m.Descripcion,
+            m.CodigoSunat,
+            m.Activo,
+            m.VersionFila,
+            m.FechaRegistro,
+            creador.Nombres AS UsuarioRegistro,
+            m.FechaActualizacion,
+            editor.Nombres AS UsuarioActualizacion
+        FROM dbo.UnidadMedida AS m
+        INNER JOIN dbo.AspNetUsers AS creador ON creador.Id=m.UsuarioRegistro
+        LEFT JOIN dbo.AspNetUsers AS editor ON editor.Id=m.UsuarioActualizacion
+        WHERE m.Id=@Id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER, INCLUDE_NULL_VALUES) AS Datos;
+        SELECT evento.Accion, usuario.Nombres AS Usuario, evento.FechaRegistro,
+            evento.EstadoAnterior, evento.EstadoNuevo, evento.CambiosJson
+        FROM dbo.EventoAuditoria AS evento INNER JOIN dbo.AspNetUsers AS usuario ON usuario.Id=evento.UsuarioId
+        WHERE evento.Entidad=N'UnidadMedida' AND evento.RegistroId=CONVERT(NVARCHAR(100),@Id)
+        ORDER BY evento.FechaRegistro DESC, evento.EventoId DESC
+        OFFSET (CONVERT(BIGINT,@PaginaAuditoria)-1)*20 ROWS FETCH NEXT 20 ROWS ONLY;
+        SELECT COUNT_BIG(1) AS Total FROM dbo.EventoAuditoria AS evento
+        WHERE evento.Entidad=N'UnidadMedida' AND evento.RegistroId=CONVERT(NVARCHAR(100),@Id);
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END;
+GO
+
 -- Fuente: StoreProcedure/spu_MantUnidadMedida_Guardar.sql
 USE [SistemaWebHYT];
 GO
@@ -781,6 +938,9 @@ BEGIN
         IF EXISTS (SELECT 1 FROM OPENJSON(@Datos) AS dato WHERE dato.[key]=N'Descripcion' AND LEN(dato.value)>150) THROW 51204,N'[HYT_VALIDACION] Texto demasiado largo: Descripcion.',1;
         DECLARE @Descripcion NVARCHAR(150) = NULLIF(LTRIM(RTRIM(JSON_VALUE(@Datos,N'$.Descripcion'))),N'');
         IF @Descripcion IS NULL THROW 51205,N'[HYT_VALIDACION] Dato obligatorio: Descripcion.',1;
+        DECLARE @CodigoSunat NVARCHAR(4000)=NULLIF(UPPER(TRIM(JSON_VALUE(@Datos,N'$.CodigoSunat'))),N'');
+        IF LEN(@CodigoSunat)>3 OR @CodigoSunat COLLATE Latin1_General_100_BIN2 LIKE N'%[^A-Z0-9]%'
+            THROW 51206,N'[HYT_VALIDACION] El código SUNAT admite hasta tres letras o números.',1;
         DECLARE @Activo BIT = TRY_CONVERT(BIT,CASE JSON_VALUE(@Datos,N'$.Activo') WHEN N'true' THEN N'1' WHEN N'false' THEN N'0' ELSE JSON_VALUE(@Datos,N'$.Activo') END);
         IF @Activo IS NULL THROW 51205,N'[HYT_VALIDACION] Dato obligatorio: Activo.',1;
         IF JSON_VALUE(@Datos,N'$.Activo') IS NOT NULL AND @Activo IS NULL THROW 51206,N'[HYT_VALIDACION] Formato no válido: Activo.',1;
@@ -789,7 +949,7 @@ BEGIN
         DECLARE @Anterior NVARCHAR(MAX), @Posterior NVARCHAR(MAX), @EstadoAnterior NVARCHAR(40), @EstadoNuevo NVARCHAR(40);
         IF @Id IS NOT NULL
         BEGIN
-            SELECT @Anterior=(SELECT anterior.Codigo, anterior.Descripcion, anterior.Activo FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)
+            SELECT @Anterior=(SELECT anterior.Codigo, anterior.Descripcion, anterior.CodigoSunat, anterior.Activo FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)
             FROM dbo.UnidadMedida AS anterior WITH (UPDLOCK,HOLDLOCK)
             WHERE anterior.Id=@Id AND anterior.VersionFila=@VersionOriginal;
             IF @Id IS NOT NULL AND @Activo <> TRY_CONVERT(BIT, JSON_VALUE(@Anterior,N'$.Activo'))
@@ -799,16 +959,16 @@ BEGIN
         END;
         IF @Id IS NULL
         BEGIN
-            INSERT INTO dbo.UnidadMedida (Codigo, Descripcion, Activo, UsuarioRegistro)
-            VALUES (@Codigo, @Descripcion, @Activo, @UsuarioId);
+            INSERT INTO dbo.UnidadMedida (Codigo, Descripcion, CodigoSunat, Activo, UsuarioRegistro)
+            VALUES (@Codigo, @Descripcion, @CodigoSunat, @Activo, @UsuarioId);
             SET @Id=CONVERT(BIGINT,SCOPE_IDENTITY());
         END
         ELSE
         BEGIN
-            UPDATE dbo.UnidadMedida SET Codigo=@Codigo, Descripcion=@Descripcion, Activo=@Activo,
+            UPDATE dbo.UnidadMedida SET Codigo=@Codigo, Descripcion=@Descripcion, CodigoSunat=CASE WHEN EXISTS(SELECT 1 FROM OPENJSON(@Datos) WHERE [key]=N'CodigoSunat') THEN @CodigoSunat ELSE CodigoSunat END, Activo=@Activo,
                 FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE Id=@Id;
         END;
-        SELECT @Posterior=(SELECT posterior.Codigo, posterior.Descripcion, posterior.Activo FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)
+        SELECT @Posterior=(SELECT posterior.Codigo, posterior.Descripcion, posterior.CodigoSunat, posterior.Activo FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)
         FROM dbo.UnidadMedida AS posterior WHERE posterior.Id=@Id;
         SET @EstadoAnterior=JSON_VALUE(@Anterior,N'$.Activo');
         SET @EstadoNuevo=JSON_VALUE(@Posterior,N'$.Activo');
@@ -828,7 +988,6 @@ BEGIN
     END CATCH
 END;
 GO
-
 
 -- Fuente: StoreProcedure/spu_MantZona_Guardar.sql
 USE [SistemaWebHYT];
@@ -1097,6 +1256,85 @@ END;
 GO
 
 
+-- Fuente: Tablas/DetraccionCatalogoHYT.sql
+USE [SistemaWebHYT];
+GO
+SET NOCOUNT ON;
+IF OBJECT_ID(N'dbo.DetraccionCatalogoHYT',N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.DetraccionCatalogoHYT
+    (
+        Codigo NVARCHAR(3) NOT NULL CONSTRAINT PK_DetraccionCatalogoHYT PRIMARY KEY,
+        Nombre NVARCHAR(250) NOT NULL,
+        Porcentaje DECIMAL(7,4) NOT NULL CHECK (Porcentaje BETWEEN 0 AND 100),
+        Activo BIT NOT NULL
+    );
+END;
+GO
+
+
+-- Fuente: Script/050_CatalogoDetraccionesHYT.sql
+USE [SistemaWebHYT];
+GO
+SET NOCOUNT ON;
+INSERT INTO dbo.DetraccionCatalogoHYT(Codigo,Nombre,Porcentaje,Activo)
+SELECT origen.Codigo,origen.Nombre,origen.Porcentaje,origen.Activo
+FROM (VALUES
+        (N'001', N'Azúcar y melaza de caña', 10.0000, 1),
+        (N'002', N'Arroz', 10.0000, 1),
+        (N'003', N'Alcohol etílico', 10.0000, 1),
+        (N'004', N'Recursos hidrobiológicos', 10.0000, 1),
+        (N'005', N'Maíz amarillo duro', 10.0000, 1),
+        (N'006', N'Caña de azúcar', 10.0000, 1),
+        (N'007', N'Madera', 10.0000, 1),
+        (N'008', N'Arena y piedra', 10.0000, 1),
+        (N'009', N'Residuos, subproductos, desechos, recortes y desperdicios', 15.0000, 1),
+        (N'010', N'Bienes gravados con el IGV o renuncia a la exoneración', 1.5000, 1),
+        (N'011', N'Intermediación laboral y tercerización', 12.0000, 1),
+        (N'012', N'Animales vivos', 10.0000, 1),
+        (N'013', N'Carnes y despojos comestibles', 10.0000, 1),
+        (N'014', N'Abonos, cueros y pieles de origen animal', 10.0000, 1),
+        (N'015', N'Aceite de pescado', 10.0000, 1),
+        (N'016', N'Harina, polvo y pellets de pescado, crustáceos, moluscos y demás invertebrados acuáticos', 10.0000, 1),
+        (N'017', N'Arrendamiento de bienes muebles', 10.0000, 1),
+        (N'018', N'Mantenimiento y reparación de bienes muebles', 12.0000, 1),
+        (N'019', N'Movimiento de carga', 10.0000, 1),
+        (N'020', N'Otros servicios empresariales', 12.0000, 1),
+        (N'021', N'Leche', 10.0000, 1),
+        (N'022', N'Comisión mercantil', 12.0000, 1),
+        (N'023', N'Fabricación de bienes por encargo', 12.0000, 1),
+        (N'024', N'Servicio de transporte de personas', 10.0000, 1),
+        (N'025', N'Servicio de transporte de carga', 4.0000, 1),
+        (N'026', N'Transporte de pasajeros', 10.0000, 1),
+        (N'027', N'Contratos de construcción', 4.0000, 1),
+        (N'028', N'Oro gravado con el IGV', 10.0000, 1),
+        (N'029', N'Paprika y otros frutos de los géneros capsicum o pimienta', 10.0000, 1),
+        (N'030', N'Minerales metálicos no auríferos', 10.0000, 1),
+        (N'031', N'Bienes exonerados del IGV', 1.5000, 1),
+        (N'032', N'Oro y demás minerales metálicos exonerados del IGV', 10.0000, 1),
+        (N'033', N'Demás servicios gravados con el IGV', 12.0000, 1),
+        (N'034', N'Minerales no metálicos', 10.0000, 1),
+        (N'035', N'Bien inmueble gravado con IGV', 4.0000, 1),
+        (N'036', N'Plomo', 15.0000, 1),
+        (N'037', N'Ley 30737', 4.0000, 1)
+) AS origen(Codigo,Nombre,Porcentaje,Activo)
+WHERE NOT EXISTS(SELECT 1 FROM dbo.DetraccionCatalogoHYT AS actual WHERE actual.Codigo=origen.Codigo);
+GO
+
+
+-- Fuente: Script/051_DetraccionMaterialHYT.sql
+USE [SistemaWebHYT];
+GO
+SET NOCOUNT ON;
+IF COL_LENGTH(N'dbo.ServicioMaterial',N'CodigoDetraccion') IS NULL
+    ALTER TABLE dbo.ServicioMaterial ADD CodigoDetraccion NVARCHAR(3) NULL;
+GO
+IF OBJECT_ID(N'dbo.FK_ServicioMaterial_DetraccionCatalogoHYT',N'F') IS NULL
+    ALTER TABLE dbo.ServicioMaterial WITH CHECK ADD CONSTRAINT FK_ServicioMaterial_DetraccionCatalogoHYT
+        FOREIGN KEY (CodigoDetraccion) REFERENCES dbo.DetraccionCatalogoHYT(Codigo);
+GO
+
+
 -- Fuente: StoreProcedure/spu_MantServicioMaterial_Guardar.sql
 USE [SistemaWebHYT];
 GO
@@ -1131,6 +1369,9 @@ BEGIN
         IF JSON_VALUE(@Datos,N'$.UnidadMedidaId') IS NOT NULL AND @UnidadMedidaId IS NULL THROW 51206,N'[HYT_VALIDACION] Formato no válido: UnidadMedidaId.',1;
         DECLARE @EspecialidadId INT = TRY_CONVERT(INT,JSON_VALUE(@Datos,N'$.EspecialidadId'));
         IF JSON_VALUE(@Datos,N'$.EspecialidadId') IS NOT NULL AND @EspecialidadId IS NULL THROW 51206,N'[HYT_VALIDACION] Formato no válido: EspecialidadId.',1;
+        DECLARE @CodigoDetraccion NVARCHAR(4000)=NULLIF(TRIM(JSON_VALUE(@Datos,N'$.CodigoDetraccion')),N'');
+        IF @CodigoDetraccion IS NOT NULL AND LEN(@CodigoDetraccion)<>3
+            THROW 51206,N'[HYT_VALIDACION] Código de detracción inválido.',1;
         DECLARE @Activo BIT = TRY_CONVERT(BIT,CASE JSON_VALUE(@Datos,N'$.Activo') WHEN N'true' THEN N'1' WHEN N'false' THEN N'0' ELSE JSON_VALUE(@Datos,N'$.Activo') END);
         IF @Activo IS NULL THROW 51205,N'[HYT_VALIDACION] Dato obligatorio: Activo.',1;
         IF JSON_VALUE(@Datos,N'$.Activo') IS NOT NULL AND @Activo IS NULL THROW 51206,N'[HYT_VALIDACION] Formato no válido: Activo.',1;
@@ -1139,7 +1380,7 @@ BEGIN
         DECLARE @Anterior NVARCHAR(MAX), @Posterior NVARCHAR(MAX), @EstadoAnterior NVARCHAR(40), @EstadoNuevo NVARCHAR(40);
         IF @Id IS NOT NULL
         BEGIN
-            SELECT @Anterior=(SELECT anterior.CodigoInterno, anterior.CodigoMaterialSAP, anterior.Descripcion, anterior.UnidadMedidaId, anterior.EspecialidadId, anterior.Activo, JSON_QUERY((SELECT z.ZonaId AS Id FROM dbo.MaterialZona AS z WHERE z.MaterialId=anterior.MaterialId FOR JSON PATH)) AS Zonas FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)
+            SELECT @Anterior=(SELECT anterior.CodigoInterno, anterior.CodigoMaterialSAP, anterior.Descripcion, anterior.UnidadMedidaId, anterior.EspecialidadId, anterior.CodigoDetraccion, anterior.Activo, JSON_QUERY((SELECT z.ZonaId AS Id FROM dbo.MaterialZona AS z WHERE z.MaterialId=anterior.MaterialId FOR JSON PATH)) AS Zonas FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)
             FROM dbo.ServicioMaterial AS anterior WITH (UPDLOCK,HOLDLOCK)
             WHERE anterior.MaterialId=@Id AND anterior.VersionFila=@VersionOriginal;
             IF @Id IS NOT NULL AND @Activo <> TRY_CONVERT(BIT, JSON_VALUE(@Anterior,N'$.Activo'))
@@ -1147,6 +1388,12 @@ BEGIN
                 THROW 51700,N'[HYT_PERMISO] No tiene permiso para activar o desactivar este registro.',1;
             IF @Anterior IS NULL THROW 51209,N'[HYT_CONCURRENCIA] El registro cambió o ya no existe. Vuelve a consultarlo.',1;
         END;
+        IF NOT EXISTS (SELECT 1 FROM OPENJSON(@Datos) AS campo WHERE campo.[key]=N'CodigoDetraccion')
+            SET @CodigoDetraccion=JSON_VALUE(@Anterior,N'$.CodigoDetraccion');
+        IF @CodigoDetraccion IS NOT NULL AND @CodigoDetraccion<>COALESCE(JSON_VALUE(@Anterior,N'$.CodigoDetraccion'),N'')
+            AND NOT EXISTS (SELECT 1 FROM dbo.DetraccionCatalogoHYT AS catalogo WITH (HOLDLOCK)
+                WHERE catalogo.Codigo=@CodigoDetraccion AND catalogo.Activo=1)
+            THROW 51212,N'[HYT_VALIDACION] Selecciona un código de detracción activo.',1;
         IF @UnidadMedidaId IS NOT NULL AND (@Id IS NULL OR COALESCE(TRY_CONVERT(BIGINT,JSON_VALUE(@Anterior,N'$.UnidadMedidaId')),-1)<>@UnidadMedidaId) AND NOT EXISTS (SELECT 1 FROM dbo.UnidadMedida AS destino WITH (HOLDLOCK) WHERE destino.Id=@UnidadMedidaId AND destino.Activo = 1) THROW 51212,N'[HYT_VALIDACION] Referencia inexistente o no disponible: UnidadMedidaId.',1;
         IF @EspecialidadId IS NOT NULL AND (@Id IS NULL OR COALESCE(TRY_CONVERT(BIGINT,JSON_VALUE(@Anterior,N'$.EspecialidadId')),-1)<>@EspecialidadId) AND NOT EXISTS (SELECT 1 FROM dbo.Especialidad AS destino WITH (HOLDLOCK) WHERE destino.Id=@EspecialidadId AND destino.Activo = 1) THROW 51212,N'[HYT_VALIDACION] Referencia inexistente o no disponible: EspecialidadId.',1;
         IF JSON_QUERY(@Datos,N'$.ZonaIds') IS NULL OR LEFT(LTRIM(JSON_QUERY(@Datos,N'$.ZonaIds')),1)<>N'[' THROW 51220,N'[HYT_VALIDACION] Indica las zonas, incluso si la selección está vacía.',1;
@@ -1168,19 +1415,19 @@ BEGIN
         END;
         IF @Id IS NULL
         BEGIN
-            INSERT INTO dbo.ServicioMaterial (CodigoInterno, CodigoMaterialSAP, Descripcion, UnidadMedidaId, EspecialidadId, Activo, UsuarioRegistro)
-            VALUES (@CodigoInterno, @CodigoMaterialSAP, @Descripcion, @UnidadMedidaId, @EspecialidadId, @Activo, @UsuarioId);
+            INSERT INTO dbo.ServicioMaterial (CodigoInterno, CodigoMaterialSAP, Descripcion, UnidadMedidaId, EspecialidadId, CodigoDetraccion, Activo, UsuarioRegistro)
+            VALUES (@CodigoInterno, @CodigoMaterialSAP, @Descripcion, @UnidadMedidaId, @EspecialidadId, @CodigoDetraccion, @Activo, @UsuarioId);
             SET @Id=CONVERT(BIGINT,SCOPE_IDENTITY());
         END
         ELSE
         BEGIN
-            UPDATE dbo.ServicioMaterial SET CodigoInterno=@CodigoInterno, CodigoMaterialSAP=@CodigoMaterialSAP, Descripcion=@Descripcion, UnidadMedidaId=@UnidadMedidaId, EspecialidadId=@EspecialidadId, Activo=@Activo,
+            UPDATE dbo.ServicioMaterial SET CodigoInterno=@CodigoInterno, CodigoMaterialSAP=@CodigoMaterialSAP, Descripcion=@Descripcion, UnidadMedidaId=@UnidadMedidaId, EspecialidadId=@EspecialidadId, CodigoDetraccion=@CodigoDetraccion, Activo=@Activo,
                 FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE MaterialId=@Id;
         END;
         DELETE FROM dbo.MaterialZona WHERE MaterialId=@Id;
         INSERT INTO dbo.MaterialZona (MaterialId,ZonaId)
         SELECT @Id,CONVERT(INT,seleccion.value) FROM OPENJSON(@Datos,N'$.ZonaIds') AS seleccion GROUP BY CONVERT(INT,seleccion.value);
-        SELECT @Posterior=(SELECT posterior.CodigoInterno, posterior.CodigoMaterialSAP, posterior.Descripcion, posterior.UnidadMedidaId, posterior.EspecialidadId, posterior.Activo, JSON_QUERY((SELECT z.ZonaId AS Id FROM dbo.MaterialZona AS z WHERE z.MaterialId=posterior.MaterialId FOR JSON PATH)) AS Zonas FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)
+        SELECT @Posterior=(SELECT posterior.CodigoInterno, posterior.CodigoMaterialSAP, posterior.Descripcion, posterior.UnidadMedidaId, posterior.EspecialidadId, posterior.CodigoDetraccion, posterior.Activo, JSON_QUERY((SELECT z.ZonaId AS Id FROM dbo.MaterialZona AS z WHERE z.MaterialId=posterior.MaterialId FOR JSON PATH)) AS Zonas FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)
         FROM dbo.ServicioMaterial AS posterior WHERE posterior.MaterialId=@Id;
         SET @EstadoAnterior=JSON_VALUE(@Anterior,N'$.Activo');
         SET @EstadoNuevo=JSON_VALUE(@Posterior,N'$.Activo');

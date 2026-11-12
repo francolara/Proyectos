@@ -6,7 +6,7 @@ public sealed record FieldDefinition(string Name, string Label, string Kind, boo
 public sealed record EntityDefinition(string Key, string Title, string DatabaseName, string Permission,
     IReadOnlyList<FieldDefinition> Fields, string? ParentField, bool HasZones);
 public sealed record MaintenanceRow(long Id, string Code, string Description, string Status, string? Extra,
-    DateTimeOffset CreatedAt, string CreatedBy, DateTimeOffset? UpdatedAt, string? UpdatedBy, string? ClientCode = null, string? ClientName = null);
+    DateTimeOffset CreatedAt, string CreatedBy, DateTimeOffset? UpdatedAt, string? UpdatedBy, string? ClientCode = null, string? ClientName = null, string? StoreName = null);
 public sealed record MaintenancePage(IReadOnlyList<MaintenanceRow> Rows, long Total, int Page);
 public sealed record AuditEntry(string Action, string User, DateTimeOffset RecordedAt, string? PreviousState, string? NewState, string? Changes);
 public sealed record RecordSnapshot(long Id, IReadOnlyDictionary<string, JsonElement> Values,

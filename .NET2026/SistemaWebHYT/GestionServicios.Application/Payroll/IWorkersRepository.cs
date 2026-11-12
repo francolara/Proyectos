@@ -3,11 +3,14 @@ namespace GestionServicios.Application.Payroll;
 public sealed record Worker(long Id, string Document, string Name, string Kind, DateTime StartDate,
     string? Bank, string? MaskedAccount, string? Account, bool Active, byte[] Version, long Total,
     long? CargoId = null, string? CargoName = null, decimal? MonthlySalary = null, WorkerPaySettings? PaySettings = null,
-    string? Cci = null, long? PendingVacationDays = null);
+    string? Cci = null, long? PendingVacationDays = null, long[]? Concepts = null, WorkerTelecredit? Telecredit = null, string? GivenNames = null, string? Surnames = null);
 
 public sealed record WorkerInput(long? Id, string Document, string Name, string Kind, DateOnly StartDate,
     bool Active, byte[]? Version, bool UpdateAccount, string? Bank, string? Account,
-    long? CargoId = null, decimal? MonthlySalary = null, bool UpdatePosition = false, WorkerPaySettings? PaySettings = null, string? Cci = null, bool UpdateCci = false);
+    long? CargoId = null, decimal? MonthlySalary = null, bool UpdatePosition = false, WorkerPaySettings? PaySettings = null, string? Cci = null, bool UpdateCci = false, long[]? Concepts = null,
+    WorkerTelecredit? Telecredit = null, bool UpdateTelecreditAccount = false, string? GivenNames = null, string? Surnames = null);
+
+public sealed record WorkerTelecredit(string? DocumentType, string? Document, string? AccountType, string? Currency);
 
 public sealed record WorkerPaySettings(TimeOnly? Entry, TimeOnly? Exit, string? Pension, string? Afp, string? Frequency);
 

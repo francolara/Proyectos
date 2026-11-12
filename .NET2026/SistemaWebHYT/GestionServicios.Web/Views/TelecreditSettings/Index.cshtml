@@ -1,0 +1,42 @@
+@model GestionServicios.Web.Controllers.TelecreditSettingsForm
+@* Firma: FRANCO LARA - 10/11/2026 | Mantenimiento de la cuenta BCP de cargo en soles. *@
+@* Firma: FRANCO LARA - 11/11/2026 | El combo ofrece Corriente para nuevas selecciones y permite elegir la moneda de la cuenta de cargo. *@
+@{ ViewData["Title"] = "Telecrédito BCP"; }
+<header class="hyt-page-header">
+    <h1>Telecrédito BCP</h1>
+    <a asp-controller="Company" asp-action="Index" class="hyt-button-secondary">Volver a Configuración HYT</a>
+</header>
+@if (TempData["TelecreditSaved"] is string notice) { <p role="status">@notice</p> }
+<form asp-action="Save" method="post" class="hyt-panel hyt-master-form">
+    <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+    <input asp-for="Version" type="hidden" />
+    <fieldset class="hyt-budget-fieldset" disabled="@(!Model.CanEdit)">
+        <legend>Cuenta de cargo habilitada para Haberes</legend>
+        <div class="hyt-master-fields">
+            <div class="hyt-field">
+                <label asp-for="AccountType">Tipo de cuenta</label>
+                <select asp-for="AccountType" required>
+                    <option value="" disabled selected="@(Model.AccountType != "C")">Selecciona</option>
+                    <option value="C">Corriente</option>
+                </select>
+                @if (Model.AccountType == "M")
+                {
+                    <small>Tipo guardado: Maestra. Selecciona Corriente solo si corresponde a la cuenta que vas a registrar.</small>
+                }
+            </div>
+            <div class="hyt-field">
+                <label asp-for="Currency">Moneda de la cuenta</label>
+                <select asp-for="Currency" required>
+                    <option value="PEN">Soles</option>
+                    <option value="USD">Dólares</option>
+                </select>
+            </div>
+            <div class="hyt-field">
+                <label asp-for="AccountNumber">N.º de cuenta BCP</label>
+                <input asp-for="AccountNumber" inputmode="numeric" maxlength="30" autocomplete="off" required />
+                <small>Cuenta de 13 dígitos. El dígito 11 indica la moneda (0 para soles y 1 para dólares).</small>
+            </div>
+        </div>
+    </fieldset>
+    @if (Model.CanEdit) { <button type="submit" class="hyt-button-primary">Guardar cuenta de cargo</button> }
+</form>

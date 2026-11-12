@@ -44,8 +44,20 @@
     "sha256": "c4d348461e30d36dfa242bee25a78f110ecaa456c0b06ad8df74d66262180679"
   },
   {
+    "path": "Tablas/DetraccionCatalogoHYT.sql",
+    "sha256": "7565014437a55f797d06178fa84a9b19ec862c1dc31acdfa7883120cc4497c20"
+  },
+  {
+    "path": "Script/050_CatalogoDetraccionesHYT.sql",
+    "sha256": "aa7530a120794cd955d1507a7d97a7bcd07b9cdad3eb004429a4c3a0e3e20c64"
+  },
+  {
+    "path": "Script/051_DetraccionMaterialHYT.sql",
+    "sha256": "24cfca07c76be3597c1e3b72396bcbf4e14b3b768bf6fc4c378115cb2251c969"
+  },
+  {
     "path": "StoreProcedure/spu_MantCatalogos.sql",
-    "sha256": "217d0840b4d4571a2b2deeb55ebe40b305ee7b971bc6a8fb1940721e6c12dc10"
+    "sha256": "50368ffea7f03d5445b330dd5fe9f0e2c9eabc7f22f911d093b7af8325206c51"
   },
   {
     "path": "StoreProcedure/spu_MantCliente_Listar.sql",
@@ -73,7 +85,7 @@
   },
   {
     "path": "StoreProcedure/spu_MantContactoCliente_Listar.sql",
-    "sha256": "4cd335f1ab998e61b63855e7f979e0ef64d06b78787a1c52e7065f6cce015759"
+    "sha256": "30c3c8501c6d16187549cd1fb73ffa08a93ec5821727836db06fe6b3e8018bab"
   },
   {
     "path": "StoreProcedure/spu_MantContactoCliente_Obtener.sql",
@@ -81,7 +93,7 @@
   },
   {
     "path": "StoreProcedure/spu_MantContactoCliente_Guardar.sql",
-    "sha256": "2ade67e66dcaef94a9b1b06016a4cffbd53dd4b6a87e68fe6c4c343b2356d1f2"
+    "sha256": "26cbc63fc2bc08a1f9228c89888f3b69ae2f64b26632ea3f5851fee83fb8206f"
   },
   {
     "path": "StoreProcedure/spu_MantProveedorCliente_Listar.sql",
@@ -96,16 +108,20 @@
     "sha256": "2859ce8c8e585671e24e7ae09189877696a7b1eb76761d63ab265ba594ee3ae0"
   },
   {
+    "path": "Script/061_HomologacionUnidadesHYT.sql",
+    "sha256": "07f431a0491e0ca914aa38ea20858c484deced16381911986b24c628e8532431"
+  },
+  {
     "path": "StoreProcedure/spu_MantUnidadMedida_Listar.sql",
-    "sha256": "b618e33b89619cf609d39d33049b11aefc663035e38df2a3475a193d720b4828"
+    "sha256": "cb9dac141690ee5734f797d89177d9c0e02e0abf1dc7061bf918992804f06e1a"
   },
   {
     "path": "StoreProcedure/spu_MantUnidadMedida_Obtener.sql",
-    "sha256": "462e5eaf431cbf02b658f8f6cd05e4303777432cbc0e0b5d1dd5d096e251d2be"
+    "sha256": "81f807fc730f38b77c0b2e94bf62499e1d26e28f29d3b05b4ad25bd32186b8ed"
   },
   {
     "path": "StoreProcedure/spu_MantUnidadMedida_Guardar.sql",
-    "sha256": "e51c4e5de940755e37075abda5cc3e54ab1d6aa2eb1c9f624fbe4034d22b16da"
+    "sha256": "6dd476e454d0be7122c102272039a93d62da26fcf0480afb27e0c6c527f545b2"
   },
   {
     "path": "StoreProcedure/spu_MantZona_Listar.sql",
@@ -149,11 +165,11 @@
   },
   {
     "path": "StoreProcedure/spu_MantServicioMaterial_Obtener.sql",
-    "sha256": "fc0c37ce88d09c0b67d085e50162579bbab97f65bf5db1e8b160a65fbc202f6d"
+    "sha256": "31d927f067d384ec2ac46c9bf1ce7f9c4c81f90d6532a0ca1a3a75124b6733b2"
   },
   {
     "path": "StoreProcedure/spu_MantServicioMaterial_Guardar.sql",
-    "sha256": "fc63cfba27d6d8aa6680efc3b58db02f4d5af1984d3abc4818c7fe26c2902dc0"
+    "sha256": "acdc8550f3a0c2b472bbeaf24b5f05e54468fef0ea5aba17d647575193a718af"
   },
   {
     "path": "Script/012_PermisosEtapa3.sql",
@@ -161,6 +177,6 @@
   },
   {
     "path": "ETAPA_3_HYT.sql",
-    "sha256": "9030f918744964be27a69f8dd2612836ec0f30768e8040ad720fca7430b8de8c"
+    "sha256": "77fad47a06f6d6bfe565d6ae566e30f0db8acbf53c26a48122e88d2d72bfdf32"
   }
 ]

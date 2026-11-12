@@ -4,6 +4,7 @@
 -- Description:   Lista UnidadMedida, búsqueda SQL y página fija de veinte.
 -- =============================================
 -- Firma: FRANCO LARA | Create date: 05/11/2026 | Códigos automáticos inalterables y retiro de posición del maestro de materiales.
+-- Firma: FRANCO LARA | Create date: 11/11/2026 | Expone la homologación SUNAT del maestro de unidades.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_MantUnidadMedida_Listar
@@ -25,12 +26,12 @@ BEGIN
         SET @Busqueda = NULLIF(LTRIM(RTRIM(@Busqueda)), N'');
         IF @Busqueda IS NOT NULL SET @Patron = N'%' + REPLACE(REPLACE(REPLACE(REPLACE(@Busqueda,N'~',N'~~'),N'%',N'~%'),N'_',N'~_'),N'[',N'~[') + N'%';
         SELECT m.Id AS Id, m.Codigo AS Codigo, m.Descripcion AS Descripcion, CASE WHEN m.Activo = 1 THEN N'ACTIVO' ELSE N'INACTIVO' END AS Estado,
-            N'' AS Informacion, m.FechaRegistro, creador.Nombres AS UsuarioRegistro,
+            COALESCE(m.CodigoSunat,N'') AS Informacion, m.FechaRegistro, creador.Nombres AS UsuarioRegistro,
             m.FechaActualizacion, editor.Nombres AS UsuarioActualizacion
         INTO #Pagina FROM dbo.UnidadMedida AS m
         INNER JOIN dbo.AspNetUsers AS creador ON creador.Id = m.UsuarioRegistro
         LEFT JOIN dbo.AspNetUsers AS editor ON editor.Id = m.UsuarioActualizacion
-        WHERE (@Patron IS NULL OR m.Codigo LIKE @Patron ESCAPE N'~' OR m.Descripcion LIKE @Patron ESCAPE N'~' OR CONVERT(NVARCHAR(40),m.Id) LIKE @Patron ESCAPE N'~') AND (@SoloActivos = 0 OR m.Activo = 1);
+        WHERE (@Patron IS NULL OR m.Codigo LIKE @Patron ESCAPE N'~' OR m.Descripcion LIKE @Patron ESCAPE N'~' OR m.CodigoSunat LIKE @Patron ESCAPE N'~' OR CONVERT(NVARCHAR(40),m.Id) LIKE @Patron ESCAPE N'~') AND (@SoloActivos = 0 OR m.Activo = 1);
         SELECT p.Id, p.Codigo, p.Descripcion, p.Estado, p.Informacion,
             p.FechaRegistro, p.UsuarioRegistro, p.FechaActualizacion, p.UsuarioActualizacion
         FROM #Pagina AS p ORDER BY p.Codigo, p.Id

@@ -3,6 +3,7 @@
 -- Create date:   03/11/2026
 -- Description:   Consulta UnidadMedida, referencias e historial paginado.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 11/11/2026 | Expone la homologación SUNAT del maestro de unidades.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_MantUnidadMedida_Obtener
@@ -22,6 +23,7 @@ BEGIN
         SELECT (SELECT m.Id AS Id,
             m.Codigo,
             m.Descripcion,
+            m.CodigoSunat,
             m.Activo,
             m.VersionFila,
             m.FechaRegistro,

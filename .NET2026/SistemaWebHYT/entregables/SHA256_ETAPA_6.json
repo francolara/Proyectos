@@ -53,7 +53,7 @@
   },
   {
     "path": "StoreProcedure/spu_SeguimientoGUIA_Listar.sql",
-    "sha256": "dcede0cf528492f7e7f16fb5afb9e1a1b3acdf2f87d22b1e562dd2762f2d95fc"
+    "sha256": "189c479e7ded777522cb65f1d0964c12083bd889b03ee583e484c4e4c2c23fa6"
   },
   {
     "path": "StoreProcedure/spu_SeguimientoGUIA_Obtener.sql",
@@ -69,7 +69,7 @@
   },
   {
     "path": "StoreProcedure/spu_SeguimientoOC_Listar.sql",
-    "sha256": "f21ea0545a5b41b9b9ee51894d7e7f83ced172102f6677012fe703d91f43729c"
+    "sha256": "28dcfc7d1e54a75000e8db9eb2226ec20e7448f4ed09af7fee8589d1c3fd5848"
   },
   {
     "path": "StoreProcedure/spu_SeguimientoOC_Obtener.sql",

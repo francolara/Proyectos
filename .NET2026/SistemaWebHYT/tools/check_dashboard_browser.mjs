@@ -4,9 +4,6 @@ import os from 'node:os';
 import path from 'node:path';
 import {spawn} from 'node:child_process';
 import {setTimeout as delay} from 'node:timers/promises';
-import {fileURLToPath} from 'node:url';
-
-const project = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const fixture = JSON.parse(await fs.readFile(path.join(os.tmpdir(), 'hyt-maintenance-browser-fixture.json'), 'utf8'));
 const targetUrl = fixture.url + '/Acceso';
 if (!['127.0.0.1', 'localhost'].includes(new URL(targetUrl).hostname)) throw new Error('Solo se revisa el host local de pruebas.');
@@ -67,29 +64,57 @@ try {
     await evaluate(`document.querySelector('#UserName').value=${JSON.stringify(fixture.user)};document.querySelector('#Password').value=${JSON.stringify(fixture.password)};document.querySelector('form').requestSubmit()`);
     await wait("location.pathname==='/'");
     await wait("document.querySelector('[data-chart=trend] path') && document.querySelector('[data-chart=states] rect') && document.querySelector('[data-chart=donut] circle')");
-    const paths=await evaluate("document.querySelectorAll('[data-chart=trend] path').length");if(paths!==2)throw new Error('Faltan las dos curvas.');
-    await click('[data-chart-series="Presupuestos"]');if(!await evaluate("document.querySelectorAll('[data-chart=trend] path').length===1"))throw new Error('No oculta serie.');
+    if (!await evaluate("document.querySelectorAll('[data-chart=trend] path[stroke]').length===2 && document.querySelector('[data-chart=trend] path[fill-opacity]') && document.querySelectorAll('[data-sparkline] path').length===4")) throw new Error('Faltan las dos curvas, el área o los minigráficos.');
+    const animations = await evaluate("['.hyt-dashboard-metrics article','.hyt-chart-reveal','.hyt-chart-bar','.hyt-dashboard-donut-segments'].map(selector=>getComputedStyle(document.querySelector(selector)).animationName)");
+    if (animations.some(name => !name.startsWith('hyt-dashboard-'))) throw new Error('Falta una animación de entrada.');
+    for (const key of ['guide', 'order', 'both', 'acceptance']) {
+        await click('[data-coverage-select="' + key + '"]');
+        const state = await evaluate("(() => { const panel=document.querySelector('[data-coverage-view]:not([hidden])');return {pressed:document.querySelector('[data-coverage-select][aria-pressed=true]').dataset.coverageSelect,view:panel.dataset.coverageView,animation:getComputedStyle(panel.querySelector('.hyt-budget-coverage-fill')).animationName};})()");
+        if (state.pressed !== key || state.view !== key || state.animation !== 'hyt-budget-coverage-grow') throw new Error('La cobertura no cambia o no anima: ' + key);
+    }
+    await click('[data-chart-series="Presupuestos"]');if(!await evaluate("document.querySelectorAll('[data-chart=trend] path[stroke]').length===1"))throw new Error('No oculta serie.');
     await click('[data-chart-series="Ordenes"]');if(!await evaluate("document.querySelector('[data-chart-note]').textContent.includes('Selecciona una serie')"))throw new Error('Estado sin series no identificado.');
     await click('[data-chart-series="Presupuestos"]');await click('[data-chart-series="Ordenes"]');
     await evaluate("const select=document.querySelector('select[aria-label=\"Consultar intervalo del gráfico\"]');select.value=String(select.options.length-1);select.dispatchEvent(new Event('change',{bubbles:true}))");
-    if(!await evaluate("document.querySelector('[data-chart-readout]').textContent.includes('Presupuestos: 5') && document.querySelector('[data-chart-readout]').textContent.includes('OC: 2')"))throw new Error('Detalle del último intervalo no coincide.');
+    if(!await evaluate("document.querySelector('[data-chart-readout]').textContent.includes('Presupuestos: 5') && document.querySelector('[data-chart-readout]').textContent.includes('OC del cliente: 2')"))throw new Error('Detalle del último intervalo no coincide.');
     await click('[data-chart-series="Confirmaciones"]');await click('[data-chart-series="Marcados"]');
-    if(!await evaluate("document.querySelectorAll('[data-chart=trend] path').length===4 && [...document.querySelectorAll('[data-chart=trend] path')].filter(path=>path.getAttribute('stroke-dasharray')!=='none').length===2"))throw new Error('Faltan series de eventos diferenciadas.');
-    for(const group of ['week','month']){await evaluate(`document.querySelector('[data-chart-group]').value=${JSON.stringify(group)};document.querySelector('[data-chart-group]').dispatchEvent(new Event('change',{bubbles:true}))`);if(!await evaluate("['Primera confirmación','Primer marcado'].every(label=>[...document.querySelectorAll('[data-chart=trend] circle')].filter(point=>point.getAttribute('aria-label').includes(label)).reduce((sum,point)=>sum+Number(point.getAttribute('aria-label').split(': ').at(-1)),0)===7)"))throw new Error('Agrupación pierde movimientos '+group);}
+    if(!await evaluate("document.querySelectorAll('[data-chart=trend] path[stroke]').length===4 && [...document.querySelectorAll('[data-chart=trend] path[stroke]')].filter(path=>path.getAttribute('stroke-dasharray')!=='none').length===2"))throw new Error('Faltan series de eventos diferenciadas.');
+    for(const group of ['week','month']){await evaluate(`document.querySelector('[data-chart-group]').value=${JSON.stringify(group)};document.querySelector('[data-chart-group]').dispatchEvent(new Event('change',{bubbles:true}))`);if(!await evaluate("['Confirmación del cliente','Facturado'].every(label=>[...document.querySelectorAll('[data-chart=trend] circle')].filter(point=>point.getAttribute('aria-label').includes(label)).reduce((sum,point)=>sum+Number(point.getAttribute('aria-label').split(': ').at(-1)),0)===7)"))throw new Error('Agrupación pierde movimientos '+group);}
     await evaluate("document.querySelector('[data-chart-group]').value='day';document.querySelector('[data-chart-group]').dispatchEvent(new Event('change',{bubbles:true}));document.querySelector('[data-chart=trend] circle').dispatchEvent(new MouseEvent('click',{bubbles:true}))");
     if(!await evaluate("!document.querySelector('[data-chart-link]').hidden && document.querySelector('[data-chart-link]').getAttribute('href').includes('/Presupuestos?from=') && document.body.textContent.includes('Expedientes por completar') && document.querySelector('a[href*=queuePage]')"))throw new Error('Navegación por intervalo o bandeja incompleta.');
-    for(const [label,width,height] of [['escritorio',1440,1100],['movil',390,844]]){
-        await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});await evaluate('new Promise(requestAnimationFrame)');
+    for(const [label,width,height] of [['escritorio',1440,1100],['tableta',870,950],['movil',390,844],['movil-estrecho',320,760]]){
+        await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});await evaluate('window.scrollTo(0,0);new Promise(requestAnimationFrame)');
         if(await evaluate('document.documentElement.scrollWidth>innerWidth+1'))throw new Error('Dashboard desborda '+label);
-        const screenshot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});await fs.writeFile(path.join(project,'entregables','preview',`dashboard-${label}.png`),Buffer.from(screenshot.data,'base64'));
+        if (process.env.HYT_DASHBOARD_PREVIEW_DIR) {
+            const screenshot = await send('Page.captureScreenshot', {format:'png'});
+            await fs.writeFile(path.join(process.env.HYT_DASHBOARD_PREVIEW_DIR, 'dashboard-' + label + '.png'), Buffer.from(screenshot.data, 'base64'));
+        }
     }
     await navigate('/?from=2026-01-01&to=2026-12-31');
     if(!await evaluate("document.querySelector('select[aria-label=\"Consultar intervalo del gráfico\"]').options.length<=90"))throw new Error('Intervalos sin acotar.');
-    await navigate('/?client=Cliente&store=Centro');await wait("document.querySelector('[data-chart=states] rect')");await click('[data-chart=states] rect');await wait("location.pathname==='/Presupuestos'");
-    if(!await evaluate("new URL(location.href).searchParams.get('state')==='BORRADOR' && document.querySelector('[name=client]').value==='Cliente' && document.querySelector('[name=store]').value==='Centro' && document.querySelector('.hyt-pagination a').getAttribute('href').includes('client=Cliente')"))throw new Error('Navegación pierde filtros comerciales/estado. '+await evaluate("JSON.stringify({url:location.href,client:document.querySelector('[name=client]')?.value,store:document.querySelector('[name=store]')?.value,page:document.querySelector('.hyt-pagination a')?.getAttribute('href')})"));
-    await navigate('/?client=Cliente&store=Centro');await click('a[href*="situation=CONFIRMADAS"]');await wait("location.pathname==='/Reportes' && document.querySelector('#report-situation')");
-    if(!await evaluate("document.querySelector('#report-situation').value==='CONFIRMADAS' && !document.querySelector('#report-situation').disabled && document.querySelector('#report-client').value==='Cliente' && document.querySelector('.hyt-pagination a').getAttribute('href').includes('situation=CONFIRMADAS')"))throw new Error('El acceso rápido no conserva seguimiento, cliente o paginación.');
-    console.log('OK dashboard: curvas, filtros de series, detalle por intervalo, columnas/dona, rango largo acotado y móvil sin desbordamiento.');
+    await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
+    await navigate('/?client=Cliente&store=Centro');
+    await wait("document.querySelector('[data-chart=states] rect')");
+    const hasContext = await evaluate("document.querySelector('.hyt-dashboard-filters [name=client]').value==='Cliente' && document.querySelector('.hyt-dashboard-filters [name=store]').value==='Centro' && document.querySelector('a[href*=queuePage]').href.includes('client=Cliente')");
+    if (!hasContext) throw new Error('Los filtros de Inicio o la bandeja perdieron el contexto comercial.');
+    await wait("document.querySelector('.hyt-dashboard-charts').getAnimations({subtree:true}).every(animation => animation.playState === 'finished')");
+    await click('[data-chart=states] rect');
+    await wait("location.pathname==='/Presupuestos'");
+    if (!await evaluate("new URL(location.href).searchParams.get('state')==='BORRADOR' && new URL(location.href).searchParams.get('client')==='Cliente' && new URL(location.href).searchParams.get('store')==='Centro'")) throw new Error('La barra no conserva estado y filtros.');
+    await navigate('/');
+    const themedCharts = await evaluate("(() => {const root=document.documentElement; const panel=document.querySelector('.hyt-dashboard');const initial=root.dataset.hytTheme; root.dataset.hytTheme='light'; const light=getComputedStyle(panel).getPropertyValue('--hyt-dashboard-blue'); root.dataset.hytTheme='dark'; const dark=getComputedStyle(panel).getPropertyValue('--hyt-dashboard-blue'); if(initial)root.dataset.hytTheme=initial;else delete root.dataset.hytTheme; return light.trim()!=='' && dark.trim()!=='' && light!==dark;})()");
+    if (!themedCharts) throw new Error('La paleta del gráfico no se adapta al tema.');
+    await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
+    await navigate('/');
+    const reduced = await evaluate("['.hyt-dashboard-metrics article','.hyt-chart-reveal','.hyt-chart-bar','.hyt-dashboard-donut-segments','.hyt-budget-coverage-fill'].every(selector=>getComputedStyle(document.querySelector(selector)).animationName==='none')");
+    if (!reduced) throw new Error('El dashboard no respeta movimiento reducido.');
+    await click('a[href*="pendingInvoice=true"]');
+    await wait("location.pathname==='/Reportes'");
+    if (!await evaluate("new URL(location.href).searchParams.get('kind')==='OC_CLIENTE' && new URL(location.href).searchParams.get('pendingInvoice')==='true'")) throw new Error('El acceso Por facturar no conserva el filtro.');
+    await navigate('/?client=HYT-QA-SIN-DATOS');
+    await wait("document.querySelector('[data-chart-note]').textContent.includes('No hay registros')");
+    if (!await evaluate("document.querySelector('[data-coverage-view=acceptance]').textContent.includes('No hay presupuestos') && document.querySelector('.hyt-dashboard-queue tbody').textContent.includes('Sin expedientes') && !document.querySelector('[data-sparkline]:not([hidden])')")) throw new Error('El estado vacío del dashboard es incompleto.');
+    console.log('OK dashboard MVC: tarjetas, minigráficos, curvas, filtros, expediente, cobertura, animaciones y movimiento reducido.');
     await send('Browser.close');
 } finally {
     socket?.close();

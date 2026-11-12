@@ -1,0 +1,16 @@
+{
+  "scripts": [
+    "Tablas/FactoringLoteHYT.sql",
+    "Tablas/FactoringFacturaHYT.sql",
+    "Script/049_PermisosFactoringHYT.sql",
+    "StoreProcedure/spu_ComprobanteHYT_FactoringConsultar.sql",
+    "StoreProcedure/spu_ComprobanteHYT_FactoringGuardar.sql",
+    "Funciones/fn_ComprobanteHYT_DetraccionMaterial.sql",
+    "Script/059_DetraccionVentaHYT.sql",
+    "Script/060_OrdenCompraComprobanteHYT.sql",
+    "Script/061_HomologacionUnidadesHYT.sql",
+    "Tablas/MotivoNotaCreditoHYT.sql",
+    "Script/062_MotivosNotaCreditoHYT.sql",
+    "StoreProcedure/spu_ComprobanteHYT_Consultar.sql"
+  ]
+}

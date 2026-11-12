@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 using GestionServicios.Application.Security;
 using GestionServicios.Web;
@@ -60,6 +61,69 @@ void ValidateMaintenance(bool condition, string label)
     if (!condition) throw new InvalidOperationException(label);
     Console.WriteLine("OK: " + label);
 }
+if (args.Contains("--listing-reports"))
+{
+    var access = new TestAccessRepository();
+    string[] sourcePermissions = ["PRESUPUESTOS.CONSULTAR", "OC_CLIENTE.CONSULTAR", "GUIAS.CONSULTAR",
+        "FACTURADO.CONSULTAR", "CONFIRMACIONES.CONSULTAR", "MATERIALES.CONSULTAR", "TARIFARIOS.CONSULTAR",
+        "UNIDADES.CONSULTAR", .. payrollPermissions];
+    access.Account = access.Account with { Permissions = [.. sourcePermissions, "REPORTES.IMPRIMIR"] };
+    using var reportFactory = new HytFactory(access);
+    using var reportClient = reportFactory.CreateClient(new WebApplicationFactoryClientOptions
+        { BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false });
+    async Task SignIn()
+    {
+        var login = await reportClient.GetStringAsync("/Acceso");
+        var token = Regex.Match(login, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"");
+        using var response = await reportClient.PostAsync("/Acceso", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["UserName"] = "operador", ["Password"] = access.Password,
+            ["__RequestVerificationToken"] = WebUtility.HtmlDecode(token.Groups[1].Value)
+        }));
+        ValidateMaintenance(response.StatusCode == HttpStatusCode.Redirect, "Autenticación de reportes");
+    }
+    await SignIn();
+    reportFactory.Documents.RichList = true;
+    var november = new DateOnly(2026, 11, 1);
+    var payroll = reportFactory.Services.GetRequiredService<IPayrollObligationsRepository>();
+    await payroll.SavePolicyAsync("test", new(1, "Aseguradora", "POL-25", "Salud", november,
+        november.AddMonths(1), new byte[8], "POR_VENCER", [new(1, "Trabajador"), new(2, "Segundo trabajador")]), default);
+    await payroll.SaveObligationAsync("test", new(1, "AFP", "AFP Integra", november,
+        120, november.AddDays(29), null, null, new byte[8], "PENDIENTE"), default);
+    var routes = new (string Url, string Data, string Preserved)[]
+    {
+        ("/Presupuestos?search=prueba-reporte&type=INVITACION&from=2026-11-01&to=2026-11-30&page=2", "REPORTE-21", "type=INVITACION"),
+        ("/Seguimiento/oc-cliente?search=prueba-reporte&pendingInvoice=true", "Totales por moneda", "pendingInvoice=true"),
+        ("/Seguimiento/guias?search=prueba-reporte", "OC-000A/01", "search=prueba-reporte"),
+        ("/Planillas/SCTR?estado=POR_VENCER&trabajador=segundo", "Segundo trabajador", "trabajador=segundo"),
+        ("/Maestros/materiales?search=prueba-reporte", "Tarifa PEN", "search=prueba-reporte"),
+        ("/Planillas/Trabajadores?kind=PLANILLA&active=true", "Trabajador de prueba", "kind=PLANILLA"),
+        ("/Planillas/Obligaciones?month=2026-11", "AFP Integra", "month=2026-11"),
+        ("/Planillas/PagosProveedores?status=TODOS&search=prueba-reporte", "Documento de sustento / factura", "status=TODOS")
+    };
+    foreach (var route in routes)
+    {
+        var listing = await reportClient.GetStringAsync(route.Url);
+        var button = Regex.Match(listing, "<a[^>]*>Imprimir listado</a>").Value;
+        var href = WebUtility.HtmlDecode(Regex.Match(button, "href=\"([^\"]+)\"").Groups[1].Value);
+        ValidateMaintenance(href.Contains(route.Preserved) && href.Contains("print=true") && !href.Contains("page=") &&
+            button.Contains("target=\"_blank\""), "Enlace con filtros " + route.Url);
+        var report = WebUtility.HtmlDecode(await reportClient.GetStringAsync(href));
+        ValidateMaintenance(report.Contains("data-report-print") && report.Contains("data-report-csv") &&
+            report.Contains(route.Data), "Reporte HTML " + route.Url);
+        if (route.Url.StartsWith("/Presupuestos", StringComparison.Ordinal))
+            ValidateMaintenance(report.Contains("21 registros") && report.Contains("REPORTE-1<") && report.Contains("REPORTE-21"),
+                "Se imprimen la primera y la última página de presupuestos");
+    }
+    access.Account = access.Account with { Permissions = sourcePermissions };
+    using var deniedPrint = await reportClient.GetAsync("/Presupuestos?print=true");
+    var listingWithoutPermission = await reportClient.GetStringAsync("/Presupuestos");
+    ValidateMaintenance(!listingWithoutPermission.Contains("Imprimir listado") &&
+        (deniedPrint.StatusCode == HttpStatusCode.Forbidden || deniedPrint.Headers.Location?.OriginalString.StartsWith("/Denegado?", StringComparison.Ordinal) == true ||
+            deniedPrint.Headers.Location?.OriginalString.Contains("/Denegado", StringComparison.Ordinal) == true), "Sin permiso de impresión no se puede abrir el reporte");
+    return;
+}
+
 var netLine = BudgetAmounts.Calculate(2, 100, "PEN", "SIN_IGV", "PEN", "SIN_IGV", 0.18m);
 ValidateMaintenance(netLine.UnitPrice == 100 && netLine.Net == 200 && netLine.Tax == 36 && netLine.Total == 236, "Presupuesto SIN IGV calcula base, impuesto y total por partida");
 var grossLine = BudgetAmounts.Calculate(2, 118, "PEN", "CON_IGV", "PEN", "CON_IGV", 0.18m);
@@ -281,8 +345,21 @@ async Task<string> MaintenanceToken(string path)
 }
 repository.Account = repository.Account with { Permissions = ["CLIENTES.CONSULTAR", "CLIENTES.EDITAR", "TARIFARIOS.CONSULTAR", "TARIFARIOS.EDITAR"] };
 await maintenanceClient.PostAsync("/Acceso", new FormUrlEncodedContent(new Dictionary<string,string> { ["UserName"] = "operador", ["Password"] = repository.Password, ["__RequestVerificationToken"] = await MaintenanceToken("/Acceso") }));
+var contactGrid = await maintenanceClient.GetStringAsync("/Maestros/contactos");
+Check(contactGrid.Contains("<th scope=\"col\">Cliente</th>") && contactGrid.Contains("<th scope=\"col\">Tienda</th>") &&
+    contactGrid.Contains("Tienda de prueba"), "Contactos muestra Cliente y Tienda en columnas separadas");
 var masterList = await maintenanceClient.GetStringAsync("/Maestros/clientes?search=abc&page=2");
 Check(masterList.Contains("0001-A") && !masterList.Contains("<script>prueba</script>") && masterList.Contains("returnUrl=") && maintenanceFactory.Maintenance.LastPage == 2 && maintenanceFactory.Maintenance.LastSearch == "abc", "Listado real envía búsqueda/página al repositorio y conserva retorno seguro");
+Check(Regex.IsMatch(masterList, "<a[^>]*data-hyt-record-action=\"view\"[^>]*>Ver</a>") &&
+    Regex.IsMatch(masterList, "<a[^>]*data-hyt-record-action=\"edit\"[^>]*>Editar</a>"),
+    "La grilla compartida marca Ver y Editar para el estilo compacto y conserva sus etiquetas");
+var previousMasterAccount = repository.Account;
+repository.Account = previousMasterAccount with { Permissions = [.. previousMasterAccount.Permissions, "MATERIALES.CONSULTAR"] };
+var materialTariffHtml = await maintenanceClient.GetStringAsync("/Maestros/materiales/1");
+repository.Account = previousMasterAccount;
+Check(Regex.IsMatch(materialTariffHtml, "<a(?=[^>]*data-material-price-open)(?=[^>]*data-hyt-record-action=\"view\")[^>]*>Ver</a>") &&
+    Regex.IsMatch(materialTariffHtml, "<a(?=[^>]*data-material-price-open)(?=[^>]*data-hyt-record-action=\"edit\")[^>]*>Editar</a>"),
+    "Los tarifarios del material mantienen sus pop-ups con acciones compactas");
 var clientForm = await maintenanceClient.GetStringAsync("/Maestros/clientes/Nuevo");
 Check(clientForm.Contains("internal-record-code") && clientForm.Contains("__RequestVerificationToken") && clientForm.Contains("master-lookup"), "Ficha nueva MVC contiene campos, antifalsificación y popup");
 var invalidMaster = await maintenanceClient.PostAsync("/Maestros/clientes/Guardar", new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = await MaintenanceToken("/Maestros/clientes/Nuevo") }));
@@ -335,7 +412,7 @@ repository.Account = repository.Account with { Permissions = ["PRESUPUESTOS.CONS
 var budgetListHtml=await maintenanceClient.GetStringAsync("/Presupuestos?search=cliente&from=2026-10-03&to=2026-11-03&page=2");
 Check(budgetListHtml.Contains("PPTO-1")&&!budgetListHtml.Contains("Cliente <prueba>")&&maintenanceFactory.Budgets.RequestedPage==2&&maintenanceFactory.Budgets.From==new DateTimeOffset(2026,10,3,5,0,0,TimeSpan.Zero)&&maintenanceFactory.Budgets.Until==new DateTimeOffset(2026,11,4,5,0,0,TimeSpan.Zero),"Presupuestos filtra límites UTC de Perú y codifica la grilla");
 var newBudgetHtml=await maintenanceClient.GetStringAsync("/Presupuestos/Nuevo");
-Check(newBudgetHtml.Contains("Draft.Revision[ContratoMarco]")&&newBudgetHtml.Contains("Draft.Revision[NumeroCotizacionCliente]")&&newBudgetHtml.Contains("budget-line-template")&&newBudgetHtml.Contains("budget-lookup"),"Ficha de presupuesto incluye campos de ambos Excel y ayudas");
+Check(newBudgetHtml.Contains("Draft.Revision[ContratoMarco]")&&!newBudgetHtml.Contains("Draft.Revision[NumeroCotizacionCliente]")&&!newBudgetHtml.Contains("data-replace-tariff")&&newBudgetHtml.Contains("budget-line-template")&&newBudgetHtml.Contains("budget-lookup"),"Ficha conserva las ayudas y asigna automáticamente cotización y tarifa");
 var budgetToken=await MaintenanceToken("/Presupuestos/Nuevo");
 var invalidBudget=await maintenanceClient.PostAsync("/Presupuestos/Guardar",new FormUrlEncodedContent(new Dictionary<string,string>{["__RequestVerificationToken"]=budgetToken}));
 Check(invalidBudget.StatusCode==HttpStatusCode.OK&&maintenanceFactory.Budgets.Saved==0,"Presupuesto inválido conserva formulario y no guarda");
@@ -411,7 +488,7 @@ foreach(var format in new[]{"NUEVO","ANTERIOR"})
     var generated=await maintenanceClient.PostAsync("/Presupuestos/Impresiones/Generar",new FormUrlEncodedContent(new Dictionary<string,string>{["__RequestVerificationToken"]=printToken,["budgetId"]="1",["revisionId"]="1",["version"]=Convert.ToBase64String(new byte[8]),["format"]=format}));
     Check(generated.StatusCode==HttpStatusCode.Redirect,"Generación HTML autorizada: "+format);
     var document=await maintenanceClient.GetAsync(generated.Headers.Location);var html=WebUtility.HtmlDecode(await document.Content.ReadAsStringAsync());
-    Check(document.StatusCode==HttpStatusCode.OK&&html.StartsWith("<!DOCTYPE html>",StringComparison.OrdinalIgnoreCase)&&html.Contains("data:image/png;base64,")&&html.Contains(format=="NUEVO"?"118.00":"100.00")&&document.Headers.GetValues("Content-Security-Policy").Single().Contains("script-src 'none'"),"Reporte autónomo conserva logo, importes y política sin scripts: "+format);
+    Check(document.StatusCode==HttpStatusCode.OK&&html.StartsWith("<!DOCTYPE html>",StringComparison.OrdinalIgnoreCase)&&html.Contains("data:image/png;base64,")&&html.Contains(format=="NUEVO"?"118.00":"100.00")&&html.Contains("data-report-print")&&html.Contains("data-report-csv")&&!html.Contains("-empty-row\"><")&&document.Headers.GetValues("Content-Security-Policy").Single().Contains("script-src 'self'"),"Reporte conserva logo e importes y ofrece impresión y CSV: "+format);
     Check(html.Contains("Firma autorizada para presupuesto")&&html.Contains(Convert.ToBase64String(signatureBytes)),"Impresión conserva firma embebida desde almacenamiento: "+format);
     Check(html.Contains(GestionServicios.Application.Maintenance.CompanySettings.DefaultSubtitle),"Impresión muestra subtítulo completo desde configuración: "+format);
     Check(format=="NUEVO"?html.Contains("CENTRO SAP FICO")&&html.Contains("000SAP"):html.Contains("P. PARCIAL")&&html.Contains("COSTO FINAL SIN IGV"),"Columnas del formato "+format);
@@ -419,7 +496,7 @@ foreach(var format in new[]{"NUEVO","ANTERIOR"})
     if(format=="ANTERIOR")Check(!html.Contains("class=\"report-status\"")&&!html.Contains("Coordinador / encargado")&&!html.Contains("Generado ")&&!html.Contains("Los precios unitarios"),"Formato anterior omite estado, responsables internos, generación y notas automáticas");
     Check(!(await document.Content.ReadAsStringAsync()).Contains("Cliente <prueba>"),"Reporte codifica datos de cliente: "+format);
 }
-Check(maintenanceFactory.Prints.Count==2&&(await maintenanceClient.GetStringAsync("/Presupuestos/Impresiones?budgetId=1&revisionId=1")).Contains("HYT-2026.10"),"Historial conserva ambas generaciones y versión del formato");
+Check(maintenanceFactory.Prints.Count==2&&(await maintenanceClient.GetStringAsync("/Presupuestos/Impresiones?budgetId=1&revisionId=1")).Contains("HYT-2026.11"),"Historial conserva ambas generaciones y versión del formato");
 Check((await maintenanceClient.GetAsync("/Presupuestos/Impresiones/1?download=true")).Content.Headers.ContentDisposition?.DispositionType=="attachment","Impresión conservada permite descarga HTML");
 var zeroPrint=await maintenanceClient.PostAsync("/Presupuestos/Impresiones/Generar",new FormUrlEncodedContent(new Dictionary<string,string>{["__RequestVerificationToken"]=printToken,["budgetId"]="51",["revisionId"]="51",["version"]=Convert.ToBase64String(new byte[8]),["format"]="NUEVO"}));
 Check(zeroPrint.StatusCode==HttpStatusCode.Redirect&&WebUtility.HtmlDecode(await maintenanceClient.GetStringAsync(zeroPrint.Headers.Location)).Contains("todavía no contiene partidas"),"Borrador sin partidas se identifica en la impresión");
@@ -662,6 +739,10 @@ var reportsNavigation=await maintenanceClient.GetAsync("/modulo/reportes");
 Check(reportsNavigation.StatusCode==HttpStatusCode.Redirect&&reportsNavigation.Headers.Location?.OriginalString=="/Reportes","Menú Reportes redirige a consulta y nunca a impresión");
 Check(dashboardHtml.Contains("Resumen de gestión")&&dashboardHtml.Contains("hyt-dashboard-data")&&dashboardHtml.Contains("36,000.00")&&dashboardHtml.Contains("USD")&&dashboardHtml.Contains("PEN"),"Inicio conecta indicadores y separa importes por moneda");
 Check(dashboardHtml.Contains("data-chart=\"trend\"")&&dashboardHtml.Contains("data-chart=\"states\"")&&dashboardHtml.Contains("data-chart=\"donut\"")&&dashboardHtml.Contains("Consultar cifras de los gráficos"),"Dashboard ofrece curvas, columnas, dona y detalle accesible");
+Check(dashboardHtml.Contains("Seguimiento de presupuestos") && dashboardHtml.Contains("data-coverage-select=\"acceptance\"") &&
+    dashboardHtml.Contains("data-coverage-select=\"guide\"") && dashboardHtml.Contains("data-coverage-select=\"order\"") &&
+    dashboardHtml.Contains("data-coverage-select=\"both\"") && dashboardHtml.Contains("Sin gu"),
+    "Inicio ofrece el gráfico interactivo de aceptación, guía y OC");
 Check((await maintenanceClient.GetAsync("/?from=2026-11-10&to=2026-11-01")).StatusCode==HttpStatusCode.BadRequest,"Dashboard rechaza rango de fechas invertido");
 Check(dashboardHtml.Contains("data-chart-group")&&dashboardHtml.Contains("data-chart-series=\"Confirmaciones\"")&&dashboardHtml.Contains("data-chart-series=\"Marcados\"")&&!dashboardHtml.Contains("Primera confirmación")&&!dashboardHtml.Contains("Primer marcado")&&dashboardHtml.Contains("Expedientes por completar"),"Panel muestra Confirmación del cliente y Facturado sin denominaciones de primeros eventos");
 Check((await maintenanceClient.GetAsync("/?queuePage=0")).StatusCode==HttpStatusCode.BadRequest&&(await maintenanceClient.GetAsync("/?client="+new string('x',201))).StatusCode==HttpStatusCode.BadRequest,"Dashboard valida página y longitud de filtros comerciales");
@@ -711,7 +792,7 @@ using(var proxyServices=proxyBuilder.Services.BuildServiceProvider())
 var payrollAccess = new TestAccessRepository();
 payrollAccess.Account = payrollAccess.Account with
 {
-    Permissions = ["PRESUPUESTOS.CONSULTAR", .. payrollPermissions]
+    Permissions = ["PRESUPUESTOS.CONSULTAR", "CONFIGURACION.CONSULTAR", "CONFIGURACION.EDITAR", .. payrollPermissions]
 };
 using var payrollFactory = new HytFactory(payrollAccess);
 using var payrollClient = payrollFactory.CreateClient(new WebApplicationFactoryClientOptions
@@ -733,6 +814,26 @@ Check((await PayrollPost("/Proveedores/Ficha", new()
     ["TaxId"] = "20000000001", ["Name"] = "Proveedor de prueba", ["Active"] = "true",
     ["Bank"] = "Banco", ["Account"] = "000012345"
 })).StatusCode == HttpStatusCode.Redirect, "Alta de proveedor por formulario MVC");
+const string supplierListUrl = "/Proveedores?search=prueba";
+const string supplierDetailsUrl = "/Proveedores/Ficha/1";
+const string supplierEditUrl = supplierDetailsUrl + "/Editar";
+var supplierList = await payrollClient.GetStringAsync(supplierListUrl);
+Check(supplierList.Contains(supplierDetailsUrl) && supplierList.Contains(supplierEditUrl),
+    "El listado de proveedores ofrece Ver y Editar con los botones estándar");
+var supplierDetails = await payrollClient.GetStringAsync(supplierDetailsUrl + "?returnUrl=%2FProveedores%3Fsearch%3Dprueba");
+Check(supplierDetails.Contains("Editar registro") && !supplierDetails.Contains("Guardar proveedor") &&
+    supplierDetails.Contains("href=\"/Proveedores?search=prueba\""),
+    "Ver proveedor abre la ficha de consulta con Editar registro y conserva los filtros");
+var supplierEdit = await payrollClient.GetStringAsync(supplierEditUrl);
+Check(supplierEdit.Contains("Guardar proveedor") && supplierEdit.Contains("name=\"Version\""),
+    "Editar proveedor abre el formulario con la versión del registro");
+var supplierPermissions = payrollAccess.Account.Permissions;
+payrollAccess.Account = payrollAccess.Account with { Permissions = ["PROVEEDORES.CONSULTAR"] };
+var readOnlySupplier = await payrollClient.GetStringAsync(supplierDetailsUrl);
+Check(!readOnlySupplier.Contains("Editar registro") && !readOnlySupplier.Contains("000012345") &&
+    (await payrollClient.GetAsync(supplierEditUrl)).StatusCode == HttpStatusCode.Redirect,
+    "La consulta de proveedores respeta los permisos de edición y de datos bancarios");
+payrollAccess.Account = payrollAccess.Account with { Permissions = supplierPermissions };
 const string costsUrl = "/Presupuestos/1/CostosProveedores";
 var supplierFilters = await payrollClient.GetStringAsync("/Planillas/PagosProveedores?status=PAGADOS&search=Servicio&from=2026-11-01&to=2026-11-09");
 Check(supplierFilters.Contains("name=\"status\"") && supplierFilters.Contains("value=\"Servicio\"") &&
@@ -782,18 +883,164 @@ Check((await PayrollPost(sctrUrl, new()
 }, sctrUrl + "/Ficha")).StatusCode == HttpStatusCode.Redirect &&
     (await payrollClient.GetStringAsync(sctrUrl)).Contains("data-status=\"POR_VENCER\""),
     "SCTR guarda una selección múltiple y muestra su estado de vencimiento");
+var sctrFiltered = await payrollClient.GetStringAsync(sctrUrl + "?estado=POR_VENCER&trabajador=SEGUNDO");
+Check(sctrFiltered.Contains("WEB-SCTR") && Regex.IsMatch(sctrFiltered, "aria-expanded=\"true\" aria-controls=\"sctr-workers-[0-9]+\"") && sctrFiltered.Contains("Segundo trabajador"),
+    "SCTR combina filtros y despliega a los trabajadores cubiertos");
+Check(!(await payrollClient.GetStringAsync(sctrUrl + "?estado=VENCIDA&trabajador=segundo")).Contains("WEB-SCTR"),
+    "SCTR excluye una póliza cuando su estado no coincide");
 const string planningUrl = "/Planillas/PlanificacionPagos";
-Check((await payrollClient.GetStringAsync(planningUrl + "?from=2026-11-09")).Contains("Precarga sin guardar"),
-    "La planificación abre la precarga semanal");
+var initialPlanningHtml = await payrollClient.GetStringAsync(planningUrl);
+var planningToday = TimeZoneInfo.ConvertTime(payrollFactory.Clock.GetUtcNow(), TimeZoneInfo.FindSystemTimeZoneById("America/Lima"));
+var initialHalf = planningToday.Day <= 15 ? "01" : "16";
+Check(initialPlanningHtml.Contains("data-loaded-frequency=\"QUINCENAL\"") &&
+    initialPlanningHtml.Contains($"data-loaded-from=\"{planningToday:yyyy-MM}-{initialHalf}\""),
+    "La planificación abre por defecto la quincena actual en Perú");
+var firstHalfHtml = await payrollClient.GetStringAsync(planningUrl + "?frequency=QUINCENAL&month=2026-11&half=1");
+var secondHalfHtml = await payrollClient.GetStringAsync(planningUrl + "?frequency=QUINCENAL&month=2026-11&half=2");
+Check(firstHalfHtml.Contains("name=\"month\"") && firstHalfHtml.Contains("name=\"half\"") &&
+    firstHalfHtml.Contains("01/11/2026 al 15/11/2026") && secondHalfHtml.Contains("16/11/2026 al 30/11/2026")
+    && firstHalfHtml.Contains("min=\"2026-11-01\" max=\"2026-11-15\"")
+    && secondHalfHtml.Contains("min=\"2026-11-16\" max=\"2026-11-30\""),
+    "El selector de mes y quincena abre el período solicitado");
+Check((await payrollClient.GetAsync(planningUrl + "?frequency=QUINCENAL&month=2026-11&half=3")).StatusCode ==
+    HttpStatusCode.BadRequest, "Se rechaza una quincena inexistente");
+var draftPlanningHtml = await payrollClient.GetStringAsync(planningUrl + "?frequency=SEMANAL&from=2026-11-09");
+Check(draftPlanningHtml.Contains("Banco de prueba") && draftPlanningHtml.Contains("0000042"),
+    "El listado de planificación presenta banco y número de cuenta autorizados");
+Check(draftPlanningHtml.Contains("Precarga sin guardar") && draftPlanningHtml.Contains("Agregar abono") &&
+    draftPlanningHtml.Contains("Bono") && !draftPlanningHtml.Contains("Agregar horas extra"),
+    "La planificación ofrece abonos y conceptos en la precarga semanal");
+Check(workerHtml.Contains("Conceptos habituales de planilla") && workerHtml.Contains("Bono"),
+    "La ficha de trabajador ofrece los conceptos habituales");
+const string conceptsUrl = "/Planillas/Conceptos";
+var conceptList = await payrollClient.GetStringAsync(conceptsUrl + "?nature=ABONO&active=true&search=bono");
+Check(conceptList.Contains("Bono") && !conceptList.Contains("Sistema de pensiones (AFP)"),
+    "El maestro de conceptos combina búsqueda, naturaleza y estado");
+Check((await PayrollPost(conceptsUrl + "/Ficha", new()
+{
+    ["Name"] = "Reintegro", ["Nature"] = "ABONO", ["Calculation"] = "PORCENTAJE", ["Active"] = "true"
+}, conceptsUrl + "/Ficha")).StatusCode == HttpStatusCode.Redirect, "El maestro registra un concepto con valor opcional");
 var savePlanResponse = await PayrollPost(planningUrl, new()
 {
     ["Frequency"] = "SEMANAL", ["From"] = "2026-11-09", ["Lines[0].TrabajadorId"] = "1",
     ["Lines[0].Base"] = "350", ["Lines[0].MinutosExtra"] = "60",
-    ["Lines[0].ImporteExtra"] = "50", ["Lines[0].Descuento"] = "25"
+    ["Lines[0].ImporteExtra"] = "50", ["Lines[0].Descuento"] = "25",
+    ["Lines[0].Ajustes[0].Tipo"] = "EXTRA", ["Lines[0].Ajustes[0].Fecha"] = "2026-11-10",
+    ["Lines[0].Ajustes[0].Concepto"] = "Trabajo de prueba", ["Lines[0].Ajustes[0].Horas"] = "1",
+    ["Lines[0].Ajustes[0].Importe"] = "50", ["Lines[0].Ajustes[1].Tipo"] = "DESCUENTO",
+    ["Lines[0].Ajustes[1].Fecha"] = "2026-11-11", ["Lines[0].Ajustes[1].Concepto"] = "Cargo de prueba",
+    ["Lines[0].Ajustes[1].Horas"] = "0", ["Lines[0].Ajustes[1].Importe"] = "25"
 });
 Check(savePlanResponse.StatusCode == HttpStatusCode.Redirect &&
-    (await payrollClient.GetStringAsync(planningUrl + "?from=2026-11-09")).Contains("375.00"),
+    (await payrollClient.GetStringAsync(planningUrl + "?frequency=SEMANAL&from=2026-11-09")).Contains("375.00"),
     "La pantalla registra y vuelve a cargar la planificación");
+const string telecreditSettingsUrl = "/Configuracion/HYT/Telecredito";
+Check(workerHtml.Contains("name=\"GivenNames\"") && workerHtml.Contains("name=\"Surnames\""),
+    "La ficha muestra campos separados para nombres y apellidos");
+Check((await PayrollPost("/Planillas/Trabajadores/Ficha", new()
+{
+    ["Document"] = "00001000", ["GivenNames"] = "Ana María", ["Surnames"] = "Pérez Ñahui",
+    ["Kind"] = "PLANILLA", ["StartDate"] = "2026-11-10", ["Active"] = "true"
+})).StatusCode == HttpStatusCode.Redirect, "La ficha registra un trabajador con nombres y apellidos separados");
+Check(Regex.IsMatch(workerHtml, "name=\"Document\"[\\s\\S]*?name=\"BcpDocumentType\"[\\s\\S]*?name=\"GivenNames\"") &&
+    !workerHtml.Contains("name=\"BcpDocument\"") && workerHtml.Contains("BcpAccountType") &&
+    WebUtility.HtmlDecode(workerHtml).Contains("N.º Documento") && !workerHtml.Contains("Identidad para Telecr"),
+    "La ficha muestra el tipo junto al único número de documento");
+Check((await payrollClient.GetStringAsync("/Configuracion/HYT")).Contains(telecreditSettingsUrl),
+    "Configuración HYT enlaza al mantenimiento de Telecrédito");
+using var currencyMismatch = await PayrollPost(telecreditSettingsUrl, new()
+{
+    ["AccountType"] = "C", ["AccountNumber"] = "1911000152155", ["Currency"] = "PEN"
+});
+Check(WebUtility.HtmlDecode(await currencyMismatch.Content.ReadAsStringAsync()).Contains("El dígito 11 es 1. Selecciona Dólares"),
+    "Telecrédito distingue la moneda de la longitud del número de cuenta");
+Check((await PayrollPost(telecreditSettingsUrl, new()
+{
+    ["AccountType"] = "C", ["AccountNumber"] = "191-1000152055"
+})).StatusCode == HttpStatusCode.Redirect, "Se guarda la cuenta de cargo BCP desde Configuración HYT");
+var savedPlanningUrl = planningUrl + "?frequency=SEMANAL&from=2026-11-09";
+var savedPlanningHtml = await payrollClient.GetStringAsync(savedPlanningUrl);
+Check(Regex.IsMatch(savedPlanningHtml, "<button(?=[^>]*data-plan-open)(?=[^>]*data-hyt-record-action=\"view\")[^>]*>Ver ajustes</button>"),
+    "Los botones con etiqueta Ver y texto adicional también usan el icono de consulta");
+Check(Regex.IsMatch(savedPlanningHtml, "data-plan-inline-list=\"abonos\"[\\s\\S]*?10/11/2026[\\s\\S]*?Trabajo de prueba[\\s\\S]*?50.00") &&
+    Regex.IsMatch(savedPlanningHtml, "data-plan-inline-list=\"cargos\"[\\s\\S]*?11/11/2026[\\s\\S]*?Cargo de prueba[\\s\\S]*?25.00"),
+    "El listado muestra ambos detalles en sus desplegables");
+Check(Regex.IsMatch(savedPlanningHtml, "N.º Ítem</th><th scope=\"col\" class=\"hyt-numeric\">Incluir</th><th scope=\"col\">Trabajador</th><th scope=\"col\">Cargo</th>") &&
+    savedPlanningHtml.Contains("<td>Supervisor</td>") &&
+    savedPlanningHtml.Contains("class=\"hyt-internal-code hyt-plan-period-card\"") &&
+    savedPlanningHtml.Contains("id=\"pay-plan-number\">000001</output>") &&
+    savedPlanningHtml.Contains(">PENDIENTE</span>") &&
+    Regex.IsMatch(savedPlanningHtml, "name=\"Lines\\[0\\]\\.Incluido\" value=\"true\" checked") &&
+    Regex.IsMatch(savedPlanningHtml, "</tr>\\s*<tr class=\"hyt-row-detail\" id=\"plan-abonos-0\" hidden") &&
+    Regex.IsMatch(savedPlanningHtml, "data-plan-footer=\"base\">350.00[\\s\\S]*?data-plan-footer=\"abonos\">50.00[\\s\\S]*?data-plan-footer=\"cargos\">25.00[\\s\\S]*?data-plan-footer=\"neto\">375.00"),
+    "La planificación muestra correlativo, cargo, desgloses en sus propias filas y totales");
+var printedPlanningHtml = await payrollClient.GetStringAsync(planningUrl + "/Reporte?frequency=SEMANAL&from=2026-11-09");
+Check(Regex.IsMatch(printedPlanningHtml, "Trabajador de prueba[\\s\\S]*?hyt-report-pay-adjustment[\\s\\S]*?10/11/2026[\\s\\S]*?Trabajo de prueba[\\s\\S]*?50.00")
+    && Regex.IsMatch(printedPlanningHtml, "hyt-report-pay-adjustment[\\s\\S]*?11/11/2026[\\s\\S]*?Cargo de prueba[\\s\\S]*?25.00"),
+    "La impresión muestra los abonos y cargos debajo del trabajador");
+Check(printedPlanningHtml.Contains("class=\"hyt-report-pay-card\"") &&
+    printedPlanningHtml.Contains("class=\"hyt-report-pay-number\">000001</strong>") &&
+    printedPlanningHtml.Contains("class=\"hyt-report-pay-status\">PENDIENTE</strong>") &&
+    printedPlanningHtml.Contains("N.º Ítem") && printedPlanningHtml.Contains("<td>Supervisor</td>") &&
+    printedPlanningHtml.Contains("Neto a pagar (S/)"),
+    "El reporte de planificación incluye la tarjeta, correlativo y cargo");
+Check(savedPlanningHtml.Contains("Exportar BCP") && savedPlanningHtml.Contains("pay-plan-bcp-PLANILLA")
+    && savedPlanningHtml.Contains("pay-plan-bcp-EXTERNO"), "La planificación pendiente ofrece las dos descargas");
+Dictionary<string, string> ExportFields(string kind) => new()
+{
+    ["Frequency"] = "SEMANAL", ["From"] = "2026-11-09", ["PlanId"] = "1",
+    ["Version"] = Convert.ToBase64String(new byte[8]), ["Kind"] = kind,
+    ["ProcessDate"] = "2026-11-18", ["Reference"] = "HABERES DE NOVIEMBRE", ["ValidateIdentity"] = "true"
+};
+foreach (var (kind, subtype, category, accountType, net) in new[]
+{
+    ("PLANILLA", 'X', "5TA", 'C', "00000000000375.10"),
+    ("EXTERNO", '4', "4TA", 'B', "00000000000824.90")
+})
+{
+    using var download = await PayrollPost(planningUrl + "/Telecredito", ExportFields(kind), savedPlanningUrl);
+    var bytes = await download.Content.ReadAsByteArrayAsync();
+    var lines = Encoding.ASCII.GetString(bytes).Split("\r\n");
+    Check(download.IsSuccessStatusCode && download.Content.Headers.ContentDisposition?.FileName?.Contains($"_{category}_") == true
+        && bytes.All(b => b < 128) && lines.Length == 3 && lines[2].Length == 0
+        && lines[0].Length == 113 && lines[0][15] == subtype && lines[1].Length == 195
+        && lines[1][1] == accountType && lines[1][177..194] == net && lines[1][194] == 'S',
+        "Descarga TXT BCP con cabecera y abono del subtipo " + subtype);
+}
+var savingsPayment = new TelecreditPayment(
+    1, "Trabajador de prueba", "1", "00000042", "BCP", "19100000000234", null, "A", "PEN", 650m, false);
+var savingsBatch = new TelecreditBatch(
+    1, new("C", "1911000152055", "PEN"), [savingsPayment]);
+var processDay = new DateOnly(2026, 11, 18);
+var savingsError = Telecredit.Generate(savingsBatch,
+    "PLANILLA", processDay, processDay, "HABERES", false);
+Check(savingsError.File is null && savingsError.Errors.Single().Contains("dígito 12 de la cuenta BCP de ahorros es 2"),
+    "Telecrédito identifica el dígito de moneda inválido aunque el IDC esté desmarcado");
+var validSavingsBatch = savingsBatch with { Abonos = [savingsPayment with { Cuenta = "19100000000034" }] };
+var savingsExport = Telecredit.Generate(validSavingsBatch,
+    "PLANILLA", processDay, processDay, "HABERES", false);
+Check(savingsExport.File is { } savingsFile &&
+    Encoding.ASCII.GetString(savingsFile.Bytes).Split("\r\n")[1] is { Length: 195 } savingsLine &&
+    savingsLine[1] == 'A' && savingsLine[^1] == 'N',
+    "Telecrédito exporta una cuenta de ahorros en soles y escribe N con el IDC desmarcado");
+var wrongReference = ExportFields("PLANILLA");
+wrongReference["Reference"] = "NOVIEMBRE 2026";
+using var failedExport = await PayrollPost(planningUrl + "/Telecredito", wrongReference, savedPlanningUrl);
+Check(failedExport.StatusCode == HttpStatusCode.UnprocessableEntity &&
+    WebUtility.HtmlDecode(await failedExport.Content.ReadAsStringAsync()).Contains("sin números"),
+    "Un dato inválido del lote bloquea el archivo e informa el motivo");
+Check(WebUtility.HtmlDecode(await payrollClient.GetStringAsync(savedPlanningUrl)).Contains("Planificación guardada"),
+    "La exportación conserva la planificación pendiente");
+using var excludedSave = await PayrollPost(planningUrl, new()
+{
+    ["Frequency"] = "SEMANAL", ["From"] = "2026-11-09", ["Version"] = Convert.ToBase64String(new byte[8]),
+    ["Lines[0].TrabajadorId"] = "1", ["Lines[0].Base"] = "350", ["Lines[0].Incluido"] = "false"
+}, savedPlanningUrl);
+var excludedHtml = await payrollClient.GetStringAsync(savedPlanningUrl);
+Check(excludedSave.StatusCode == HttpStatusCode.Redirect &&
+    excludedHtml.Contains("data-plan-included=\"false\"") &&
+    excludedHtml.Contains("data-plan-footer=\"neto\">0.00") &&
+    !excludedHtml.Contains("data-plan-confirm-button"), "Al desmarcar, se conserva la fila y se excluye del total guardado");
 Check(workerHtml.Contains("/Planillas/Trabajadores/1/Vacaciones") && !workerHtml.Contains("Registro horario"),
     "La ficha del trabajador enlaza a vacaciones y retira el acceso de registro horario");
 Check((await payrollClient.GetStringAsync("/Planillas/Trabajadores")).Contains("Vacaciones pendientes"),
@@ -819,10 +1066,215 @@ Check((await PayrollPost(attendanceUrl, new()
     (await payrollClient.GetStringAsync(attendanceUrl + "?from=2026-11-01&to=2026-11-30")).Contains("17:00"),
     "La jornada registrada muestra la salida y el total de extras");
 
+// Firma: FRANCO LARA - 10/11/2026 | Cobertura MVC de provisiones y emisión.
+payrollAccess.Account=payrollAccess.Account with {Permissions=["FACTURADO.CONSULTAR","FACTURADO.EDITAR","PAGOS_PROVEEDOR.CONSULTAR","PAGOS_PROVEEDOR.EDITAR","COSTOS_PROVEEDOR.CONSULTAR","COSTOS_PROVEEDOR.EDITAR","PRESUPUESTOS.CONSULTAR"]};
+foreach(var scope in new[]{"compras","ventas"})
+{
+    var listing=await payrollClient.GetStringAsync("/Comprobantes/"+scope);
+    Check(listing.Contains("Nuevo registro")&&listing.Contains("name=\"tipo\""),"Listado de comprobantes con filtro por tipo: "+scope);
+    var newHtml=await payrollClient.GetStringAsync("/Comprobantes/"+scope+"/Nuevo");
+    Check(newHtml.Contains("multipart/form-data")&&newHtml.Contains("Input.Detalle[0].Descripcion")&&newHtml.Contains("name=\"Input.Fecha\""),"Registro manual y XML disponibles: "+scope);
+    Check(newHtml.Contains("multiple")&&newHtml.Contains("commercial-party-lookup")&&newHtml.Contains("data-commercial-lines-total")&&newHtml.Contains("data-commercial-tax")&&newHtml.Contains("data-commercial-total"),
+        "La ficha ofrece carga múltiple, ventana de ayuda y tarjeta de totales: "+scope);
+    Check(scope == "compras"
+        ? newHtml.Contains("data-catalog-select=\"022\"") && newHtml.Contains("Input.MonedaDetraccion") &&
+            newHtml.Contains("commercial-withholding-amount") && newHtml.Contains("commercial-withholding-equivalent")
+        : newHtml.Contains("commercial-withholding-lookup") && newHtml.Contains("Input.CodigoDetraccion") &&
+            newHtml.Contains("commercial-withholding-rate") && newHtml.Contains("data-commercial-withholding-url") &&
+            listing.Contains("Afecto a detracción") && listing.Contains("Saldo pendiente") && !newHtml.Contains("Input.MonedaDetraccion"),
+        "El registro muestra los controles de detracción según el tipo de comprobante: "+scope);
+    var detailsHtml=await payrollClient.GetStringAsync("/Comprobantes/"+scope+"/1");
+    Check(detailsHtml.Contains("Producto de prueba")&&detailsHtml.Contains("commercial-totals"),
+        "Consulta de comprobante muestra partidas y tarjeta de totales: "+scope);
+    var printHtml=await payrollClient.GetStringAsync("/Comprobantes/"+scope+"/1?print=true");
+    Check(printHtml.Contains("data-report-csv")&&!printHtml.Contains("data-commercial-form"),"Impresión y CSV del comprobante: "+scope);
+}
+var salesForm = await payrollClient.GetStringAsync("/Comprobantes/ventas/Nuevo?clienteId=1");
+var salesBudgetOptions = await payrollClient.GetStringAsync("/Comprobantes/ventas/Presupuestos?clienteId=1&buscar=202611000002");
+Check(salesForm.Contains("data-commercial-budget-open") && salesForm.Contains("commercial-budget-lookup") &&
+    !salesForm.Contains("<select id=\"commercial-presupuestoId\"") &&
+    salesBudgetOptions.Contains("202611000002"),
+    "La precarga de ventas abre la ayuda de presupuestos del cliente");
+foreach(var linkScope in new[]{"compras","ventas"})
+{
+    var listing=await payrollClient.GetStringAsync("/Comprobantes/"+linkScope);
+    Check(listing.Contains(linkScope=="compras"?"Vincular trabajos":"Vincular presupuestos"),"El listado ofrece vinculación: "+linkScope);
+    var linkUrl="/Comprobantes/"+linkScope+"/1/Vincular?popup=true";
+    var linkHtml=await payrollClient.GetStringAsync(linkUrl);
+    Check(!linkHtml.Contains("<html")&&linkHtml.Contains("name=\"ids\""),"La vinculación abre como diálogo parcial: "+linkScope);
+    if (linkScope == "compras")
+    {
+        var workMatches = await payrollClient.GetStringAsync("/Comprobantes/compras/1/TrabajosDisponibles?buscar=202611000003");
+        Check(linkHtml.Contains("data-cost-options-query") && !workMatches.Contains("<html") &&
+            workMatches.Contains("Trabajo dos") && !workMatches.Contains("Trabajo uno"),
+            "El pop-up consulta trabajos disponibles por presupuesto y recibe solo las filas del resultado");
+    }
+    var response=await PayrollPost("/Comprobantes/"+linkScope+"/1/Vincular",new()
+    {["popup"]="true",["ids[0]"]="2",["ids[1]"]="3",["retorno"]="/Comprobantes/"+linkScope+"?pagina=2"},linkUrl);
+    Check(response.StatusCode==HttpStatusCode.OK&&payrollFactory.Commercial.LinkedIds.Count==2&&
+        (await response.Content.ReadAsStringAsync()).Contains("pagina=2"),"La vinculación conserva selección múltiple y filtros: "+linkScope);
+}
+var orderLookupHtml = await payrollClient.GetStringAsync("/Comprobantes/ventas/Nuevo?clienteId=1");
+Check(orderLookupHtml.Contains("Input.OrdenCompraId") && orderLookupHtml.Contains("commercial-order-lookup") &&
+    orderLookupHtml.Contains("OrdenesCompra?clienteId=1"), "El registro de ventas ofrece el pop-up de órdenes del cliente");
+var customerOrders = await payrollClient.GetStringAsync("/Comprobantes/ventas/OrdenesCompra?clienteId=1&buscar=CONF-QA");
+Check(customerOrders.Contains("OC-QA") && customerOrders.Contains("CONF-QA"),
+    "La ayuda de órdenes devuelve el número de confirmación junto a la orden");
+var linkOrderResponse = await PayrollPost("/Comprobantes/ventas/1/OrdenCompra", new()
+{
+    ["ordenCompraId"] = "1"
+}, "/Comprobantes/ventas/1");
+Check(linkOrderResponse.StatusCode == HttpStatusCode.Redirect && payrollFactory.Commercial.LinkedOrderId == 1,
+    "Una venta registrada puede asociar su orden desde la ficha");
+const string withholdingUrl="/Administracion/Detracciones";
+var withholdingList=await payrollClient.GetStringAsync(withholdingUrl);
+Check(withholdingList.Contains("Registrar pago")&&withholdingList.Contains("name=\"estado\""),"El listado de detracciones ofrece filtros y pago en diálogo");
+var withholdingPaymentUrl=withholdingUrl+"/1/Pagar?popup=true";
+var withholdingPaid=await PayrollPost(withholdingUrl+"/1/Pagar",new()
+{["fecha"]="2026-11-10",["importe"]="12",["operacion"]="CONST-009",["retorno"]=withholdingUrl+"?estado=PENDIENTE"},withholdingPaymentUrl);
+Check(withholdingPaid.StatusCode==HttpStatusCode.OK&&(await withholdingPaid.Content.ReadAsStringAsync()).Contains("redirect"),
+    "El pago de detracción se registra desde el listado y devuelve su destino");
+var commercialSaved=await PayrollPost("/Comprobantes/compras/Guardar",new()
+{
+    ["Input.Tipo"]="01",["Input.Serie"]="F001",["Input.Numero"]="999",["Input.Fecha"]="2026-11-10",["Input.FechaVencimiento"]="2026-12-11",
+    ["Input.Moneda"]="PEN",["Input.MonedaDetraccion"]="PEN",["Input.DocumentoTercero"]="20600000001",
+    ["Input.NombreTercero"]="Proveedor de prueba",["Input.FormaPago"]="Crédito",["Input.PlazoPagoDias"]="30",["Input.Importe"]="999",
+    ["Input.Detalle[0].Descripcion"]="Producto",["Input.Detalle[0].Unidad"]="NIU",["Input.Detalle[0].Cantidad"]="1",
+    ["Input.Detalle[0].Precio"]="100",["Input.Detalle[0].Importe"]="999"
+},"/Comprobantes/compras/Nuevo");
+Check(commercialSaved.StatusCode==HttpStatusCode.Redirect&&payrollFactory.Commercial.Saved is { Importe:118m } savedCommercial && savedCommercial.Detalle.Single().Importe==100m && savedCommercial.FechaVencimiento==new DateOnly(2026,12,10),
+    "Compras calcula partidas, IGV, total y vencimiento de crédito aunque se envíen otros valores");
+var purchaseForm = await payrollClient.GetStringAsync("/Comprobantes/compras/Nuevo");
+var supplierName = purchaseForm.IndexOf("name=\"Input.NombreTercero\"", StringComparison.Ordinal);
+var supplierDocument = purchaseForm.IndexOf("name=\"Input.DocumentoTercero\"", StringComparison.Ordinal);
+var supplierLookup = purchaseForm.IndexOf("data-commercial-party-open", StringComparison.Ordinal);
+Check(supplierName >= 0 && supplierName < supplierDocument && supplierDocument < supplierLookup &&
+    purchaseForm.Contains("data-commercial-payment") && purchaseForm.Contains("value=\"120\"") &&
+    purchaseForm.Contains("data-commercial-item-number"),
+    "Compras empieza con el proveedor y usa el mismo plazo y detalle que ventas");
+
+const string newSaleUrl = "/Comprobantes/ventas/Nuevo?clienteId=1";
+var saleForm = await payrollClient.GetStringAsync(newSaleUrl);
+var invoiceLookup = await payrollClient.GetStringAsync("/Comprobantes/ventas/FacturasEmitidas?clienteId=1&buscar=F001");
+Check(saleForm.Contains("data-credit-invoice-search") && saleForm.Contains("name=\"Input.CodigoMotivoNota\"") &&
+    saleForm.Contains("list=\"commercial-units\"") && invoiceLookup.Contains("F001-123"),
+    "La nota de crédito usa la ayuda de facturas del cliente y los catálogos SUNAT");
+Check((await payrollClient.GetAsync("/Comprobantes/ventas/FacturasEmitidas?clienteId=1&desde=2026-11-11&hasta=2026-11-10")).StatusCode == HttpStatusCode.BadRequest,
+    "La ayuda de facturas rechaza un rango de fechas invertido");
+var clientName = saleForm.IndexOf("name=\"Input.NombreTercero\"", StringComparison.Ordinal);
+var clientDocument = saleForm.IndexOf("name=\"Input.DocumentoTercero\"", StringComparison.Ordinal);
+var clientLookup = saleForm.IndexOf("data-commercial-party-open", StringComparison.Ordinal);
+Check(clientName >= 0 && clientName < clientDocument && clientDocument < clientLookup &&
+    saleForm.Contains("data-commercial-payment") && saleForm.Contains("value=\"120\""),
+    "El registro de ventas empieza con el cliente y ofrece los plazos de crédito");
+var saleFields = new Dictionary<string, string>
+{
+    ["clienteId"] = "1", ["Input.Tipo"] = "01", ["Input.Fecha"] = "2026-12-20",
+    ["Input.DocumentoTercero"] = "20600000001", ["Input.NombreTercero"] = "Tercero de prueba",
+    ["Input.Detalle[0].Descripcion"] = "Producto", ["Input.Detalle[0].Unidad"] = "NIU",
+    ["Input.Detalle[0].Cantidad"] = "1", ["Input.Detalle[0].Precio"] = "100",
+    ["Input.FechaVencimiento"] = "2026-12-21", ["Input.FormaPago"] = "Crédito", ["Input.PlazoPagoDias"] = "30"
+};
+var creditSale = await PayrollPost("/Comprobantes/ventas/Guardar", saleFields, newSaleUrl);
+Check(creditSale.StatusCode == HttpStatusCode.Redirect &&
+    payrollFactory.Commercial.Saved?.FechaVencimiento == new DateOnly(2027, 1, 19),
+    "Ventas calcula el vencimiento de crédito en el servidor aunque se envíe otra fecha");
+saleFields["Input.PlazoPagoDias"] = "20";
+var invalidCredit = await PayrollPost("/Comprobantes/ventas/Guardar", saleFields, newSaleUrl);
+Check(invalidCredit.StatusCode == HttpStatusCode.OK && (await invalidCredit.Content.ReadAsStringAsync()).Contains("permita calcular"),
+    "Ventas rechaza plazos fuera del selector");
+saleFields["Input.FormaPago"] = "Contado";
+saleFields.Remove("Input.PlazoPagoDias");
+var cashSale = await PayrollPost("/Comprobantes/ventas/Guardar", saleFields, newSaleUrl);
+Check(cashSale.StatusCode == HttpStatusCode.Redirect &&
+    payrollFactory.Commercial.Saved?.FechaVencimiento == new DateOnly(2026, 12, 20),
+    "Ventas al contado vence en la fecha de emisión");
+
+saleFields["Input.Serie"] = "F001";
+saleFields["Input.Numero"] = "999";
+saleFields["Input.Detalle[0].Cantidad"] = "1.5";
+foreach (var scope in new[] { "compras", "ventas" })
+{
+    var fractionalQuantity = await PayrollPost($"/Comprobantes/{scope}/Guardar", saleFields,
+        $"/Comprobantes/{scope}/Nuevo?clienteId=1");
+    Check(fractionalQuantity.StatusCode == HttpStatusCode.OK &&
+        (await fractionalQuantity.Content.ReadAsStringAsync()).Contains("entero."),
+        $"El registro manual rechaza cantidades fraccionarias: {scope}");
+}
+
+payrollAccess.Account=payrollAccess.Account with {Permissions=["PAGOS_PROVEEDOR.CONSULTAR"]};
+Check(!(await payrollClient.GetStringAsync("/Comprobantes/compras")).Contains("Nuevo registro")&&
+    (await payrollClient.GetAsync("/Comprobantes/ventas")).StatusCode==HttpStatusCode.Redirect,"Consulta restringida respeta permisos de compras y ventas");
+
+var purchasesFactoring = await payrollClient.GetStringAsync("/Comprobantes/compras?factoring=true");
+Check(payrollFactory.Commercial.HasFactoring is null && !purchasesFactoring.Contains("commercial-factoring"),
+    "Factoring se filtra solo en Emisión de comprobantes");
+
+payrollAccess.Account=payrollAccess.Account with {Permissions=["FACTORING.CONSULTAR","FACTORING.EDITAR","FACTURADO.CONSULTAR"]};
+const string factoringUrl="/Administracion/Factoring";
+Check((await payrollClient.GetStringAsync(factoringUrl)).Contains("Nuevo lote"),"Administración muestra el listado de Factoring");
+var factoringForm=await payrollClient.GetStringAsync(factoringUrl+"/Nuevo");
+Check(factoringForm.Contains("Input.Facturas") && factoringForm.Contains("data-hyt-open=\"factoring-bank-lookup\"") &&
+    factoringForm.Contains("data-catalog-select=\"Financiera de prueba\""),"La ficha de factoring ofrece la ayuda de financieras en un diálogo");
+var factoringSave=await PayrollPost(factoringUrl+"/Guardar",new()
+{
+    ["Input.Financiera"]="Financiera de prueba",["Input.FechaNegociacion"]="2026-11-10",
+    ["Input.Porcentaje"]="3.125",["Input.Facturas"]="1"
+},factoringUrl+"/Nuevo");
+Check(factoringSave.StatusCode==HttpStatusCode.Redirect&&payrollFactory.Commercial.SavedFactoring?.Porcentaje==3.125m,
+    "El registro de factoring conserva el porcentaje y la selección");
+var factoringPrint=await payrollClient.GetStringAsync(factoringUrl+"/1?print=true");
+Check(factoringPrint.Contains("Financiera de prueba")&&factoringPrint.Contains("F001-123")&&factoringPrint.Contains("data-report-csv"),
+    "El lote tiene reporte HTML con sus facturas e impresión y CSV");
+var noFactoring=await payrollClient.GetStringAsync("/Comprobantes/ventas?sinFactoring=true");
+Check(noFactoring.Contains("Sin factoring")&&payrollFactory.Commercial.WithoutFactoring,"El filtro anterior Sin factoring conserva su comportamiento");
+var salesWithFactoring = await payrollClient.GetStringAsync("/Comprobantes/ventas?factoring=true");
+Check(payrollFactory.Commercial.HasFactoring == true && salesWithFactoring.Contains("Estado de factoring")
+    && salesWithFactoring.Contains("Con fecha de desembolso") && salesWithFactoring.Contains("Lote 1")
+    && salesWithFactoring.Contains("12/11/2026") && salesWithFactoring.Contains("factoring=true"),
+    "El filtro Sí muestra estado y fecha de desembolso y se conserva al paginar");
+var salesWithoutFactoring = await payrollClient.GetStringAsync("/Comprobantes/ventas?factoring=false");
+Check(payrollFactory.Commercial.HasFactoring == false && salesWithoutFactoring.Contains("Sin factoring")
+    && salesWithoutFactoring.Contains("factoring=false"), "El filtro No muestra las ventas sin factoring");
+
+var ublSample="""
+    <Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+    xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"
+    xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2">
+    <cbc:ID>F001-0009</cbc:ID><cbc:IssueDate>2026-11-10</cbc:IssueDate><cbc:DueDate>2026-12-10</cbc:DueDate><cbc:InvoiceTypeCode>01</cbc:InvoiceTypeCode><cbc:DocumentCurrencyCode>PEN</cbc:DocumentCurrencyCode>
+    <cac:AccountingSupplierParty><cac:Party><cac:PartyIdentification><cbc:ID>20100000001</cbc:ID></cac:PartyIdentification><cac:PartyLegalEntity><cbc:RegistrationName>Emisor</cbc:RegistrationName></cac:PartyLegalEntity></cac:Party></cac:AccountingSupplierParty>
+    <cac:AccountingCustomerParty><cac:Party><cac:PartyIdentification><cbc:ID>20600000001</cbc:ID></cac:PartyIdentification><cac:PartyLegalEntity><cbc:RegistrationName>Receptor</cbc:RegistrationName></cac:PartyLegalEntity></cac:Party></cac:AccountingCustomerParty>
+    <cac:PaymentTerms><cbc:ID>FormaPago</cbc:ID><cbc:PaymentMeansID>Credito</cbc:PaymentMeansID></cac:PaymentTerms>
+    <cac:PaymentTerms><cbc:ID>Detraccion</cbc:ID><cbc:PaymentMeansID>022</cbc:PaymentMeansID><cbc:PaymentPercent>12</cbc:PaymentPercent><cbc:Amount currencyID="PEN">12.00</cbc:Amount></cac:PaymentTerms>
+    <cac:LegalMonetaryTotal><cbc:PayableAmount>118.00</cbc:PayableAmount></cac:LegalMonetaryTotal>
+    <cac:InvoiceLine><cbc:InvoicedQuantity unitCode="NIU">2</cbc:InvoicedQuantity><cbc:LineExtensionAmount>100.00</cbc:LineExtensionAmount><cac:Item><cbc:Description>Producto XML</cbc:Description></cac:Item><cac:Price><cbc:PriceAmount>50.00</cbc:PriceAmount></cac:Price></cac:InvoiceLine>
+    </Invoice>
+    """;
+async Task<GestionServicios.Application.Billing.CommercialDocument> ParseCommercial(string xml,bool sales)
+{
+    using var stream=new MemoryStream(System.Text.Encoding.UTF8.GetBytes(xml));
+    return await GestionServicios.Application.Billing.CommercialDocumentXml.ReadAsync(stream,sales,default);
+}
+var purchaseXml=await ParseCommercial(ublSample,false);
+var saleXml=await ParseCommercial(ublSample,true);
+Check(purchaseXml.RucHYT=="20600000001"&&saleXml.RucHYT=="20100000001"&&saleXml.CodigoDetraccion=="022"&&saleXml.PorcentajeDetraccion==12m&&saleXml.ImporteDetraccion==12m&&saleXml.DetraccionDocumento==12m&&purchaseXml.Detalle.Single().Cantidad==2m&&
+    purchaseXml.FormaPago=="Crédito"&&purchaseXml.ImporteDetraccion==12m&&purchaseXml.Numero=="0009"&&purchaseXml.FechaVencimiento==new DateOnly(2026,12,10),"UBL distingue RUC HYT y obtiene pago, detracción y detalle");
+var ncXml=ublSample.Replace("Invoice","CreditNote").Replace("CreditNotedQuantity","CreditedQuantity");
+ncXml=ncXml.Replace("</CreditNote>","<cac:BillingReference><cac:InvoiceDocumentReference><cbc:ID>F001-0008</cbc:ID></cac:InvoiceDocumentReference></cac:BillingReference><cac:DiscrepancyResponse><cbc:Description>Devolución</cbc:Description></cac:DiscrepancyResponse></CreditNote>");
+var ncParsed=await ParseCommercial(ncXml,true);
+Check(ncParsed.Tipo=="07"&&ncParsed.ReferenciaNota=="F001-0008"&&ncParsed.MotivoNota=="Devolución","UBL importa nota de crédito con referencia y motivo");
+try
+{
+    await ParseCommercial("<!DOCTYPE Invoice [<!ENTITY x SYSTEM 'file:///windows/win.ini'>]><Invoice>&x;</Invoice>",false);
+    throw new InvalidOperationException("El lector aceptó un DTD");
+}
+catch(System.Xml.XmlException){Check(true,"El lector XML impide DTD y entidades externas");}
+
 sealed class HytFactory(TestAccessRepository repository,bool turnstileEnabled=false,string siteKey="sitekey-prueba") : WebApplicationFactory<WebEntryPoint>
 {
     public StubCloudflareHandler Turnstile {get;}=new();
     public string FileRoot {get;}=Path.Combine(Path.GetTempPath(),"hyt-http-files-"+Guid.NewGuid().ToString("N"));
+    public TestCommercialDocumentRepository Commercial {get;}=new();
     public TestInvoiceMarkRepository InvoiceMarks {get;}=new();
     public TestReportingRepository Reporting {get;}=new();
     public TestClock Clock { get; } = new();
@@ -859,6 +1311,10 @@ sealed class HytFactory(TestAccessRepository repository,bool turnstileEnabled=fa
             services.RemoveAll<GestionServicios.Web.Services.IDocumentFileStore>();services.AddScoped<GestionServicios.Web.Services.IDocumentFileStore,GestionServicios.Web.Services.PrivateDocumentFileStore>();
             services.RemoveAll<GestionServicios.Application.Followup.IDocumentFileRepository>();services.AddSingleton<GestionServicios.Application.Followup.IDocumentFileRepository>(new TestDocumentFileRepository(Documents));
             services.RemoveAll<GestionServicios.Application.Followup.IDocumentRepository>(); services.AddSingleton<GestionServicios.Application.Followup.IDocumentRepository>(Documents);
+            services.RemoveAll<GestionServicios.Application.Billing.IFactoringRepository>();
+            services.AddSingleton<GestionServicios.Application.Billing.IFactoringRepository>(Commercial);
+            services.RemoveAll<GestionServicios.Application.Billing.ICommercialDocumentRepository>();
+            services.AddSingleton<GestionServicios.Application.Billing.ICommercialDocumentRepository>(Commercial);
             services.RemoveAll<GestionServicios.Application.Billing.IInvoiceMarkRepository>();services.AddSingleton<GestionServicios.Application.Billing.IInvoiceMarkRepository>(InvoiceMarks);
             services.RemoveAll<GestionServicios.Application.Reporting.IReportingRepository>();services.AddSingleton<GestionServicios.Application.Reporting.IReportingRepository>(Reporting);
             services.RemoveAll<IBudgetRepository>(); services.AddSingleton<IBudgetRepository>(Budgets);
@@ -870,6 +1326,8 @@ sealed class HytFactory(TestAccessRepository repository,bool turnstileEnabled=fa
             services.RemoveAll<IWorkersRepository>(); services.AddSingleton<IWorkersRepository>(payroll);
             services.RemoveAll<IPersonalPaymentsRepository>(); services.AddSingleton<IPersonalPaymentsRepository>(payroll);
             services.RemoveAll<IPayrollObligationsRepository>(); services.AddSingleton<IPayrollObligationsRepository>(payroll);
+            services.RemoveAll<IPayrollConceptRepository>(); services.AddSingleton<IPayrollConceptRepository>(payroll);
+            services.RemoveAll<ITelecreditRepository>(); services.AddSingleton<ITelecreditRepository>(payroll);
             services.RemoveAll<IPayPlanningRepository>(); services.AddSingleton<IPayPlanningRepository>(payroll);
             services.RemoveAll<IPayrollCatalogRepository>(); services.AddSingleton<IPayrollCatalogRepository>(payroll);
         });

@@ -34,11 +34,15 @@ builder.Services.Configure<GestionServicios.Web.Services.CloudflareR2Settings>(b
 builder.Services.AddScoped<GestionServicios.Web.Services.IR2ObjectClient,GestionServicios.Web.Services.CloudflareR2ObjectClient>();
 builder.Services.AddScoped<GestionServicios.Web.Services.IDocumentFileStore,GestionServicios.Web.Services.R2DocumentFileStore>();
 builder.Services.AddScoped<GestionServicios.Application.Reporting.IReportingRepository,GestionServicios.Infrastructure.Reporting.SqlReportingRepository>();
+builder.Services.AddScoped<GestionServicios.Application.Billing.IFactoringRepository,GestionServicios.Infrastructure.Billing.SqlCommercialDocumentRepository>();
+builder.Services.AddScoped<GestionServicios.Application.Billing.ICommercialDocumentRepository,GestionServicios.Infrastructure.Billing.SqlCommercialDocumentRepository>();
 builder.Services.AddScoped<GestionServicios.Application.Billing.IInvoiceMarkRepository,GestionServicios.Infrastructure.Billing.SqlInvoiceMarkRepository>();
 builder.Services.AddScoped<GestionServicios.Application.Payroll.ISupplierPaymentsRepository, GestionServicios.Infrastructure.Payroll.SqlSupplierPaymentsRepository>();
 builder.Services.AddScoped<GestionServicios.Application.Payroll.IWorkersRepository, GestionServicios.Infrastructure.Payroll.SqlSupplierPaymentsRepository>();
 builder.Services.AddScoped<GestionServicios.Application.Payroll.IPersonalPaymentsRepository, GestionServicios.Infrastructure.Payroll.SqlSupplierPaymentsRepository>();
 builder.Services.AddScoped<GestionServicios.Application.Payroll.IPayrollObligationsRepository, GestionServicios.Infrastructure.Payroll.SqlSupplierPaymentsRepository>();
+builder.Services.AddScoped<GestionServicios.Application.Payroll.IPayrollConceptRepository, GestionServicios.Infrastructure.Payroll.SqlSupplierPaymentsRepository>();
+builder.Services.AddScoped<GestionServicios.Application.Payroll.ITelecreditRepository, GestionServicios.Infrastructure.Payroll.SqlSupplierPaymentsRepository>();
 builder.Services.AddScoped<GestionServicios.Application.Payroll.IPayPlanningRepository, GestionServicios.Infrastructure.Payroll.SqlSupplierPaymentsRepository>();
 builder.Services.AddScoped<GestionServicios.Application.Payroll.IPayrollCatalogRepository, GestionServicios.Infrastructure.Payroll.SqlSupplierPaymentsRepository>();
 builder.Services.AddScoped<GestionServicios.Application.Followup.IDocumentRepository, GestionServicios.Infrastructure.Followup.SqlDocumentRepository>();

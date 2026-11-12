@@ -1,19 +1,25 @@
 @model GestionServicios.Web.Controllers.PayrollObligationsPage
 @* Firma: FRANCO LARA - 09/11/2026 | Registro de AFP, ONP con catálogo previsional. Aplica el estándar HYT de grillas, filtros y formularios. Ayudas de catálogo en pop-up. Alinea importes y cantidades en la grilla. *@
 @* Firma: FRANCO LARA - 10/11/2026 | Listado independiente con acceso a ficha y tasas previsionales. Muestra la programación y confirma pagos desde la fila. *@
+@* Firma: FRANCO LARA - 11/11/2026 | Alinea y uniforma las acciones de edición y confirmación de pago por fila y agrega la impresión del mes consultado. *@
 @{
     ViewData["Title"] = "Obligaciones";
     ViewData["Wide"] = true;
 }
 <header class="hyt-page-header">
     <div><h1>Obligaciones</h1><p>Programa las obligaciones de AFP y ONP.</p></div>
+    <div class="hyt-master-related">
+        @if (User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "REPORTES.IMPRIMIR"))
+        {
+            <a class="hyt-button-secondary" asp-action="Index" asp-route-month="@Model.Month" asp-route-print="true" target="_blank" rel="noopener">Imprimir listado</a>
+        }
+
     @if (Model.CanEdit)
     {
-        <div class="hyt-master-related">
             <a asp-action="Rates" asp-route-month="@Model.Month" class="hyt-button-secondary">Porcentajes AFP y ONP</a>
             <a asp-action="ObligationDetails" asp-route-month="@Model.Month" class="hyt-button-primary">Registrar obligación</a>
-        </div>
     }
+    </div>
 </header>
 <form asp-action="Index" method="get" class="hyt-filters">
     <div class="hyt-field">
@@ -41,8 +47,10 @@ else
                         <td>
                             @if (row.FechaPago is null)
                             {
-                                <a class="hyt-button-secondary" asp-action="ObligationDetails" asp-route-month="@Model.Month" asp-route-obligationId="@row.ObligacionId">Editar</a>
-                                <button type="button" class="hyt-button-secondary" data-hyt-open="obligation-payment-@row.ObligacionId">Confirmar pago</button>
+                                <div class="hyt-obligation-row-actions">
+                                    <a class="hyt-button-secondary" asp-action="ObligationDetails" asp-route-month="@Model.Month" asp-route-obligationId="@row.ObligacionId">Editar</a>
+                                    <button type="button" class="hyt-button-secondary" data-hyt-open="obligation-payment-@row.ObligacionId">Confirmar pago</button>
+                                </div>
                             }
                         </td>
                     }

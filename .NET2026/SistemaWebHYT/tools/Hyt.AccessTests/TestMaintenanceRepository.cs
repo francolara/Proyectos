@@ -18,7 +18,7 @@ sealed class TestMaintenanceRepository : IMaintenanceRepository
     public Task<MaintenancePage> ListAsync(EntityDefinition entity, string actorId, string? search, int page, long? parentId = null, bool activeOnly = false, CancellationToken cancellationToken = default)
     {
         LastPage = page; LastSearch = search;
-        return Task.FromResult(new MaintenancePage([new(entity.Key == "zonas" ? (page - 1) * 20 + 1 : 1, "0001-A", entity.Key == "zonas" ? page == 1 ? "Sur" : "Centro" : "Cliente <script>prueba</script>", "ACTIVO", "Sur · Centro", DateTimeOffset.UtcNow, "Operador", null, null, entity.Key is "tiendas" or "contactos" ? "CLI-000099" : null, entity.Key is "tiendas" or "contactos" ? "Cliente de prueba" : null)], 41, page));
+        return Task.FromResult(new MaintenancePage([new(entity.Key == "zonas" ? (page - 1) * 20 + 1 : 1, "0001-A", entity.Key == "zonas" ? page == 1 ? "Sur" : "Centro" : "Cliente <script>prueba</script>", "ACTIVO", "Sur · Centro", DateTimeOffset.UtcNow, "Operador", null, null, entity.Key is "tiendas" or "contactos" ? "CLI-000099" : null, entity.Key is "tiendas" or "contactos" ? "Cliente de prueba" : null, entity.Key == "contactos" ? "Tienda de prueba" : null)], search == "prueba-reporte" ? 1 : 41, page));
     }
     public Task<RecordSnapshot?> GetAsync(EntityDefinition entity, string actorId, long id, int auditPage = 1, CancellationToken cancellationToken = default)
     {

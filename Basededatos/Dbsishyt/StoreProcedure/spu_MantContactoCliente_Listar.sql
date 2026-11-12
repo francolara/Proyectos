@@ -4,6 +4,7 @@
 -- Description:   Lista ContactoCliente, búsqueda SQL y página fija de veinte.
 -- =============================================
 -- Firma: FRANCO LARA | Create date: 05/11/2026 | Listado y búsqueda por código/nombre del cliente, con veinte filas por página.
+-- Firma: FRANCO LARA | Create date: 11/11/2026 | Incluye la tienda del contacto en el listado y en la búsqueda.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_MantContactoCliente_Listar
@@ -26,13 +27,14 @@ BEGIN
         IF @Busqueda IS NOT NULL SET @Patron = N'%' + REPLACE(REPLACE(REPLACE(REPLACE(@Busqueda,N'~',N'~~'),N'%',N'~%'),N'_',N'~_'),N'[',N'~[') + N'%';
         SELECT m.ContactoId AS Id, CONVERT(NVARCHAR(40), m.ContactoId) AS Codigo, m.Nombre AS Descripcion, CASE WHEN m.Activo = 1 THEN N'ACTIVO' ELSE N'INACTIVO' END AS Estado,
             N'' AS Informacion, m.FechaRegistro, creador.Nombres AS UsuarioRegistro,
-            m.FechaActualizacion, editor.Nombres AS UsuarioActualizacion, cliente.Codigo AS ClienteCodigo, CASE WHEN cliente.TipoEntidad=N'NATURAL' THEN CONCAT(cliente.Nombres,N' ',cliente.Apellidos) ELSE cliente.RazonSocial END AS ClienteNombre
+            m.FechaActualizacion, editor.Nombres AS UsuarioActualizacion, cliente.Codigo AS ClienteCodigo, CASE WHEN cliente.TipoEntidad=N'NATURAL' THEN CONCAT(cliente.Nombres,N' ',cliente.Apellidos) ELSE cliente.RazonSocial END AS ClienteNombre, tienda.Nombre AS TiendaNombre
         INTO #Pagina FROM dbo.ContactoCliente AS m INNER JOIN dbo.Cliente AS cliente ON cliente.ClienteId=m.ClienteId
+        LEFT JOIN dbo.Tienda AS tienda ON tienda.ClienteId=m.ClienteId AND tienda.TiendaId=m.TiendaId
         INNER JOIN dbo.AspNetUsers AS creador ON creador.Id = m.UsuarioRegistro
         LEFT JOIN dbo.AspNetUsers AS editor ON editor.Id = m.UsuarioActualizacion
-        WHERE (@Patron IS NULL OR CONVERT(NVARCHAR(40), m.ContactoId) LIKE @Patron ESCAPE N'~' OR m.Nombre LIKE @Patron ESCAPE N'~' OR cliente.Codigo LIKE @Patron ESCAPE N'~' OR CASE WHEN cliente.TipoEntidad=N'NATURAL' THEN CONCAT(cliente.Nombres,N' ',cliente.Apellidos) ELSE cliente.RazonSocial END LIKE @Patron ESCAPE N'~') AND (@SoloActivos = 0 OR m.Activo = 1) AND (@PadreId IS NULL OR m.ClienteId = @PadreId);
+        WHERE (@Patron IS NULL OR CONVERT(NVARCHAR(40), m.ContactoId) LIKE @Patron ESCAPE N'~' OR m.Nombre LIKE @Patron ESCAPE N'~' OR cliente.Codigo LIKE @Patron ESCAPE N'~' OR CASE WHEN cliente.TipoEntidad=N'NATURAL' THEN CONCAT(cliente.Nombres,N' ',cliente.Apellidos) ELSE cliente.RazonSocial END LIKE @Patron ESCAPE N'~' OR tienda.Nombre LIKE @Patron ESCAPE N'~') AND (@SoloActivos = 0 OR m.Activo = 1) AND (@PadreId IS NULL OR m.ClienteId = @PadreId);
         SELECT p.Id, p.Codigo, p.Descripcion, p.Estado, p.Informacion,
-            p.FechaRegistro, p.UsuarioRegistro, p.FechaActualizacion, p.UsuarioActualizacion, p.ClienteCodigo, p.ClienteNombre
+            p.FechaRegistro, p.UsuarioRegistro, p.FechaActualizacion, p.UsuarioActualizacion, p.ClienteCodigo, p.ClienteNombre, p.TiendaNombre
         FROM #Pagina AS p ORDER BY p.Codigo, p.Id
         OFFSET (CONVERT(BIGINT,@Pagina)-1)*20 ROWS FETCH NEXT 20 ROWS ONLY;
         SELECT COUNT_BIG(1) AS Total FROM #Pagina AS p;

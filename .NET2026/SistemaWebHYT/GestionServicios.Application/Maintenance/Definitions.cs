@@ -32,7 +32,7 @@ public static class MaintenanceDefinitions
         ], "ClienteId", false),
         new("contactos", "Contactos", "ContactoCliente", "CLIENTES", [
             new("ClienteId", "Cliente", "Reference", true, 0, "clientes", null, null),
-            new("TiendaId", "Tienda (opcional)", "Reference", false, 0, "tiendas", null, null),
+            new("TiendaId", "Tienda", "Reference", true, 0, "tiendas", null, null),
             new("Nombre", "Nombre", "Text", true, 150, null, null, null),
             new("Telefono", "Teléfono", "Text", false, 50, null, null, null),
             new("Cargo", "Cargo", "Text", false, 100, null, null, null),
@@ -50,6 +50,7 @@ public static class MaintenanceDefinitions
         new("unidades", "Unidades de medida", "UnidadMedida", "UNIDADES", [
             new("Codigo", "Abreviatura", "Text", true, 30, null, null, null),
             new("Descripcion", "Descripción", "Text", true, 150, null, null, null),
+            new("CodigoSunat", "Código SUNAT", "Text", false, 3, null, null, null),
             new("Activo", "Activo", "Boolean", true, 0, null, "true", null)
         ], null, false),
         new("zonas", "Zonas", "Zona", "ZONAS", [
@@ -73,6 +74,7 @@ public static class MaintenanceDefinitions
             new("Descripcion", "Descripción", "LongText", true, 1500, null, null, null),
             new("UnidadMedidaId", "Unidad de medida", "Reference", true, 0, "unidades", null, null),
             new("EspecialidadId", "Especialidad", "Reference", false, 0, "especialidades", null, null),
+            new("CodigoDetraccion", "Detracción", "Select", false, 3, null, null, "Withholding"),
             new("Activo", "Activo", "Boolean", true, 0, null, "true", null)
         ], null, true),
         new("tarifarios", "Tarifarios", "Tarifario", "TARIFARIOS", [

@@ -342,6 +342,8 @@ spu_MantTienda_Listar y spu_MantContactoCliente_Listar incorporan JOIN explícit
 
 MaintenanceRow y SqlMaintenanceRepository transportan los dos campos al listado MVC, con columnas separadas «Código de cliente» y «Cliente: nombres / razón social». Las ayudas conservan su contrato. Aplicados ambos procedimientos en SQL local; paquete y huellas de etapa 3 regenerados. Verificación: compilación, pruebas HTTP y 158 comprobaciones SQL aisladas, incluidas búsquedas por cliente jurídico y natural.
 
+11/11/2026. El listado de contactos muestra Cliente y Tienda en columnas separadas y permite buscar por nombre de tienda. Guardar exige una tienda del cliente para nuevos registros y actualizaciones. Los contactos históricos sin tienda aparecen como «Sin tienda» hasta que se les asigne una.
+
 ## Lista de enlaces de documentos por cliente — 05/11/2026
 
 ClienteEnlaceDocumento almacena Id, ClienteId, Descripcion (200), Url (2048), Orden, fecha/usuario de registro y actualización. FK a Cliente y a usuarios; índice por cliente/orden/Id. Alta de tabla independiente en Tablas/ClienteEnlaceDocumento.sql, registrada antes de los SP de mantenimiento en etapa 3. Script/022_EnlacesDocumentosCliente.sql migra el antiguo UrlCargaDocumentos con descripción «Documentos del cliente»; conserva el valor anterior y marca la migración mediante propiedad extendida de tabla. Repetir el script no duplica ni restaura enlaces que el usuario haya retirado.
@@ -564,6 +566,10 @@ Los nuevos reportes de gestión imprimibles deben seguir la vista de impresión 
 
 Mostrar en el resumen el título, los filtros o el período aplicado y el número de registros. Incluir el conjunto completo autorizado para esa consulta y sus totales cuando correspondan. Alinear los importes a la derecha y centrar cantidades, cuentas y códigos numéricos. Conservar los ceros iniciales de las cuentas. La impresión usa A4 horizontal, repite los encabezados de tabla y evita partir filas entre páginas.
 
+## Dashboard: seguimiento de presupuestos — 11/11/2026
+
+La aceptación compara presupuestos aceptados con los demás estados del período. `spu_Dashboard_Obtener` devuelve `CoberturaPresupuesto` con conteos de guía registrada, OC vigente y ambas sobre la última revisión aceptada de cada presupuesto registrado en el período. Cada conteo documental se entrega según su permiso de consulta. Las OC canceladas quedan fuera de la cobertura. La interfaz calcula los grupos excluyentes de guía y OC con esos conteos.
+
 ## Dashboard: Confirmación del cliente y Facturado — 06/11/2026
 
 Sustituye los indicadores temporales de primeros eventos del diseño anterior. Los controles, leyendas y detalle se denominan Confirmación del cliente y Facturado. spu_Dashboard_Obtener ya no calcula MIN(FechaRegistro) ni agrupa la primera incorporación histórica por OC: #Eventos contiene confirmaciones/referencias Vigente=1 asociadas a OC no canceladas, filtradas por su propia FechaRegistro y por contexto comercial. La curva agrupa esos registros por fecha de Lima. Se mantienen claves JSON Confirmaciones/Marcados por compatibilidad de contrato; no son nombres visibles. Presupuestos/Ordenes se mantienen por su fecha de registro y concilian con sus KPI del período. El resto de estados y pendientes conserva reglas vigentes.
@@ -698,7 +704,8 @@ Obligaciones muestra el listado mensual. La ficha se abre con **Registrar obliga
 - **Obligaciones** confirma el pago desde la fila pendiente con fecha y número de operación. Reutiliza `spu_ObligacionPersonalHYT_Guardar` y verifica la versión del registro antes de confirmar.
 - **Pagos a Proveedores** lista trabajos con saldo pendiente. Reutiliza el formulario de abono y `spu_PagoProveedor_Registrar`. Un pago parcial conserva el saldo en la bandeja. El pago total retira el trabajo de pendientes.
 - **Planificación de Planilla** confirma un período guardado con una fecha y número de operación comunes. `046_ConfirmacionPagoPlanillaHYT.sql` añade `FechaPago` y `ReferenciaPago` al encabezado. `spu_PlanPagoHYT_ConfirmarPago` registra el bruto, descuento y pago neto por trabajador con `spu_MovimientoPersonalHYT_Registrar` y cierra la planificación en una transacción. Rechaza movimientos de remuneración, servicio, descuento o pago que se superpongan a la cobertura. Si falla una fila, se revierte todo el pago. Repetir fecha y referencia del plan confirmado devuelve el mismo identificador sin volver a registrar movimientos.
-- `spu_PlanPagoHYT_Guardar` protege los períodos pagados contra ediciones. `spu_PlanPagoHYT_Consultar` expone la confirmación a la ficha y al reporte. El cierre de la planificación se limita a su período y frecuencia.
+- `spu_PlanPagoHYT_Guardar` protege los períodos pagados contra ediciones. `spu_PlanPagoHYT_Consultar` expone la confirmación a la ficha y al reporte y devuelve el cargo actual de la ficha en períodos nuevos o guardados. En períodos pendientes, la pantalla precarga también los trabajadores activos en planilla o externos que aún no están en el detalle, cuya frecuencia coincide y cuya fecha de ingreso es anterior o igual al fin del período. Al guardar se incorporan al detalle y se conservan los registros existentes. La confirmación y la exportación requieren guardar las incorporaciones. Los períodos pagados conservan el detalle registrado.
+- `058_SeleccionPlanPagoHYT.sql` agrega `PlanPagoDetalleHYT.Incluido` con valor inicial verdadero. Guardar conserva las filas excluidas y sus ajustes para poder incluirlas de nuevo. El reporte, Telecrédito y la confirmación consideran solo las filas incluidas. El listado identifica el período guardado por su `PlanId` y distingue Pendiente de Pagada según `FechaPago`.
 
 ### Reportes de Planillas por tipo · 10/11/2026
 
@@ -713,3 +720,102 @@ La vista previa y **Imprimir reporte** ejecutan la misma consulta con los filtro
 ### Adjuntos de expedientes facturados · 10/11/2026
 
 Los procedimientos `spu_SeguimientoOC_Guardar`, `spu_SeguimientoGUIA_Guardar` y `spu_SeguimientoCONFIRMACION_Guardar` permiten agregar y retirar adjuntos cuando el expediente está marcado como facturado. Exigen motivo, versiones vigentes y que los demás campos del documento coincidan con el registro guardado. El marcado facturado y el historial de archivos retirados se conservan. Las correcciones a los datos del documento siguen requiriendo retirar el marcado.
+
+### Ajustes de presupuestos y tarifas del 10/11/2026
+
+- spu_Presupuesto_Listar busca también en la descripción de las partidas de la última revisión.
+- spu_Presupuesto_Guardar registra el número de presupuesto como número de cotización. El código SAP de proveedor se sugiere desde Cliente.CodigoSAP y se guarda en PresupuestoRevision.CodigoSAPProveedor con el valor del formulario.
+- spu_MaterialTarifas_Listar muestra un registro por material. spu_MaterialTarifa_Guardar impide duplicar la tarifa directa. spu_Presupuesto_AyudaTarifario prioriza la tarifa directa y conserva la consulta por identificador de partida para presupuestos anteriores.
+- Los reportes HTML exportan las tablas de la vista a CSV UTF-8 desde el navegador.
+
+### Provisiones de compras y emisión de comprobantes. 10/11/2026
+
+#### Estructura
+
+- ComprobanteHYT guarda compras y ventas, RUC de HYT y del tercero, proveedor/cliente, tipo 01/03/07, serie, número, fecha, moneda, forma de pago, importe y líneas en JSON estructurado. Conserva el XML original y referencia/motivo de notas de crédito. Incluye estado SUNAT pendiente, proveedor e identificador electrónico para la futura integración.
+- ComprobanteHYTPresupuesto relaciona una venta con uno o varios presupuestos del mismo cliente. Los documentos numerados de tipo 01/03 se reflejan como facturados en la ficha, el listado, reportes e indicadores. El borrador sin numeración queda pendiente. Una NC se vincula como documento y conserva la referencia del comprobante modificado.
+- ComprobanteHYTCosto relaciona una compra con uno o varios costos del mismo proveedor y moneda. Cada costo pertenece a una sola provisión. Permite crear costos desde la compra y controla que la suma vinculada no exceda el importe.
+- ComprobanteHYTPago registra pagos al proveedor y depósitos de detracción con fecha, importe y referencia/constancia. El saldo al proveedor descuenta el equivalente de detracción en la moneda del documento. Los pagos de esta provisión se registran en esta opción. El vínculo de un costo conserva su historial previo de pagos en Planillas.
+- La importación utiliza el RUC de ConfiguracionHYT. En compras debe ser el receptor y en ventas el emisor. La creación del proveedor por RUC, el documento y sus vínculos se confirman en una transacción. Los comprobantes numerados no se duplican. Los borradores manuales y la creación de costos tienen identificador de operación para proteger reintentos.
+- Los XML UBL Invoice y CreditNote se leen con espacios de nombres y con DTD/entidades externas deshabilitados. Límite de 2 MB y 500 partidas. Se conservan códigos, descripción, unidad, cantidad, precio e importe. Cuando la detracción viene en otra moneda, el porcentaje del XML determina el equivalente. En el registro manual se indica el equivalente.
+- Ventas utiliza FACTURADO.CONSULTAR/EDITAR. Compras utiliza PAGOS_PROVEEDOR.CONSULTAR/EDITAR. Crear o vincular costos requiere COSTOS_PROVEEDOR.EDITAR. La precarga de partidas del presupuesto requiere PRESUPUESTOS.CONSULTAR. La ayuda en un nuevo comprobante de venta busca por número o descripción entre los presupuestos no cancelados del cliente y carga las partidas del seleccionado.
+- La nota de crédito manual de venta referencia una factura de tipo 01 con serie y número del mismo cliente. La ayuda muestra hasta 20 facturas, desde un mes antes de hoy hasta hoy por defecto, con filtros de fechas y serie o número. Se excluyen borradores y estados de rechazo, anulación o baja. El guardado valida la referencia y resuelve la descripción en `MotivoNotaCreditoHYT`. `ComprobanteHYT.CodigoMotivoNota` guarda el código separado del texto y admite el código del XML importado.
+- `UnidadMedida.CodigoSunat` conserva la homologación del catálogo 03 y se puede editar desde el maestro. Las sugerencias de unidad aparecen en los registros manuales de compras y ventas. La migración `061_HomologacionUnidadesHYT.sql` completa códigos faltantes desde Proveeperu_071126, mantiene los ID existentes y crea las unidades faltantes cuando ya existe un usuario activo con permiso de edición de unidades. En instalaciones nuevas se puede volver a ejecutar el script después de aprovisionar el administrador.
+- Se admiten de 1 a 25 XML por carga, hasta 2 MB por archivo y 24 MB en total. Un error de validación o un duplicado revierte todos los comprobantes y las altas de terceros del lote. Completar un borrador admite un XML.
+- Los XML de compra crean proveedores por RUC si faltan. Los de venta crean clientes por número de documento. Si el cliente nuevo es persona natural, el primer componente del nombre UBL se guarda en Nombres y el resto en Apellidos.
+- El registro manual calcula importes desde cantidad y precio sin IGV, subtotal e IGV según la vigencia de la fecha de emisión. El servidor vuelve a calcular al guardar. La importación XML conserva los importes del documento.
+- La migración 048 agrega FechaVencimiento a ComprobanteHYT. El registro manual permite ingresarla y la importación toma DueDate o el primer vencimiento de las cuotas. Los comprobantes anteriores conservan el valor vacío.
+- Las ayudas cargan al abrir clientes activos con documento del maestro Cliente y proveedores activos de ProveedorHYT. Admiten búsqueda por nombre o documento.
+- spu_ComprobanteHYT_Consultar devuelve arreglos JSON vacíos para listados, pagos, vínculos y selectores sin resultados.
+- Las vistas de consulta tienen impresión y CSV mediante la plantilla común de reportes.
+
+#### Instalación
+
+Aplicar los archivos de Basededatos/Dbsishyt/manifest-comprobantes.json en orden sobre una base HYT existente y publicar la aplicación. El manifiesto acumulado también incluye las tablas y procedimientos nuevos. El sistema mantiene su modelo ADO.NET y procedimientos almacenados.
+
+La estructura XML se contrastó con las guías UBL de factura y nota de crédito de SUNAT. [Guías y manuales SUNAT](https://cpe.sunat.gob.pe/guias-y-manuales).
+
+### Negociación de Factoring. 10/11/2026
+
+- FactoringLoteHYT guarda la financiera, fechas de negociación y desembolso, referencia, observaciones, moneda y porcentaje negociado. La ficha sugiere el catálogo de bancos y permite escribir la financiera.
+- FactoringFacturaHYT vincula cada factura de venta numerada con un único lote. Las facturas del lote son de la misma moneda. El registro es transaccional y el identificador de operación protege los reintentos.
+- FactoringConsultar y FactoringGuardar consultan los lotes, seleccionan las facturas disponibles y registran la negociación. Los permisos FACTORING.CONSULTAR y FACTORING.EDITAR se asignan a Administrador y Administración.
+- Emisión de comprobantes filtra por Todos, Sí o No según la vinculación de cada venta a un lote. Muestra Sin factoring, Negociado o Con fecha de desembolso, junto al lote y a la fecha cuando está registrada. La fecha registrada por sí sola no confirma el pago. El reporte HTML del lote incluye impresión y CSV.
+- Para actualizar una base existente, aplicar en orden los archivos de Basededatos/Dbsishyt/manifest-factoring.json.
+
+### Vinculación desde listados y pago de detracciones. 10/11/2026
+
+- Registro de compras permite vincular varios trabajos existentes del mismo proveedor y moneda desde un diálogo en el listado. La ficha y el diálogo comparten la selección por casillas. El selector consulta por número de presupuesto o descripción antes de limitar a 100 resultados, conserva las casillas marcadas entre búsquedas y omite todos los trabajos ya vinculados a un comprobante.
+- Emisión de comprobantes permite vincular uno o varios presupuestos del cliente desde el listado. La operación conserva los filtros al volver y reutiliza los procedimientos transaccionales de vinculación. El script 060 agrega ComprobanteHYT.OrdenCompraId como vínculo opcional a una orden vigente del mismo cliente. La ayuda filtra por cliente y busca por orden, presupuesto o confirmación. El listado y la ficha consultan la confirmación vigente de la orden. El registro manual puede guardar el vínculo, y la ficha de una venta registrada o importada permite asociarlo, cambiarlo o retirarlo. Completar un borrador con XML conserva la orden ya elegida.
+- Administración incluye Pago de detracciones. La consulta muestra todos los pendientes, también de fechas anteriores. Filtra por pendiente/pagada/todos, proveedor por RUC o nombre y búsqueda por comprobante, código o constancia.
+- El pago se registra desde el listado con fecha, importe y número de operación. Reutiliza ComprobanteHYTPago con EsDetraccion=1 y spu_ComprobanteHYT_Pago. El saldo determina el estado pagado y los reintentos con la misma referencia conservan un solo pago.
+- Aplicar StoreProcedure/spu_ComprobanteHYT_DetraccionesConsultar.sql en una base existente. Está registrado en los manifiestos acumulado y de comprobantes.
+
+### Catálogo de detracciones de FralseCont. 10/11/2026
+
+- DetraccionCatalogoHYT y el script 050 replican los 37 códigos, nombres, porcentajes y estados de FralseCont.dbo.ADM_DetraccionSunat.
+- ComprobanteHYT_Consultar expone la ayuda de códigos activos para compras y el nombre del código en la consulta. La ficha manual de ventas consulta la tasa de mayor porcentaje de los materiales de la factura por código interno o SAP único. Cuando ninguna partida tiene una detracción configurada, permite seleccionar un código activo del catálogo. El servidor aplica esa tasa al total y la conserva en el comprobante. En las facturas importadas se conservan el código, el porcentaje y el importe declarados en el XML, incluido el equivalente en la moneda del comprobante cuando el depósito usa otra moneda. El listado muestra la afectación, la tasa, el total íntegro, la detracción y el saldo pendiente. El script 059 recupera la detracción de facturas anteriores y se ejecuta después de instalar fn_ComprobanteHYT_DetraccionMaterial.
+- ComprobanteHYT_Guardar calcula la detracción de compra manual aplicando el porcentaje del catálogo al total con IGV y redondeando a dos decimales en la moneda del comprobante. El equivalente se descuenta del saldo del proveedor. La detracción queda como saldo independiente para depositar. Si el depósito usa otra moneda, el usuario registra su importe en esa moneda y el sistema conserva el equivalente calculado sobre el total del comprobante. En compras importadas se conservan el importe y moneda declarados en el XML.
+- ServicioMaterial.CodigoDetraccion es opcional y referencia DetraccionCatalogoHYT. La ficha de Materiales y servicios usa el catálogo activo de spu_MantCatalogos. spu_MantServicioMaterial_Obtener devuelve el código y spu_MantServicioMaterial_Guardar lo valida y audita.
+- En una base existente, aplicar los cambios de detracciones en el orden de manifest-comprobantes.json, incluidos los scripts 050 y 051 y los procedimientos de maestros y comprobantes.
+
+### Conceptos de planilla. 10/11/2026
+
+- ConceptoPlanillaHYT guarda cargos y abonos con cálculo por importe o porcentaje, valor opcional, estado y versión. Se crean Asignación familiar, Bono, AFP y ONP. Los SP del maestro reutilizan los permisos de consulta y edición de Trabajadores y registran auditoría.
+- TrabajadorConceptoHYT relaciona los conceptos habituales con el trabajador. spu_TrabajadorHYT_Listar los devuelve en la ficha y spu_TrabajadorHYT_Guardar guarda la selección en la misma transacción. El régimen previsional existente activa el concepto AFP u ONP para personal de planilla.
+- spu_PlanPagoHYT_Consultar precarga conceptos activos para períodos sin guardar. Los porcentajes se calculan sobre la base de la fila, con preferencia por el valor del concepto y, para AFP/ONP, la tasa de la entidad configurada si se dejó vacío. El operador puede cambiar el porcentaje o fijar un importe en el ajuste. Los valores sin configurar se precargan en cero para completarlos en la planificación.
+- spu_PlanPagoHYT_Guardar conserva ConceptoId y el porcentaje aplicado en el JSON de ajustes y recalcula los porcentajes sobre la base recibida. Al editar manualmente el importe, se guarda como fijo. Los planes guardados conservan sus ajustes y los registros históricos de horas extra siguen incluidos en los abonos. La confirmación usa los totales guardados.
+- Aplicar Basededatos/Dbsishyt/manifest-conceptos-planilla.json después de las migraciones previas de Planillas. El manifiesto acumulado incluye los mismos cambios.
+
+### Planificación quincenal. 10/11/2026
+
+- Planificación permite elegir mes y primera quincena (1 al 15) o segunda (16 al fin de mes). La base inicial divide el sueldo mensual y asigna a la segunda quincena la diferencia de redondeo necesaria para completar el sueldo.
+- Script/053_AsignacionFamiliarQuincenaHYT.sql identifica la asignación familiar mediante ConceptoPlanillaHYT.CodigoSistema, independientemente del nombre mostrado. El manifiesto ejecuta 053 antes de la siembra 052.
+- spu_PlanPagoHYT_Consultar precarga asignación familiar y AFP/ONP en la segunda quincena. Si se calculan por porcentaje, aplica el sueldo mensual completo. Los otros conceptos porcentuales usan la base de la quincena. spu_PlanPagoHYT_Guardar conserva BasePorcentaje en el JSON del ajuste para repetir el cálculo con la misma base mensual. El operador puede editar el porcentaje o fijar un importe.
+- El listado de planificación muestra banco y número de cuenta con el permiso TRABAJADORES.CUENTA, tanto en precarga como en períodos guardados. El CCI se entrega en el reporte autorizado.
+- La precarga aplica a períodos nuevos. Para actualizar la base ejecutar el manifiesto de conceptos de planilla.
+
+### Exportación de Haberes Telecrédito BCP. 10/11/2026
+
+- Configuración HYT → Telecrédito BCP registra una cuenta de cargo corriente de 13 dígitos. El código de cuenta maestra se conserva para configuraciones previas. TelecreditoHYT usa versión de fila y los permisos CONFIGURACION.CONSULTAR y CONFIGURACION.EDITAR. La auditoría guarda solo los últimos cuatro dígitos.
+- Script/054_TrabajadorTelecreditoHYT.sql agrega tipo de documento, documento alternativo, tipo de cuenta y moneda al trabajador. Permite registrar un CCI sin número de cuenta local y mostrarlo como cuenta de abono en la planificación autorizada. Si el banco del trabajador es distinto de BCP, el TXT usa automáticamente el CCI y el código interbancario B. Los tipos A, C y M se eligen solo para cuentas BCP. Los procedimientos de trabajadores conservan datos de llamadas antiguas y mantienen el permiso TRABAJADORES.CUENTA para abonos.
+- spu_TelecreditoHYT_ConsultarLote exige una planificación guardada, vigente y pendiente, permisos de consulta y edición de pagos, y consulta de cuentas. Separa PLANILLA (X) y EXTERNO (4), devuelve el neto del detalle y señala movimientos superpuestos. Los externos se tratan como honorarios y el TXT utiliza el número de documento principal de la ficha y el neto planificado. El tipo se selecciona junto al número y la ficha utiliza un solo campo para el documento.
+- El generador escribe 113 posiciones de cabecera y 195 de detalle en ASCII sin BOM, con CRLF, controla cuenta, documento, moneda, fecha, referencias, importe, suma y total de control. El IDC se selecciona en el diálogo. Descargar conserva la planificación pendiente. Antes del primer envío, contrastar ambos formatos con el Excel oficial y la validación del portal BCP.
+- Aplicar Basededatos/Dbsishyt/manifest-telecredito.json sobre HYT actualizado. El manifiesto acumulado incluye la misma estructura.
+
+### Nombres y apellidos de trabajadores. 11/11/2026
+
+- Script/056_NombresTrabajadorHYT.sql agrega Nombres y Apellidos. La ficha exige ambos al guardar y spu_TrabajadorHYT_Guardar compone NombreCompleto en orden Apellidos Nombres, con un máximo combinado de 180 caracteres.
+- spu_TrabajadorHYT_Listar devuelve ambos campos y permite buscar en cualquiera de los dos órdenes. Listados, nuevas planificaciones y Telecrédito usan NombreCompleto. Las planificaciones guardadas y pendientes muestran el nombre actualizado cuando se completan ambos campos. spu_PlanPagoHYT_ConfirmarPago guarda el nombre vigente al cerrar el pago. Los períodos ya pagados conservan el nombre histórico.
+
+### Moneda de la cuenta de cargo Telecrédito. 11/11/2026
+
+- Script/057_MonedaCuentaCargoTelecreditoHYT.sql permite registrar la cuenta de cargo en soles o dólares y valida el dígito 11 del número BCP. spu_TelecreditoHYT_Guardar conserva la moneda seleccionada y registra el cambio en auditoría.
+- La planificación de HYT lleva los importes en soles. Su exportación requiere una cuenta de cargo en soles e informa la incompatibilidad cuando la cuenta configurada está en dólares.
+
+## 11/11/2026 — Impresión de listados (bloques 1 y 2)
+
+- Los reportes conservan filtros y permisos de los listados y reúnen todas sus páginas. Comparten la impresión horizontal y el CSV de HYT.
+- \`spu_Presupuesto_Listar\` agrega \`Comprobantes\` con números de comprobantes emitidos y referencias externas vigentes para usuarios con \`FACTURADO.CONSULTAR\`.
+- \`spu_SeguimientoOC_Listar\` agrega \`FechaRecepcionOC\` y \`NumeroComprobante\` emitido con el permiso de facturación. \`spu_SeguimientoGUIA_Listar\` agrega \`NumeroOCCliente\` con \`OC_CLIENTE.CONSULTAR\`.
+- \`spu_CostoProveedor_Listar\` agrega \`FacturaCompra\` a la página consultada si existen las tablas del módulo de compras y el usuario puede consultar pagos de proveedores. Conserva los filtros, el orden, los saldos y el conteo.

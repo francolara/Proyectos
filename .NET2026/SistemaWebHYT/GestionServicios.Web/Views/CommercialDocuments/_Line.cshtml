@@ -1,0 +1,24 @@
+@* Firma: FRANCO LARA - 10/11/2026 | Partidas editables con el botón de eliminación estándar de HYT e importe calculado. *@
+@* Firma: FRANCO LARA - 11/11/2026 | Muestra el número de ítem de la partida como texto y permite editar y ampliar la descripción y muestra la cantidad entera sin ceros decimales y sugiere unidades del maestro homologado. *@
+@using System.Globalization
+@using GestionServicios.Application.Billing
+@model (string Index,CommercialLine Line)
+@{
+    var prefix = $"Input.Detalle[{Model.Index}]";
+    var item = int.TryParse(Model.Index, out var index) ? index + 1 : (int?)null;
+    var quantity = Model.Line.Cantidad.ToString("0.############################", CultureInfo.InvariantCulture);
+}
+<tr>
+<td data-commercial-item-number>@item</td>
+<td><input name="@(prefix+".Codigo")" value="@Model.Line.Codigo" maxlength="100" aria-label="Código" /></td>
+<td><textarea name="@(prefix+".Descripcion")" rows="1" maxlength="1500" aria-label="Descripción" required>@Model.Line.Descripcion</textarea></td>
+<td><input name="@(prefix+".Unidad")" value="@Model.Line.Unidad" maxlength="30" list="commercial-units" aria-label="Unidad" required /></td>
+<td><input name="@(prefix+".Cantidad")" value="@quantity" type="number" step="1" min="0" aria-label="Cantidad" required /></td>
+<td><input name="@(prefix+".Precio")" value="@Model.Line.Precio.ToString(CultureInfo.InvariantCulture)" type="number" step="any" min="0" aria-label="Precio sin IGV" required /></td>
+<td><input name="@(prefix+".Importe")" value="@Model.Line.Importe.ToString(CultureInfo.InvariantCulture)" type="number" step="any" min="0" aria-label="Importe calculado" readonly /></td>
+<td>
+    <button type="button" class="hyt-button-secondary hyt-detail-icon" data-commercial-remove title="Quitar ítem" aria-label="Quitar ítem">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg>
+    </button>
+</td>
+</tr>

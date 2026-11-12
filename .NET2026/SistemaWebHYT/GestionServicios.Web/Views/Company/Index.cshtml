@@ -4,8 +4,9 @@
 @model CompanyModel
 @* Firma: FRANCO LARA - 03/11/2026 | Datos únicos de HYT y responsables de cambios. *@
 @* Firma: FRANCO LARA - 05/11/2026 | Acciones presentadas como botones HYT; Franja común de responsables sin historial en edición. Consideraciones predeterminadas editables para presupuestos. *@
+@* Firma: FRANCO LARA - 10/11/2026 | Acceso al mantenimiento de la cuenta de cargo de Telecrédito BCP. *@
 @{ViewData["Title"]="Datos de HYT";}
-<header class="hyt-page-header"><div><h1>Datos de HYT</h1><p>Identificación y contacto utilizados al preparar nuevas revisiones de presupuesto.</p></div><a class="hyt-button-secondary" asp-controller="TaxRate" asp-action="Index">Vigencias del IGV</a></header>
+<header class="hyt-page-header"><div><h1>Datos de HYT</h1><p>Identificación y contacto utilizados al preparar nuevas revisiones de presupuesto.</p></div><div class="hyt-payroll-actions"><a class="hyt-button-secondary" asp-controller="TaxRate" asp-action="Index">Vigencias del IGV</a><a class="hyt-button-secondary" asp-controller="TelecreditSettings" asp-action="Index">Telecrédito BCP</a></div></header>
 @if(TempData["Notice"] is string notice){<p role="status">@notice</p>}
 <form asp-action="Save" method="post" class="hyt-panel hyt-master-form" data-hyt-save><div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
 <input name="Id" type="hidden" value="@Model.Input.Id" /><input name="RowVersion" type="hidden" value="@Model.Input.RowVersion" />

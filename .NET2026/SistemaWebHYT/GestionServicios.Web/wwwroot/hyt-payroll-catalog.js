@@ -1,3 +1,4 @@
+// Firma: FRANCO LARA - 10/11/2026 | Permite buscar el código y nombre de detracciones en el diálogo compartido.
 // Firma: FRANCO LARA - 09/11/2026 | Búsqueda y selección de bancos y previsión en diálogo HYT.
 import {setDialog} from './hyt-ui.js';
 
@@ -10,7 +11,8 @@ function filter(dialog) {
     const regime = document.getElementById(dialog.dataset.regimeField)?.value;
     let matches = 0;
     for (const row of dialog.querySelectorAll('[data-catalog-row]')) {
-        const name = row.querySelector('[data-catalog-select]').dataset.catalogSelect;
+        const { catalogLabel, catalogSelect } = row.querySelector('[data-catalog-select]').dataset;
+        const name = catalogLabel ?? catalogSelect;
         row.hidden = !searchable(name).includes(query) || Boolean(regime && row.dataset.catalogRegime !== regime);
         if (!row.hidden) matches++;
     }

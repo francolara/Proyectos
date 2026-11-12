@@ -1,3 +1,4 @@
+// Firma: FRANCO LARA - 11/11/2026 | Estilo de gestión con área de tendencia, colores por serie y barras animadas con escala común y selector de cobertura documental, minigráficos por período y entrada de la distribución de facturación.
 // Firma: FRANCO LARA - 06/11/2026 | Nombres comerciales de estados del presupuesto/OC y navegación por fuente independiente. Curvas con nombres legibles Confirmación del cliente y Facturado sobre registros vigentes.
 // Firma: FRANCO LARA - 03/11/2026 | Gráficos SVG HYT con curvas sin sobrepasar valores, detalle por teclado y agrupación acotada.
 // Firma: FRANCO LARA - 05/11/2026 | Agrupación día/semana/mes, eventos diferenciados y navegación por intervalo con espera compartida y gráficos legibles en ambos temas.
@@ -5,7 +6,19 @@
 const source=document.querySelector('#hyt-dashboard-data');if(!source)return;
 const model=JSON.parse(source.textContent),data=model.data,ns='http://www.w3.org/2000/svg';
 const stateLabel=state=>({BORRADOR:'Registrado',ENVIADO:'Enviado',OBSERVADO:'Observado',APROBADO:'Aceptada',RECHAZADO:'Rechazada',CANCELADO:'Cancelado',REGISTRADA:'Registrada',TRABAJO_COMPLETADO:'Completado',CERRADA_OPERATIVAMENTE:'Cerrada operativamente',CANCELADA:'Cancelada'}[state]??state);
-const colors=['#c91620','var(--hyt-chart-ink)' ,'var(--hyt-chart-muted)' ];
+const seriesColors = {
+    Presupuestos: 'var(--hyt-dashboard-blue)',
+    Ordenes: 'var(--hyt-dashboard-indigo)',
+    Confirmaciones: 'var(--hyt-dashboard-amber)',
+    Marcados: 'var(--hyt-dashboard-green)'
+};
+const stateColors = {
+    BORRADOR: 'var(--hyt-dashboard-blue)', ENVIADO: 'var(--hyt-dashboard-indigo)',
+    OBSERVADO: 'var(--hyt-dashboard-amber)', APROBADO: 'var(--hyt-dashboard-green)',
+    RECHAZADO: 'var(--hyt-link)', CANCELADO: 'var(--hyt-chart-muted)',
+    REGISTRADA: 'var(--hyt-dashboard-blue)', TRABAJO_COMPLETADO: 'var(--hyt-dashboard-green)',
+    CERRADA_OPERATIVAMENTE: 'var(--hyt-dashboard-indigo)', CANCELADA: 'var(--hyt-chart-muted)'
+};
 const value=n=>Number.isFinite(Number(n))?Math.max(0,Number(n)):0;
 function node(tag,attrs={},text){const element=document.createElementNS(ns,tag);for(const [key,val] of Object.entries(attrs))element.setAttribute(key,String(val));if(text!==undefined)element.textContent=text;return element;}
 function title(element,text){element.append(node('title',{},text));return element;}
@@ -25,9 +38,39 @@ function regroup(){
  for(const record of data.Movimientos){const time=day(record.Fecha),bucket=buckets.find(item=>time>=item.date&&time<=item.end);if(bucket)for(const key of series)bucket[key]+=value(record[key]);}
 }
 regroup();
+for (const sparkline of document.querySelectorAll('[data-sparkline]')) {
+    const key = sparkline.dataset.sparkline;
+    const samples = buckets.map(bucket => bucket[key]);
+    const maximum = Math.max(0, ...samples);
+    if (maximum === 0 || samples.length < 2) continue;
+
+    const points = samples.map((count, index) => [
+        2 + index * 108 / (samples.length - 1),
+        35 - count * 30 / maximum
+    ]);
+    const line = points.map(point => point.join(' ')).join(' L ');
+    const area = 'M ' + line + ' L 110 35 L 2 35 Z';
+    sparkline.append(node('path', { d: area, fill: seriesColors[key], 'fill-opacity': .14 }),
+        node('path', { d: 'M ' + line, fill: 'none', stroke: seriesColors[key], 'stroke-width': 2, 'stroke-linejoin': 'round' }));
+    sparkline.removeAttribute('hidden');
+}
+const coveragePanel = document.querySelector('[data-budget-coverage]');
+coveragePanel?.addEventListener('click', event => {
+    const button = event.target.closest('[data-coverage-select]');
+    if (!button || button.getAttribute('aria-pressed') === 'true') return;
+    const selected = button.dataset.coverageSelect;
+    coveragePanel.querySelectorAll('[data-coverage-select]').forEach(control => {
+        control.setAttribute('aria-pressed', String(control === button));
+    });
+    coveragePanel.querySelectorAll('[data-coverage-view]').forEach(view => {
+        view.hidden = view.dataset.coverageView !== selected;
+    });
+});
+
 const trend=document.querySelector('[data-chart=trend]'),readout=document.querySelector('[data-chart-readout]'),note=document.querySelector('[data-chart-note]');
 const controls=document.querySelector('.hyt-chart-controls');
 let selector;
+let firstTrendRender = true;
 if(controls){const label=document.createElement('label');label.textContent='Detalle por fecha ';selector=document.createElement('select');selector.setAttribute('aria-label','Consultar intervalo del gráfico');label.append(selector);controls.append(label);}
 const labelFor=bucket=>date(bucket.date)+(bucket.end>bucket.date?' – '+date(bucket.end):'');
 function read(index){const bucket=buckets[index];if(!bucket)return;const selected=[...document.querySelectorAll('[data-chart-series]:checked')].map(input=>input.dataset.chartSeries);readout.textContent=labelFor(bucket)+' · '+selected.map(key=>seriesLabels[key]+': '+bucket[key].toLocaleString('es-PE')).join(' · ');}
@@ -41,36 +84,57 @@ if(!keys.length||!hasRecords){readout.textContent='';return;}
 const maximum=Math.max(4,Math.ceil(Math.max(0,...buckets.flatMap(bucket=>keys.map(key=>bucket[key])))/4)*4),left=52,right=740,top=18,bottom=220;
 const x=index=>buckets.length===1?(left+right)/2:left+index*(right-left)/(buckets.length-1),y=count=>bottom-count/maximum*(bottom-top);
 for(let tick=0;tick<=4;tick++){const count=maximum*tick/4,position=y(count);trend.append(node('line',{x1:left,x2:right,y1:position,y2:position,stroke:'var(--hyt-border)'}));trend.append(node('text',{x:42,y:position+4,'text-anchor':'end'},Math.ceil(count).toLocaleString('es-PE')));}
-for(const key of keys){
-const color=colors[key==='Presupuestos'||key==='Confirmaciones'?0:1],points=buckets.map((bucket,index)=>[x(index),y(bucket[key])]);let path=`M ${points[0][0]} ${points[0][1]}`;
+const plot = node('g', { class: firstTrendRender ? 'hyt-chart-reveal' : '' });
+firstTrendRender = false;
+trend.append(plot);
+for(const [seriesIndex, key] of keys.entries()){
+const color=seriesColors[key],points=buckets.map((bucket,index)=>[x(index),y(bucket[key])]);let path=`M ${points[0][0]} ${points[0][1]}`;
 for(let index=1;index<points.length;index++){const previous=points[index-1],next=points[index],middle=(previous[0]+next[0])/2;path+=` C ${middle} ${previous[1]},${middle} ${next[1]},${next[0]} ${next[1]}`;}
-trend.append(node('path',{d:path,fill:'none',stroke:color,'stroke-width':3,'stroke-linecap':'round','stroke-dasharray':key==='Confirmaciones'?'8 5':key==='Marcados'?'3 5':'none'}));
-buckets.forEach((bucket,index)=>{const text=labelFor(bucket)+' · '+seriesLabels[key]+': '+bucket[key],circle=title(node('circle',{cx:x(index),cy:y(bucket[key]),r:4,fill:color,tabindex:0,role:'img','aria-label':text}),text);circle.addEventListener('focus',()=>{if(selector)selector.value=String(index);read(index);});circle.addEventListener('pointerenter',()=>read(index));const select=()=>{read(index);const link=document.querySelector('[data-chart-link]');if(!link)return;link.hidden=!['Presupuestos','Ordenes'].includes(key);if(link.hidden)return;const url=new URL(key==='Presupuestos'?'/Presupuestos':'/Seguimiento/oc-cliente',location.origin);url.searchParams.set('from',new Date(bucket.date).toISOString().slice(0,10));url.searchParams.set('to',new Date(bucket.end).toISOString().slice(0,10));if(model.client)url.searchParams.set('client',model.client);if(model.store)url.searchParams.set('store',model.store);link.href=url.pathname+url.search;link.textContent='Abrir '+seriesLabels[key]+' del intervalo';};circle.addEventListener('click',select);circle.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();select();}});trend.append(circle);});
+if (seriesIndex === 0 && points.length > 1) {
+    plot.append(node('path', {
+        d: path + ' L ' + points.at(-1)[0] + ' ' + bottom + ' L ' + points[0][0] + ' ' + bottom + ' Z',
+        fill: color, 'fill-opacity': .13, 'pointer-events': 'none'
+    }));
+}
+plot.append(node('path',{d:path,fill:'none',stroke:color,'stroke-width':3,'stroke-linecap':'round','stroke-dasharray':key==='Confirmaciones'?'8 5':key==='Marcados'?'3 5':'none'}));
+buckets.forEach((bucket,index)=>{const text=labelFor(bucket)+' · '+seriesLabels[key]+': '+bucket[key],circle=title(node('circle',{cx:x(index),cy:y(bucket[key]),r:4,fill:color,tabindex:0,role:'img','aria-label':text}),text);circle.addEventListener('focus',()=>{if(selector)selector.value=String(index);read(index);});circle.addEventListener('pointerenter',()=>read(index));const select=()=>{read(index);const link=document.querySelector('[data-chart-link]');if(!link)return;link.hidden=!['Presupuestos','Ordenes'].includes(key);if(link.hidden)return;const url=new URL(key==='Presupuestos'?'/Presupuestos':'/Seguimiento/oc-cliente',location.origin);url.searchParams.set('from',new Date(bucket.date).toISOString().slice(0,10));url.searchParams.set('to',new Date(bucket.end).toISOString().slice(0,10));if(model.client)url.searchParams.set('client',model.client);if(model.store)url.searchParams.set('store',model.store);link.href=url.pathname+url.search;link.textContent='Abrir '+seriesLabels[key]+' del intervalo';};circle.addEventListener('click',select);circle.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();select();}});plot.append(circle);});
 }
 trend.append(node('text',{x:left,y:252},date(from)),node('text',{x:right,y:252,'text-anchor':'end'},date(until)));
 buckets.forEach((bucket,index)=>{const option=document.createElement('option');option.value=String(index);option.textContent=labelFor(bucket);selector?.append(option);});if(selector){selector.value=String(buckets.length-1);}read(buckets.length-1);
 }
 document.querySelector('[data-chart-group]')?.addEventListener('change',()=>{regroup();renderTrend();const link=document.querySelector('[data-chart-link]');if(link)link.hidden=true;});
-selector?.addEventListener('change',()=>read(Number(selector.value)));document.querySelectorAll('[data-chart-series]').forEach(input=>input.addEventListener('change',renderTrend));renderTrend();
+selector?.addEventListener('change', () => {
+    const link = document.querySelector('[data-chart-link]');
+    if (link) link.hidden = true;
+    read(Number(selector.value));
+});document.querySelectorAll('[data-chart-series]').forEach(input=>input.addEventListener('change',renderTrend));renderTrend();
 for(const states of document.querySelectorAll('[data-state-source]')){
 const isBudget=states.dataset.stateSource==='PRESUPUESTO',rows=isBudget?data.EstadosPresupuesto:data.EstadosOC;
 if(states){states.replaceChildren();if(!rows.length){states.style.display='none';const empty=document.createElement('p');empty.textContent='Sin documentos para distribuir por estado.';states.after(empty);}else{
-const maximum=Math.max(1,...rows.map(row=>value(row.Cantidad))),left=40,width=700,bottom=220;
-for(let tick=0;tick<=4;tick++){const position=bottom-tick*48;states.append(node('line',{x1:left,x2:750,y1:position,y2:position,stroke:'var(--hyt-border)'}));}
-rows.forEach((row,index)=>{const slot=width/rows.length,x=left+slot*index+slot*.2,height=value(row.Cantidad)/maximum*180,label=stateLabel(row.Estado),text=label+': '+row.Cantidad;const bar=title(node('rect',{x,y:bottom-height,width:slot*.6,height,rx:3,fill:colors[0],tabindex:0,role:'link','aria-label':text+' · Abrir listado'}),text);const open=()=>{const url=new URL(isBudget?'/Presupuestos':'/Seguimiento/oc-cliente',location.origin);url.searchParams.set('from',model.from);url.searchParams.set('to',model.to);url.searchParams.set('state',row.Estado);if(model.client)url.searchParams.set('client',model.client);if(model.store)url.searchParams.set('store',model.store);globalThis.hytLoading?.navigation();location.assign(url.pathname+url.search);};bar.addEventListener('click',open);bar.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}});states.append(bar);states.append(node('text',{x:x+slot*.3,y:bottom-height-10,'text-anchor':'middle'},row.Cantidad));states.append(title(node('text',{x:x+slot*.3,y:244,'text-anchor':'middle',transform:`rotate(-18 ${x+slot*.3} 244)`},label),label));});
+const maximum=Math.max(4,Math.ceil(Math.max(0,...rows.map(row=>value(row.Cantidad)))/4)*4),left=54,width=690,bottom=220,plotHeight=184;
+for(let tick=0;tick<=4;tick++){
+    const position=bottom-tick*plotHeight/4;
+    states.append(node('line',{x1:left,x2:744,y1:position,y2:position,stroke:'var(--hyt-border)'}),
+        node('text',{x:left-8,y:position+4,'text-anchor':'end'},(maximum*tick/4).toLocaleString('es-PE')));
+}
+rows.forEach((row,index)=>{const slot=width/rows.length,x=left+slot*index+slot*.2,height=value(row.Cantidad)/maximum*plotHeight,label=stateLabel(row.Estado),text=label+': '+row.Cantidad;const bar=title(node('rect',{x,y:bottom-height,width:slot*.6,height,rx:4,fill:stateColors[row.Estado] ?? "var(--hyt-chart-muted)",class:"hyt-chart-bar",tabindex:0,role:'link','aria-label':text+' · Abrir listado'}),text);const open=()=>{const url=new URL(isBudget?'/Presupuestos':'/Seguimiento/oc-cliente',location.origin);url.searchParams.set('from',model.from);url.searchParams.set('to',model.to);url.searchParams.set('state',row.Estado);if(model.client)url.searchParams.set('client',model.client);if(model.store)url.searchParams.set('store',model.store);globalThis.hytLoading?.navigation();location.assign(url.pathname+url.search);};bar.addEventListener('click',open);bar.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}});states.append(bar);states.append(node('text',{x:x+slot*.3,y:bottom-height-10,'text-anchor':'middle'},row.Cantidad));states.append(title(node('text',{x:x+slot*.3,y:244,'text-anchor':'middle'},row.Estado==='CERRADA_OPERATIVAMENTE'?'Cerrada':label),label));});
 }}
-if(states&&rows.length){const legend=document.createElement('ul');legend.className='hyt-states-legend';for(const row of rows){const item=document.createElement('li');item.textContent=stateLabel(row.Estado)+' · '+value(row.Cantidad).toLocaleString('es-PE');legend.append(item);}states.after(legend);}
+if(states&&rows.length){const legend=document.createElement('ul');legend.className='hyt-states-legend';for(const row of rows){const item=document.createElement('li');const swatch=document.createElement('span');swatch.className='hyt-chart-swatch';
+swatch.style.backgroundColor=stateColors[row.Estado]??'var(--hyt-chart-muted)';
+item.append(swatch,document.createTextNode(stateLabel(row.Estado)+' · '+value(row.Cantidad).toLocaleString('es-PE')));legend.append(item);}states.after(legend);}
 }
 const donut=document.querySelector('[data-chart=donut]'),legend=document.querySelector('[data-donut-legend]');
-if(donut){const categories=[{label:'Sin confirmar',count:value(data.SinConfirmar),color:colors[2]},{label:'Confirmadas sin marcar',count:value(data.ConfirmadasSinMarcar),color:colors[1]},{label:'Facturadas',count:value(data.Facturadas),color:colors[0]}],total=categories.reduce((sum,item)=>sum+item.count,0),circumference=2*Math.PI*84;let offset=0;
+if(donut){const categories=[{label:'Sin confirmar',count:value(data.SinConfirmar),color:'var(--hyt-dashboard-amber)'},{label:'Confirmadas sin marcar',count:value(data.ConfirmadasSinMarcar),color:'var(--hyt-dashboard-blue)'},{label:'Facturadas',count:value(data.Facturadas),color:'var(--hyt-dashboard-green)'}],total=categories.reduce((sum,item)=>sum+item.count,0),circumference=2*Math.PI*84;let offset=0;
 donut.append(node('circle',{cx:180,cy:125,r:84,fill:'none',stroke:'var(--hyt-border)','stroke-width':28}));
+const segments = node('g', { class: 'hyt-dashboard-donut-segments' });
+donut.append(segments);
 for(const item of categories){if(total&&item.count){
 const fraction=item.count/total,text=item.label+': '+item.count+' ('+(fraction*100).toFixed(2)+' %)',a=offset/circumference*Math.PI*2-Math.PI/2,b=a+fraction*Math.PI*2;
 const point=(radius,angle)=>`${180+radius*Math.cos(angle)} ${125+radius*Math.sin(angle)}`;
 let segment;
 if(item.count===total)segment=node('circle',{cx:180,cy:125,r:84,fill:'none',stroke:item.color,'stroke-width':28});
 else segment=node('path',{d:`M ${point(98,a)} A 98 98 0 ${fraction>.5?1:0} 1 ${point(98,b)} L ${point(70,b)} A 70 70 0 ${fraction>.5?1:0} 0 ${point(70,a)} Z`,fill:item.color});
-segment.setAttribute('tabindex','0');segment.setAttribute('role','img');segment.setAttribute('aria-label',text);segment.setAttribute('data-segment','');donut.append(title(segment,text));offset+=fraction*circumference;}
+segment.setAttribute('tabindex','0');segment.setAttribute('role','img');segment.setAttribute('aria-label',text);segment.setAttribute('data-segment','');segments.append(title(segment,text));offset+=fraction*circumference;}
 const line=document.createElement('li'),swatch=document.createElement('span');swatch.className='hyt-chart-swatch';swatch.style.backgroundColor=item.color;line.append(swatch,document.createTextNode(item.label+' · '+item.count.toLocaleString('es-PE')));legend?.append(line);}
 const center=node('text',{x:180,y:130,'text-anchor':'middle'},total.toLocaleString('es-PE'));center.style.fontSize='32px';center.style.fill='var(--hyt-chart-ink)' ;donut.append(center,node('text',{x:180,y:154,'text-anchor':'middle'},total?'OC activas':'Sin OC activas'));
 }

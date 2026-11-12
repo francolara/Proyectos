@@ -1,0 +1,133 @@
+@* Firma: FRANCO LARA - 10/11/2026 | Consulta, vínculos, pagos y detracciones con los controles de HYT y tarjeta de totales. Muestra la fecha de vencimiento y comparte el selector de vínculos con el listado y muestra el código de detracción. *@
+@* Firma: FRANCO LARA - 11/11/2026 | Muestra la tasa y el saldo de venta con la detracción registrada o importada y permite asociar la orden de compra del cliente. Muestra el código SUNAT de la nota de crédito. *@
+@using GestionServicios.Web.ViewModels.Billing
+@using GestionServicios.Web.Security
+@model CommercialPage
+@{
+var row=Model.Data.GetProperty("Documento");var id=row.GetProperty("ComprobanteId").GetInt64();
+var isPrint=ViewData["IsPrint"] is true;
+ViewData["Title"]=Model.Title+" · "+CommercialPage.Number(row);
+if(isPrint){Layout="_ReportPrintLayout";ViewData["ReportSubtitle"]=Model.Title;}
+var currency=CommercialPage.Text(row,"Moneda");var detCurrency=CommercialPage.Text(row,"MonedaDetraccion");
+var payments=row.GetProperty("Pagos").EnumerateArray().ToArray();
+var paid=payments.Where(p=>!p.GetProperty("EsDetraccion").GetBoolean()).Sum(p=>CommercialPage.Amount(p,"Importe"));
+var detPaid=payments.Where(p=>p.GetProperty("EsDetraccion").GetBoolean()).Sum(p=>CommercialPage.Amount(p,"Importe"));
+var det=CommercialPage.Amount(row,"ImporteDetraccion");
+var supplierBalance=CommercialPage.Amount(row,"Importe")-paid-CommercialPage.Amount(row,"DetraccionDocumento");
+var orderId = row.TryGetProperty("OrdenCompraId", out var orderValue) && orderValue.TryGetInt64(out var orderKey) ? (long?)orderKey : null;
+var orderNumber = CommercialPage.Text(row,"NumeroOCCliente");
+var canCost=Model.CanEdit&&User.HasClaim(AccessService.PermissionClaim,"COSTOS_PROVEEDOR.EDITAR");
+}
+<header class="hyt-page-header"><div><h1>@CommercialPage.TypeLabel(CommercialPage.Text(row,"Tipo")) @CommercialPage.Number(row)</h1><p>@Model.Title</p></div>
+@if(!isPrint){<div class="hyt-grid-actions"><a class="hyt-button-secondary" asp-action="Index" asp-route-scope="@Model.Scope">Volver al listado</a><a class="hyt-button-secondary" asp-action="Details" asp-route-scope="@Model.Scope" asp-route-id="@id" asp-route-print="true" target="_blank" rel="noopener">Imprimir / exportar</a></div>}</header>
+@if(TempData["CommercialNotice"] is string notice){<p role="status">@notice</p>}
+<section class="@(isPrint?"hyt-panel":"hyt-panel hyt-master-form")">
+<table class="hyt-table"><tbody>
+<tr><th>RUC HYT</th><td>@CommercialPage.Text(row,"RucHYT")</td><th>Fecha de emisión</th><td>@CommercialPage.Date(CommercialPage.Text(row,"Fecha"))</td></tr>
+<tr><th>Fecha de vencimiento</th><td colspan="3">@(CommercialPage.Text(row,"FechaVencimiento") is { Length: > 0 } due ? CommercialPage.Date(due) : "—")</td></tr>
+<tr><th>@(Model.Sales?"Cliente":"Proveedor")</th><td>@CommercialPage.Text(row,"NombreTercero")</td><th>Documento</th><td>@CommercialPage.Text(row,"DocumentoTercero")</td></tr>
+@if(!Model.Sales){<tr><th>Código del proveedor</th><td>@CommercialPage.Text(row,"ProveedorId")</td><th>Forma de pago</th><td>@CommercialPage.Text(row,"FormaPago")</td></tr>}
+@if(CommercialPage.Text(row,"CodigoDetraccion") is { Length: > 0 } withholdingCode){
+<tr><th>Detracción</th><td colspan="3">@withholdingCode @CommercialPage.Text(row,"NombreDetraccion")</td></tr>
+}
+@if (Model.Sales)
+{
+    <tr><th>Orden de compra del cliente</th><td>@(orderNumber.Length > 0 ? orderNumber : "—")</td>
+        <th>N.º de confirmación</th><td>@(CommercialPage.Text(row,"NumeroConfirmacion") is { Length: > 0 } confirmation ? confirmation : "—")</td></tr>
+}
+<tr><th>Estado SUNAT</th><td colspan="3">@CommercialPage.Text(row,"EstadoSunat")</td></tr>
+@if(CommercialPage.Text(row,"Tipo")=="07"){var reasonCode=CommercialPage.Text(row,"CodigoMotivoNota");<tr><th>Comprobante modificado</th><td>@CommercialPage.Text(row,"ReferenciaNota")</td><th>Motivo</th><td>@(reasonCode.Length > 0 ? reasonCode + " · " : "")@CommercialPage.Text(row,"MotivoNota")</td></tr>}
+</tbody></table>
+</section>
+<section class="@(isPrint?"hyt-panel":"hyt-panel hyt-master-form")"><h2>Detalle</h2><div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Detalle del comprobante"><table class="hyt-table">
+<thead><tr><th>Código</th><th>Descripción</th><th>Unidad</th><th>Cantidad</th><th>Precio</th><th>Importe</th></tr></thead><tbody>
+@foreach(var line in row.GetProperty("Detalle").EnumerateArray()){
+<tr><td>@CommercialPage.Text(line,"Codigo")</td><td>@CommercialPage.Text(line,"Descripcion")</td><td>@CommercialPage.Text(line,"Unidad")</td><td>@CommercialPage.Text(line,"Cantidad")</td><td>@CommercialPage.Text(line,"Precio")</td><td>@CommercialPage.Text(line,"Importe")</td></tr>
+}</tbody></table></div></section>
+<section class="@(isPrint ? "hyt-panel" : "hyt-panel hyt-master-form")" aria-labelledby="commercial-totals">
+<h2 id="commercial-totals">Totales del comprobante</h2>
+<table class="hyt-table"><tbody>
+<tr><th scope="row">Importe de las partidas</th><td>@currency @CommercialPage.Money(row.GetProperty("Detalle").EnumerateArray().Sum(line => CommercialPage.Amount(line,"Importe")))</td></tr>
+<tr><th scope="row">Total del comprobante</th><td><strong>@currency @CommercialPage.Money(CommercialPage.Amount(row,"Importe"))</strong></td></tr>
+@if (Model.Sales && CommercialPage.Text(row,"Tipo") == "01")
+{
+    var rate = CommercialPage.Amount(row, "PorcentajeDetraccion");
+    var withheld = CommercialPage.Amount(row, "DetraccionDocumento");
+    if (rate > 0 || det > 0)
+    {
+        <tr><th scope="row">Detracción (@rate.ToString("0.####")%)</th><td>@detCurrency @CommercialPage.Money(det)</td></tr>
+        @if (currency != detCurrency)
+        {
+            <tr><th scope="row">Equivalente en moneda del comprobante</th><td>@currency @CommercialPage.Money(withheld)</td></tr>
+        }
+    }
+    <tr><th scope="row">Saldo pendiente</th><td>@currency @CommercialPage.Money(CommercialPage.Amount(row,"Importe") - withheld)</td></tr>
+}
+@if(!Model.Sales && CommercialPage.Text(row,"Tipo")!="07"){
+<tr><th scope="row">Detracción</th><td>@detCurrency @CommercialPage.Money(det)</td></tr>
+<tr><th scope="row">Saldo proveedor</th><td>@currency @CommercialPage.Money(supplierBalance)</td></tr>
+<tr><th scope="row">Detracción por pagar</th><td>@detCurrency @CommercialPage.Money(det-detPaid)</td></tr>
+}
+</tbody></table>
+</section>
+@if(Model.Sales){
+@if (Model.CanEdit && row.TryGetProperty("ClienteId", out var clientValue) && clientValue.TryGetInt64(out var clientKey))
+{
+    <section class="hyt-panel hyt-master-form">
+        <form method="post" asp-action="LinkPurchaseOrder" asp-route-scope="@Model.Scope" asp-route-id="@id">
+            <partial name="_OrderPicker" model='((long?)clientKey, orderId, orderNumber, "ordenCompraId")' />
+            <button type="submit" class="hyt-button-primary">Guardar orden</button>
+        </form>
+    </section>
+}
+<section class="@(isPrint?"hyt-panel":"hyt-panel hyt-master-form")"><h2>Presupuestos vinculados</h2>
+<table class="hyt-table"><thead><tr><th>Presupuesto</th><th>Registro de facturación</th></tr></thead><tbody>
+@foreach(var budget in row.GetProperty("Presupuestos").EnumerateArray()){
+<tr><td>@CommercialPage.Text(budget,"NumeroPresupuesto")</td><td>@(CommercialPage.Text(row,"Serie").Length==0?"Borrador pendiente de completar":CommercialPage.Text(row,"Tipo")=="07"?"Nota de crédito vinculada":"Facturado")</td></tr>
+}</tbody></table>
+@if(Model.CanEdit){
+<partial name="_LinkSelection" model="(Model, false, (string?)null)" />
+}
+</section>
+@if(Model.CanEdit&&CommercialPage.Text(row,"Serie").Length==0){
+<section class="@(isPrint?"hyt-panel":"hyt-panel hyt-master-form")"><h2>Completar borrador con XML emitido</h2>
+<form method="post" enctype="multipart/form-data" asp-action="Import" asp-route-scope="@Model.Scope" class="hyt-filters">
+<input type="hidden" name="id" value="@id" /><div class="hyt-field"><label for="commercial-xml">XML del comprobante</label><input id="commercial-xml" type="file" name="xml" accept=".xml" required /></div><button class="hyt-button-primary" type="submit">Cargar XML</button>
+</form></section>
+}
+}else{
+<section class="@(isPrint?"hyt-panel":"hyt-panel hyt-master-form")"><h2>Costos vinculados</h2>
+<table class="hyt-table"><thead><tr><th>Costo</th><th>Presupuesto</th><th>Descripción</th><th>Importe</th></tr></thead><tbody>
+@foreach(var cost in row.GetProperty("Costos").EnumerateArray()){
+<tr><td>@CommercialPage.Text(cost,"CostoProveedorId")</td><td>@CommercialPage.Text(cost,"NumeroPresupuesto")</td><td>@CommercialPage.Text(cost,"Descripcion")</td><td>@currency @CommercialPage.Money(CommercialPage.Amount(cost,"Importe"))</td></tr>
+}</tbody></table>
+@if(canCost){
+<partial name="_LinkSelection" model="(Model, false, (string?)null)" />
+<h3>Registrar como costo</h3>
+<form method="post" asp-action="Link" asp-route-scope="@Model.Scope" asp-route-id="@id" class="hyt-filters" data-commercial-cost-form data-budgets-url="@Url.Action("CostBudgets",new{scope=Model.Scope,id})">
+<input name="operacionId" type="hidden" value="@Guid.NewGuid()" />
+<div class="hyt-field"><label for="commercial-budget-search">Buscar presupuesto</label><input id="commercial-budget-search" type="search" data-commercial-budget-search maxlength="150" placeholder="Número o descripción" /></div>
+<div class="hyt-field"><label for="commercial-presupuestoId">Presupuesto</label><select id="commercial-presupuestoId" name="presupuestoId" data-commercial-budgets required><option value="">Selecciona un presupuesto</option></select></div><span role="status" data-commercial-budget-status></span>
+<div class="hyt-field"><label for="commercial-descripcion">Descripción</label><input id="commercial-descripcion" name="descripcion" maxlength="300" value="@CommercialPage.Number(row)" required /></div>
+<div class="hyt-field"><label for="commercial-costo-importe">Importe en @currency</label><input id="commercial-costo-importe" name="importe" type="number" min="0.01" step="0.01" required /></div>
+<button class="hyt-button-primary" type="submit">Registrar costo y vincular</button></form>
+}
+</section>
+<section class="@(isPrint?"hyt-panel":"hyt-panel hyt-master-form")"><h2>Pagos y detracciones</h2>
+@if(currency!=detCurrency&&det>0){<p>La detracción equivale a @currency @CommercialPage.Money(CommercialPage.Amount(row,"DetraccionDocumento")) en la moneda del comprobante.</p>}
+<table class="hyt-table"><thead><tr><th>Fecha</th><th>Tipo</th><th>Moneda</th><th>Importe</th><th>Referencia / constancia</th></tr></thead><tbody>
+@foreach(var payment in payments){
+var withholding=payment.GetProperty("EsDetraccion").GetBoolean();
+<tr><td>@CommercialPage.Date(CommercialPage.Text(payment,"Fecha"))</td><td>@(withholding?"Detracción":"Pago proveedor")</td><td>@(withholding?detCurrency:currency)</td><td>@CommercialPage.Money(CommercialPage.Amount(payment,"Importe"))</td><td>@CommercialPage.Text(payment,"Referencia")</td></tr>
+}</tbody></table>
+@if(Model.CanEdit&&CommercialPage.Text(row,"Tipo")!="07"){
+<form method="post" asp-action="Pay" asp-route-scope="@Model.Scope" asp-route-id="@id" class="hyt-filters">
+<div class="hyt-field"><label for="commercial-detraccion">Tipo</label><select id="commercial-detraccion" name="detraccion"><option value="false">Pago al proveedor (@currency)</option>@if(det>0){<option value="true">Detracción (@detCurrency)</option>}</select></div>
+<partial name="_DatePicker" model="@(new DatePickerModel("fecha", "Fecha", Model.Today, Required:true, Max:Model.Today))" />
+<div class="hyt-field"><label for="commercial-importe">Importe</label><input id="commercial-importe" name="importe" type="number" step="0.01" min="0.01" required /></div>
+<div class="hyt-field"><label for="commercial-referencia">Referencia / constancia</label><input id="commercial-referencia" name="referencia" maxlength="100" required /></div><button class="hyt-button-primary" type="submit">Registrar pago</button>
+</form>
+}
+</section>
+}
+@if(!isPrint){<script type="module" src="~/hyt-commercial-documents.js" asp-append-version="true"></script>}

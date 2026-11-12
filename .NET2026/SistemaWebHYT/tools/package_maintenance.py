@@ -11,7 +11,7 @@ OUTPUT = PROJECT / 'entregables'
 def save(path, text):
     path.write_bytes(text.replace('\r\n','\n').replace('\n','\r\n').encode('utf-8'))
 
-groups = {3: ['Tablas/UbigeoDepartamentos.sql','Tablas/UbigeoProvincias.sql','Tablas/UbigeoDistritos.sql','Script/024_UbigeosCatalogo.sql','Script/025_DireccionesYConsideraciones.sql','Script/028_UbigeoConfiguracionHYT.sql','Script/011_EstadosMantenimientos.sql', 'Script/020_CodigosInternosAutomaticos.sql', 'Script/021_CodigoSAPCliente.sql', 'Tablas/ClienteEnlaceDocumento.sql', 'Script/022_EnlacesDocumentosCliente.sql', 'StoreProcedure/spu_MantCatalogos.sql'], 4: ['Script/023_TarifarioMaterialDirecto.sql']}
+groups = {3: ['Tablas/UbigeoDepartamentos.sql','Tablas/UbigeoProvincias.sql','Tablas/UbigeoDistritos.sql','Script/024_UbigeosCatalogo.sql','Script/025_DireccionesYConsideraciones.sql','Script/028_UbigeoConfiguracionHYT.sql','Script/011_EstadosMantenimientos.sql', 'Script/020_CodigosInternosAutomaticos.sql', 'Script/021_CodigoSAPCliente.sql', 'Tablas/ClienteEnlaceDocumento.sql', 'Script/022_EnlacesDocumentosCliente.sql', 'Tablas/DetraccionCatalogoHYT.sql', 'Script/050_CatalogoDetraccionesHYT.sql', 'Script/051_DetraccionMaterialHYT.sql', 'StoreProcedure/spu_MantCatalogos.sql'], 4: ['Script/023_TarifarioMaterialDirecto.sql']}
 for entity in ENTITIES:
     stage = 4 if entity['permission'] == 'TARIFARIOS' else 3
     groups[stage] += [f"StoreProcedure/spu_Mant{entity['table']}_{action}.sql" for action in ['Listar','Obtener','Guardar']]
@@ -37,6 +37,8 @@ for stage, scripts in groups.items():
     parts = [signature.format(description=f'Entrega incremental HYT etapa {stage}, para ejecución manual.') + f'-- Aplicar después de etapa {stage-1}. No ejecutado automáticamente.\n']
     if any(b'05/11/2026' in (BASE / source).read_bytes() for source in scripts):parts.append('-- Firma: FRANCO LARA | Create date: 05/11/2026 | Códigos internos automáticos y precios gestionados desde materiales.\n')
     if any(b'06/11/2026' in (BASE / source).read_bytes() for source in scripts):parts.append('-- Firma: FRANCO LARA | Create date: 06/11/2026 | Ubigeo de configuración HYT y demás fuentes de esta etapa.\n')
+    if stage == 3:
+        parts.append('-- Firma: FRANCO LARA | Create date: 10/11/2026 | Catálogo de detracciones y código opcional por material.\n')
     hashes = []
     for relative in scripts:
         raw = (BASE / relative).read_bytes()

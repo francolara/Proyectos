@@ -1,3 +1,4 @@
+// Firma: FRANCO LARA - 10/11/2026 | Precarga la tarifa del material y el código SAP del cliente.
 // Firma: FRANCO LARA - 06/11/2026 | Tarifa del material disponible sin cliente; iconos compactos con ayudas accesibles. Selección del nombre del tipo de servicio y títulos SAP; sin aviso al completar cantidades ni confirmación de moneda.
 // Firma: FRANCO LARA - 03/11/2026 | Presupuestos MVC: ayudas, partidas, previsualización y revalorización explícita.
 // Firma: FRANCO LARA - 05/11/2026 | Direcciones al seleccionar cliente/tienda y ayudas de zona/especialidad. Búsquedas por fila, unidad del material, tarifa filtrada y conversión neta con edición del precio.
@@ -15,7 +16,7 @@ if(form){
     const lookupStatus=dialog.querySelector('[data-budget-lookup-status]');
     const previous=dialog.querySelector('[data-budget-prev]'),next=dialog.querySelector('[data-budget-next]');
     const prices=new WeakMap();
-    let lookupMode='',reference=null,rowTarget=null,page=1,busy=false,lookupRequest=0,calculationRequest=0,timer,metadataRequest=0;
+    let lookupMode='',reference=null,rowTarget=null,page=1,busy=false,lookupRequest=0,calculationRequest=0,timer,metadataRequest=0,sapPending=false;
     const header=name=>form.querySelector(`[name="Draft.Revision[${name}]"]`);
     const field=(row,name)=>row.querySelector(`[name$=".${name}"]`);
     const number=value=>value===null||value===undefined?'Pendiente':new Intl.NumberFormat('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(value);
@@ -38,22 +39,56 @@ if(form){
         for(const [name,value]of Object.entries({OrigenPrecio:'MANUAL',PartidaTarifarioId:item.tariffLineId,MaterialId:item.materialId,CodigoInterno:item.internalCode,Posicion:item.position,CodigoMaterialSAP:item.sapCode,Descripcion:item.description,Unidad:item.unit,PrecioManual:netPrice(item),CodigoMonedaOrigen:item.currency,CodigoTipoIGVOrigen:'SIN_IGV',ZonasTexto:item.zones,MotivoPrecioManual:'Precio neto del detalle del presupuesto'}))field(row,name).value=value??'';
         if(!field(row,'TipoServicio').value)field(row,'TipoServicio').value=item.serviceType??'';field(row,'TipoServicio').title=field(row,'TipoServicio').value;
         if(!field(row,'NumeroNecesidad').value)field(row,'NumeroNecesidad').value=item.needNumber??'';
-        field(row,'CodigoMaterialSAP').title=field(row,'CodigoMaterialSAP').value;row.querySelector('[data-line-material-code]').textContent=item.internalCode;row.querySelector('[data-line-tariff-label]').textContent='Tarifa seleccionada';
+        field(row,'CodigoMaterialSAP').title=field(row,'CodigoMaterialSAP').value;row.querySelector('[data-line-material-code]').textContent=item.internalCode;
         sync(row);prices.set(row,new Map([[item.currency,field(row,'PrecioManual').value]]));
     }
+    async function tariffFor(materialId,currency,tariffLineId){
+        const params=new URLSearchParams({clientId:form.querySelector('[name="Draft.ClienteId"]').value||'0',date:header('FechaEmision').value,currency,materialId});
+        if(tariffLineId)params.set('tariffLineId',tariffLineId);
+        const response=await fetch('/Presupuestos/Tarifario?'+params,{headers:{Accept:'application/json'}});
+        if(!response.ok)throw new Error();
+        return (await response.json()).rows[0];
+    }
     async function material(row,item){
-        const selected=String(item.id);field(row,'MaterialId').value=selected;field(row,'PartidaTarifarioId').value='';field(row,'PrecioManual').value='';field(row,'Unidad').value='';field(row,'CodigoInterno').value=item.code;field(row,'Descripcion').value=item.description;
-        row.querySelector('[data-line-material-code]').textContent=item.code;row.querySelector('[data-line-tariff-label]').textContent='Sin tarifa';prices.set(row,new Map());
-        try{const response=await fetch('/Maestros/materiales/'+encodeURIComponent(selected)+'/Predeterminados',{headers:{Accept:'application/json'}});if(!response.ok)throw new Error();const data=await response.json();if(field(row,'MaterialId').value!==selected)return;field(row,'Unidad').value=data.fields.UnidadCodigo??'';field(row,'CodigoMaterialSAP').value=data.fields.CodigoMaterialSAP??'';field(row,'CodigoMaterialSAP').title=field(row,'CodigoMaterialSAP').value;}
-        catch{if(field(row,'MaterialId').value===selected)feedback.textContent='No se pudo cargar la unidad. Vuelve a buscar el material.';}
+        const selected=String(item.id);
+        const currency=header('CodigoMoneda').value;
+        for(const [name,value] of Object.entries({MaterialId:selected,PartidaTarifarioId:'',PrecioManual:'',Unidad:'',CodigoInterno:item.code,Descripcion:item.description,CodigoMaterialSAP:'',Posicion:'',ZonasTexto:''}))field(row,name).value=value;
+        row.querySelector('[data-line-material-code]').textContent=item.code;
+        const selection=new Map();
+        prices.set(row,selection);
+        try{
+            const response=await fetch('/Maestros/materiales/'+encodeURIComponent(selected)+'/Predeterminados',{headers:{Accept:'application/json'}});
+            if(!response.ok)throw new Error();
+            const data=await response.json();
+            if(prices.get(row)!==selection||!row.isConnected)return;
+            field(row,'Unidad').value=data.fields.UnidadCodigo??'';
+            field(row,'CodigoMaterialSAP').value=data.fields.CodigoMaterialSAP??'';
+            field(row,'CodigoMaterialSAP').title=field(row,'CodigoMaterialSAP').value;
+        }catch{
+            if(prices.get(row)===selection)feedback.textContent='No se pudieron cargar los datos del material. Vuelve a seleccionarlo.';
+        }
+        if(prices.get(row)===selection&&header('CodigoMoneda').value===currency&&row.isConnected)await refreshPrice(row,currency,true);
         schedule();
     }
-    async function refreshPrice(row,currency){
+    async function refreshPrice(row,currency,selecting=false){
         const tariff=field(row,'PartidaTarifarioId').value,materialId=field(row,'MaterialId').value;
-        if(!tariff){field(row,'PrecioManual').value=prices.get(row)?.get(currency)??'';return;}
-        field(row,'PrecioManual').value='';
-        try{const params=new URLSearchParams({clientId:form.querySelector('[name="Draft.ClienteId"]').value,date:header('FechaEmision').value,currency,materialId,tariffLineId:tariff});const response=await fetch('/Presupuestos/Tarifario?'+params,{headers:{Accept:'application/json'}});if(!response.ok)throw new Error();const data=await response.json();if(header('CodigoMoneda').value!==currency||field(row,'PartidaTarifarioId').value!==tariff||field(row,'PrecioManual').value!=='')return;const item=data.rows.find(item=>String(item.tariffLineId)===tariff);if(!item)throw new Error();field(row,'PrecioManual').value=netPrice(item);prices.get(row).set(currency,field(row,'PrecioManual').value);}
-        catch{feedback.textContent='Una tarifa no tiene precio disponible en la moneda elegida. Registra el importe o vuelve a buscar tarifa.';}
+        const selection=prices.get(row);
+        if(!selecting)field(row,'PrecioManual').value=selection.get(currency)??'';
+        if(!materialId||field(row,'PrecioManual').value!=='')return;
+        const current=()=>row.isConnected&&prices.get(row)===selection&&header('CodigoMoneda').value===currency&&field(row,'PrecioManual').value==='';
+        try{
+            const item=await tariffFor(materialId,currency,tariff);
+            if(!current())return;
+            if(item&&selecting)applyTariff(row,item);
+            else if(item){
+                field(row,'PrecioManual').value=netPrice(item);
+                field(row,'PartidaTarifarioId').value=item.tariffLineId;
+                selection.set(currency,field(row,'PrecioManual').value);
+            }
+            if(!item||item.price===null)feedback.textContent='El material no tiene precio en la moneda elegida. Registra el importe.';
+        }catch{
+            if(current())feedback.textContent='No se pudo cargar el precio. Vuelve a seleccionar el material o registra el importe.';
+        }
         schedule();
     }
     function newRow(){
@@ -98,8 +133,11 @@ if(form){
             form.querySelector('[data-store-address]').textContent=data.Tienda?.Direccion||'Sin dirección registrada';
             form.dataset.taxRate=data.Tasa?String(data.Tasa.Valor):'';
             form.dataset.storeCenter=data.Tienda?.CentroSAPFICO??'';
+            const sap=header('CodigoSAPProveedor');
+            if((sapPending||overwrite)&&!sap.value)sap.value=data.Proveedor?.CodigoSAPProveedor??'';
+            sapPending=false;
             if(overwrite){
-                for(const [key,value] of Object.entries({ZonaTexto:data.Tienda?.ZonaTexto,CodigoSAPProveedor:data.Proveedor?.CodigoSAPProveedor,ContratoMarco:data.Proveedor?.ContratoMarco}))header(key).value=value??'';
+                for(const [key,value] of Object.entries({ZonaTexto:data.Tienda?.ZonaTexto,ContratoMarco:data.Proveedor?.ContratoMarco}))header(key).value=value??'';
                 if(!header('Firmante').value)header('Firmante').value=data.Empresa?.NombreFirmante??'';
                 if(!header('CargoFirmante').value)header('CargoFirmante').value=data.Empresa?.CargoFirmante??'';
             }
@@ -112,49 +150,44 @@ if(form){
         const current=++lookupRequest;busy=true;setDialog(dialog,true,true,close);lookupBody.replaceChildren();lookupStatus.textContent='Cargando…';previous.disabled=true;next.disabled=true;
         try{
             const parameters=new URLSearchParams({search:query.elements.search.value,page:String(page)});let endpoint;
-            if(lookupMode==='tariff'){
-                parameters.set('materialId',field(rowTarget,'MaterialId').value);parameters.set('clientId',form.querySelector('[name="Draft.ClienteId"]').value||'0');parameters.set('date',header('FechaEmision').value);parameters.set('currency',header('CodigoMoneda').value);endpoint='/Presupuestos/Tarifario';
-            }else{
-                endpoint='/Maestros/'+(lookupMode==='material'?'materiales':lookupMode==='service'?'tipos-servicio':reference.dataset.entity)+'/Ayuda';
-                if(reference?.dataset.entity==='tiendas')parameters.set('parentId',form.querySelector('[name="Draft.ClienteId"]').value);
-            }
+            endpoint='/Maestros/'+(lookupMode==='material'?'materiales':lookupMode==='service'?'tipos-servicio':reference.dataset.entity)+'/Ayuda';
+            if(reference?.dataset.entity==='tiendas')parameters.set('parentId',form.querySelector('[name="Draft.ClienteId"]').value);
             const response=await fetch(endpoint+'?'+parameters,{headers:{Accept:'application/json'}});
             if(!response.ok||!response.headers.get('content-type')?.includes('application/json'))throw new Error();
             const data=await response.json();if(current!==lookupRequest)return;
             for(const item of data.rows){
                 const tr=document.createElement('tr');
-                const values=lookupMode==='tariff'?[item.internalCode,item.description,item.unit,item.price===null?'Sin precio':netPrice(item)+' '+item.currency,item.zones??'—']:[item.code,item.description,item.extra??''];
+                const values=[item.code,item.description,item.extra??''];
                 for(const value of values){const td=document.createElement('td');td.textContent=value;tr.append(td);}
                 const cell=document.createElement('td'),button=document.createElement('button');button.type='button';button.className='hyt-button-secondary';button.textContent='Seleccionar';
                 button.addEventListener('click',()=>{
-                    if(lookupMode==='tariff'){
-                        applyTariff(rowTarget,item);
-                    }else if(lookupMode==='material'){material(rowTarget,item);}else if(lookupMode==='service'){field(rowTarget,'TipoServicio').value=item.description;field(rowTarget,'TipoServicio').title=item.description;}else{
+                    if(lookupMode==='material'){material(rowTarget,item);}else if(lookupMode==='service'){field(rowTarget,'TipoServicio').value=item.description;field(rowTarget,'TipoServicio').title=item.description;}else{
+                        const previousId=reference.querySelector('input').value;
                         reference.querySelector('input').value=['zonas','especialidades'].includes(reference.dataset.entity)?item.description:String(item.id);reference.querySelector('[data-reference-label]').textContent=item.code+' · '+item.description;
-                        if(reference.dataset.entity==='clientes'){
+                        if(reference.dataset.entity==='clientes'&&previousId!==String(item.id)){
                             form.querySelector('[data-client-address]').textContent='Consultando dirección…';form.querySelector('[data-store-address]').textContent='Selecciona una tienda';
                             const store=form.querySelector('[data-budget-reference="TiendaId"]');store.querySelector('input').value='';store.querySelector('[data-reference-label]').textContent='Sin seleccionar';
+                            sapPending=true;
                             for(const key of ['CodigoSAPProveedor','ContratoMarco','ZonaTexto'])header(key).value='';form.dataset.storeCenter='';
                         }
                         if(reference.dataset.entity==='tiendas')form.querySelector('[data-store-address]').textContent='Consultando dirección…';
-                        if(['clientes','tiendas'].includes(reference.dataset.entity))metadata(false);
+                        if(['clientes','tiendas'].includes(reference.dataset.entity))metadata();
                     }
                     close();schedule();
                 });cell.append(button);tr.append(cell);lookupBody.append(tr);
             }
-            lookupStatus.textContent=data.rows.length?`${data.total} registros encontrados. Las zonas del tarifario son informativas.`:'No se encontraron registros con los filtros seleccionados.';
+            lookupStatus.textContent=data.rows.length?`${data.total} registros encontrados.`:'No se encontraron registros con los filtros seleccionados.';
             dialog.querySelector('[data-budget-page]').textContent=`Página ${page} · 20 por página`;previous.disabled=page<=1;next.disabled=page*20>=data.total;
         }catch{if(current===lookupRequest)lookupStatus.textContent='No se pudo cargar la ayuda. Revisa los datos seleccionados y vuelve a buscar.';}
         finally{if(current===lookupRequest){busy=false;setDialog(dialog,true,false,close);}}
     }
     function open(mode,target=null){
         if(!editable)return;
-        if(mode==='tariff'&&!field(target,'MaterialId').value){feedback.textContent='Selecciona primero el material del ítem.';return;}
         
         if(mode==='reference'&&target.dataset.entity==='tiendas'&&!form.querySelector('[name="Draft.ClienteId"]').value){feedback.textContent='Selecciona primero el cliente.';return;}
-        lookupMode=mode;reference=mode==='reference'?target:null;rowTarget=['tariff','material','service'].includes(mode)?target:null;page=1;query.reset();
-        dialog.querySelector('#budget-lookup-title').textContent=mode==='tariff'?'Seleccionar tarifa del material':mode==='material'?'Seleccionar material':mode==='service'?'Seleccionar tipo de servicio':'Seleccionar '+({tiendas:'tienda',clientes:'cliente',zonas:'zona',especialidades:'especialidad'}[target.dataset.entity]||'registro');
-        const labels=mode==='tariff'?['Código del material','Descripción','Unidad','Precio sin IGV','Zonas','Acción']:['Código','Descripción','Información','Acción'];
+        lookupMode=mode;reference=mode==='reference'?target:null;rowTarget=['material','service'].includes(mode)?target:null;page=1;query.reset();
+        dialog.querySelector('#budget-lookup-title').textContent=mode==='material'?'Seleccionar material':mode==='service'?'Seleccionar tipo de servicio':'Seleccionar '+({tiendas:'tienda',clientes:'cliente',zonas:'zona',especialidades:'especialidad'}[target.dataset.entity]||'registro');
+        const labels=['Código','Descripción','Información','Acción'];
         const head=dialog.querySelector('[data-budget-lookup-head]'),tr=document.createElement('tr');head.replaceChildren();for(const label of labels){const th=document.createElement('th');th.textContent=label;tr.append(th);}head.append(tr);load();
     }
     renumber();body.querySelectorAll('[data-budget-line]').forEach(sync);
@@ -166,7 +199,6 @@ if(form){
             const remove=event.target.closest('[data-remove-line]');if(remove){remove.closest('[data-budget-line]').remove();renumber();schedule();}
             const chooseMaterial=event.target.closest('[data-line-material]');if(chooseMaterial)open('material',chooseMaterial.closest('[data-budget-line]'));
             const service=event.target.closest('[data-line-service]');if(service)open('service',service.closest('[data-budget-line]'));
-            const replace=event.target.closest('[data-replace-tariff]');if(replace)open('tariff',replace.closest('[data-budget-line]'));
         });
         body.addEventListener('input',event=>{const row=event.target.closest('[data-budget-line]');if(row){sync(row);if(event.target.matches('[data-origin-price]'))prices.get(row).set(field(row,'CodigoMonedaOrigen').value,field(row,'PrecioManual').value);}});
         header('CodigoMoneda').addEventListener('change',()=>{
@@ -175,7 +207,7 @@ if(form){
                 const cache=prices.get(row);cache.set(field(row,'CodigoMonedaOrigen').value,field(row,'PrecioManual').value);
                 field(row,'CodigoMonedaOrigen').value=currency;refreshPrice(row,currency);sync(row);
             }
-            feedback.textContent='Revisa precios en la nueva moneda. Vuelve a elegir la tarifa o registra el precio manual; no se aplica tipo de cambio.';schedule();
+            feedback.textContent='Revisa precios en la nueva moneda. Los precios se consultan en la moneda seleccionada.';schedule();
         });
         header('FechaEmision').addEventListener('change',()=>metadata(false));
         form.addEventListener('input',schedule);form.addEventListener('change',schedule);form.addEventListener('submit',renumber);

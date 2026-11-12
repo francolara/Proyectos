@@ -1,33 +1,92 @@
-@model GestionServicios.Web.Controllers.PayrollObligationsPage
+@* Firma: FRANCO LARA - 11/11/2026 | Desglosa la cobertura debajo de la póliza sin alterar las columnas. Agrega la impresión del listado filtrado. *@
+@* Firma: FRANCO LARA - 10/11/2026 | Filtra por estado y trabajador, con desglose de cobertura desde el listado. *@
+@model GestionServicios.Web.Controllers.SctrList
 @* Firma: FRANCO LARA - 09/11/2026 | Pólizas SCTR por trabajador y estado visual de vigencia. Alinea importes y cantidades en la grilla. *@
 @{
     ViewData["Wide"] = true;
     ViewData["Title"] = "SCTR";
+    var statuses = new Dictionary<string,string>
+    {
+        ["VIGENTE"] = "Vigente",
+        ["POR_VENCER"] = "Por vencer",
+        ["VENCIDA"] = "Vencida",
+        ["PROGRAMADA"] = "Programada"
+    };
 }
 <header class="hyt-page-header">
     <div><h1>SCTR</h1><p>Consulta las pólizas, los trabajadores cubiertos y los vencimientos.</p></div>
+<div class="hyt-master-related">
+@if (User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "REPORTES.IMPRIMIR"))
+{
+    <a class="hyt-button-secondary" asp-action="Sctr" asp-route-estado="@Model.Status" asp-route-trabajador="@Model.Worker" asp-route-print="true" target="_blank" rel="noopener">Imprimir listado</a>
+}
+
     @if (Model.CanEdit) { <a asp-action="SctrForm" class="hyt-button-primary">Nueva póliza</a> }
+
+</div>
 </header>
 @if (TempData["ObligationMessage"] is string message) { <p role="status">@message</p> }
 @if (TempData["ObligationError"] is string error) { <p role="alert">@error</p> }
-@if (Model.Data.Polizas.Length == 0) { <p class="hyt-panel hyt-grid-message">No hay pólizas registradas.</p> }
+<form method="get" asp-action="Sctr" class="hyt-filters">
+    <div class="hyt-field">
+        <label for="sctr-status">Estado</label>
+        <select id="sctr-status" name="estado">
+            <option value="">Todos</option>
+            @foreach (var status in statuses)
+            { <option value="@status.Key" selected="@(Model.Status == status.Key)">@status.Value</option> }
+        </select>
+    </div>
+    <div class="hyt-field">
+        <label for="sctr-worker">Trabajador</label>
+        <input id="sctr-worker" name="trabajador" type="search" value="@Model.Worker" maxlength="150" placeholder="Nombre o apellido" />
+    </div>
+    <div class="hyt-filters-actions">
+        <button type="submit" class="hyt-button-primary">Consultar</button>
+        <a class="hyt-button-secondary" asp-action="Sctr">Restablecer</a>
+    </div>
+</form>
+@if (Model.Policies.Length == 0)
+{
+    <p class="hyt-panel hyt-grid-message">@(Model.Status is null && Model.Worker.Length == 0 ? "No hay pólizas registradas." : "No se encontraron pólizas para los filtros seleccionados.")</p>
+}
 else
 {
     <div class="hyt-panel hyt-table-wrap" tabindex="0" role="region" aria-label="Vigencia de pólizas SCTR">
         <table class="hyt-table hyt-align-sctr-policies">
             <thead><tr><th scope="col">Aseguradora</th><th scope="col">Póliza</th><th scope="col">Cobertura</th><th scope="col">Desde</th><th scope="col">Hasta</th><th scope="col">Trabajadores</th><th scope="col">Estado</th>@if (Model.CanEdit) { <th scope="col">Acción</th> }</tr></thead>
             <tbody>
-            @foreach (var row in Model.Data.Polizas)
+            @foreach (var row in Model.Policies)
             {
+                var workers = row.Trabajadores ?? [];
+                var expanded = Model.Worker.Length > 0;
                 <tr><td>@row.Aseguradora</td><td>@row.NumeroPoliza</td><td>@(row.Cobertura == "PENSION" ? "Pensión" : "Salud")</td>
                     <td>@row.VigenciaDesde.ToString("dd/MM/yyyy")</td><td>@row.VigenciaHasta.ToString("dd/MM/yyyy")</td>
-                    <td>@(row.Trabajadores is { Length: > 0 } ? string.Join(", ", row.Trabajadores.Select(worker => worker.Nombre)) : "Sin asignar")</td>
-                    <td><span class="hyt-sctr-status" data-status="@row.Estado">@(row.Estado switch
-                    {
-                        "POR_VENCER" => "Por vencer", "VENCIDA" => "Vencida", "VIGENTE" => "Vigente", _ => "Programada"
-                    })</span></td>
+                    <td>
+                        @if (workers.Length > 0)
+                        {
+                            <button type="button" class="hyt-row-toggle" data-hyt-row-toggle
+                                    aria-expanded="@(expanded ? "true" : "false")" aria-controls="sctr-workers-@row.PolizaId">
+                                @workers.Length @(workers.Length == 1 ? "trabajador" : "trabajadores")
+                            </button>
+                        }
+                        else { <span>Sin asignar</span> }
+                    </td>
+                    <td><span class="hyt-sctr-status" data-status="@row.Estado">@statuses.GetValueOrDefault(row.Estado, row.Estado)</span></td>
                     @if (Model.CanEdit) { <td><a class="hyt-button-secondary hyt-action-button" asp-action="SctrForm" asp-route-policyId="@row.PolizaId">Editar póliza</a></td> }
                 </tr>
+                @if (workers.Length > 0)
+                {
+                    <tr class="hyt-row-detail" id="sctr-workers-@row.PolizaId" hidden="@(!expanded)">
+                        <td colspan="@(Model.CanEdit ? 8 : 7)">
+                            <div class="hyt-row-detail-content">
+                                <strong>Trabajadores cubiertos</strong>
+                                <ul class="hyt-sctr-detail-list">
+                                    @foreach (var worker in workers) { <li>@worker.Nombre</li> }
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                }
             }
             </tbody>
         </table>

@@ -892,6 +892,12 @@ Dim indFacturaGuia            As Integer
                         cantidadtot = CDbl(Trim("" & RstDet.Fields("cantidad")))
                         csql = " select idempresa,tipodocreferencia,seriedocreferencia,numdocreferencia from docreferencia" & _
                                 " where idempresa = '" & Trim(RstDet.Fields("idempresa")) & "' and tipodocorigen = '" & Trim(RstDet.Fields("iddocumento")) & "' and seriedocorigen = '" & Trim(RstDet.Fields("idserie")) & "' and numdocorigen = '" & Trim(RstDet.Fields("iddocventas")) & "' "
+                        ' Author:        FRANCO LARA
+                        ' Create date:   11/11/2026
+                        ' Description:   Solo una guia de venta asigna cantidades a un pedido agrupado.
+                        If strTD = "86" And Trim(strCodMotivoTranslado) <> "06090001" Then
+                            csql = csql & " AND tipodocreferencia <> '40'"
+                        End If
                         If rstdocref.State = 1 Then rstdocref.Close
                         rstdocref.Open csql, Cn, adOpenStatic, adLockReadOnly
                                             

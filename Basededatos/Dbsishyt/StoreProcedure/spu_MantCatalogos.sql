@@ -4,6 +4,7 @@
 -- Description:   Consulta catálogos internos de moneda y tratamiento IGV.
 -- =============================================
 -- Firma: FRANCO LARA | Create date: 05/11/2026 | Catálogos de ubigeo para combos dependientes.
+-- Firma: FRANCO LARA | Create date: 10/11/2026 | Publica códigos activos de detracción en el catálogo de maestros.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_MantCatalogos
@@ -20,6 +21,8 @@ BEGIN
         SELECT d.CodigoDepartamento,d.Nombre FROM dbo.UbigeoDepartamentos AS d WHERE d.Activo=1 ORDER BY d.Nombre;
         SELECT p.CodigoProvincia,p.Nombre FROM dbo.UbigeoProvincias AS p WHERE p.Activo=1 ORDER BY p.Nombre;
         SELECT d.CodigoUbigeo,d.Nombre FROM dbo.UbigeoDistritos AS d WHERE d.Activo=1 ORDER BY d.Nombre;
+        SELECT catalogo.Codigo, CONCAT(catalogo.Codigo,N' · ',catalogo.Nombre) AS Nombre
+        FROM dbo.DetraccionCatalogoHYT AS catalogo WHERE catalogo.Activo=1 ORDER BY catalogo.Codigo;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;

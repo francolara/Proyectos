@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 11/11/2026 | Agrega la impresión del listado filtrado. *@
 @* Firma: FRANCO LARA - 06/11/2026 | KPI por estado OC bajo el título y controles de pendientes. *@
 @{ViewData["Wide"]=true;}
 @using GestionServicios.Web.ViewModels.Followup
@@ -5,7 +6,12 @@
 @* Firma: FRANCO LARA - 03/11/2026 | Listado documental con grilla compartida, fechas y responsables. *@
 @* Firma: FRANCO LARA - 05/11/2026 | Listado al ancho disponible y acciones uniformes. *@
 @{ViewData["Title"]=Model.Kind.Title;}
-<header class="hyt-page-header"><div><h1>@Model.Kind.Title</h1><p>Documentos registrados por cliente y tienda.</p></div></header>
+<header class="hyt-page-header"><div><h1>@Model.Kind.Title</h1><p>Documentos registrados por cliente y tienda.</p></div>
+@if ((Model.Kind.Code is "OC" or "GUIA") && User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "REPORTES.IMPRIMIR"))
+{
+    <a class="hyt-button-secondary" asp-action="Index" asp-all-route-data="@Model.Grid.Query" asp-route-print="true" target="_blank" rel="noopener">Imprimir listado</a>
+}
+</header>
 @if(Model.Kpis is {Count:>0}){<partial name="_StateKpis" model="Model.Kpis" />}
 <partial name="_Filters" model="Model.Filter" />
 <partial name="_Grid" model="Model.Grid" />

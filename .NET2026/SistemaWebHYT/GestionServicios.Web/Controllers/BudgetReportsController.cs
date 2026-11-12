@@ -42,7 +42,23 @@ public sealed class BudgetReportsController(IBudgetRepository budgets,IBudgetPri
         Response.Headers["Content-Security-Policy"]="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'";
         Response.Headers["X-Content-Type-Options"]="nosniff";
         if(download)return File(Encoding.UTF8.GetBytes(document.Html),"text/html; charset=utf-8",$"HYT-{document.BudgetId}-R{document.RevisionId}-{document.Format}.html");
-        return Content(document.Html,"text/html; charset=utf-8");
+        // Firma: FRANCO LARA - 10/11/2026 | Barra negra compartida con acciones de impresión y CSV, incluidas impresiones conservadas.
+        var bodyStart=document.Html.IndexOf("<body",StringComparison.OrdinalIgnoreCase);
+        var toolbarAt=bodyStart<0?-1:document.Html.IndexOf('>',bodyStart);
+        if(toolbarAt<0)return Content(document.Html,"text/html; charset=utf-8");
+
+        var scriptUrl=System.Text.Encodings.Web.HtmlEncoder.Default.Encode(Url.Content("~/hyt-report-actions.js")!);
+        var styleUrl=System.Text.Encodings.Web.HtmlEncoder.Default.Encode(Url.Content("~/hyt-report-toolbar.css")!);
+        var toolbar=$"""
+            <link rel="stylesheet" href="{styleUrl}" />
+            <nav class="hyt-print-toolbar" aria-label="Acciones del presupuesto">
+                <button type="button" data-report-print>Imprimir / Guardar PDF</button>
+                <button type="button" data-report-csv>Exportar CSV</button>
+            </nav>
+            <script src="{scriptUrl}" defer></script>
+            """;
+        Response.Headers["Content-Security-Policy"]="default-src 'none'; img-src data:; style-src 'self' 'unsafe-inline'; script-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'";
+        return Content(document.Html.Insert(toolbarAt+1,toolbar),"text/html; charset=utf-8");
     }
     [HttpGet("")]
     public async Task<IActionResult> Index(long budgetId,long revisionId,int page=1,CancellationToken ct=default)

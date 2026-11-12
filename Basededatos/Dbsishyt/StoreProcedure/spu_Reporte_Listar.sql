@@ -1,3 +1,4 @@
+-- Firma: FRANCO LARA | Create date: 10/11/2026 | Incluye comprobantes de venta vinculados en los indicadores de facturación.
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   03/11/2026
@@ -77,7 +78,17 @@ BEGIN
         LEFT JOIN dbo.GuiaConformidad AS guia ON guia.PresupuestoId=p.PresupuestoId
         LEFT JOIN dbo.Ejecucion AS ejecucion ON ejecucion.PresupuestoId=p.PresupuestoId
         LEFT JOIN dbo.ConfirmacionFacturacion AS confirmacion ON confirmacion.OrdenCompraId=oc.OrdenCompraId AND confirmacion.Vigente=1
-        LEFT JOIN dbo.ReferenciaComprobanteExterno AS referencia ON referencia.OrdenCompraId=oc.OrdenCompraId AND referencia.Vigente=1
+        OUTER APPLY (
+            SELECT TOP (1) origen.ReferenciaId,origen.CodigoTipoDocumento,origen.Serie,origen.NumeroDocumento,origen.FechaDocumento,origen.FechaRegistro
+            FROM (
+                SELECT r.ReferenciaId,r.CodigoTipoDocumento,r.Serie,r.NumeroDocumento,r.FechaDocumento,r.FechaRegistro
+                FROM dbo.ReferenciaComprobanteExterno AS r WHERE r.OrdenCompraId=oc.OrdenCompraId AND r.Vigente=1
+                UNION ALL
+                SELECT -c.ComprobanteId,c.Tipo,c.Serie,c.Numero,c.Fecha,c.FechaRegistro
+                FROM dbo.ComprobanteHYTPresupuesto AS v INNER JOIN dbo.ComprobanteHYT AS c ON c.ComprobanteId=v.ComprobanteId
+                WHERE v.PresupuestoId=p.PresupuestoId AND c.EsVenta=1 AND c.Tipo IN('01','03') AND c.Serie IS NOT NULL
+            ) AS origen ORDER BY origen.FechaRegistro DESC,origen.ReferenciaId
+        ) AS referencia
         WHERE ((@Reporte=N'PRESUPUESTO' AND p.FechaRegistro>=@Desde AND p.FechaRegistro<@HastaExclusiva) OR (@Reporte=N'OC_CLIENTE' AND oc.FechaRegistro>=@Desde AND oc.FechaRegistro<@HastaExclusiva))
             AND (@Estado IS NULL OR (@Reporte=N'PRESUPUESTO' AND actual.Estado=@Estado) OR (@Reporte=N'OC_CLIENTE' AND oc.Estado=@Estado))
             AND (@TipoAtencion IS NULL OR p.TipoAtencion=@TipoAtencion)

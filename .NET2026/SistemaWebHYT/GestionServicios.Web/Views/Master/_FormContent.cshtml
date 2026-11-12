@@ -20,6 +20,7 @@
 }
 @if(Model.MaterialContextLabel is not null){<p><strong>Material:</strong> @Model.MaterialContextLabel</p>}
 <div class="hyt-master-fields">
+@* Firma: FRANCO LARA - 10/11/2026 | Código de detracción opcional en la ficha de materiales y servicios. *@
 @foreach (var field in Model.Entity.Fields.Where(field => field.Kind is not ("AutoCode" or "Hidden")))
 {
     var value = Model.Input.Fields.GetValueOrDefault(field.Name) ?? "";
@@ -53,7 +54,14 @@
     else if (field.Kind == "Select")
     {
         var options = Model.Catalogs.GetValueOrDefault(field.Catalog ?? "") ?? [];
-        <select id="field-@field.Name" name="Fields[@field.Name]" disabled="@disabled" required="@(required && !inactive)"><option value="">Selecciona</option>@foreach (var option in options) { <option value="@option.Code" selected="@(option.Code == value)">@option.Label</option> }</select>
+        <select id="field-@field.Name" name="Fields[@field.Name]" disabled="@disabled" required="@(required && !inactive)">
+            <option value="">@(field.Catalog == "Withholding" ? "Sin detracción" : "Selecciona")</option>
+            @if (field.Catalog == "Withholding" && !string.IsNullOrEmpty(value) && !options.Any(option => option.Code == value))
+            {
+                <option value="@value" selected>@value (no disponible en el catálogo activo)</option>
+            }
+            @foreach (var option in options) { <option value="@option.Code" selected="@(option.Code == value)">@option.Label</option> }
+        </select>
     }
     else if (field.Kind == "Boolean")
     {

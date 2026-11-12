@@ -44,7 +44,7 @@ public static partial class BudgetDraftRules
 {
     public static IReadOnlyList<BudgetField> HeaderFields { get; }=
     [
-        new("FechaEmision","Fecha de emisión","Date",10,true),new("NumeroCotizacionCliente","N° de cotización del cliente","Text",60),
+        new("FechaEmision","Fecha de emisión","Date",10,true),
         new("CodigoMoneda","Moneda","Currency",3,true),new("CodigoTipoIGV","Tratamiento IGV de los precios","Tax",10,true),
         new("FechaEjecucion","Fecha de ejecución","Date",10),new("Trimestre","Trimestre","Text",40),new("VigenciaTexto","Vigencia de la oferta","Text",100),
         new("ZonaTexto","Zona informativa","Text",200),new("CodigoSAPProveedor","Código SAP de HYT como proveedor","Text",60),new("ContratoMarco","Contrato marco","Text",60),

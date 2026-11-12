@@ -1,0 +1,54 @@
+@* Firma: FRANCO LARA - 10/11/2026 | Listado de negociaciones y acceso a impresión por lote. *@
+@using GestionServicios.Web.ViewModels.Billing
+@model FactoringList
+@{
+    ViewData["Title"] = "Negociación de Factoring";
+    ViewData["Wide"] = true;
+    var rows = Model.Data.GetProperty("Lotes").EnumerateArray().ToArray();
+    var total = rows.Length == 0 ? 0 : rows[0].GetProperty("TotalFilas").GetInt64();
+}
+<header class="hyt-page-header">
+    <div><h1>@ViewData["Title"]</h1></div>
+    @if (Model.CanEdit) { <a class="hyt-button-primary" asp-action="New">Nuevo lote</a> }
+</header>
+<form method="get" asp-action="Index" class="hyt-filters">
+    <partial name="_DatePicker" model="@(new DatePickerModel("desde", "Desde", Model.Filter.From, Required:true))" />
+    <partial name="_DatePicker" model="@(new DatePickerModel("hasta", "Hasta", Model.Filter.To, Required:true))" />
+    <div class="hyt-field"><label for="factoring-search">Financiera o referencia</label><input id="factoring-search" name="buscar" type="search" maxlength="150" value="@Model.Filter.Search" /></div>
+    <div class="hyt-filters-actions"><button class="hyt-button-primary" type="submit">Consultar</button><a class="hyt-button-secondary" asp-action="Index">Restablecer</a></div>
+</form>
+<section class="hyt-panel" aria-label="Lotes de factoring">
+    <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Lotes de factoring">
+        <table class="hyt-table">
+            <thead><tr><th>Lote</th><th>Financiera</th><th>Negociación</th><th>Desembolso</th><th>Porcentaje</th><th>Facturas</th><th>Importe de facturas</th><th>Acciones</th></tr></thead>
+            <tbody>
+            @if (rows.Length == 0) { <tr><td colspan="8" class="hyt-grid-message">No se encontraron lotes para los filtros seleccionados.</td></tr> }
+            @foreach (var row in rows)
+            {
+                var id = row.GetProperty("LoteId").GetInt64();
+                <tr>
+                    <td>@id</td><td>@CommercialPage.Text(row,"Financiera")</td>
+                    <td>@CommercialPage.Date(CommercialPage.Text(row,"FechaNegociacion"))</td>
+                    <td>@(CommercialPage.Text(row,"FechaDesembolso") is { Length: > 0 } date ? CommercialPage.Date(date) : "—")</td>
+                    <td>@CommercialPage.Amount(row,"Porcentaje").ToString("0.####")%</td>
+                    <td>@CommercialPage.Text(row,"Cantidad")</td>
+                    <td>@CommercialPage.Text(row,"Moneda") @CommercialPage.Money(CommercialPage.Amount(row,"Importe"))</td>
+                    <td><div class="hyt-grid-actions">
+                        <a class="hyt-button-secondary hyt-action-button" asp-action="Details" asp-route-id="@id">Ver</a>
+                        <a class="hyt-button-secondary hyt-action-button" asp-action="Details" asp-route-id="@id" asp-route-print="true" target="_blank" rel="noopener">Imprimir</a>
+                    </div></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    <nav class="hyt-pagination" aria-label="Paginación">
+        <span>Página @Model.Filter.Page · @total lotes</span>
+        @foreach (var destination in new[] { Model.Filter.Page-1, Model.Filter.Page+1 })
+        {
+            if (destination < 1 || destination > Model.Filter.Page && Model.Filter.Page * 20 >= total) { continue; }
+            <a class="hyt-button-secondary" asp-action="Index" asp-route-pagina="@destination" asp-route-buscar="@Model.Filter.Search"
+               asp-route-desde="@Model.Filter.From.ToString("yyyy-MM-dd")" asp-route-hasta="@Model.Filter.To.ToString("yyyy-MM-dd")">@(destination < Model.Filter.Page ? "Anterior" : "Siguiente")</a>
+        }
+    </nav>
+</section>

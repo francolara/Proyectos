@@ -2,24 +2,25 @@
 @inject GestionServicios.Application.Payroll.IPayrollCatalogRepository PayrollCatalog
 @model GestionServicios.Web.Controllers.SupplierDetails
 @* Firma: FRANCO LARA - 09/11/2026 | Ficha y edición de proveedores y sus datos bancarios. Aplica el estándar HYT de grillas, filtros y formularios. Incluye CCI opcional. Ayudas de catálogo en pop-up. *@
+@* Firma: FRANCO LARA - 11/11/2026 | Ficha de consulta con acceso a Editar registro y navegación al listado original. *@
 @{
-    var catalog = Model.CanEdit && Model.CanSeeAccount
+    var catalog = Model.Editing && Model.CanSeeAccount
         ? await PayrollCatalog.CatalogAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!, Context.RequestAborted)
         : null;
     var input = Model.Input;
-    ViewData["Title"] = input.Id.HasValue ? "Ficha del proveedor" : "Nuevo proveedor";
+    ViewData["Title"] = input.Id is null ? "Nuevo proveedor" : Model.Editing ? "Editar proveedor" : "Ficha del proveedor";
 }
 <header class="hyt-page-header">
     <div><h1>@ViewData["Title"]</h1><p>@input.Name</p></div>
-    <a asp-action="Index" class="hyt-button-secondary">Volver a proveedores</a>
+    <a href="@(Model.ReturnUrl ?? Url.Action("Index"))" class="hyt-button-secondary">Volver al listado</a>
 </header>
 @if (TempData["SupplierSaved"] is string message)
 {
     <p role="status">@message</p>
 }
-@if (Model.CanEdit)
+@if (Model.Editing)
 {
-    <form asp-action="Save" asp-route-id="@input.Id" method="post" class="hyt-panel hyt-master-form hyt-payroll-form">
+    <form asp-action="Save" asp-route-id="@input.Id" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="hyt-panel hyt-master-form hyt-payroll-form">
         <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
         <input type="hidden" name="Version" value="@input.Version" />
         <h2>Datos generales</h2>
@@ -70,7 +71,9 @@
 }
 else
 {
-    <dl class="hyt-panel hyt-payroll-summary">
+    <section class="hyt-panel hyt-master-form">
+    <dl class="hyt-payroll-summary">
+        <dt>Razón social</dt><dd>@input.Name</dd>
         <dt>RUC</dt><dd>@input.TaxId</dd>
         <dt>Estado</dt><dd>@(input.Active ? "Activo" : "Inactivo")</dd>
         <dt>Banco</dt><dd>@(input.Bank ?? "Sin registrar")</dd>
@@ -80,4 +83,12 @@ else
             <dt>CCI</dt><dd>@(input.Cci ?? "Sin registrar")</dd>
         }
     </dl>
+    @if (Model.CanEdit)
+    {
+        <div class="hyt-payroll-actions">
+            <a class="hyt-button-primary" asp-action="Edit" asp-route-id="@input.Id"
+               asp-route-returnUrl="@Model.ReturnUrl">Editar registro</a>
+        </div>
+    }
+    </section>
 }

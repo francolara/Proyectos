@@ -3,6 +3,7 @@
 -- Create date:   10/11/2026
 -- Description:   Confirma la planificacion y registra sus movimientos de forma atomica.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 11/11/2026 | Conserva el nombre completo vigente al cerrar una planificación de trabajadores con nombres y apellidos separados. Exige guardar las incorporaciones pendientes y registra movimientos solo para los incluidos.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_PlanPagoHYT_ConfirmarPago
@@ -54,9 +55,20 @@ BEGIN
             THROW 51000, N'La planificacion cambio. Vuelva a abrirla y revise los importes.', 1;
 
         IF EXISTS (
+            SELECT 1 FROM dbo.TrabajadorHYT AS trabajador WITH (HOLDLOCK)
+            WHERE trabajador.Activo = 1 AND trabajador.FrecuenciaPago = @Frecuencia AND trabajador.FechaIngreso <= @Hasta
+                AND NOT EXISTS (SELECT 1 FROM dbo.PlanPagoDetalleHYT AS detalle
+                    WHERE detalle.PlanId = @PlanId AND detalle.TrabajadorId = trabajador.TrabajadorId))
+            THROW 51000, N'Guarde la planificación para incorporar a los trabajadores pendientes antes de confirmar el pago.', 1;
+
+        IF NOT EXISTS (SELECT 1 FROM dbo.PlanPagoDetalleHYT AS detalle
+            WHERE detalle.PlanId = @PlanId AND detalle.Incluido = 1)
+            THROW 51000, N'Incluya al menos un trabajador antes de confirmar el pago.', 1;
+
+        IF EXISTS (
             SELECT 1 FROM dbo.PlanPagoDetalleHYT AS detalle
             INNER JOIN dbo.MovimientoPersonalHYT AS movimiento ON movimiento.TrabajadorId = detalle.TrabajadorId
-            WHERE detalle.PlanId = @PlanId AND movimiento.MonedaCodigo = N'PEN'
+            WHERE detalle.PlanId = @PlanId AND detalle.Incluido = 1 AND movimiento.MonedaCodigo = N'PEN'
               AND movimiento.Concepto IN ('REMUNERACION', 'SERVICIO', 'DESCUENTO', 'PAGO')
               AND movimiento.PeriodoDesde <= @Hasta AND movimiento.PeriodoHasta >= @Desde)
             THROW 51000, N'Hay movimientos de personal que ya cubren este periodo. Revise el estado de cuenta.', 1;
@@ -67,7 +79,7 @@ BEGIN
         DECLARE trabajadores CURSOR LOCAL FAST_FORWARD FOR
             SELECT detalle.TrabajadorId, detalle.Tipo, detalle.Base + detalle.ImporteExtra, detalle.Descuento
             FROM dbo.PlanPagoDetalleHYT AS detalle
-            WHERE detalle.PlanId = @PlanId
+            WHERE detalle.PlanId = @PlanId AND detalle.Incluido = 1
             ORDER BY detalle.TrabajadorId;
 
         OPEN trabajadores;
@@ -100,6 +112,11 @@ BEGIN
         END;
         CLOSE trabajadores;
         DEALLOCATE trabajadores;
+
+        UPDATE detalle SET Nombre=trabajador.NombreCompleto
+        FROM dbo.PlanPagoDetalleHYT AS detalle
+        INNER JOIN dbo.TrabajadorHYT AS trabajador ON trabajador.TrabajadorId=detalle.TrabajadorId
+        WHERE detalle.PlanId=@PlanId AND trabajador.Nombres IS NOT NULL;
 
         UPDATE dbo.PlanPagoHYT SET FechaPago = @FechaPago, ReferenciaPago = @ReferenciaPago WHERE PlanId = @PlanId;
         DECLARE @RegistroId NVARCHAR(100) = CONVERT(NVARCHAR(100), @PlanId);

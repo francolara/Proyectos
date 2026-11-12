@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 11/11/2026 | Rediseña Inicio con indicadores compactos, gráficos de gestión y expedientes junto a la tendencia y cobertura de guía y OC en presupuestos aceptados. Consolida el rediseño con filtros, prioridades y minigráficos del período. *@
 @* Firma: FRANCO LARA - 06/11/2026 | Estados comerciales en el detalle accesible del panel. Guía registrada sin aceptación adicional. Panel centrado en estados vigentes y pendientes documentales; accesos al reporte integral. Series legibles Confirmación del cliente y Facturado con registros vigentes, sin denominaciones de primeros eventos. *@
 @using System.Text.Json
 @using GestionServicios.Web.Security
@@ -5,37 +6,149 @@
 @model DashboardModel
 @* Firma: FRANCO LARA - 03/11/2026 | Panel HYT con métricas, curvas, columnas, dona y detalle accesible por moneda. *@
 @* Firma: FRANCO LARA - 05/11/2026 | Filtros cliente/tienda, primeros eventos, agrupación temporal y bandeja de pendientes histórica; Acciones presentadas como botones HYT. *@
-@{var data=Model.Data;var budgets=data.GetProperty("VerPresupuestos").GetBoolean();var orders=data.GetProperty("VerOC").GetBoolean();long Count(string key)=>data.GetProperty(key).GetInt64();}
+@{
+    var data = Model.Data;
+    var budgets = data.GetProperty("VerPresupuestos").GetBoolean();
+    var orders = data.GetProperty("VerOC").GetBoolean();
+    var hasQueue = data.GetProperty("VerPendientes").GetBoolean();
+    var canSeeGuide = User.HasClaim(AccessService.PermissionClaim, "GUIAS.CONSULTAR");
+    var canSeeConfirmation = User.HasClaim(AccessService.PermissionClaim, "CONFIRMACIONES.CONSULTAR");
+    var canSeeInvoice = User.HasClaim(AccessService.PermissionClaim, "FACTURADO.CONSULTAR");
+    var from = Model.From.ToString("yyyy-MM-dd");
+    var to = Model.To.ToString("yyyy-MM-dd");
+    long Count(string key) => data.GetProperty(key).GetInt64();
+    var updated = PeruDate.Display(new DateTimeOffset(DateTime.SpecifyKind(data.GetProperty("ActualizadoUTC").GetDateTime(), DateTimeKind.Utc)));
+}
 <link rel="stylesheet" href="~/hyt-dashboard.css" asp-append-version="true" />
-<header class="hyt-page-header"><div><h1>Resumen de gestión</h1><p>Documentos registrados del @Model.From.ToString("dd/MM/yyyy") al @Model.To.ToString("dd/MM/yyyy"), con su estado actual.</p></div>@if(budgets||orders){<a class="hyt-button-secondary" asp-controller="Reports" asp-action="Index" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")" >Consultar reportes</a>}</header>
-<form class="hyt-filters" asp-controller="Home" asp-action="Index" method="get"><partial name="_DatePicker" model="@(new DatePickerModel("from","Desde",Model.From))" /><partial name="_DatePicker" model="@(new DatePickerModel("to","Hasta",Model.To))" /><button class="hyt-button-primary" type="submit">Actualizar panel</button></form>
-<p class="hyt-master-trace">Consulta actualizada: @PeruDate.Display(new DateTimeOffset(DateTime.SpecifyKind(data.GetProperty("ActualizadoUTC").GetDateTime(),DateTimeKind.Utc))). Los estados muestran la situación actual; los pendientes corresponden al período consultado.</p>
-@if(!budgets&&!orders){<p class="hyt-panel hyt-master-trace">Tu perfil no tiene acceso a las fuentes de presupuestos u OC de este panel.</p>}
-<section class="hyt-operational-flow" aria-label="Flujo vigente"><strong>Presupuesto</strong><span>→ OC del cliente / Guía</span><span>Confirmación de OC → Trabajo completado</span><span>Guía + confirmación → Facturado</span><small>Guía y ejecución son fichas documentales; no requieren cambiar estados por separado.</small></section>
-@if(budgets||orders){<section class="hyt-panel hyt-dashboard-chart"><header class="hyt-dashboard-section-heading"><h2>Estados actuales</h2><span>Presupuestos: @Count("Presupuestos") · OC: @Count("Ordenes")</span></header>
-@foreach(var source in new[]{(Kind:"PRESUPUESTO",Key:"EstadosPresupuesto",Label:"Presupuestos",Visible:budgets),(Kind:"OC_CLIENTE",Key:"EstadosOC",Label:"Orden de Compra - Cliente",Visible:orders)}){
-@if(source.Visible){<h3>@source.Label</h3><div class="hyt-dashboard-states">@foreach(var state in ReportDisplay.States(source.Kind)){var matching=data.GetProperty(source.Key).EnumerateArray().Where(row=>row.GetProperty("Estado").GetString()==state.Key);var count=matching.Sum(row=>row.GetProperty("Cantidad").GetInt64());<a class="hyt-internal-code" href="@("/Reportes?kind="+source.Kind+"&state="+state.Key+"&from="+Model.From.ToString("yyyy-MM-dd")+"&to="+Model.To.ToString("yyyy-MM-dd"))"><span>@state.Value</span><output>@count</output></a>}</div>}
-}</section>}
-<section class="hyt-dashboard-metrics" aria-label="Pendientes del período">
-@if(budgets){
-@if(User.HasClaim(AccessService.PermissionClaim,"OC_CLIENTE.CONSULTAR")){<article><h2>Pendiente de OC del cliente</h2><strong>@Count("PresupuestosSinOC")</strong><a class="hyt-button-secondary" href="@("/Reportes?kind=PRESUPUESTO&pendingOrder=true&from="+Model.From.ToString("yyyy-MM-dd")+"&to="+Model.To.ToString("yyyy-MM-dd"))">Revisar presupuestos</a></article>}
-@if(User.HasClaim(AccessService.PermissionClaim,"GUIAS.CONSULTAR")){<article><h2>Pendiente de guía</h2><strong>@Count("PresupuestosSinGuia")</strong><a class="hyt-button-secondary" href="@("/Reportes?kind=PRESUPUESTO&pendingGuide=true&from="+Model.From.ToString("yyyy-MM-dd")+"&to="+Model.To.ToString("yyyy-MM-dd"))">Revisar guías pendientes</a></article>}
+<div class="hyt-dashboard">
+<div class="hyt-dashboard-overview">
+    <header class="hyt-dashboard-header">
+        <h1>Resumen de gestión</h1>
+        <p>@Model.From.ToString("dd/MM/yyyy") al @Model.To.ToString("dd/MM/yyyy") · Actualizado @updated</p>
+    </header>
+    @if (budgets || orders)
+    {
+        <form class="hyt-filters hyt-dashboard-filters" asp-controller="Home" asp-action="Index" method="get">
+            <partial name="_DatePicker" model='@(new DatePickerModel("from", "Desde", Model.From))' />
+            <partial name="_DatePicker" model='@(new DatePickerModel("to", "Hasta", Model.To))' />
+            @if (Model.Client is not null) { <input type="hidden" name="client" value="@Model.Client" /> }
+            @if (Model.Store is not null) { <input type="hidden" name="store" value="@Model.Store" /> }
+            <button class="hyt-button-primary" type="submit">Actualizar panel</button>
+            <a class="hyt-button-secondary" asp-controller="Reports" asp-action="Index" asp-route-from="@from" asp-route-to="@to"
+               asp-route-client="@Model.Client" asp-route-store="@Model.Store">Consultar reportes</a>
+        </form>
+    }
+</div>
+@if (!budgets && !orders)
+{
+    <p class="hyt-panel hyt-master-trace">Tu perfil no tiene acceso a las fuentes de presupuestos u OC de este panel.</p>
 }
-@if(orders){
-@if(User.HasClaim(AccessService.PermissionClaim,"CONFIRMACIONES.CONSULTAR")){<article><h2>Pendiente de confirmación del cliente</h2><strong>@Count("SinConfirmar")</strong><a class="hyt-button-secondary" href="@("/Reportes?kind=OC_CLIENTE&pendingConfirmation=true&from="+Model.From.ToString("yyyy-MM-dd")+"&to="+Model.To.ToString("yyyy-MM-dd"))">Revisar OC</a></article>}
-@if(User.HasClaim(AccessService.PermissionClaim,"FACTURADO.CONSULTAR")){<article><h2>Pendiente de facturar</h2><strong>@Count("PendientesFacturar")</strong><a class="hyt-button-secondary" href="@("/Reportes?kind=OC_CLIENTE&pendingInvoice=true&from="+Model.From.ToString("yyyy-MM-dd")+"&to="+Model.To.ToString("yyyy-MM-dd"))">Revisar pendientes</a></article>}
-<article><h2>Listas para marcar Facturado</h2><strong>@Count("ListasParaMarcar")</strong><span>Trabajo completado, guía registrada y confirmación vigente.</span></article>
-<article><h2>Marcadas Facturado</h2><strong>@Count("Facturadas")</strong><span>Referencias vigentes de comprobantes externos.</span></article>
+else
+{
+    <section class="hyt-dashboard-metrics" aria-label="Indicadores del período">
+        @if (budgets)
+        {
+            <article class="hyt-kpi-budget">
+                <h2>Presupuestos</h2>
+                <strong>@Count("Presupuestos").ToString("N0")</strong>
+                <svg data-sparkline="Presupuestos" viewBox="0 0 112 38" aria-hidden="true" hidden></svg>
+                <a asp-controller="Reports" asp-action="Index" asp-route-kind="PRESUPUESTO" asp-route-from="@from" asp-route-to="@to"
+                   asp-route-client="@Model.Client" asp-route-store="@Model.Store" aria-label="Ver presupuestos">Ver listado</a>
+            </article>
+        }
+        @if (orders)
+        {
+            <article class="hyt-kpi-order">
+                <h2>OC del cliente</h2>
+                <strong>@Count("Ordenes").ToString("N0")</strong>
+                <svg data-sparkline="Ordenes" viewBox="0 0 112 38" aria-hidden="true" hidden></svg>
+                <a asp-controller="Reports" asp-action="Index" asp-route-kind="OC_CLIENTE" asp-route-from="@from" asp-route-to="@to"
+                   asp-route-client="@Model.Client" asp-route-store="@Model.Store">Ver órdenes</a>
+            </article>
+            @if (canSeeConfirmation)
+            {
+                <article class="hyt-kpi-pending">
+                    <h2>Sin confirmación</h2><strong>@Count("SinConfirmar").ToString("N0")</strong>
+                    <a asp-controller="Reports" asp-action="Index" asp-route-kind="OC_CLIENTE" asp-route-pendingConfirmation="true"
+                       asp-route-from="@from" asp-route-to="@to" asp-route-client="@Model.Client" asp-route-store="@Model.Store">Revisar OC</a>
+                </article>
+            }
+            @if (canSeeInvoice)
+            {
+                <article class="hyt-kpi-pending">
+                    <h2>Por facturar</h2><strong>@Count("PendientesFacturar").ToString("N0")</strong>
+                    <a asp-controller="Reports" asp-action="Index" asp-route-kind="OC_CLIENTE" asp-route-pendingInvoice="true"
+                       asp-route-from="@from" asp-route-to="@to" asp-route-client="@Model.Client" asp-route-store="@Model.Store">Revisar pendientes</a>
+                </article>
+            }
+            <article class="hyt-kpi-done">
+                <h2>Facturadas</h2><strong>@Count("Facturadas").ToString("N0")</strong>
+                <span>Órdenes con comprobante</span>
+            </article>
+        }
+    </section>
+    @if (budgets && (orders || canSeeGuide) || orders && canSeeInvoice)
+    {
+        <div class="hyt-dashboard-priorities" aria-label="Prioridades documentales">
+            @if (budgets && orders)
+            {
+                <a asp-controller="Reports" asp-action="Index" asp-route-kind="PRESUPUESTO" asp-route-pendingOrder="true"
+                   asp-route-from="@from" asp-route-to="@to" asp-route-client="@Model.Client" asp-route-store="@Model.Store"><strong>@Count("PresupuestosSinOC").ToString("N0")</strong> Sin OC del cliente</a>
+            }
+            @if (budgets && canSeeGuide)
+            {
+                <a asp-controller="Reports" asp-action="Index" asp-route-kind="PRESUPUESTO" asp-route-pendingGuide="true"
+                   asp-route-from="@from" asp-route-to="@to" asp-route-client="@Model.Client" asp-route-store="@Model.Store"><strong>@Count("PresupuestosSinGuia").ToString("N0")</strong> Sin guía</a>
+            }
+            @if (orders && canSeeInvoice)
+            {
+                <span title="Trabajo completado, guía registrada y confirmación vigente"><strong>@Count("ListasParaMarcar").ToString("N0")</strong> Listas para marcar Facturado</span>
+            }
+        </div>
+    }
 }
-</section>
 @if(budgets||orders)
 {
-<section class="hyt-panel hyt-dashboard-chart"><header><h2>Registros en el tiempo</h2><p>Cantidad de registros por fecha en Perú. Confirmación del cliente y Facturado consideran registros vigentes; los estados actuales se consultan en las tarjetas del panel.</p></header><div class="hyt-chart-controls">@if(budgets){<label><input type="checkbox" data-chart-series="Presupuestos" checked /> Presupuestos</label>}@if(orders){<label><input type="checkbox" data-chart-series="Ordenes" checked /> OC del cliente</label><label><input type="checkbox" data-chart-series="Confirmaciones" /> Confirmación del cliente</label><label><input type="checkbox" data-chart-series="Marcados" /> Facturado</label>}<label>Agrupar por<select data-chart-group><option value="day">Día</option><option value="week">Semana</option><option value="month">Mes</option></select></label></div>
-<svg data-chart="trend" viewBox="0 0 760 270" role="img" aria-label="Curvas de registros de presupuestos y OC"></svg><p data-chart-note></p><output data-chart-readout aria-live="polite">Selecciona un punto para consultar su fecha y cantidad.</output><a class="hyt-button-secondary hyt-action-button" data-chart-link hidden></a></section>
+<div class="hyt-dashboard-primary @(hasQueue ? "hyt-dashboard-with-queue" : "")">
+<section class="hyt-panel hyt-dashboard-chart hyt-dashboard-trend"><header><h2>Registros en el tiempo</h2><p>Registros por fecha en Perú. Confirmación del cliente y Facturado muestran registros vigentes.</p></header><div class="hyt-chart-controls">@if(budgets){<label><input type="checkbox" data-chart-series="Presupuestos" checked /> Presupuestos</label>}@if(orders){<label><input type="checkbox" data-chart-series="Ordenes" checked /> OC del cliente</label><label><input type="checkbox" data-chart-series="Confirmaciones" /> Confirmación del cliente</label><label><input type="checkbox" data-chart-series="Marcados" /> Facturado</label>}<label>Agrupar por<select data-chart-group><option value="day">Día</option><option value="week">Semana</option><option value="month">Mes</option></select></label></div>
+<svg data-chart="trend" viewBox="0 0 760 270" role="img" aria-label="Evolución de registros de presupuestos, órdenes, confirmaciones y facturación"></svg><p data-chart-note></p><output data-chart-readout aria-live="polite">Selecciona un punto para consultar su fecha y cantidad.</output><a class="hyt-button-secondary hyt-action-button" data-chart-link hidden></a></section>
+@if(hasQueue)
+{
+<section class="hyt-panel hyt-dashboard-chart hyt-dashboard-queue"><h2>Expedientes por completar</h2><p><strong>@Count("PendientesPeriodo")</strong> del período · <strong>@Count("TotalPendientes")</strong> acumulados al @Model.To.ToString("dd/MM/yyyy")</p>
+<div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Expedientes por completar">
+<table class="hyt-table">
+<thead><tr><th scope="col">Expediente</th><th scope="col">Pendientes</th></tr></thead>
+<tbody>
+@foreach(var row in data.GetProperty("Pendientes").EnumerateArray())
+{
+    <tr>
+        <td>
+            <a class="hyt-dashboard-case-link" asp-controller="Budget" asp-action="Details" asp-route-id="@row.GetProperty("Id").GetInt64()" asp-route-returnUrl="@(Context.Request.Path+Context.Request.QueryString)">@row.GetProperty("Numero").GetString()</a>
+            <span>@row.GetProperty("ClienteNombre").GetString() / @row.GetProperty("TiendaNombre").GetString()</span>
+            <small>@PeruDate.Display(new DateTimeOffset(DateTime.SpecifyKind(row.GetProperty("FechaRegistro").GetDateTime(),DateTimeKind.Utc))) · @row.GetProperty("DiasPendiente").GetInt32() días</small>
+        </td>
+        <td><div class="hyt-dashboard-alerts">
+            @if(row.GetProperty("SinOC").GetBoolean()){<span>Sin OC</span>}
+            @if(row.GetProperty("SinGuia").GetBoolean()){<span>Sin guía</span>}
+            @if(row.GetProperty("EmergenciaPorRegularizar").GetBoolean()){<span>Emergencia sin aceptación</span>}
+        </div></td>
+    </tr>
+}
+@if(data.GetProperty("Pendientes").GetArrayLength()==0){<tr><td colspan="2">Sin expedientes pendientes en esta página.</td></tr>}
+</tbody></table></div><nav class="hyt-pagination" aria-label="Páginas de pendientes">
+@if(Model.QueuePage>1){<a class="hyt-button-secondary hyt-action-button" asp-action="Index" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@to" asp-route-client="@Model.Client" asp-route-store="@Model.Store" asp-route-queuePage="@(Model.QueuePage-1)">Anterior</a>}
+<span>Página @Model.QueuePage · 20 por página</span>
+@if((long)Model.QueuePage*20<Count("TotalPendientes")){<a class="hyt-button-secondary hyt-action-button" asp-action="Index" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@to" asp-route-client="@Model.Client" asp-route-store="@Model.Store" asp-route-queuePage="@(Model.QueuePage+1)">Siguiente</a>}
+</nav></section>
+}
+</div>
+<div class="hyt-dashboard-documentation">
+@if (budgets) { <partial name="_BudgetCoverage" model="Model.Data" /> }
+@if(orders){<section class="hyt-panel hyt-dashboard-chart hyt-dashboard-billing"><h2>Documentación de OC para facturar</h2><svg data-chart="donut" viewBox="0 0 360 260" role="img" aria-label="Distribución de OC sin confirmar, confirmadas sin marcado y facturadas"></svg><ul data-donut-legend></ul><p>Las confirmadas sin marcar pueden tener trabajo o guía pendientes.</p></section>}
+</div>
 <div class="hyt-dashboard-charts">
 @if(budgets){<section class="hyt-panel hyt-dashboard-chart"><h2>Estados de presupuestos</h2><svg data-chart="states" data-state-source="PRESUPUESTO" viewBox="0 0 760 300" role="img" aria-label="Columnas de presupuestos por estado"></svg></section>}
 @if(orders){<section class="hyt-panel hyt-dashboard-chart"><h2>Estados de OC del cliente</h2><svg data-chart="states-oc" data-state-source="OC_CLIENTE" viewBox="0 0 760 300" role="img" aria-label="Columnas de OC por estado"></svg></section>}
-@if(orders){<section class="hyt-panel hyt-dashboard-chart"><h2>Documentación de OC para facturar</h2><svg data-chart="donut" viewBox="0 0 360 260" role="img" aria-label="Distribución de OC sin confirmar, confirmadas sin marcado y facturadas"></svg><ul data-donut-legend></ul><p>Las confirmadas sin marcar pueden tener trabajo o guía pendientes.</p></section>}
 </div>
 <section class="hyt-panel hyt-dashboard-chart"><h2>Importes por moneda</h2><p>Valor de las revisiones de presupuesto y de las revisiones vinculadas a OC. Se excluyen cancelados. Los dos documentos representan vistas del mismo servicio y no se suman entre sí.</p>
 <div class="hyt-dashboard-money">@foreach(var source in new[]{(Key:"ImportesPresupuesto",Label:"Presupuestos"),(Key:"ImportesOC",Label:"OC del cliente")})
@@ -49,17 +162,10 @@
 @foreach(var day in data.GetProperty("Movimientos").EnumerateArray()){<tr><td>Presupuestos / OC</td><td>@day.GetProperty("Fecha").GetString()</td><td>@day.GetProperty("Presupuestos").GetInt64() / @day.GetProperty("Ordenes").GetInt64()</td><td>@day.GetProperty("Confirmaciones").GetInt64() / @day.GetProperty("Marcados").GetInt64()</td></tr>}
 </tbody></table></div></details>
 }
-@if(data.GetProperty("VerPendientes").GetBoolean())
-{
-<section class="hyt-panel hyt-dashboard-chart"><h2>Expedientes por completar</h2><p>@Count("PendientesPeriodo") registrados en el período · @Count("TotalPendientes") acumulados hasta @Model.To.ToString("dd/MM/yyyy"), incluidos los anteriores al período. Una fila puede tener varios pendientes.</p>
-<div class="hyt-table-wrap"><table class="hyt-table"><thead><tr><th>Presupuesto</th><th>Cliente / tienda</th><th>Registro</th><th>Antigüedad al consultar</th><th>Pendientes</th><th>Acción</th></tr></thead><tbody>
-@foreach(var row in data.GetProperty("Pendientes").EnumerateArray())
-{<tr><td>@row.GetProperty("Numero").GetString()</td><td>@row.GetProperty("ClienteNombre").GetString() / @row.GetProperty("TiendaNombre").GetString()</td><td>@PeruDate.Display(new DateTimeOffset(DateTime.SpecifyKind(row.GetProperty("FechaRegistro").GetDateTime(),DateTimeKind.Utc)))</td><td>@row.GetProperty("DiasPendiente").GetInt32() días</td><td>@if(row.GetProperty("SinOC").GetBoolean()){<span>Sin OC. </span>}@if(row.GetProperty("SinGuia").GetBoolean()){<span>Sin guía. </span>}@if(row.GetProperty("EmergenciaPorRegularizar").GetBoolean()){<span>Emergencia sin aceptación.</span>}</td><td><a class="hyt-button-secondary hyt-action-button" asp-controller="Budget" asp-action="Details" asp-route-id="@row.GetProperty("Id").GetInt64()" asp-route-returnUrl="@(Context.Request.Path+Context.Request.QueryString)">Abrir expediente</a></td></tr>}
-@if(data.GetProperty("Pendientes").GetArrayLength()==0){<tr><td colspan="6">Sin expedientes pendientes en esta página.</td></tr>}
-</tbody></table></div><nav class="hyt-pagination" aria-label="Páginas de pendientes">
-@if(Model.QueuePage>1){<a class="hyt-button-secondary hyt-action-button" asp-action="Index" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")"  asp-route-queuePage="@(Model.QueuePage-1)">Anterior</a>}
-<span>Página @Model.QueuePage · 20 por página</span>
-@if((long)Model.QueuePage*20<Count("TotalPendientes")){<a class="hyt-button-secondary hyt-action-button" asp-action="Index" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")"  asp-route-queuePage="@(Model.QueuePage+1)">Siguiente</a>}
-</nav></section>
-}
+@if(budgets||orders){<details class="hyt-panel hyt-dashboard-chart"><summary>Consultar reportes por estado</summary>
+@foreach(var source in new[]{(Kind:"PRESUPUESTO",Key:"EstadosPresupuesto",Label:"Presupuestos",Visible:budgets),(Kind:"OC_CLIENTE",Key:"EstadosOC",Label:"Orden de Compra - Cliente",Visible:orders)}){
+@if(source.Visible){<h3>@source.Label</h3><div class="hyt-dashboard-states">@foreach(var state in ReportDisplay.States(source.Kind)){var matching=data.GetProperty(source.Key).EnumerateArray().Where(row=>row.GetProperty("Estado").GetString()==state.Key);var count=matching.Sum(row=>row.GetProperty("Cantidad").GetInt64());<a class="hyt-internal-code" href="@("/Reportes?kind="+source.Kind+"&state="+state.Key+"&from="+Model.From.ToString("yyyy-MM-dd")+"&to="+Model.To.ToString("yyyy-MM-dd"))"><span>@state.Value</span><output>@count</output></a>}</div>}
+}</details>}
+<section class="hyt-operational-flow" aria-label="Flujo documental"><strong>Presupuesto</strong><span>→ OC del cliente / Guía</span><span>Confirmación de OC → Trabajo completado</span><span>Guía + confirmación → Facturado</span><small>Guía y ejecución son fichas documentales; no requieren cambiar estados por separado.</small></section>
+</div>
 <script type="application/json" id="hyt-dashboard-data">@Html.Raw(JsonSerializer.Serialize(new{from=Model.From.ToString("yyyy-MM-dd"),to=Model.To.ToString("yyyy-MM-dd"),client=Model.Client,store=Model.Store,data=Model.Data}))</script>

@@ -6,8 +6,9 @@
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   10/11/2026
--- Description:   Agrega filtro por estado antes de paginar.
+-- Description:   Agrega filtro por estado antes de paginar y devuelve los conceptos y datos de Telecrédito en la ficha, con permiso para abono.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 11/11/2026 | Devuelve nombres y apellidos y permite buscar en ambos órdenes.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_TrabajadorHYT_Listar
@@ -32,7 +33,7 @@ BEGIN
         DECLARE @VerVacaciones BIT = dbo.fn_HYTPermiso(@UsuarioId, N'VACACIONES.CONSULTAR');
         SET @Buscar = NULLIF(TRIM(@Buscar), N'');
 
-        SELECT trabajador.TrabajadorId, trabajador.Documento, trabajador.NombreCompleto, trabajador.Tipo,
+        SELECT trabajador.TrabajadorId, trabajador.Documento, trabajador.NombreCompleto, trabajador.Nombres, trabajador.Apellidos, trabajador.Tipo,
                trabajador.FechaIngreso, trabajador.Banco, trabajador.CargoId, cargo.Nombre AS CargoNombre,
                CASE WHEN @TrabajadorId IS NOT NULL THEN trabajador.SueldoMensual END AS SueldoMensual,
                CASE WHEN trabajador.NumeroCuenta IS NOT NULL THEN
@@ -41,10 +42,17 @@ BEGIN
                     THEN trabajador.NumeroCuenta END AS NumeroCuenta,
                CASE WHEN @TrabajadorId IS NOT NULL AND @VerCuenta = 1
                     THEN trabajador.CuentaInterbancaria END AS CuentaInterbancaria,
+               CASE WHEN @TrabajadorId IS NOT NULL THEN trabajador.TipoDocumentoBcp END AS TipoDocumentoBcp,
+               CASE WHEN @TrabajadorId IS NOT NULL THEN trabajador.DocumentoBcp END AS DocumentoBcp,
+               CASE WHEN @TrabajadorId IS NOT NULL AND @VerCuenta=1 THEN trabajador.TipoCuentaBcp END AS TipoCuentaBcp,
+               CASE WHEN @TrabajadorId IS NOT NULL AND @VerCuenta=1 THEN trabajador.MonedaCuentaBcp END AS MonedaCuentaBcp,
                trabajador.HoraEntradaHabitual, trabajador.HoraSalidaHabitual, trabajador.RegimenPrevisional,
                trabajador.AdministradoraAFP, trabajador.FrecuenciaPago, trabajador.Activo, trabajador.VersionFila,
                CASE WHEN @VerVacaciones = 1 AND trabajador.Tipo = 'PLANILLA'
                     THEN COALESCE(vacaciones.Pendientes, 0) END AS VacacionesPendientes,
+               CASE WHEN @TrabajadorId IS NOT NULL THEN (
+                   SELECT asignado.ConceptoId FROM dbo.TrabajadorConceptoHYT AS asignado
+                   WHERE asignado.TrabajadorId=trabajador.TrabajadorId FOR JSON PATH) END AS Conceptos,
                COUNT_BIG(1) OVER () AS Total
         FROM dbo.TrabajadorHYT AS trabajador
         LEFT JOIN dbo.CargoTrabajadorHYT AS cargo ON cargo.CargoId = trabajador.CargoId
@@ -63,6 +71,7 @@ BEGIN
           AND (@Activo IS NULL OR trabajador.Activo = @Activo)
           AND (@SoloActivos = 0 OR trabajador.Activo = 1)
           AND (@Buscar IS NULL OR CHARINDEX(@Buscar, trabajador.NombreCompleto) > 0
+               OR (trabajador.Nombres IS NOT NULL AND CHARINDEX(@Buscar, CONCAT(trabajador.Nombres,N' ',trabajador.Apellidos))>0)
                OR CHARINDEX(@Buscar, trabajador.Documento) > 0)
         ORDER BY trabajador.NombreCompleto, trabajador.TrabajadorId
         OFFSET (CONVERT(BIGINT, @Pagina) - 1) * 20 ROWS FETCH NEXT 20 ROWS ONLY;

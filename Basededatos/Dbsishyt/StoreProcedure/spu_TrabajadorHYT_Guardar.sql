@@ -3,6 +3,8 @@
 -- Create date:   09/11/2026
 -- Description:   Guarda trabajadores con cargo, sueldo base, horario, regimen y frecuencia. Incluye el CCI con permiso bancario.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 10/11/2026 | Guarda los conceptos habituales y datos de Telecrédito con los permisos existentes.
+-- Firma: FRANCO LARA | Create date: 11/11/2026 | Guarda nombres y apellidos y compone el nombre completo en orden Apellidos Nombres.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_TrabajadorHYT_Guardar
@@ -27,7 +29,11 @@ CREATE OR ALTER PROCEDURE dbo.spu_TrabajadorHYT_Guardar
     @FrecuenciaPago VARCHAR(10) = NULL,
     @ActualizarPlanificacion BIT = 0,
     @CuentaInterbancaria VARCHAR(100) = NULL,
-    @ActualizarCCI BIT = 0
+    @ActualizarCCI BIT = 0,
+    @Conceptos NVARCHAR(MAX) = NULL,
+    @ActualizarIdentidadBcp BIT=0, @TipoDocumentoBcp CHAR(1)=NULL, @DocumentoBcp VARCHAR(40)=NULL,
+    @ActualizarAbonoBcp BIT=0, @TipoCuentaBcp CHAR(1)=NULL, @MonedaCuentaBcp CHAR(3)=NULL,
+    @Nombres NVARCHAR(180)=NULL, @Apellidos NVARCHAR(180)=NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -36,6 +42,14 @@ BEGIN
         IF dbo.fn_HYTPermiso(@UsuarioId, N'TRABAJADORES.EDITAR') = 0
             THROW 51000, N'No tiene permiso para guardar trabajadores.', 1;
 
+        SET @Nombres=NULLIF(TRIM(@Nombres),N'');
+        SET @Apellidos=NULLIF(TRIM(@Apellidos),N'');
+        IF @Nombres IS NOT NULL OR @Apellidos IS NOT NULL
+        BEGIN
+            IF @Nombres IS NULL OR @Apellidos IS NULL OR LEN(@Apellidos)+1+LEN(@Nombres)>180
+                THROW 51000,N'Indica nombres y apellidos. El nombre completo admite hasta 180 caracteres.',1;
+            SET @NombreCompleto=CONCAT(@Apellidos,N' ',@Nombres);
+        END;
         SET @NombreCompleto = NULLIF(TRIM(@NombreCompleto), N'');
         SET @Documento = NULLIF(TRIM(@Documento), N'');
         IF @Documento IS NULL OR @Tipo IS NULL OR @Tipo NOT IN ('PLANILLA', 'EXTERNO')
@@ -46,6 +60,22 @@ BEGIN
         SET @Banco = NULLIF(TRIM(@Banco), N'');
         SET @NumeroCuenta = NULLIF(TRIM(@NumeroCuenta), N'');
         SET @CuentaInterbancaria = NULLIF(TRIM(@CuentaInterbancaria), '');
+        IF @ActualizarAbonoBcp=1 AND (@ActualizarCuenta<>1
+            OR (@TipoCuentaBcp IS NOT NULL AND @TipoCuentaBcp NOT IN ('A','C','M','B'))
+            OR (@MonedaCuentaBcp IS NOT NULL AND @MonedaCuentaBcp NOT IN ('PEN','USD')))
+            THROW 51000,N'Revisa el tipo y la moneda de la cuenta de abono.',1;
+        IF @ActualizarIdentidadBcp=1
+        BEGIN
+            SET @DocumentoBcp=NULLIF(TRIM(@DocumentoBcp),'');
+            DECLARE @IdentidadBcp NVARCHAR(40)=COALESCE(@DocumentoBcp,@Documento);
+            IF (@TipoDocumentoBcp IS NULL AND @DocumentoBcp IS NOT NULL)
+                OR (@TipoDocumentoBcp IS NOT NULL AND (@TipoDocumentoBcp NOT IN ('1','3','4')
+                    OR LEN(@IdentidadBcp) NOT BETWEEN 1 AND 12
+                    OR @IdentidadBcp COLLATE Latin1_General_100_BIN2 LIKE '%[^0-9A-Za-z]%'
+                    OR (@TipoDocumentoBcp='1' AND (LEN(@IdentidadBcp)<>8
+                        OR @IdentidadBcp COLLATE Latin1_General_100_BIN2 LIKE '%[^0-9]%'))))
+                THROW 51000,N'Revisa el tipo y número del documento de identidad para Telecrédito.',1;
+        END;
         IF @ActualizarCCI = 1 AND @ActualizarCuenta <> 1
             THROW 51000, N'El CCI requiere autorizacion para actualizar la cuenta bancaria.', 1;
 
@@ -54,9 +84,10 @@ BEGIN
             IF dbo.fn_HYTPermiso(@UsuarioId, N'TRABAJADORES.CUENTA') = 0
                 THROW 51000, N'No tiene permiso para cambiar datos bancarios.', 1;
 
-            IF (@Banco IS NULL AND @NumeroCuenta IS NOT NULL)
-               OR (@Banco IS NOT NULL AND @NumeroCuenta IS NULL)
-                THROW 51000, N'Indique banco y numero de cuenta juntos.', 1;
+            IF (@Banco IS NULL AND (@NumeroCuenta IS NOT NULL OR @CuentaInterbancaria IS NOT NULL))
+               OR (@Banco IS NOT NULL AND @NumeroCuenta IS NULL AND @CuentaInterbancaria IS NULL
+                   AND (@ActualizarCCI=1 OR @TrabajadorId IS NULL))
+                THROW 51000, N'Indica el banco y el número de cuenta o CCI.', 1;
 
             IF @ActualizarCCI = 1 AND @CuentaInterbancaria IS NOT NULL
                 AND (@Banco IS NULL OR DATALENGTH(@CuentaInterbancaria) <> 20
@@ -90,9 +121,10 @@ BEGIN
         DECLARE @Accion NVARCHAR(60) = N'MODIFICAR';
         IF @TrabajadorId IS NULL
         BEGIN
-            INSERT INTO dbo.TrabajadorHYT (Documento, NombreCompleto, Tipo, FechaIngreso, Banco, NumeroCuenta, CuentaInterbancaria, Activo, CargoId, SueldoMensual,
-                 HoraEntradaHabitual, HoraSalidaHabitual, RegimenPrevisional, AdministradoraAFP, FrecuenciaPago)
-            VALUES (@Documento, @NombreCompleto, @Tipo, @FechaIngreso, CASE WHEN @ActualizarCuenta = 1 THEN @Banco END,
+            INSERT INTO dbo.TrabajadorHYT (Documento, NombreCompleto, Nombres, Apellidos, Tipo, FechaIngreso, Banco, NumeroCuenta, CuentaInterbancaria, Activo, CargoId, SueldoMensual,
+                 HoraEntradaHabitual, HoraSalidaHabitual, RegimenPrevisional, AdministradoraAFP, FrecuenciaPago,
+                 TipoDocumentoBcp, DocumentoBcp, TipoCuentaBcp, MonedaCuentaBcp)
+            VALUES (@Documento, @NombreCompleto, @Nombres, @Apellidos, @Tipo, @FechaIngreso, CASE WHEN @ActualizarCuenta = 1 THEN @Banco END,
                     CASE WHEN @ActualizarCuenta = 1 THEN @NumeroCuenta END,
                     CASE WHEN @ActualizarCuenta = 1 AND @ActualizarCCI = 1 THEN @CuentaInterbancaria END, @Activo,
                     CASE WHEN @ActualizarPuesto = 1 THEN @CargoId END, CASE WHEN @ActualizarPuesto = 1 THEN @SueldoMensual END,
@@ -100,14 +132,20 @@ BEGIN
                     CASE WHEN @ActualizarPlanificacion = 1 THEN @HoraSalidaHabitual END,
                     CASE WHEN @ActualizarPlanificacion = 1 THEN @RegimenPrevisional END,
                     CASE WHEN @ActualizarPlanificacion = 1 THEN @AdministradoraAFP END,
-                    CASE WHEN @ActualizarPlanificacion = 1 THEN @FrecuenciaPago END);
+                    CASE WHEN @ActualizarPlanificacion = 1 THEN @FrecuenciaPago END,
+                    CASE WHEN @ActualizarIdentidadBcp=1 THEN @TipoDocumentoBcp END,
+                    CASE WHEN @ActualizarIdentidadBcp=1 THEN @DocumentoBcp END,
+                    CASE WHEN @ActualizarAbonoBcp=1 THEN @TipoCuentaBcp END,
+                    CASE WHEN @ActualizarAbonoBcp=1 THEN @MonedaCuentaBcp END);
             SET @TrabajadorId = SCOPE_IDENTITY();
             SET @Accion = N'CREAR';
         END
         ELSE
         BEGIN
             UPDATE dbo.TrabajadorHYT
-            SET Documento = @Documento, NombreCompleto = @NombreCompleto, Activo = @Activo,
+            SET Documento = @Documento,
+                NombreCompleto = CASE WHEN @Nombres IS NOT NULL OR Nombres IS NULL THEN @NombreCompleto ELSE NombreCompleto END,
+                Nombres=COALESCE(@Nombres,Nombres), Apellidos=COALESCE(@Apellidos,Apellidos), Activo = @Activo,
                 Tipo = @Tipo, FechaIngreso = @FechaIngreso,
                 CargoId = CASE WHEN @ActualizarPuesto = 1 THEN @CargoId ELSE CargoId END,
                 SueldoMensual = CASE WHEN @ActualizarPuesto = 1 THEN @SueldoMensual ELSE SueldoMensual END,
@@ -119,21 +157,48 @@ BEGIN
                 Banco = CASE WHEN @ActualizarCuenta = 1 THEN @Banco ELSE Banco END,
                 CuentaInterbancaria = CASE WHEN @ActualizarCuenta = 1 AND @Banco IS NULL THEN NULL
                     WHEN @ActualizarCuenta = 1 AND @ActualizarCCI = 1 THEN @CuentaInterbancaria ELSE CuentaInterbancaria END,
-                NumeroCuenta = CASE WHEN @ActualizarCuenta = 1 THEN @NumeroCuenta ELSE NumeroCuenta END
+                NumeroCuenta = CASE WHEN @ActualizarCuenta = 1 THEN @NumeroCuenta ELSE NumeroCuenta END,
+                TipoDocumentoBcp=CASE WHEN @ActualizarIdentidadBcp=1 THEN @TipoDocumentoBcp ELSE TipoDocumentoBcp END,
+                DocumentoBcp=CASE WHEN @ActualizarIdentidadBcp=1 THEN @DocumentoBcp ELSE DocumentoBcp END,
+                TipoCuentaBcp=CASE WHEN @ActualizarAbonoBcp=1 THEN @TipoCuentaBcp ELSE TipoCuentaBcp END,
+                MonedaCuentaBcp=CASE WHEN @ActualizarAbonoBcp=1 THEN @MonedaCuentaBcp ELSE MonedaCuentaBcp END
             WHERE TrabajadorId = @TrabajadorId AND VersionFila = @VersionFila;
 
             IF @@ROWCOUNT = 0
                 THROW 51000, N'El trabajador cambio o ya no existe. Vuelva a abrir su ficha.', 1;
         END;
 
+        IF @Conceptos IS NOT NULL
+        BEGIN
+            IF ISJSON(@Conceptos,ARRAY)<>1 OR (SELECT COUNT(1) FROM OPENJSON(@Conceptos))>200
+                THROW 51000,N'Revisa los conceptos seleccionados.',1;
+            IF EXISTS (
+                SELECT 1 FROM OPENJSON(@Conceptos) AS entrada
+                LEFT JOIN dbo.ConceptoPlanillaHYT AS concepto WITH (HOLDLOCK)
+                    ON concepto.ConceptoId=TRY_CONVERT(BIGINT,entrada.value)
+                LEFT JOIN dbo.TrabajadorConceptoHYT AS asignado
+                    ON asignado.TrabajadorId=@TrabajadorId AND asignado.ConceptoId=concepto.ConceptoId
+                WHERE entrada.type<>2 OR concepto.ConceptoId IS NULL OR concepto.Regimen IS NOT NULL
+                    OR (concepto.Activo=0 AND asignado.ConceptoId IS NULL))
+                THROW 51000,N'Uno de los conceptos seleccionados ya no está disponible.',1;
+            DELETE FROM dbo.TrabajadorConceptoHYT WHERE TrabajadorId=@TrabajadorId;
+            INSERT INTO dbo.TrabajadorConceptoHYT(TrabajadorId,ConceptoId)
+            SELECT @TrabajadorId,CONVERT(BIGINT,entrada.value)
+            FROM OPENJSON(@Conceptos) AS entrada GROUP BY CONVERT(BIGINT,entrada.value);
+        END;
+
         DECLARE @RegistroId NVARCHAR(100) = CONVERT(NVARCHAR(100), @TrabajadorId);
         DECLARE @CorrelacionId UNIQUEIDENTIFIER = NEWID();
         DECLARE @Cambios NVARCHAR(MAX) = (
-            SELECT @Documento AS Documento, @NombreCompleto AS NombreCompleto, @Activo AS Activo,
+            SELECT @Documento AS Documento, trabajador.NombreCompleto AS NombreCompleto, @Activo AS Activo,
+                   trabajador.Nombres, trabajador.Apellidos,
                    @Tipo AS Tipo, @FechaIngreso AS FechaIngreso, @ActualizarCuenta AS ActualizoCuenta, @ActualizarCCI AS ActualizoCCI,
                    @ActualizarPuesto AS ActualizoPuesto, @CargoId AS CargoId, @ActualizarPlanificacion AS ActualizoPlanificacion,
                    @HoraEntradaHabitual AS HoraEntradaHabitual, @HoraSalidaHabitual AS HoraSalidaHabitual,
-                   @RegimenPrevisional AS RegimenPrevisional, @AdministradoraAFP AS AdministradoraAFP, @FrecuenciaPago AS FrecuenciaPago
+                   @RegimenPrevisional AS RegimenPrevisional, @AdministradoraAFP AS AdministradoraAFP, @FrecuenciaPago AS FrecuenciaPago,
+                   @ActualizarIdentidadBcp AS ActualizoIdentidadBcp,@ActualizarAbonoBcp AS ActualizoAbonoBcp,
+                   JSON_QUERY(@Conceptos) AS Conceptos
+            FROM dbo.TrabajadorHYT AS trabajador WHERE trabajador.TrabajadorId=@TrabajadorId
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         );
         EXEC dbo.spu_RegistrarAuditoria @UsuarioId, @CorrelacionId, N'TrabajadorHYT',

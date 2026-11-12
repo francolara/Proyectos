@@ -1,7 +1,7 @@
 using GestionServicios.Application.Payroll;
 
 sealed class TestPayrollRepository : ISupplierPaymentsRepository, IWorkersRepository,
-    IPersonalPaymentsRepository, IPayrollObligationsRepository, IPayPlanningRepository, IPayrollCatalogRepository
+    IPersonalPaymentsRepository, IPayrollObligationsRepository, IPayPlanningRepository, IPayrollCatalogRepository, IPayrollConceptRepository, ITelecreditRepository
 {
     private Supplier supplier = new(1, "20000000001", "Proveedor de prueba", "Banco", "****2345", "000012345", true, new byte[8], 1);
     private SupplierCost? cost;
@@ -17,10 +17,44 @@ sealed class TestPayrollRepository : ISupplierPaymentsRepository, IWorkersReposi
     private PayrollObligation? obligation;
     private SctrPolicy? policy;
     private PayPlan? payPlan;
+    private readonly List<PayrollConcept> concepts = [
+        new(1, "Asignación familiar", "ABONO", "IMPORTE", 100m, null, true, new byte[8]),
+        new(2, "Bono", "ABONO", "IMPORTE", null, null, true, new byte[8]),
+        new(3, "Sistema de pensiones (AFP)", "CARGO", "PORCENTAJE", null, "AFP", true, new byte[8])
+    ];
+
+    private TelecreditAccount? chargeAccount;
+
+    public Task<TelecreditAccount?> GetChargeAccountAsync(string actor, CancellationToken ct)
+        => Task.FromResult(chargeAccount);
+
+    public Task<long> SaveChargeAccountAsync(string actor, TelecreditAccount account, CancellationToken ct)
+    {
+        chargeAccount = account with { VersionFila = new byte[8] };
+        return Task.FromResult(1L);
+    }
+
+    public Task<TelecreditBatch> ReadBatchAsync(string actor, long planId, byte[] version, string kind, CancellationToken ct)
+        => Task.FromResult(new TelecreditBatch(planId, chargeAccount, kind == "PLANILLA"
+            ? [new(1, "Pérez Ñahui", "1", "00000042", "BCP", "1910008791097", null, "C", "PEN", 375.10m, false)]
+            : [new(2, "López Díaz", "3", "001ABC", "Interbank", null, "00963200000380987111", null, "PEN", 824.90m, false)]));
+
+    public Task<IReadOnlyList<PayrollConcept>> ConceptsAsync(string actor, CancellationToken ct)
+        => Task.FromResult<IReadOnlyList<PayrollConcept>>(concepts);
+
+    public Task<long> SaveConceptAsync(string actor, PayrollConcept concept, CancellationToken ct)
+    {
+        var id = concept.ConceptoId == 0 ? concepts.Max(item => item.ConceptoId) + 1 : concept.ConceptoId;
+        concepts.RemoveAll(item => item.ConceptoId == id);
+        concepts.Add(concept with { ConceptoId = id, VersionFila = new byte[8] });
+        return Task.FromResult(id);
+    }
 
     public Task<PayPlan> PlanAsync(string actor, string frequency, DateOnly from, CancellationToken ct)
-        => Task.FromResult(payPlan ?? new PayPlan(null, null, frequency, from, from.AddDays(6),
-            [new(worker.Id, worker.Name, worker.Kind, 1500m, 60, 0, 0)]));
+        => Task.FromResult(payPlan ?? new PayPlan(null, null, frequency, from, PeriodEnd(frequency, from),
+            [new(worker.Id, worker.Name, worker.Kind, 1500m, 60, 0, 0, Banco: "Banco de prueba", Cuenta: "0000042", Cargo: "Supervisor")], VerCuenta: true,
+            Conceptos: concepts.Where(item => item.Activo).Select(item =>
+                new PayPlanConcept(item.ConceptoId, item.Nombre, item.Naturaleza, item.Calculo, item.Valor)).ToArray()));
 
     public Task<PayPlan> ReportPlanAsync(string actor, string frequency, DateOnly from, CancellationToken ct)
         => PlanAsync(actor, frequency, from, ct);
@@ -36,10 +70,17 @@ sealed class TestPayrollRepository : ISupplierPaymentsRepository, IWorkersReposi
         IReadOnlyList<PayPlanLineInput> lines, CancellationToken ct)
     {
         var row = lines.Single();
-        payPlan = new(1, new byte[8], frequency, from, from.AddDays(6),
-            [new(row.TrabajadorId, worker.Name, worker.Kind, row.Base, row.MinutosExtra, row.ImporteExtra, row.Descuento, row.Ajustes)]);
+        payPlan = new(1, new byte[8], frequency, from, PeriodEnd(frequency, from),
+            [new(row.TrabajadorId, worker.Name, worker.Kind, row.Base, row.MinutosExtra, row.ImporteExtra, row.Descuento, row.Ajustes, Cargo: "Supervisor", Incluido: row.Incluido)]);
         return Task.FromResult(1L);
     }
+
+    private static DateOnly PeriodEnd(string frequency, DateOnly from) => frequency switch
+    {
+        "SEMANAL" => from.AddDays(6),
+        "QUINCENAL" when from.Day == 1 => from.AddDays(14),
+        _ => new DateOnly(from.Year, from.Month, DateTime.DaysInMonth(from.Year, from.Month))
+    };
 
     public Task<PersonalAccount?> AccountAsync(string actor, long workerId, DateOnly month, CancellationToken ct)
         => Task.FromResult<PersonalAccount?>(new(worker.Id, worker.Name, worker.Kind, termination is null, month,
@@ -106,7 +147,12 @@ sealed class TestPayrollRepository : ISupplierPaymentsRepository, IWorkersReposi
 
     public Task<long> SavePolicyAsync(string actor, SctrPolicy input, CancellationToken ct)
     {
-        policy = input with { PolizaId = 1, VersionFila = new byte[8], Estado = "POR_VENCER" };
+        policy = input with
+        {
+            PolizaId = 1, VersionFila = new byte[8], Estado = "POR_VENCER",
+            Trabajadores = input.Trabajadores?.Select(item => item with
+                { Nombre = item.TrabajadorId == worker.Id ? worker.Name : "Segundo trabajador" }).ToArray()
+        };
         return Task.FromResult(1L);
     }
 
