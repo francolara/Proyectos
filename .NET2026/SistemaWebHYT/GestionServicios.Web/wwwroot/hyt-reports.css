@@ -78,3 +78,11 @@
     .hyt-report-summary ~ h3 { break-after: avoid; }
     .hyt-listing-report-table th, .hyt-listing-report-table td { line-height: 1.3; }
 }
+
+/* Firma: FRANCO LARA - 12/11/2026 | Ajusta el ancho de los listados de comprobantes para pantalla y papel horizontal. */
+@media screen {
+    .hyt-report-print .hyt-listing-report-table:has(th:nth-child(14)) { min-width: 1120px; }
+}
+.hyt-listing-report-table:has(th:nth-child(14)) th:first-child { width: 8%; }
+.hyt-listing-report-table:has(th:nth-child(14)) th:nth-child(5) { width: 11%; }
+.hyt-listing-report-table:has(th:nth-child(14)) th:nth-child(8) { width: 4%; }

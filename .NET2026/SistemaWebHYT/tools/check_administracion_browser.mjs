@@ -93,6 +93,24 @@ try {
     await navigate('/Administracion/Perfiles/consulta/Duplicar');
     await click('[data-security-all]');
     await wait("document.querySelectorAll('input[name=Permissions]:checked').length === 3");
+    await click('[data-profile-tab][aria-controls="profile-panel-1"]');
+    await wait("!document.querySelector('#profile-panel-1').hidden && document.querySelector('#profile-panel-0').hidden");
+    if (await evaluate("document.querySelectorAll('input[value=\"OBLIGACIONES.CONSULTAR\"]').length") !== 1)
+        throw new Error('El permiso SCTR/Obligaciones se duplicó.');
+    await click('[data-profile-tab][aria-controls="profile-panel-2"]');
+    await click('[data-profile-owner]');
+    await wait("!document.querySelector('#profile-panel-1').hidden");
+    await evaluate(`document.querySelector('[data-profile-search]').value='factoring';document.querySelector('[data-profile-search]').dispatchEvent(new Event('input'))`);
+    await wait("!document.querySelector('[data-profile-row=FACTORING]').closest('section').hidden && document.querySelector('#profile-panel-0').hidden");
+    await click('[data-profile-row=FACTORING] input[value="FACTORING.EDITAR"]');
+    await wait("new FormData(document.querySelector('[data-security-profile]')).getAll('Permissions').length === 5");
+    await click('[data-profile-select=all]');
+    await wait("new FormData(document.querySelector('[data-security-profile]')).getAll('Permissions').length === 7");
+    await click('[data-profile-select=none]');
+    await wait("new FormData(document.querySelector('[data-security-profile]')).getAll('Permissions').length === 0");
+    await wait("!document.querySelector('input[data-security-all]').indeterminate");
+    await navigate('/Administracion/Perfiles/consulta');
+    await wait("!document.querySelector('input[name=Permissions]') && document.querySelector('[data-profile-tab]') !== null");
     await navigate('/Administracion/Auditoria');
     await click('[data-document-open]');
     await wait("document.querySelector('#document-dialog').open && document.querySelector('#document-dialog').textContent.includes('María')");

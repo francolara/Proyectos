@@ -770,6 +770,7 @@ La estructura XML se contrastó con las guías UBL de factura y nota de crédito
 - Administración incluye Pago de detracciones. La consulta muestra todos los pendientes, también de fechas anteriores. Filtra por pendiente/pagada/todos, proveedor por RUC o nombre y búsqueda por comprobante, código o constancia.
 - El pago se registra desde el listado con fecha, importe y número de operación. Reutiliza ComprobanteHYTPago con EsDetraccion=1 y spu_ComprobanteHYT_Pago. El saldo determina el estado pagado y los reintentos con la misma referencia conservan un solo pago.
 - Aplicar StoreProcedure/spu_ComprobanteHYT_DetraccionesConsultar.sql en una base existente. Está registrado en los manifiestos acumulado y de comprobantes.
+- 14/11/2026. El procedimiento expone el nombre del catálogo y el porcentaje guardado en el comprobante. Si el porcentaje histórico está vacío, usa el del catálogo. El listado y el reporte muestran ambos campos después del importe de detracción. La fecha del último pago permanece en el reporte impreso.
 
 ### Catálogo de detracciones de FralseCont. 10/11/2026
 
@@ -819,3 +820,23 @@ La estructura XML se contrastó con las guías UBL de factura y nota de crédito
 - \`spu_Presupuesto_Listar\` agrega \`Comprobantes\` con números de comprobantes emitidos y referencias externas vigentes para usuarios con \`FACTURADO.CONSULTAR\`.
 - \`spu_SeguimientoOC_Listar\` agrega \`FechaRecepcionOC\` y \`NumeroComprobante\` emitido con el permiso de facturación. \`spu_SeguimientoGUIA_Listar\` agrega \`NumeroOCCliente\` con \`OC_CLIENTE.CONSULTAR\`.
 - \`spu_CostoProveedor_Listar\` agrega \`FacturaCompra\` a la página consultada si existen las tablas del módulo de compras y el usuario puede consultar pagos de proveedores. Conserva los filtros, el orden, los saldos y el conteo.
+
+## 12/11/2026 — Impresión de listados de Administración
+
+- Registro de compras, Emisión de comprobantes, Pago de detracciones y Negociación de Factoring comparten el reporte HTML A4 horizontal, con CSV y todas las páginas de los filtros aplicados. La impresión requiere REPORTES.IMPRIMIR además del permiso de consulta del módulo.
+- spu_ComprobanteHYT_Consultar incorpora documento del tercero, forma de pago y referencias de presupuestos o trabajos vinculados en Filas. Los vínculos respetan los permisos de consulta respectivos. Los filtros, el conteo y la paginación son los mismos del listado.
+- spu_ComprobanteHYT_FactoringConsultar incorpora Referencia en Lotes. El detalle por lote conserva la impresión existente.
+- Los importes se agrupan por moneda. Las notas de crédito se muestran en el resumen por tipo y los saldos corresponden a facturas, boletas y borradores de estos tipos. Las detracciones de compras conservan su moneda de pago.
+
+## 14/11/2026 — Estados de factoring y aplicación de notas de crédito en ventas
+
+- El script 063 incorpora FactoringLoteHYT.Estado con valor inicial REGISTRADO para lotes nuevos y anteriores. spu_ComprobanteHYT_FactoringCambiarEstado aplica REGISTRADO → ACEPTADO → CERRADO con permisos de factoring y graba los estados en auditoría. La fecha de desembolso sigue siendo informativa.
+- fn_ComprobanteHYT_SaldoVenta calcula el saldo al consultar. Los comprobantes de un lote cerrado quedan en cero sin registrar pagos ficticios ni cambiar su estado SUNAT. FactoringConsultar devuelve el estado y el saldo de sus facturas. El parámetro opcional @Estado filtra los lotes antes del conteo y la paginación. El reporte del listado conserva ese filtro y muestra el estado de cada lote. FactoringGuardar y la ayuda excluyen facturas sin saldo.
+- La función aplica las NC numeradas y vigentes por referencia, cliente, emisor y moneda. Una NC total cubre el saldo completo y una parcial reduce el saldo por su importe, con mínimo cero. La NC se muestra con saldo cero. Los borradores, NC rechazadas, anuladas o dadas de baja no reducen el saldo de una factura. Guardar valida la moneda de la factura seleccionada para la nota manual.
+- spu_ComprobanteHYT_Consultar devuelve SaldoPendiente, NotaCreditoAplicada y el estado de factoring para el listado, la ficha y sus reportes. Ejecutar la migración, la función y los procedimientos actualizados en el orden de manifest-comprobantes.json.
+
+## 14/11/2026 — Adjunto de póliza SCTR
+
+- El script 064 agrega el vínculo opcional PolizaSctrHYT.ArchivoId a ArchivoAdjunto. spu_ObligacionesHYT_Consultar devuelve el identificador y nombre del adjunto vigente. spu_PolizaSctrHYT_Adjunto consulta el archivo o lo reemplaza con control de concurrencia y auditoría.
+- La ficha de una póliza guardada admite un PDF, PNG o JPG de hasta 15 MB. Se utiliza el almacenamiento privado de HYT en Cloudflare R2, bajo SCTR/<PolizaId>/<operación>.<ext>. El reemplazo retira el vínculo anterior y conserva el historial del archivo.
+- OBLIGACIONES.CONSULTAR permite descargar desde el listado cuando existe el archivo. Adjuntar o reemplazar requiere además OBLIGACIONES.EDITAR.

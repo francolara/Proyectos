@@ -7,6 +7,7 @@ using GestionServicios.Application.Budgets;
 using GestionServicios.Application.Maintenance;
 using GestionServicios.Web.Security;
 using GestionServicios.Web.ViewModels.Billing;
+using GestionServicios.Web.ViewModels.Reporting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,6 +15,7 @@ namespace GestionServicios.Web.Controllers;
 
 // Firma: FRANCO LARA - 10/11/2026 | Compras y comprobantes, carga UBL individual o atómica por lote, registro manual con totales calculados, ayudas, pagos y vínculos desde ficha y listado.
 // Firma: FRANCO LARA - 11/11/2026 | Filtra las ventas por presencia de factoring y consulta la detracción de las partidas y permite buscar y asociar órdenes de compra y buscar trabajos disponibles por factura y presupuestos del cliente para precargar y facturas emitidas para notas de crédito.
+// Firma: FRANCO LARA - 12/11/2026 | Imprime el listado completo de compras y ventas con los filtros activos.
 [Authorize]
 [Route("Comprobantes/{scope:regex(^(compras|ventas)$)}")]
 public sealed class CommercialDocumentsController(ICommercialDocumentRepository documents, IBudgetRepository budgets,
@@ -27,7 +29,7 @@ public sealed class CommercialDocumentsController(ICommercialDocumentRepository 
 
     [HttpGet("")]
     public async Task<IActionResult> Index(string scope, DateOnly? desde, DateOnly? hasta, string? tipo, string? buscar,
-        int pagina = 1, bool sinFactoring = false, bool? factoring = null, CancellationToken ct = default)
+        int pagina = 1, bool sinFactoring = false, bool? factoring = null, CancellationToken ct = default, bool print = false)
     {
         if (!Allowed(scope, "CONSULTAR")) return Forbid();
         var end = hasta ?? Today;
@@ -37,8 +39,29 @@ public sealed class CommercialDocumentsController(ICommercialDocumentRepository 
         var sales = scope == "ventas";
         var hasFactoring = sales ? factoring : null;
         var onlyWithoutFactoring = sales && hasFactoring is null && sinFactoring;
-        var data = await documents.ReadAsync(Actor, sales, null, start, end, tipo, buscar, pagina, null, null, ct,
-            onlyWithoutFactoring, hasFactoring);
+        Task<JsonElement> Load(int page) => documents.ReadAsync(Actor, sales, null, start, end, tipo, buscar, page,
+            null, null, ct, onlyWithoutFactoring, hasFactoring);
+        if (print)
+        {
+            if (!User.HasClaim(AccessService.PermissionClaim, "REPORTES.IMPRIMIR")) return Forbid();
+            try
+            {
+                var rows = await ListingReport.AllJsonAsync(Load, "ComprobanteId", "Filas");
+                var filters = new List<string> { ListingReport.Range(start, end),
+                    ListingReport.Filter("Tipo", tipo is null ? null : CommercialPage.TypeLabel(tipo)),
+                    ListingReport.Filter("Buscar", buscar) };
+                if (sales)
+                    filters.Add(ListingReport.Filter("Factoring", hasFactoring switch
+                    {
+                        true => "Sí",
+                        false => "No",
+                        _ => onlyWithoutFactoring ? "Facturas elegibles sin factoring" : null
+                    }));
+                return View("ListingReport", CommercialListingReport.Documents(sales, rows, filters));
+            }
+            catch (MaintenanceException error) { return Conflict(error.Message); }
+        }
+        var data = await Load(pagina);
         return View(new CommercialPage(scope, data, Allowed(scope, "EDITAR"), Today, start, end, tipo, buscar, pagina,
             onlyWithoutFactoring, hasFactoring));
     }

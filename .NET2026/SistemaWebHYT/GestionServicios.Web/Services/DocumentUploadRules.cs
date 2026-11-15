@@ -1,4 +1,5 @@
 // Firma: FRANCO LARA - 06/11/2026 | Rutas por tipo/número con segmentos seguros y lectura compatible de claves históricas.
+// Firma: FRANCO LARA - 14/11/2026 | Admite adjuntos por número interno de póliza SCTR.
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using GestionServicios.Application.Followup;
@@ -30,13 +31,13 @@ public static class DocumentUploadRules
     public static string Folder(string code,string number)
     {
         if(code=="FIRMA")return "ConfigHYT/Firma";
-        var root=code switch{"OC"=>"OCCliente","GUIA"=>"Guia","CONFIRMACION"=>"ConfirmacionCliente","PRESUPUESTO"=>"Presupuestos",_=>throw new MaintenanceException("Tipo de carpeta no válido.")};
+        var root=code switch{"OC"=>"OCCliente","GUIA"=>"Guia","CONFIRMACION"=>"ConfirmacionCliente","PRESUPUESTO"=>"Presupuestos","SCTR"=>"SCTR",_=>throw new MaintenanceException("Tipo de carpeta no válido.")};
         var value=number.Trim(' ');if(value.Length is <1 or >100)throw new MaintenanceException("Revisa el número del documento para guardar su archivo.");
         return root+"/"+Regex.Replace(value,@"[^A-Za-z0-9_-]","_",RegexOptions.CultureInvariant);
     }
     public static void Reference(string key)
     {
-        if(!Regex.IsMatch(key,@"\A(?:(?:(?:Presupuestos|OCCliente|Guia|ConfirmacionCliente)/[A-Za-z0-9_-]{1,100}|ConfigHYT/Firma)/)?[a-f0-9]{32}\.(pdf|png|jpg)\z",RegexOptions.CultureInvariant))throw new MaintenanceException("La referencia del archivo no es válida.");
+        if(!Regex.IsMatch(key,@"\A(?:(?:(?:Presupuestos|OCCliente|Guia|ConfirmacionCliente|SCTR)/[A-Za-z0-9_-]{1,100}|ConfigHYT/Firma)/)?[a-f0-9]{32}\.(pdf|png|jpg)\z",RegexOptions.CultureInvariant))throw new MaintenanceException("La referencia del archivo no es válida.");
     }
     public static void Verify(DocumentAttachment file,byte[] bytes)
     {

@@ -21,6 +21,14 @@ public sealed record ListingReport(string Title, IReadOnlyList<string> Filters, 
     public static string Filter(string label, string? value) => $"{label}: {(string.IsNullOrWhiteSpace(value) ? "Todos" : value)}";
     public static string Range(DateOnly? from, DateOnly? to) => $"Desde {Date(from)} hasta {Date(to)}";
 
+    public static Task<IReadOnlyList<JsonElement>> AllJsonAsync(Func<int, Task<JsonElement>> load, string idKey, string? rowsKey = null)
+        => AllAsync(async page =>
+        {
+            var data = await load(page);
+            var rows = (rowsKey is null ? data : data.GetProperty(rowsKey)).EnumerateArray().ToArray();
+            return (rows, rows.Length == 0 ? 0 : rows[0].GetProperty("TotalFilas").GetInt64());
+        }, (JsonElement row) => row.GetProperty(idKey).GetInt64());
+
     public static async Task<IReadOnlyList<T>> AllAsync<T>(
         Func<int, Task<(IReadOnlyList<T> Rows, long Total)>> load, Func<T, long> id)
     {

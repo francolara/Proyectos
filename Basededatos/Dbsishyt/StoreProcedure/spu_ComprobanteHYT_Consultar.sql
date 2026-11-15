@@ -1,5 +1,7 @@
 -- Firma: FRANCO LARA | Create date: 10/11/2026 | Operaciones de provisiones de compras y comprobantes de venta. Devuelve arreglos vacíos para consultas sin coincidencias y lista clientes y proveedores activos desde la apertura de la ayuda y consulta el IGV vigente y la fecha de vencimiento. Identifica facturas sin factoring y consulta el catálogo de detracciones.
 -- Firma: FRANCO LARA | Create date: 11/11/2026 | Filtra ventas con o sin factoring y devuelve la fecha de desembolso registrada en el lote y expone la detracción de ventas y su consulta por material, la orden vinculada y su confirmación vigente. Busca trabajos disponibles y presupuestos de venta por número o descripción y ofrece las facturas del cliente y los catálogos SUNAT.
+-- Firma: FRANCO LARA | Create date: 12/11/2026 | Agrega documento del tercero, forma de pago y referencias autorizadas para imprimir los listados.
+-- Firma: FRANCO LARA | Create date: 14/11/2026 | Expone el estado de factoring y el saldo compensado por cierre o por notas de crédito.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_ComprobanteHYT_Consultar
@@ -59,7 +61,8 @@ BEGIN
                 JSON_QUERY(CASE WHEN @Id IS NULL THEN NULL ELSE (
                     SELECT c.ComprobanteId,c.Tipo,c.Serie,c.Numero,c.Fecha,c.FechaVencimiento,c.Moneda,c.RucHYT,c.DocumentoTercero,c.NombreTercero,
                         c.ClienteId,c.ProveedorId,c.OrdenCompraId,orden.NumeroOCCliente,confirmacion.NumeroConfirmacion,c.FormaPago,c.Importe,c.ImporteDetraccion,c.DetraccionDocumento,c.MonedaDetraccion,c.CodigoDetraccion,c.PorcentajeDetraccion,catalogo.Nombre AS NombreDetraccion,
-                        c.ReferenciaNota,c.MotivoNota,c.CodigoMotivoNota,c.EstadoSunat,CONVERT(BIT,CASE WHEN c.XmlOriginal IS NULL THEN 0 ELSE 1 END) AS Importado,
+                        c.ReferenciaNota,c.MotivoNota,c.CodigoMotivoNota,c.EstadoSunat,
+                        venta.SaldoPendiente,venta.ImporteAplicado AS NotaCreditoAplicada,venta.EstadoFactoring,venta.LoteId,venta.FechaDesembolso AS FactoringFechaDesembolso,CONVERT(BIT,CASE WHEN c.XmlOriginal IS NULL THEN 0 ELSE 1 END) AS Importado,
                         JSON_QUERY(c.Detalle) AS Detalle,
                         JSON_QUERY(COALESCE((SELECT pago.Fecha,pago.EsDetraccion,pago.Importe,pago.Referencia FROM dbo.ComprobanteHYTPago AS pago WHERE pago.ComprobanteId=c.ComprobanteId ORDER BY pago.Fecha,pago.PagoId FOR JSON PATH),N'[]')) AS Pagos,
                         JSON_QUERY(COALESCE((SELECT p.PresupuestoId,p.NumeroPresupuesto FROM dbo.ComprobanteHYTPresupuesto AS vinculo INNER JOIN dbo.Presupuesto AS p ON p.PresupuestoId=vinculo.PresupuestoId WHERE vinculo.ComprobanteId=c.ComprobanteId FOR JSON PATH),N'[]')) AS Presupuestos,
@@ -68,22 +71,37 @@ BEGIN
                     LEFT JOIN dbo.DetraccionCatalogoHYT AS catalogo ON catalogo.Codigo=c.CodigoDetraccion
                     LEFT JOIN dbo.OrdenCompraCliente AS orden ON orden.OrdenCompraId=c.OrdenCompraId
                     LEFT JOIN dbo.ConfirmacionFacturacion AS confirmacion ON confirmacion.OrdenCompraId=orden.OrdenCompraId AND confirmacion.Vigente=1
+                    OUTER APPLY dbo.fn_ComprobanteHYT_SaldoVenta(c.ComprobanteId) AS venta
                     WHERE c.EsVenta=@EsVenta AND c.ComprobanteId=@Id FOR JSON PATH,WITHOUT_ARRAY_WRAPPER)
                 END) AS Documento,
                 JSON_QUERY(COALESCE(CASE WHEN @Id IS NOT NULL OR @Desde IS NULL OR @Hasta IS NULL OR @BuscarFacturas=1 THEN N'[]' ELSE (
-                    SELECT c.ComprobanteId,c.Tipo,c.Serie,c.Numero,c.Fecha,c.FechaVencimiento,c.Moneda,c.NombreTercero,c.Importe,c.ImporteDetraccion,c.DetraccionDocumento,c.MonedaDetraccion,c.PorcentajeDetraccion,c.EstadoSunat,factura.LoteId,lote.FechaDesembolso AS FactoringFechaDesembolso,
-                        orden.NumeroOCCliente,confirmacion.NumeroConfirmacion,
+                    SELECT c.ComprobanteId,c.Tipo,c.Serie,c.Numero,c.Fecha,c.FechaVencimiento,c.Moneda,c.NombreTercero,c.Importe,c.ImporteDetraccion,c.DetraccionDocumento,c.MonedaDetraccion,c.PorcentajeDetraccion,c.EstadoSunat,venta.LoteId,venta.FechaDesembolso AS FactoringFechaDesembolso,
+                        venta.EstadoFactoring,venta.SaldoPendiente,venta.ImporteAplicado AS NotaCreditoAplicada,
+                        c.DocumentoTercero,c.FormaPago,orden.NumeroOCCliente,confirmacion.NumeroConfirmacion,
+                        CASE WHEN @EsVenta=1 AND dbo.fn_HYTPermiso(@UsuarioId,N'PRESUPUESTOS.CONSULTAR')=1 THEN (
+                            SELECT STRING_AGG(CONVERT(NVARCHAR(MAX),presupuesto.NumeroPresupuesto),N', ')
+                                WITHIN GROUP (ORDER BY presupuesto.NumeroPresupuesto)
+                            FROM dbo.ComprobanteHYTPresupuesto AS vinculo
+                            INNER JOIN dbo.Presupuesto AS presupuesto ON presupuesto.PresupuestoId=vinculo.PresupuestoId
+                            WHERE vinculo.ComprobanteId=c.ComprobanteId
+                        ) END AS PresupuestosVinculados,
+                        CASE WHEN @EsVenta=0 AND dbo.fn_HYTPermiso(@UsuarioId,N'COSTOS_PROVEEDOR.CONSULTAR')=1 THEN (
+                            SELECT STRING_AGG(CONVERT(NVARCHAR(MAX),trabajo.Descripcion),NCHAR(10))
+                                WITHIN GROUP (ORDER BY trabajo.CostoProveedorId)
+                            FROM dbo.ComprobanteHYTCosto AS vinculo
+                            INNER JOIN dbo.CostoProveedorPresupuesto AS trabajo ON trabajo.CostoProveedorId=vinculo.CostoProveedorId
+                            WHERE vinculo.ComprobanteId=c.ComprobanteId
+                        ) END AS TrabajosVinculados,
                         COALESCE(pagos.Pagado,0) AS Pagado,COALESCE(pagos.Detraido,0) AS Detraido,COUNT_BIG(1) OVER() AS TotalFilas
                     FROM dbo.ComprobanteHYT AS c
-                    LEFT JOIN dbo.FactoringFacturaHYT AS factura ON factura.ComprobanteId=c.ComprobanteId
-                    LEFT JOIN dbo.FactoringLoteHYT AS lote ON lote.LoteId=factura.LoteId
+                    OUTER APPLY dbo.fn_ComprobanteHYT_SaldoVenta(c.ComprobanteId) AS venta
                     LEFT JOIN dbo.OrdenCompraCliente AS orden ON orden.OrdenCompraId=c.OrdenCompraId
                     LEFT JOIN dbo.ConfirmacionFacturacion AS confirmacion ON confirmacion.OrdenCompraId=orden.OrdenCompraId AND confirmacion.Vigente=1
                     OUTER APPLY (SELECT SUM(CASE WHEN p.EsDetraccion=0 THEN p.Importe END) AS Pagado,SUM(CASE WHEN p.EsDetraccion=1 THEN p.Importe END) AS Detraido FROM dbo.ComprobanteHYTPago AS p WHERE p.ComprobanteId=c.ComprobanteId) AS pagos
                     WHERE c.EsVenta=@EsVenta AND c.Fecha BETWEEN @Desde AND @Hasta AND (@Tipo IS NULL OR c.Tipo=@Tipo)
                       AND (@ConFactoring IS NULL OR (@EsVenta=1 AND
-                           ((@ConFactoring=1 AND factura.LoteId IS NOT NULL) OR (@ConFactoring=0 AND factura.LoteId IS NULL))))
-                      AND (@ConFactoring IS NOT NULL OR @SinFactoring=0 OR (c.EsVenta=1 AND c.Tipo='01' AND c.Serie IS NOT NULL AND c.Numero IS NOT NULL AND c.Importe>0 AND factura.ComprobanteId IS NULL))
+                           ((@ConFactoring=1 AND venta.LoteId IS NOT NULL) OR (@ConFactoring=0 AND venta.LoteId IS NULL))))
+                      AND (@ConFactoring IS NOT NULL OR @SinFactoring=0 OR (c.EsVenta=1 AND c.Tipo='01' AND c.Serie IS NOT NULL AND c.Numero IS NOT NULL AND venta.SaldoPendiente>0 AND venta.LoteId IS NULL))
                       AND (@Busqueda IS NULL OR CHARINDEX(@Busqueda,c.NombreTercero)>0 OR CHARINDEX(@Busqueda,c.DocumentoTercero)>0 OR CHARINDEX(@Busqueda,CONCAT(c.Serie,N'-',c.Numero))>0)
                     ORDER BY c.Fecha DESC,c.ComprobanteId DESC OFFSET (CONVERT(BIGINT,@Pagina)-1)*20 ROWS FETCH NEXT 20 ROWS ONLY FOR JSON PATH)
                 END,N'[]')) AS Filas,

@@ -4,12 +4,14 @@ using GestionServicios.Application.Billing;
 using GestionServicios.Application.Maintenance;
 using GestionServicios.Web.Security;
 using GestionServicios.Web.ViewModels.Billing;
+using GestionServicios.Web.ViewModels.Reporting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GestionServicios.Web.Controllers;
 
 // Firma: FRANCO LARA - 10/11/2026 | Consulta y pago de detracciones desde el listado de Administración.
+// Firma: FRANCO LARA - 12/11/2026 | Imprime las detracciones con los filtros activos y totales por moneda.
 [Authorize(Policy = "perm:PAGOS_PROVEEDOR.CONSULTAR")]
 [Route("Administracion/Detracciones")]
 public sealed class WithholdingPaymentsController(ICommercialDocumentRepository repository, TimeProvider clock) : Controller
@@ -21,13 +23,27 @@ public sealed class WithholdingPaymentsController(ICommercialDocumentRepository 
 
     [HttpGet("")]
     public async Task<IActionResult> Index(string estado = "PENDIENTE", string? proveedor = null, string? buscar = null,
-        int pagina = 1, CancellationToken ct = default)
+        int pagina = 1, CancellationToken ct = default, bool print = false)
     {
         if (!ModelState.IsValid || estado is not ("TODOS" or "PENDIENTE" or "PAGADA") ||
             proveedor?.Length > 150 || buscar?.Length > 150 || pagina is < 1 or > 100000) return BadRequest("Revisa los filtros.");
         var supplier = string.IsNullOrWhiteSpace(proveedor) ? null : proveedor.Trim();
         var search = string.IsNullOrWhiteSpace(buscar) ? null : buscar.Trim();
-        var rows = await repository.ReadWithholdingsAsync(Actor, estado, supplier, search, pagina, ct);
+        Task<JsonElement> Load(int page) => repository.ReadWithholdingsAsync(Actor, estado, supplier, search, page, ct);
+        if (print)
+        {
+            if (!User.HasClaim(AccessService.PermissionClaim, "REPORTES.IMPRIMIR")) return Forbid();
+            try
+            {
+                var reportRows = await ListingReport.AllJsonAsync(Load, "ComprobanteId");
+                var status = estado switch { "PENDIENTE" => "Pendientes", "PAGADA" => "Pagadas", _ => "Todos" };
+                return View("ListingReport", CommercialListingReport.Withholdings(reportRows,
+                    [ListingReport.Filter("Estado", status), ListingReport.Filter("Proveedor", supplier),
+                        ListingReport.Filter("Buscar", search)]));
+            }
+            catch (MaintenanceException error) { return Conflict(error.Message); }
+        }
+        var rows = await Load(pagina);
         return View(new WithholdingList(rows, estado, supplier, search, pagina, CanPay));
     }
 

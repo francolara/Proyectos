@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 14/11/2026 | Incluye el factoring y las notas de crédito en el saldo de la ficha y su impresión. *@
 @* Firma: FRANCO LARA - 10/11/2026 | Consulta, vínculos, pagos y detracciones con los controles de HYT y tarjeta de totales. Muestra la fecha de vencimiento y comparte el selector de vínculos con el listado y muestra el código de detracción. *@
 @* Firma: FRANCO LARA - 11/11/2026 | Muestra la tasa y el saldo de venta con la detracción registrada o importada y permite asociar la orden de compra del cliente. Muestra el código SUNAT de la nota de crédito. *@
 @using GestionServicios.Web.ViewModels.Billing
@@ -49,7 +50,7 @@ var canCost=Model.CanEdit&&User.HasClaim(AccessService.PermissionClaim,"COSTOS_P
 <table class="hyt-table"><tbody>
 <tr><th scope="row">Importe de las partidas</th><td>@currency @CommercialPage.Money(row.GetProperty("Detalle").EnumerateArray().Sum(line => CommercialPage.Amount(line,"Importe")))</td></tr>
 <tr><th scope="row">Total del comprobante</th><td><strong>@currency @CommercialPage.Money(CommercialPage.Amount(row,"Importe"))</strong></td></tr>
-@if (Model.Sales && CommercialPage.Text(row,"Tipo") == "01")
+@if (Model.Sales)
 {
     var rate = CommercialPage.Amount(row, "PorcentajeDetraccion");
     var withheld = CommercialPage.Amount(row, "DetraccionDocumento");
@@ -61,7 +62,15 @@ var canCost=Model.CanEdit&&User.HasClaim(AccessService.PermissionClaim,"COSTOS_P
             <tr><th scope="row">Equivalente en moneda del comprobante</th><td>@currency @CommercialPage.Money(withheld)</td></tr>
         }
     }
-    <tr><th scope="row">Saldo pendiente</th><td>@currency @CommercialPage.Money(CommercialPage.Amount(row,"Importe") - withheld)</td></tr>
+    @if (CommercialPage.Amount(row,"NotaCreditoAplicada") > 0)
+    {
+        <tr><th scope="row">Notas de crédito aplicadas</th><td>@currency @CommercialPage.Money(CommercialPage.Amount(row,"NotaCreditoAplicada"))</td></tr>
+    }
+    @if (CommercialPage.Text(row,"LoteId") is { Length: > 0 } lot)
+    {
+        <tr><th scope="row">Factoring</th><td>Lote @lot · @CommercialPage.FactoringStatus(CommercialPage.Text(row,"EstadoFactoring"))</td></tr>
+    }
+    <tr><th scope="row">Saldo pendiente</th><td>@currency @CommercialPage.Money(CommercialPage.SalesBalance(row))</td></tr>
 }
 @if(!Model.Sales && CommercialPage.Text(row,"Tipo")!="07"){
 <tr><th scope="row">Detracción</th><td>@detCurrency @CommercialPage.Money(det)</td></tr>

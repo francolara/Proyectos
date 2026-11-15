@@ -1,5 +1,6 @@
 -- Firma: FRANCO LARA | Create date: 10/11/2026 | Operaciones de provisiones y ventas. Admite carga atómica y alta de clientes desde XML y conserva la fecha de vencimiento y calcula la detracción manual con el catálogo de FralseCont y admite depósito en otra moneda con equivalente calculado.
 -- Firma: FRANCO LARA | Create date: 11/11/2026 | Calcula la detracción de ventas por materiales o conserva los datos declarados en XML y vincula la orden de compra del cliente y valida la factura y el motivo SUNAT en notas de crédito manuales de venta.
+-- Firma: FRANCO LARA | Create date: 14/11/2026 | Verifica la moneda de la factura referenciada por una NC manual.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_ComprobanteHYT_Guardar
@@ -173,11 +174,11 @@ BEGIN
         END;
         IF @EsVenta=1 AND @Tipo='07' AND @Xml IS NULL AND NOT EXISTS (
             SELECT 1 FROM dbo.ComprobanteHYT AS factura WITH(HOLDLOCK)
-            WHERE factura.EsVenta=1 AND factura.Tipo='01' AND factura.ClienteId=@ClienteId
+            WHERE factura.EsVenta=1 AND factura.Tipo='01' AND factura.ClienteId=@ClienteId AND factura.Moneda=@Moneda
                 AND factura.Serie IS NOT NULL AND factura.Numero IS NOT NULL
                 AND factura.EstadoSunat NOT IN(N'RECHAZADO',N'ANULADO',N'BAJA')
                 AND CONCAT(factura.Serie,N'-',factura.Numero)=@Ref)
-            THROW 51601,N'[HYT_VALIDACION] Selecciona una factura emitida del cliente.',1;
+            THROW 51601,N'[HYT_VALIDACION] Selecciona una factura emitida del cliente en la misma moneda.',1;
 
         IF @OrdenCompraId IS NOT NULL AND (@EsVenta=0 OR NOT EXISTS (
             SELECT 1 FROM dbo.OrdenCompraCliente AS orden WITH(HOLDLOCK)

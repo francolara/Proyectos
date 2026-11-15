@@ -1,3 +1,4 @@
+using GestionServicios.Application.Followup;
 using System.Data;
 using System.Text.Json;
 using GestionServicios.Application.Payroll;
@@ -395,6 +396,22 @@ public sealed class SqlSupplierPaymentsRepository(SqlConnectionFactory connectio
             if (preservePayment) Add(command, "@ConservarPago", SqlDbType.Bit, true);
             Add(command, "@ObligacionId", SqlDbType.BigInt, input.ObligacionId == 0 ? null : input.ObligacionId);
             Add(command, "@VersionFila", SqlDbType.Binary, input.ObligacionId == 0 ? null : input.VersionFila, 8);
+        }, ct);
+
+    public Task<DocumentAttachment?> PolicyAttachmentAsync(string actor, long policyId, CancellationToken ct)
+        => ReadJsonAsync<DocumentAttachment>("spu_PolizaSctrHYT_Adjunto", actor,
+            command => Add(command, "@PolizaId", SqlDbType.BigInt, policyId), ct);
+
+    public Task AttachPolicyAsync(string actor, long policyId, long? previousFileId, DocumentAttachment file, CancellationToken ct)
+        => WriteAsync("spu_PolizaSctrHYT_Adjunto", actor, command =>
+        {
+            Add(command, "@PolizaId", SqlDbType.BigInt, policyId);
+            Add(command, "@ArchivoAnterior", SqlDbType.BigInt, previousFileId);
+            Add(command, "@Nombre", SqlDbType.NVarChar, file.NombreOriginal, 255);
+            Add(command, "@Clave", SqlDbType.NVarChar, file.ClaveAlmacenamiento, 500);
+            Add(command, "@Contenido", SqlDbType.NVarChar, file.TipoContenido, 150);
+            Add(command, "@Tamano", SqlDbType.BigInt, file.TamanoBytes);
+            Add(command, "@SHA256", SqlDbType.Char, file.SHA256, 64);
         }, ct);
 
     public Task<long> SavePolicyAsync(string actor, SctrPolicy input, CancellationToken ct)

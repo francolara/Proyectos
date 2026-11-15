@@ -13,9 +13,11 @@
   "StoreProcedure/spu_CeseTrabajadorHYT_Registrar.sql": "1f771f15edfb19a22a6141e3973857ac98ed7f64d118e70842ee244dc0702e4e",
   "StoreProcedure/spu_ReportePlanillasHYT_Consultar.sql": "eeb77959cbfe547d02cb5592b16ad086888d107ea57ff1a13bd0f92e614773c3",
   "Script/035_PermisosPagosPersonal.sql": "1c8b0c8e0f0bad517ad2eb26c2b9000e56fdf1fec4b21288cf3b3a7b877e59a8",
-  "StoreProcedure/spu_ObligacionesHYT_Consultar.sql": "5b709e208681906e284acc5885f48bc675a4bd63e1000ed87013316e4a405a2c",
+  "StoreProcedure/spu_ObligacionesHYT_Consultar.sql": "c10e28ecc7e95310c542b9ee507640fbef4b20c7d8c8a097fdc14b32c7f1dca1",
   "StoreProcedure/spu_ObligacionPersonalHYT_Guardar.sql": "be72d3f3df19fba7715e7f5be1524bbcdfebdc532e645fbae9d7f5ad502a19ab",
   "StoreProcedure/spu_PolizaSctrHYT_Guardar.sql": "97bd9224a9dd73cdf27e8b285909e10d02a48de4bf7547cc928250ea7b343850",
   "Script/036_PermisosObligaciones.sql": "f1566d243be741cf884da3f1f93700a35c8b4f5a52867028a4f4301330efca29",
-  "PLANILLAS_ETAPAS_3_4_HYT.sql": "2b399d9d2d583713bd90c92f241d140513b49adf5d582b608e662389b204f535"
+  "PLANILLAS_ETAPAS_3_4_HYT.sql": "b363a5d6a3cce2fc8cc8a89482d733ac1eb929627d2586d1185d41d0d6ea8327",
+  "Script/064_AdjuntoPolizaSctrHYT.sql": "9fc931c2949eae001158f60a76aab09041a00232bc3d7f39c9e6b9e0b5ec0d5b",
+  "StoreProcedure/spu_PolizaSctrHYT_Adjunto.sql": "487e1a1e96a5fbea33bb6644084d190d137352071e3d585602eb97ac5ce87833"
 }

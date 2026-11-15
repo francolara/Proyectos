@@ -145,6 +145,20 @@ sealed class TestPayrollRepository : ISupplierPaymentsRepository, IWorkersReposi
         return Task.FromResult(1L);
     }
 
+    private GestionServicios.Application.Followup.DocumentAttachment? policyAttachment;
+
+    public Task<GestionServicios.Application.Followup.DocumentAttachment?> PolicyAttachmentAsync(string actor, long policyId, CancellationToken ct)
+        => Task.FromResult(policy?.PolizaId == policyId ? policyAttachment : null);
+
+    public Task AttachPolicyAsync(string actor, long policyId, long? previousFileId,
+        GestionServicios.Application.Followup.DocumentAttachment file, CancellationToken ct)
+    {
+        if (policy?.PolizaId != policyId || policy.ArchivoId != previousFileId) throw new InvalidOperationException();
+        policyAttachment = file;
+        policy = policy with { ArchivoId = (previousFileId ?? 0) + 1, NombreAdjunto = file.NombreOriginal };
+        return Task.CompletedTask;
+    }
+
     public Task<long> SavePolicyAsync(string actor, SctrPolicy input, CancellationToken ct)
     {
         policy = input with

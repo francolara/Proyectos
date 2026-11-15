@@ -55,14 +55,19 @@ public sealed class SqlCommercialDocumentRepository(SqlConnectionFactory connect
         ], value => JsonSerializer.Deserialize<JsonElement>((string)value!), ct);
 
     public Task<JsonElement> ReadFactoringAsync(string actor, long? id, DateOnly? from, DateOnly? to, string? search,
-        int page, bool eligible, CancellationToken ct)
+        int page, bool eligible, CancellationToken ct, string? status = null)
         => ExecuteAsync("FactoringConsultar", actor, [
             ("@Id", SqlDbType.BigInt, id), ("@Desde", SqlDbType.Date, from), ("@Hasta", SqlDbType.Date, to),
-            ("@Busqueda", SqlDbType.NVarChar, search), ("@Pagina", SqlDbType.Int, page), ("@Elegibles", SqlDbType.Bit, eligible)
+            ("@Busqueda", SqlDbType.NVarChar, search), ("@Pagina", SqlDbType.Int, page), ("@Elegibles", SqlDbType.Bit, eligible),
+            ("@Estado", SqlDbType.NVarChar, status)
         ], value => JsonSerializer.Deserialize<JsonElement>((string)value!), ct);
 
     public Task<long> SaveFactoringAsync(string actor, FactoringLot lot, CancellationToken ct)
         => ExecuteAsync("FactoringGuardar", actor, [("@Datos", SqlDbType.NVarChar, JsonSerializer.Serialize(lot))], Convert.ToInt64, ct);
+
+    public Task ChangeFactoringStatusAsync(string actor, long id, string status, CancellationToken ct)
+        => ExecuteAsync("FactoringCambiarEstado", actor, [("@Id", SqlDbType.BigInt, id),
+            ("@Estado", SqlDbType.NVarChar, status)], Convert.ToInt64, ct);
 
     public Task<long> SaveAsync(string actor, bool sales, CommercialDocument document, long? id, CancellationToken ct)
         => ExecuteAsync("Guardar", actor, [("@EsVenta", SqlDbType.Bit, sales), ("@Id", SqlDbType.BigInt, id),

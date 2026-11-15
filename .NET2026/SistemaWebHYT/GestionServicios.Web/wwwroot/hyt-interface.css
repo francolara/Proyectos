@@ -120,10 +120,76 @@ form[data-budget-form] .hyt-budget-table .hyt-detail-icon{box-sizing:border-box;
 .hyt-filter-checks input[type=checkbox]{width:18px;height:18px;min-width:18px;margin:0;accent-color:var(--hyt-red)}
 @media(max-width:1100px){.hyt-state-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
-.hyt-security-matrix th[scope="row"] { min-width: 150px; }
-.hyt-security-options { display: flex; flex-wrap: wrap; gap: 4px 16px; }
-.hyt-security-options label { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; }
-.hyt-security-options input[type="checkbox"] { width: 16px; height: 16px; min-height: 0; }
+/* Firma: FRANCO LARA - 14/11/2026 | Pestañas y matriz de permisos alineadas al menú de HYT, con encabezados y casillas de estado. */
+.hyt-profile-navigation { margin-block: 16px 6px; }
+.hyt-profile-toolbar {
+    display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: 12px 20px;
+    padding: 14px; background: var(--hyt-surface-alt); border: 1px solid var(--hyt-border); border-radius: 8px;
+}
+.hyt-profile-toolbar .hyt-field { flex: 1 1 18rem; max-width: 34rem; min-width: 0; margin: 0; }
+.hyt-profile-bulk { display: flex; flex-wrap: wrap; gap: 8px; }
+.hyt-profile-tabs { display: flex; flex-wrap: wrap; column-gap: 8px; border-bottom: 1px solid var(--hyt-border); margin-top: 16px; }
+.hyt-profile-tabs button {
+    min-height: 44px; padding: 8px 12px; border: 1px solid var(--hyt-border); border-bottom: 3px solid transparent;
+    border-radius: 8px 8px 0 0; color: var(--hyt-text); background: var(--hyt-surface-alt);
+    font: inherit; font-weight: 600; cursor: pointer;
+}
+.hyt-profile-tabs button[aria-selected="true"] { color: var(--hyt-link); background: var(--hyt-hover); border-bottom-color: var(--hyt-red); font-weight: 700; }
+.hyt-profile-tabs button:hover { background: var(--hyt-surface-alt); }
+.hyt-profile-section { margin-block: 16px 24px; min-width: 0; }
+.hyt-profile-section h2 {
+    margin: 0; padding: 12px 14px; border: 1px solid var(--hyt-border); border-inline-start: 3px solid var(--hyt-red);
+    border-radius: 8px 8px 0 0; background: var(--hyt-surface-alt); font-size: 1.125rem; font-weight: 700;
+}
+.hyt-profile-section .hyt-table-wrap { border: 1px solid var(--hyt-border); border-top: 0; border-radius: 0 0 8px 8px; }
+.hyt-profile-table thead th { background: var(--hyt-surface); font-weight: 700; }
+.hyt-profile-table { min-width: 640px; }
+.hyt-profile-table th:first-child { width: 35%; }
+.hyt-profile-table th:nth-child(n+2):nth-child(-n+4) { width: 11%; }
+.hyt-profile-table small { display: block; margin-top: 4px; color: var(--hyt-muted); font-weight: 400; }
+.hyt-profile-permission, .hyt-profile-permission label { display: flex; align-items: center; gap: 6px; }
+.hyt-profile-permission { min-height: 32px; font-weight: 400; }
+.hyt-profile-permission input[type="checkbox"], .hyt-profile-check {
+    appearance: none; display: inline-grid; place-items: center; width: 20px; height: 20px; min-height: 0;
+    flex: 0 0 20px; margin: 0; padding: 0; border: 1px solid var(--hyt-control-border); border-radius: 5px;
+    background: var(--hyt-surface); color: var(--hyt-muted); box-sizing: border-box;
+}
+.hyt-profile-permission input[type="checkbox"] { cursor: pointer; }
+.hyt-profile-permission input[type="checkbox"]::before, .hyt-profile-check::before {
+    content: "×"; font: 700 14px/1 system-ui;
+}
+.hyt-profile-permission input[type="checkbox"]:checked, .hyt-profile-check-on {
+    border-color: var(--hyt-red); background: var(--hyt-red); color: #fff;
+}
+.hyt-profile-permission input[type="checkbox"]:checked::before, .hyt-profile-check-on::before { content: "✓"; }
+.hyt-profile-permission input[type="checkbox"]:indeterminate {
+    border-color: var(--hyt-link); background: var(--hyt-hover); color: var(--hyt-link);
+}
+.hyt-profile-permission input[type="checkbox"]:indeterminate::before { content: "−"; }
+.hyt-profile-permission input[type="checkbox"]:focus-visible { outline: 2px solid var(--hyt-link); outline-offset: 3px; }
+@media (forced-colors: active) {
+    .hyt-profile-permission input[type="checkbox"] { appearance: auto; }
+    .hyt-profile-permission input[type="checkbox"]::before { content: none; }
+}
+.hyt-profile-actions {
+    position: sticky; bottom: 0; z-index: 1; padding-block: 12px; border-top: 1px solid var(--hyt-border);
+    background: var(--hyt-surface);
+}
+@media (max-width: 640px) {
+    .hyt-profile-tabs { column-gap: 2px; }
+    .hyt-profile-tabs button { padding-inline: 8px; }
+    .hyt-profile-table { min-width: 0; }
+    .hyt-profile-table, .hyt-profile-table tbody { display: block; }
+    .hyt-profile-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .hyt-profile-table tr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .hyt-profile-table th[scope="row"] { grid-column: 1 / -1; width: auto; }
+    .hyt-profile-table td { min-width: 0; padding-inline: 8px; }
+    .hyt-profile-table td[data-profile-column]::before {
+        content: attr(data-profile-column); display: block; color: var(--hyt-muted); font-size: .8rem;
+    }
+    .hyt-profile-table td[data-profile-column="Otras acciones"], .hyt-profile-table td[colspan] { grid-column: 1 / -1; }
+    .hyt-profile-table td.hyt-profile-unavailable[data-profile-column="Otras acciones"] { display: none; }
+}
 [data-security-password] .hyt-master-related { align-items: center; margin-block: 10px; }
 
 .hyt-password-fields { grid-template-columns: minmax(0, 1fr); max-width: 38rem; }

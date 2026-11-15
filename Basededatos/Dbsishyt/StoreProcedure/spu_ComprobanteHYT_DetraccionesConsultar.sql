@@ -1,4 +1,5 @@
 -- Firma: FRANCO LARA | Create date: 10/11/2026 | Listado de detracciones por estado, proveedor y comprobante, con fecha y operación del último pago.
+-- Firma: FRANCO LARA | Create date: 14/11/2026 | Agrega el nombre y porcentaje de detracción para el listado y el reporte.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_ComprobanteHYT_DetraccionesConsultar
@@ -14,11 +15,13 @@ BEGIN
             THROW 51601,N'[HYT_VALIDACION] Revisa los filtros del listado.',1;
         SELECT COALESCE((
             SELECT c.ComprobanteId,c.Serie,c.Numero,c.Fecha,c.NombreTercero,c.DocumentoTercero,
-                c.ImporteDetraccion,c.MonedaDetraccion,c.CodigoDetraccion,
+                c.ImporteDetraccion,c.MonedaDetraccion,c.CodigoDetraccion,catalogo.Nombre AS NombreDetraccion,
+                COALESCE(c.PorcentajeDetraccion,catalogo.Porcentaje) AS PorcentajeDetraccion,
                 COALESCE(pago.Importe,0) AS Pagado,c.ImporteDetraccion-COALESCE(pago.Importe,0) AS Saldo,
                 ultimo.Fecha AS FechaUltimoPago,ultimo.Referencia AS UltimaOperacion,
                 COUNT_BIG(1) OVER() AS TotalFilas
             FROM dbo.ComprobanteHYT AS c
+            LEFT JOIN dbo.DetraccionCatalogoHYT AS catalogo ON catalogo.Codigo=c.CodigoDetraccion
             OUTER APPLY(SELECT SUM(p.Importe) AS Importe FROM dbo.ComprobanteHYTPago AS p WHERE p.ComprobanteId=c.ComprobanteId AND p.EsDetraccion=1) AS pago
             OUTER APPLY(SELECT TOP (1) pagoReciente.Fecha,pagoReciente.Referencia
                 FROM dbo.ComprobanteHYTPago AS pagoReciente WHERE pagoReciente.ComprobanteId=c.ComprobanteId AND pagoReciente.EsDetraccion=1

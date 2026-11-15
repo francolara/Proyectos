@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 14/11/2026 | Ordena la ficha por el menú e incorpora pestañas, búsqueda y matriz de permisos. Incorpora selección global, casillas de estado y encabezados de sección. Identifica acciones combinadas y muestra las opciones compartidas en el orden del menú. *@
 @* Firma: FRANCO LARA - 07/11/2026 | Perfiles y consulta de auditoría HYT. *@
 @using GestionServicios.Web.Security
 @using GestionServicios.Web.ViewModels.Security
@@ -5,10 +6,13 @@
 @{
     var id = Model.Record?.Text("Id");
     var selected = Model.Input.Permissions.ToHashSet(StringComparer.Ordinal);
-    var groups = Model.Catalog.Select(p => p.Text("Codigo")).GroupBy(p => p.Split('.')[0]).OrderBy(p => SecurityDisplay.Module(p.Key));
+    var sections = ProfilePermissions.Sections(Model.Catalog);
+    var granted = sections.SelectMany(section => section.Modules).SelectMany(module => module.Permissions).Count(selected.Contains);
+    string[] columns = ["Consultar", "Crear", "Editar", "Otras acciones"];
+    ViewData["Wide"] = true;
     ViewData["Title"] = Model.ReadOnly ? "Perfil de acceso" : id is null ? "Nuevo perfil de acceso" : "Editar perfil de acceso";
 }
-<header class="hyt-page-header"><div><h1>@ViewData["Title"]</h1><p>Permisos por módulo</p></div><a class="hyt-button-secondary" asp-action="Index">Volver al listado</a></header>
+<header class="hyt-page-header"><div><h1>@ViewData["Title"]</h1><p>Permisos por opción del menú</p></div><a class="hyt-button-secondary" asp-action="Index">Volver al listado</a></header>
 @if (TempData["SecurityNotice"] is string notice) { <p class="hyt-panel hyt-master-trace" role="status">@notice</p> }
 <form method="post" asp-action="@(id is null ? "Create" : "Update")" asp-route-id="@id" class="hyt-panel hyt-master-form" data-security-profile>
     <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
@@ -16,33 +20,120 @@
     <div class="hyt-field"><label for="profile-name">Nombre del perfil</label><input id="profile-name" name="Name" value="@Model.Input.Name" maxlength="256" required readonly="@Model.ReadOnly" /></div>
     @if (Model.Record is { } row) { <p>@row.Text("Usuarios", "0") usuarios con este perfil.</p> }
     @if (!Model.ReadOnly) { <p>Al elegir una acción, también se habilita la consulta del módulo si corresponde.</p> }
-    <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Permisos por módulo">
-    <table class="hyt-table hyt-security-matrix"><thead><tr><th>Módulo</th><th>Acciones permitidas</th></tr></thead><tbody>
-    @foreach (var group in groups)
+    @if (sections.Count == 0)
     {
-        <tr data-security-module><th scope="row">@SecurityDisplay.Module(group.Key)</th><td>
-        <div class="hyt-security-options">
-            @if (!Model.ReadOnly)
-            { <label><input type="checkbox" data-security-all /> Todas</label> }
-            @foreach (var code in group.OrderBy(code => !code.EndsWith(".CONSULTAR", StringComparison.Ordinal)).ThenBy(SecurityDisplay.Permission))
-            {
-                <label><input type="checkbox" name="Permissions" value="@code" checked="@selected.Contains(code)" disabled="@Model.ReadOnly" data-security-consult="@(code.EndsWith(".CONSULTAR", StringComparison.Ordinal) ? "" : null)" /> @SecurityDisplay.Permission(code)</label>
-            }
-        </div>
-        </td></tr>
+        <p>No hay permisos disponibles.</p>
     }
-    </tbody></table></div>
-    <div class="hyt-master-related">
+    else
+    {
+        <div class="hyt-profile-navigation" data-profile-navigation hidden>
+            <div class="hyt-profile-toolbar">
+                <div class="hyt-field">
+                    <label for="profile-search">Buscar opción o permiso</label>
+                    <input id="profile-search" type="search" data-profile-search />
+                </div>
+                @if (!Model.ReadOnly)
+                {
+                    <div class="hyt-profile-bulk" role="group" aria-label="Todos los permisos del perfil">
+                        <button type="button" class="hyt-button-secondary" data-profile-select="all">Marcar todos</button>
+                        <button type="button" class="hyt-button-secondary" data-profile-select="none">Desmarcar todos</button>
+                    </div>
+                }
+            </div>
+            <div class="hyt-profile-tabs" role="tablist" aria-label="Secciones del menú">
+                @for (var index = 0; index < sections.Count; index++)
+                {
+                    <button type="button" id="profile-tab-@index" role="tab" aria-controls="profile-panel-@index"
+                            aria-selected="@(index == 0 ? "true" : "false")" tabindex="@(index == 0 ? 0 : -1)" data-profile-tab>
+                        @sections[index].Name
+                    </button>
+                }
+            </div>
+            <p data-profile-results role="status" hidden></p>
+        </div>
+        @for (var index = 0; index < sections.Count; index++)
+        {
+            var menuSection = sections[index];
+            <section id="profile-panel-@index" class="hyt-profile-section" data-profile-panel>
+                <h2>@menuSection.Name</h2>
+                <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Permisos de @menuSection.Name">
+                    <table class="hyt-table hyt-profile-table">
+                        <thead>
+                            <tr><th scope="col">Opción</th>@foreach (var column in columns) { <th scope="col">@column</th> }</tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var module in menuSection.Modules)
+                        {
+                            <tr id="@(module.Owner is null ? "profile-module-" + module.Code : null)" data-profile-row="@module.Code" data-security-module>
+                                <th scope="row">
+                                    @module.Name
+                                    @if (!Model.ReadOnly && module.Owner is null)
+                                    {
+                                        <label class="hyt-profile-permission"><input type="checkbox" data-security-all aria-label="Todos los permisos de @module.Name" /> Todas</label>
+                                    }
+                                </th>
+                                @if (module.Owner is not null)
+                                {
+                                    <td colspan="4"><a href="#profile-module-@module.Code" data-profile-owner>Permisos compartidos · @module.Owner</a></td>
+                                }
+                                else
+                                {
+                                    var sharedAction = module.Permissions.Select(ProfilePermissions.RegisteredAction).FirstOrDefault(action => action is not null);
+                                    var hasIndependentCreate = module.Permissions.Any(code => ProfilePermissions.Column(code) == 1);
+                                    @for (var col = 0; col < columns.Length; col++)
+                                    {
+                                        if (sharedAction is not null && !hasIndependentCreate && col == 2) { continue; }
+                                        var combined = sharedAction is not null && !hasIndependentCreate && col == 1;
+                                        var heading = combined ? sharedAction : columns[col];
+                                        var permissions = module.Permissions.Where(code => ProfilePermissions.Column(code) == (combined ? 2 : col)).ToArray();
+                                        <td data-profile-column="@heading" colspan="@(combined ? "2" : null)" class="@(permissions.Length == 0 ? "hyt-profile-unavailable" : null)">
+                                            @if (permissions.Length == 0) { <span class="hyt-muted" aria-label="No aplica">—</span> }
+                                            @foreach (var code in permissions)
+                                            {
+                                                var allowed = selected.Contains(code);
+                                                var action = ProfilePermissions.RegisteredAction(code) ?? SecurityDisplay.Permission(code);
+                                                <div class="hyt-profile-permission" data-profile-action="@action" title="@action · @module.Name">
+                                                    @if (Model.ReadOnly)
+                                                    {
+                                                        <span class="hyt-profile-check @(allowed ? "hyt-profile-check-on" : "")" role="img" aria-label="@(allowed ? "Permitido" : "Sin permiso")"></span>
+                                                        @if (combined || col == 3 || permissions.Length > 1) { <span>@action</span> }
+                                                    }
+                                                    else
+                                                    {
+                                                        <label>
+                                                            <input type="checkbox" name="Permissions" value="@code" checked="@allowed"
+                                                                   aria-label="@action · @module.Name" data-security-consult="@(col == 0 ? "" : null)" />
+                                                            @if (combined || col == 3 || permissions.Length > 1) { <span>@action</span> }
+                                                        </label>
+                                                    }
+                                                </div>
+                                            }
+                                        </td>
+                                    }
+                                }
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        }
+    }
+    <div class="hyt-master-related hyt-profile-actions">
     @if (!Model.ReadOnly)
     {
-        <span data-security-count role="status"></span>
+        <span data-security-count role="status">@granted permisos seleccionados</span>
         <button type="submit" class="hyt-button-primary">Guardar perfil</button>
         <a class="hyt-button-secondary" asp-action="@(id is null ? "Index" : "Detail")" asp-route-id="@id">Cancelar</a>
     }
-    else if (User.HasClaim(AccessService.PermissionClaim, "PERFILES.EDITAR"))
+    else
     {
+        <span>@granted permisos habilitados</span>
+        @if (User.HasClaim(AccessService.PermissionClaim, "PERFILES.EDITAR"))
+        {
         <a class="hyt-button-primary" asp-action="Edit" asp-route-id="@id">Editar perfil</a>
         <a class="hyt-button-secondary" asp-action="Duplicate" asp-route-id="@id">Duplicar perfil</a>
+        }
     }
     </div>
 </form>

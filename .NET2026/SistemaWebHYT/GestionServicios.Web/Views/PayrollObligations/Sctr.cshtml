@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 14/11/2026 | Descarga la póliza adjunta desde el listado. *@
 @* Firma: FRANCO LARA - 11/11/2026 | Desglosa la cobertura debajo de la póliza sin alterar las columnas. Agrega la impresión del listado filtrado. *@
 @* Firma: FRANCO LARA - 10/11/2026 | Filtra por estado y trabajador, con desglose de cobertura desde el listado. *@
 @model GestionServicios.Web.Controllers.SctrList
@@ -5,6 +6,7 @@
 @{
     ViewData["Wide"] = true;
     ViewData["Title"] = "SCTR";
+    var showActions = Model.CanEdit || Model.Policies.Any(row => row.ArchivoId.HasValue);
     var statuses = new Dictionary<string,string>
     {
         ["VIGENTE"] = "Vigente",
@@ -53,7 +55,7 @@ else
 {
     <div class="hyt-panel hyt-table-wrap" tabindex="0" role="region" aria-label="Vigencia de pólizas SCTR">
         <table class="hyt-table hyt-align-sctr-policies">
-            <thead><tr><th scope="col">Aseguradora</th><th scope="col">Póliza</th><th scope="col">Cobertura</th><th scope="col">Desde</th><th scope="col">Hasta</th><th scope="col">Trabajadores</th><th scope="col">Estado</th>@if (Model.CanEdit) { <th scope="col">Acción</th> }</tr></thead>
+            <thead><tr><th scope="col">Aseguradora</th><th scope="col">Póliza</th><th scope="col">Cobertura</th><th scope="col">Desde</th><th scope="col">Hasta</th><th scope="col">Trabajadores</th><th scope="col">Estado</th>@if (showActions) { <th scope="col">Acciones</th> }</tr></thead>
             <tbody>
             @foreach (var row in Model.Policies)
             {
@@ -72,12 +74,24 @@ else
                         else { <span>Sin asignar</span> }
                     </td>
                     <td><span class="hyt-sctr-status" data-status="@row.Estado">@statuses.GetValueOrDefault(row.Estado, row.Estado)</span></td>
-                    @if (Model.CanEdit) { <td><a class="hyt-button-secondary hyt-action-button" asp-action="SctrForm" asp-route-policyId="@row.PolizaId">Editar póliza</a></td> }
+                    @if (showActions)
+                    {
+                        <td><div class="hyt-grid-actions">
+                            @if (row.ArchivoId.HasValue)
+                            {
+                                <a class="hyt-button-secondary hyt-action-button" asp-action="DownloadPolicy" asp-route-policyId="@row.PolizaId">Descargar póliza</a>
+                            }
+                            @if (Model.CanEdit)
+                            {
+                                <a class="hyt-button-secondary hyt-action-button" asp-action="SctrForm" asp-route-policyId="@row.PolizaId">Editar póliza</a>
+                            }
+                        </div></td>
+                    }
                 </tr>
                 @if (workers.Length > 0)
                 {
                     <tr class="hyt-row-detail" id="sctr-workers-@row.PolizaId" hidden="@(!expanded)">
-                        <td colspan="@(Model.CanEdit ? 8 : 7)">
+                        <td colspan="@(showActions ? 8 : 7)">
                             <div class="hyt-row-detail-content">
                                 <strong>Trabajadores cubiertos</strong>
                                 <ul class="hyt-sctr-detail-list">

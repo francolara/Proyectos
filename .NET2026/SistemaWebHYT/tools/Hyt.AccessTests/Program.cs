@@ -66,7 +66,7 @@ if (args.Contains("--listing-reports"))
     var access = new TestAccessRepository();
     string[] sourcePermissions = ["PRESUPUESTOS.CONSULTAR", "OC_CLIENTE.CONSULTAR", "GUIAS.CONSULTAR",
         "FACTURADO.CONSULTAR", "CONFIRMACIONES.CONSULTAR", "MATERIALES.CONSULTAR", "TARIFARIOS.CONSULTAR",
-        "UNIDADES.CONSULTAR", .. payrollPermissions];
+        "UNIDADES.CONSULTAR", "FACTORING.CONSULTAR", .. payrollPermissions];
     access.Account = access.Account with { Permissions = [.. sourcePermissions, "REPORTES.IMPRIMIR"] };
     using var reportFactory = new HytFactory(access);
     using var reportClient = reportFactory.CreateClient(new WebApplicationFactoryClientOptions
@@ -99,21 +99,48 @@ if (args.Contains("--listing-reports"))
         ("/Maestros/materiales?search=prueba-reporte", "Tarifa PEN", "search=prueba-reporte"),
         ("/Planillas/Trabajadores?kind=PLANILLA&active=true", "Trabajador de prueba", "kind=PLANILLA"),
         ("/Planillas/Obligaciones?month=2026-11", "AFP Integra", "month=2026-11"),
-        ("/Planillas/PagosProveedores?status=TODOS&search=prueba-reporte", "Documento de sustento / factura", "status=TODOS")
+        ("/Planillas/PagosProveedores?status=TODOS&search=prueba-reporte", "Documento de sustento / factura", "status=TODOS"),
+        ("/Comprobantes/compras?desde=2026-11-01&hasta=2026-11-30&tipo=01&buscar=prueba-reporte&pagina=2",
+            "Trabajo vinculado QA", "tipo=01"),
+        ("/Comprobantes/ventas?desde=2026-11-01&hasta=2026-11-30&factoring=true&buscar=prueba-reporte&pagina=2",
+            "CONF-QA", "factoring=true"),
+        ("/Comprobantes/ventas?sinFactoring=true&buscar=prueba-reporte", "Facturas elegibles sin factoring", "sinFactoring=true"),
+        ("/Administracion/Detracciones?estado=TODOS&proveedor=prueba&buscar=F001", "F001-123", "proveedor=prueba"),
+        ("/Administracion/Factoring?desde=2026-11-01&hasta=2026-11-30&buscar=prueba-reporte&estado=ACEPTADO", "REF-QA", "estado=ACEPTADO")
     };
     foreach (var route in routes)
     {
         var listing = await reportClient.GetStringAsync(route.Url);
         var button = Regex.Match(listing, "<a[^>]*>Imprimir listado</a>").Value;
         var href = WebUtility.HtmlDecode(Regex.Match(button, "href=\"([^\"]+)\"").Groups[1].Value);
-        ValidateMaintenance(href.Contains(route.Preserved) && href.Contains("print=true") && !href.Contains("page=") &&
+        ValidateMaintenance(href.Contains(route.Preserved) && href.Contains("print=true") && !href.Contains("page=") && !href.Contains("pagina=") &&
             button.Contains("target=\"_blank\""), "Enlace con filtros " + route.Url);
         var report = WebUtility.HtmlDecode(await reportClient.GetStringAsync(href));
         ValidateMaintenance(report.Contains("data-report-print") && report.Contains("data-report-csv") &&
             report.Contains(route.Data), "Reporte HTML " + route.Url);
+        if (route.Url.StartsWith("/Administracion/Factoring", StringComparison.Ordinal))
+        {
+            ValidateMaintenance(listing.Contains("value=\"ACEPTADO\" selected=\"selected\"") &&
+                report.Contains("Estado: Aceptado") && report.Contains("<td>Aceptado</td>"),
+                "Factoring conserva el filtro de estado y muestra el estado de cada lote al imprimir");
+            var closed = await reportClient.GetStringAsync(href.Replace("ACEPTADO", "CERRADO", StringComparison.Ordinal));
+            ValidateMaintenance(!closed.Contains("REF-QA"), "Factoring excluye los lotes de otro estado");
+        }
+        if (route.Url.StartsWith("/Administracion/Detracciones", StringComparison.Ordinal))
+        {
+            ValidateMaintenance(listing.Contains("<th>Detracción</th><th>Nombre de la detracción</th><th>%</th>") &&
+                listing.Contains("<td>Servicios de prueba</td>") && listing.Contains("<td>4%</td>") &&
+                !listing.Contains("<th>Último pago</th>"), "Listado de detracciones muestra nombre y porcentaje y retira Último pago");
+            ValidateMaintenance(report.Contains("<td>Servicios de prueba</td>") && report.Contains("<td>4%</td>"),
+                "Reporte de detracciones muestra nombre y porcentaje");
+        }
         if (route.Url.StartsWith("/Presupuestos", StringComparison.Ordinal))
             ValidateMaintenance(report.Contains("21 registros") && report.Contains("REPORTE-1<") && report.Contains("REPORTE-21"),
                 "Se imprimen la primera y la última página de presupuestos");
+        if (route.Url.StartsWith("/Comprobantes/", StringComparison.Ordinal))
+            ValidateMaintenance(report.Contains("21 registros") && report.Contains("FQA1-1<") && report.Contains("FQA1-21") &&
+                report.Contains("<td>PEN</td>") && report.Contains("<td>USD</td>"),
+                "Se incluyen ambas páginas de comprobantes y se distinguen las monedas");
     }
     access.Account = access.Account with { Permissions = sourcePermissions };
     using var deniedPrint = await reportClient.GetAsync("/Presupuestos?print=true");
@@ -319,6 +346,13 @@ Check(userForm.Contains("Contraseña temporal") && userForm.Contains("Perfil de 
 var roleForm = WebUtility.HtmlDecode(await securityClient.GetStringAsync("/Administracion/Perfiles/consulta/Duplicar"));
 Check(roleForm.Contains("Copia de Consulta") && roleForm.Contains("data-security-module") && roleForm.Contains("Guardar perfil"),
     "Duplicación abre un nuevo perfil con casillas de permisos");
+var menuOptions = GestionServicios.Web.Navigation.HytMenu.Items;
+var profileSections = GestionServicios.Web.ViewModels.Security.ProfilePermissions.Sections(
+    menuOptions.Select(item => System.Text.Json.JsonSerializer.SerializeToElement(new { Codigo = item.Permission })));
+Check(profileSections.SelectMany(section => section.Modules).Select(module => module.Name).SequenceEqual(menuOptions.Select(option => option.Label)) &&
+    profileSections.SelectMany(section => section.Modules).SelectMany(module => module.Permissions).Distinct().Count() ==
+        menuOptions.Select(option => option.Permission).Distinct().Count(),
+    "Perfiles conserva las opciones y el orden del menú con una casilla por permiso compartido");
 var auditRepository = (TestSecurityAdministration)securityFactory.Services.GetRequiredService<ISecurityAdministrationRepository>();
 var auditFilters = await securityClient.GetStringAsync("/Administracion/Auditoria?entity=Presupuesto&eventAction=GENERAR_IMPRESION");
 Check(auditRepository.LastAuditFilter == ("Presupuesto", "GENERAR_IMPRESION") &&
@@ -652,7 +686,7 @@ Check(rejectedR2&&fakeR2.Files.Count==1,"R2 no reemplaza un archivo existente co
 fakeR2.Files[r2Metadata.ClaveAlmacenamiento][0]=0;
 var corruptR2=false;try{await r2Store.ReadAsync(r2Metadata,CancellationToken.None);}catch(MaintenanceException){corruptR2=true;}
 Check(corruptR2,"R2 rechaza contenido alterado antes de entregarlo al usuario");
-foreach(var code in new[]{"OC","GUIA","CONFIRMACION","PRESUPUESTO"})
+foreach(var code in new[]{"OC","GUIA","CONFIRMACION","PRESUPUESTO","SCTR"})
 {
     var scopedKind=new GestionServicios.Application.Followup.DocumentKind("test",code,"Test","TEST");
     var scopedFolder=GestionServicios.Web.Services.DocumentUploadRules.Folder(code,"DOC 001/A");
@@ -888,6 +922,41 @@ Check(sctrFiltered.Contains("WEB-SCTR") && Regex.IsMatch(sctrFiltered, "aria-exp
     "SCTR combina filtros y despliega a los trabajadores cubiertos");
 Check(!(await payrollClient.GetStringAsync(sctrUrl + "?estado=VENCIDA&trabajador=segundo")).Contains("WEB-SCTR"),
     "SCTR excluye una póliza cuando su estado no coincide");
+const string policyFile = sctrUrl + "/1/Adjunto";
+var policyForm = await payrollClient.GetStringAsync(sctrUrl + "/Ficha/1");
+var sctrToken = Regex.Match(policyForm, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value;
+var sctrPdfBytes = "%PDF-1.7 SCTR prueba"u8.ToArray();
+async Task<HttpResponseMessage> UploadPolicy(string name, byte[] bytes)
+{
+    using var form = new MultipartFormDataContent
+    {
+        { new StringContent(WebUtility.HtmlDecode(sctrToken)), "__RequestVerificationToken" },
+        { new StringContent(Guid.NewGuid().ToString()), "operationId" },
+        { new ByteArrayContent(bytes), "attachment", name }
+    };
+    return await payrollClient.PostAsync(policyFile, form);
+}
+Check(!(await payrollClient.GetStringAsync(sctrUrl)).Contains("Descargar póliza"),
+    "SCTR muestra la descarga únicamente si existe un adjunto");
+using var invalidPolicyUpload = await UploadPolicy("malo.pdf", "archivo inválido"u8.ToArray());
+Check(invalidPolicyUpload.StatusCode == HttpStatusCode.Redirect &&
+    (await payrollClient.GetAsync(policyFile)).StatusCode == HttpStatusCode.NotFound, "SCTR valida la firma del archivo");
+using var policyUpload = await UploadPolicy("poliza-sctr.pdf", sctrPdfBytes);
+Check(policyUpload.StatusCode == HttpStatusCode.Redirect &&
+    (await payrollClient.GetStringAsync(sctrUrl)).Contains("Descargar póliza"), "SCTR permite adjuntar y muestra la descarga");
+var attachment = await payrollFactory.Services.GetRequiredService<IPayrollObligationsRepository>()
+    .PolicyAttachmentAsync("test", 1, default);
+Check(attachment?.ClaveAlmacenamiento.StartsWith("SCTR/1/", StringComparison.Ordinal) == true,
+    "El adjunto SCTR usa el número interno como carpeta");
+var originalPermissions = payrollAccess.Account.Permissions;
+payrollAccess.Account = payrollAccess.Account with { Permissions = ["OBLIGACIONES.CONSULTAR"] };
+using var policyDownload = await payrollClient.GetAsync(policyFile);
+Check(policyDownload.StatusCode == HttpStatusCode.OK && policyDownload.Content.Headers.ContentDisposition?.FileName == "poliza-sctr.pdf" &&
+    (await policyDownload.Content.ReadAsByteArrayAsync()).SequenceEqual(sctrPdfBytes) &&
+    (await payrollClient.GetStringAsync(sctrUrl)).Contains("Descargar póliza") &&
+    (await UploadPolicy("poliza-sctr.pdf", sctrPdfBytes)).StatusCode == HttpStatusCode.Redirect,
+    "La consulta SCTR permite descargar el archivo y protege el adjunto contra edición");
+payrollAccess.Account = payrollAccess.Account with { Permissions = originalPermissions };
 const string planningUrl = "/Planillas/PlanificacionPagos";
 var initialPlanningHtml = await payrollClient.GetStringAsync(planningUrl);
 var planningToday = TimeZoneInfo.ConvertTime(payrollFactory.Clock.GetUtcNow(), TimeZoneInfo.FindSystemTimeZoneById("America/Lima"));
@@ -1226,11 +1295,18 @@ Check(factoringSave.StatusCode==HttpStatusCode.Redirect&&payrollFactory.Commerci
 var factoringPrint=await payrollClient.GetStringAsync(factoringUrl+"/1?print=true");
 Check(factoringPrint.Contains("Financiera de prueba")&&factoringPrint.Contains("F001-123")&&factoringPrint.Contains("data-report-csv"),
     "El lote tiene reporte HTML con sus facturas e impresión y CSV");
+var reportWithoutChanges = await payrollClient.GetStringAsync(factoringUrl + "/1");
+Check(reportWithoutChanges.Contains("Aceptar lote") && !reportWithoutChanges.Contains("Cerrar lote"),
+    "Un lote registrado ofrece aceptar");
+Check((await PayrollPost(factoringUrl + "/1/Estado", new() { ["estado"] = "ACEPTADO" }, factoringUrl + "/1")).StatusCode == HttpStatusCode.Redirect &&
+    (await payrollClient.GetStringAsync(factoringUrl + "/1")).Contains("Cerrar lote"), "El lote aceptado ofrece cerrar");
+Check((await PayrollPost(factoringUrl + "/1/Estado", new() { ["estado"] = "CERRADO" }, factoringUrl + "/1")).StatusCode == HttpStatusCode.Redirect &&
+    (await payrollClient.GetStringAsync(factoringUrl + "/1?print=true")).Contains("Cerrado"), "La impresión muestra el lote cerrado");
 var noFactoring=await payrollClient.GetStringAsync("/Comprobantes/ventas?sinFactoring=true");
 Check(noFactoring.Contains("Sin factoring")&&payrollFactory.Commercial.WithoutFactoring,"El filtro anterior Sin factoring conserva su comportamiento");
 var salesWithFactoring = await payrollClient.GetStringAsync("/Comprobantes/ventas?factoring=true");
 Check(payrollFactory.Commercial.HasFactoring == true && salesWithFactoring.Contains("Estado de factoring")
-    && salesWithFactoring.Contains("Con fecha de desembolso") && salesWithFactoring.Contains("Lote 1")
+    && salesWithFactoring.Contains("Fecha de desembolso") && salesWithFactoring.Contains("Lote 1")
     && salesWithFactoring.Contains("12/11/2026") && salesWithFactoring.Contains("factoring=true"),
     "El filtro Sí muestra estado y fecha de desembolso y se conserva al paginar");
 var salesWithoutFactoring = await payrollClient.GetStringAsync("/Comprobantes/ventas?factoring=false");

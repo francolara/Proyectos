@@ -1,9 +1,12 @@
+using GestionServicios.Application.Followup;
+
 namespace GestionServicios.Application.Payroll;
 
 public sealed record PayrollObligation(long ObligacionId, string Tipo, string Entidad, DateOnly Mes,
     decimal Importe, DateOnly Vencimiento, DateOnly? FechaPago, string? ReferenciaPago, byte[] VersionFila, string Estado);
 public sealed record SctrPolicy(long PolizaId, string Aseguradora, string NumeroPoliza, string Cobertura,
-    DateOnly VigenciaDesde, DateOnly VigenciaHasta, byte[] VersionFila, string Estado, SctrWorker[]? Trabajadores = null);
+    DateOnly VigenciaDesde, DateOnly VigenciaHasta, byte[] VersionFila, string Estado, SctrWorker[]? Trabajadores = null,
+    long? ArchivoId = null, string? NombreAdjunto = null);
 public sealed record SctrWorker(long TrabajadorId, string Nombre);
 public sealed record PayrollObligations(DateOnly Mes, PayrollObligation[] Obligaciones, SctrPolicy[] Polizas, SctrWorker[]? PersonalActivo = null);
 
@@ -25,5 +28,7 @@ public interface IPayrollObligationsRepository
     Task<IReadOnlyList<PensionEstimate>> PensionEstimatesAsync(string actor, DateOnly month, CancellationToken ct, bool includeWorkers = false);
     Task<long> SavePensionRateAsync(string actor, string entity, decimal rate, CancellationToken ct);
     Task<long> SaveObligationAsync(string actor, PayrollObligation input, CancellationToken ct, bool preservePayment = false);
+    Task<DocumentAttachment?> PolicyAttachmentAsync(string actor, long policyId, CancellationToken ct);
+    Task AttachPolicyAsync(string actor, long policyId, long? previousFileId, DocumentAttachment file, CancellationToken ct);
     Task<long> SavePolicyAsync(string actor, SctrPolicy input, CancellationToken ct);
 }

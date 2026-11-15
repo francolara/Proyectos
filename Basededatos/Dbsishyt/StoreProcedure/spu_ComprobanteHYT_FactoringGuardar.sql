@@ -1,4 +1,5 @@
 -- Firma: FRANCO LARA | Create date: 10/11/2026 | Registra un lote de facturas en una sola operación.
+-- Firma: FRANCO LARA | Create date: 14/11/2026 | Valida que las facturas tengan saldo al registrar el lote.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_ComprobanteHYT_FactoringGuardar
@@ -42,8 +43,10 @@ BEGIN
         END;
         IF EXISTS(SELECT 1 FROM @Seleccion AS elegido LEFT JOIN dbo.ComprobanteHYT AS c WITH(UPDLOCK,HOLDLOCK) ON c.ComprobanteId=elegido.ComprobanteId
             LEFT JOIN dbo.FactoringFacturaHYT AS factura ON factura.ComprobanteId=elegido.ComprobanteId
+            OUTER APPLY dbo.fn_ComprobanteHYT_SaldoVenta(c.ComprobanteId) AS venta
             WHERE c.ComprobanteId IS NULL OR c.EsVenta=0 OR c.Tipo<>'01' OR c.Serie IS NULL OR c.Numero IS NULL OR c.Importe<=0
-                OR c.Fecha>@Fecha OR factura.ComprobanteId IS NOT NULL)
+                OR c.Fecha>@Fecha OR factura.ComprobanteId IS NOT NULL OR venta.SaldoPendiente<=0
+                OR c.EstadoSunat IN (N'RECHAZADO',N'ANULADO',N'BAJA'))
             THROW 51601,N'[HYT_VALIDACION] Selecciona facturas emitidas hasta la fecha de negociación y que aún no pertenezcan a otro lote.',1;
         SELECT @Moneda=MIN(c.Moneda) FROM @Seleccion AS elegido INNER JOIN dbo.ComprobanteHYT AS c ON c.ComprobanteId=elegido.ComprobanteId;
         IF EXISTS(SELECT 1 FROM @Seleccion AS elegido INNER JOIN dbo.ComprobanteHYT AS c ON c.ComprobanteId=elegido.ComprobanteId WHERE c.Moneda<>@Moneda)

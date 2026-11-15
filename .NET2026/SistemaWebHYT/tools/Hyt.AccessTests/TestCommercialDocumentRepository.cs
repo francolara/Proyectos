@@ -7,6 +7,7 @@ public sealed class TestCommercialDocumentRepository : ICommercialDocumentReposi
     public FactoringLot? SavedFactoring { get; private set; }
     public bool WithoutFactoring { get; private set; }
     public bool? HasFactoring { get; private set; }
+    private string factoringStatus = "REGISTRADO";
     public long? LinkedOrderId { get; private set; }
     public CommercialDocument? Saved { get; private set; }
     public Task<JsonElement> ReadAsync(string actor, bool sales, long? id, DateOnly? from, DateOnly? to,
@@ -15,6 +16,21 @@ public sealed class TestCommercialDocumentRepository : ICommercialDocumentReposi
     {
         WithoutFactoring = withoutFactoring;
         HasFactoring = hasFactoring;
+        if (search == "prueba-reporte" && id is null && from.HasValue && to.HasValue)
+        {
+            var rows = Enumerable.Range(1, 21).Skip((page - 1) * 20).Take(20).Select(number => new
+            {
+                ComprobanteId = (long)number, Tipo = type ?? "01", Serie = "FQA1", Numero = number.ToString(),
+                Fecha = "2026-11-10", FechaVencimiento = "2026-12-10", NombreTercero = "Tercero de prueba",
+                DocumentoTercero = "20600000001", FormaPago = "Credito", Moneda = number == 21 ? "USD" : "PEN",
+                MonedaDetraccion = "PEN", Importe = 118m, ImporteDetraccion = 12m, DetraccionDocumento = 12m,
+                Detraido = 5m, Pagado = 10m, EstadoSunat = "PENDIENTE",
+                LoteId = hasFactoring == true ? 1L : (long?)null, FactoringFechaDesembolso = hasFactoring == true ? "2026-11-12" : null,
+                NumeroOCCliente = "OC-QA", NumeroConfirmacion = "CONF-QA", PresupuestosVinculados = "PPTO-QA",
+                TrabajosVinculados = "Trabajo vinculado QA", TotalFilas = 21
+            });
+            return Task.FromResult(JsonSerializer.SerializeToElement(new { RucHYT = "20100000001", Filas = rows }));
+        }
         var doc = new
         {
             ComprobanteId=1L,Tipo="01",Serie="F001",Numero="123",Fecha="2026-11-10",Moneda="PEN",RucHYT="20100000001",
@@ -44,19 +60,29 @@ public sealed class TestCommercialDocumentRepository : ICommercialDocumentReposi
             OpcionesCostoPresupuesto=Array.Empty<object>()
         }));
     }
-    public Task<JsonElement> ReadFactoringAsync(string actor,long? id,DateOnly? from,DateOnly? to,string? search,int page,bool eligible,CancellationToken ct)
+    public Task<JsonElement> ReadFactoringAsync(string actor,long? id,DateOnly? from,DateOnly? to,string? search,int page,bool eligible,CancellationToken ct,string? status = null)
     {
         var invoices = new[]{new{ComprobanteId=1L,Serie="F001",Numero="123",Fecha="2026-11-10",
             FechaVencimiento="2026-12-10",NombreTercero="Cliente de prueba",DocumentoTercero="20600000001",Moneda="PEN",Importe=118m}};
         return Task.FromResult(JsonSerializer.SerializeToElement(new
         {
-            Lotes=Array.Empty<object>(), Facturas=invoices, Financieras=new[]{new{Nombre="Financiera de prueba"}},
+            Lotes = search == "prueba-reporte" && !eligible && (status is null or "ACEPTADO")
+                ? new object[] { new { LoteId = 8L, Financiera = "Financiera de prueba", FechaNegociacion = "2026-11-10",
+                    Porcentaje = 3.125m, Moneda = "PEN", Referencia = "REF-QA", Estado = "ACEPTADO", Cantidad = 2, Importe = 236m, TotalFilas = 1 } }
+                : [],
+            Facturas=invoices, Financieras=new[]{new{Nombre="Financiera de prueba"}},
             Lote=id.HasValue?new{LoteId=id.Value,Financiera="Financiera de prueba",FechaNegociacion="2026-11-10",
-                Porcentaje=3.125m,Moneda="PEN",Facturas=invoices}:null
+                Porcentaje=3.125m,Moneda="PEN",Estado=factoringStatus,Facturas=invoices}:null
         }));
     }
     public Task<long> SaveFactoringAsync(string actor,FactoringLot lot,CancellationToken ct)
     { SavedFactoring=lot;return Task.FromResult(1L); }
+
+    public Task ChangeFactoringStatusAsync(string actor, long id, string status, CancellationToken ct)
+    {
+        factoringStatus = status;
+        return Task.CompletedTask;
+    }
 
     public Task<long> SaveAsync(string actor,bool sales,CommercialDocument document,long? id,CancellationToken ct)
     { Saved=document;return Task.FromResult(1L); }
@@ -69,7 +95,7 @@ public sealed class TestCommercialDocumentRepository : ICommercialDocumentReposi
     public Task<JsonElement> ReadWithholdingsAsync(string actor,string state,string? supplier,string? search,int page,CancellationToken ct)
         => Task.FromResult(JsonSerializer.SerializeToElement(new[]{new{ComprobanteId=1L,Serie="F001",Numero="123",
             Fecha="2026-11-10",NombreTercero="Proveedor de prueba",DocumentoTercero="20600000001",ImporteDetraccion=12m,MonedaDetraccion="PEN",
-            Pagado=0m,Saldo=12m,TotalFilas=1}}));
+            NombreDetraccion="Servicios de prueba",PorcentajeDetraccion=4m,Pagado=0m,Saldo=12m,TotalFilas=1}}));
     public Task PayAsync(string actor,long id,bool withholding,DateOnly date,decimal amount,string reference,CancellationToken ct)
         => Task.CompletedTask;
 }

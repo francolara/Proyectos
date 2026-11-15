@@ -17,6 +17,8 @@
     "StoreProcedure/spu_CeseTrabajadorHYT_Reingresar.sql",
     "StoreProcedure/spu_ReportePlanillasHYT_Consultar.sql",
     "Script/035_PermisosPagosPersonal.sql",
+    "Script/064_AdjuntoPolizaSctrHYT.sql",
+    "StoreProcedure/spu_PolizaSctrHYT_Adjunto.sql",
     "StoreProcedure/spu_ObligacionesHYT_Consultar.sql",
     "StoreProcedure/spu_ObligacionPersonalHYT_Guardar.sql",
     "StoreProcedure/spu_PolizaSctrHYT_Guardar.sql",

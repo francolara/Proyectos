@@ -4,7 +4,7 @@ using GestionServicios.Application.Billing;
 
 namespace GestionServicios.Web.ViewModels.Billing;
 
-public sealed record FactoringSearch(DateOnly From, DateOnly To, string? Search, int Page = 1);
+public sealed record FactoringSearch(DateOnly From, DateOnly To, string? Search, int Page = 1, string? Status = null);
 public sealed record FactoringList(FactoringSearch Filter, JsonElement Data, bool CanEdit);
 public sealed record FactoringForm(FactoringSearch Filter, JsonElement Data, FactoringInput Input);
 

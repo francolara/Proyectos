@@ -22,7 +22,11 @@ sealed class TestSecurityAdministration(TestAccessRepository access) : ISecurity
         Task.FromResult<(IReadOnlyList<JsonElement>, IReadOnlyList<JsonElement>)>(([RoleFixture], [
             JsonSerializer.SerializeToElement(new { Codigo = "CLIENTES.CONSULTAR" }),
             JsonSerializer.SerializeToElement(new { Codigo = "CLIENTES.CREAR" }),
-            JsonSerializer.SerializeToElement(new { Codigo = "CLIENTES.MODIFICAR" })
+            JsonSerializer.SerializeToElement(new { Codigo = "CLIENTES.MODIFICAR" }),
+            JsonSerializer.SerializeToElement(new { Codigo = "OBLIGACIONES.CONSULTAR" }),
+            JsonSerializer.SerializeToElement(new { Codigo = "OBLIGACIONES.EDITAR" }),
+            JsonSerializer.SerializeToElement(new { Codigo = "FACTORING.CONSULTAR" }),
+            JsonSerializer.SerializeToElement(new { Codigo = "FACTORING.EDITAR" })
         ]));
 
     public Task<SecurityPage> RolesAsync(string actor, string? search, int page, CancellationToken ct) =>

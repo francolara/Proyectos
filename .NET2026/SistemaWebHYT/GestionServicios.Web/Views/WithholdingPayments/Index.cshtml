@@ -1,3 +1,5 @@
+@* Firma: FRANCO LARA - 14/11/2026 | Muestra el nombre y porcentaje después del importe de detracción y retira la fecha del último pago del listado. *@
+@* Firma: FRANCO LARA - 12/11/2026 | Agrega la impresión del listado con los filtros de la consulta. *@
 @* Firma: FRANCO LARA - 10/11/2026 | Detracciones pendientes y pagadas con filtros y pago en diálogo y datos de la última operación. *@
 @using GestionServicios.Web.ViewModels.Billing
 @model GestionServicios.Web.Controllers.WithholdingList
@@ -8,7 +10,14 @@
     var total = rows.Length == 0 ? 0 : rows[0].GetProperty("TotalFilas").GetInt64();
     var returnUrl = Context.Request.PathBase + Context.Request.Path + Context.Request.QueryString;
 }
-<header class="hyt-page-header"><div><h1>@ViewData["Title"]</h1></div></header>
+<header class="hyt-page-header">
+    <div><h1>@ViewData["Title"]</h1></div>
+    @if (User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, "REPORTES.IMPRIMIR"))
+    {
+        <a class="hyt-button-secondary" asp-action="Index" asp-route-print="true"
+           asp-route-estado="@Model.State" asp-route-proveedor="@Model.Supplier" asp-route-buscar="@Model.Search" target="_blank" rel="noopener">Imprimir listado</a>
+    }
+</header>
 @if (TempData["WithholdingNotice"] is string notice) { <p role="status">@notice</p> }
 <form method="get" asp-action="Index" class="hyt-filters">
     <div class="hyt-field"><label for="withholding-state">Estado</label>
@@ -24,9 +33,9 @@
 <section class="hyt-panel" aria-label="Detracciones">
     <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Listado de detracciones">
         <table class="hyt-table">
-            <thead><tr><th>Emisión</th><th>Comprobante</th><th>Proveedor</th><th>RUC</th><th>Moneda</th><th>Detracción</th><th>Pagado</th><th>Saldo</th><th>Último pago</th><th>N.º de operación</th><th>Estado</th><th>Acción</th></tr></thead>
+            <thead><tr><th>Emisión</th><th>Comprobante</th><th>Proveedor</th><th>RUC</th><th>Moneda</th><th>Detracción</th><th>Nombre de la detracción</th><th>%</th><th>Pagado</th><th>Saldo</th><th>N.º de operación</th><th>Estado</th><th>Acción</th></tr></thead>
             <tbody>
-            @if (rows.Length == 0) { <tr><td colspan="12" class="hyt-grid-message">No hay detracciones para los filtros seleccionados.</td></tr> }
+            @if (rows.Length == 0) { <tr><td colspan="13" class="hyt-grid-message">No hay detracciones para los filtros seleccionados.</td></tr> }
             @foreach (var row in rows)
             {
                 var balance = CommercialPage.Amount(row, "Saldo");
@@ -34,9 +43,11 @@
                     <td>@CommercialPage.Date(CommercialPage.Text(row, "Fecha"))</td><td>@CommercialPage.Number(row)</td>
                     <td>@CommercialPage.Text(row, "NombreTercero")</td><td>@CommercialPage.Text(row, "DocumentoTercero")</td>
                     <td>@CommercialPage.Text(row, "MonedaDetraccion")</td>
-                    <td>@CommercialPage.Money(CommercialPage.Amount(row, "ImporteDetraccion"))</td><td>@CommercialPage.Money(CommercialPage.Amount(row, "Pagado"))</td>
+                    <td>@CommercialPage.Money(CommercialPage.Amount(row, "ImporteDetraccion"))</td>
+                    <td>@(CommercialPage.Text(row, "NombreDetraccion") is { Length: > 0 } name ? name : "—")</td>
+                    <td>@CommercialPage.WithholdingRate(row)</td>
+                    <td>@CommercialPage.Money(CommercialPage.Amount(row, "Pagado"))</td>
                     <td>@CommercialPage.Money(balance)</td>
-                    <td>@(CommercialPage.Text(row,"FechaUltimoPago") is { Length: > 0 } date ? CommercialPage.Date(date) : "—")</td>
                     <td>@(CommercialPage.Text(row,"UltimaOperacion") is { Length: > 0 } operation ? operation : "—")</td>
                     <td>@(balance <= 0 ? "Pagada" : CommercialPage.Amount(row,"Pagado") > 0 ? "Pago parcial" : "Pendiente")</td>
                     <td>@if (Model.CanPay && balance > 0) {

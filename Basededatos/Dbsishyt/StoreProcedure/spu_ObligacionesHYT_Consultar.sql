@@ -3,6 +3,7 @@
 -- Create date:   09/11/2026
 -- Description:   Consulta obligaciones y polizas con sus trabajadores cubiertos.
 -- =============================================
+-- Firma: FRANCO LARA | Create date: 14/11/2026 | Expone el adjunto SCTR vigente en la consulta de pólizas.
 USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_ObligacionesHYT_Consultar
@@ -34,6 +35,7 @@ BEGIN
                    JSON_QUERY((
                        SELECT poliza.PolizaId, poliza.Aseguradora, poliza.NumeroPoliza, poliza.Cobertura,
                               poliza.VigenciaDesde, poliza.VigenciaHasta, poliza.VersionFila,
+                              archivo.ArchivoId, archivo.NombreOriginal AS NombreAdjunto,
                               JSON_QUERY(COALESCE((
                                   SELECT trabajador.TrabajadorId, trabajador.NombreCompleto AS Nombre
                                   FROM dbo.PolizaSctrTrabajadorHYT AS cobertura
@@ -46,6 +48,7 @@ BEGIN
                                    WHEN DATEDIFF(DAY, @Hoy, poliza.VigenciaHasta) <= 30 THEN 'POR_VENCER'
                                    ELSE 'VIGENTE' END AS Estado
                        FROM dbo.PolizaSctrHYT AS poliza
+                       LEFT JOIN dbo.ArchivoAdjunto AS archivo ON archivo.ArchivoId=poliza.ArchivoId AND archivo.Retirado=0
                        ORDER BY poliza.VigenciaHasta DESC, poliza.PolizaId DESC
                        FOR JSON PATH
                    )) AS Polizas,

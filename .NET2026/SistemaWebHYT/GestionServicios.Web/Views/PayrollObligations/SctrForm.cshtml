@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 14/11/2026 | Agrega el adjunto privado a la ficha SCTR. *@
 @model GestionServicios.Web.Controllers.PayrollObligationsPage
 @* Firma: FRANCO LARA - 09/11/2026 | Pólizas SCTR por trabajador y estado visual de vigencia. *@
 @{
@@ -12,6 +13,7 @@
     <div><h1>@ViewData["Title"]</h1></div>
     <a asp-action="Sctr" class="hyt-button-secondary">Volver al listado</a>
 </header>
+@if (TempData["ObligationMessage"] is string message) { <p role="status">@message</p> }
 @if (TempData["ObligationError"] is string error) { <p role="alert">@error</p> }
 @if (Model.CanEdit)
 {
@@ -58,6 +60,34 @@
             <div class="hyt-payroll-actions">
                 <button class="hyt-button-primary" type="submit">Guardar póliza</button>
                 @if (policy is not null) { <a asp-action="Sctr" class="hyt-button-secondary">Cancelar edición</a> }
+            </div>
+        </form>
+    </section>
+}
+
+@if (Model.CanEdit && policy is not null)
+{
+    <section class="hyt-panel hyt-payroll-section" aria-labelledby="sctr-attachment-title">
+        <h2 id="sctr-attachment-title">Adjunto de la póliza</h2>
+        <p>N.º interno @policy.PolizaId</p>
+        @if (policy.ArchivoId.HasValue)
+        {
+            <p><a asp-action="DownloadPolicy" asp-route-policyId="@policy.PolizaId">@policy.NombreAdjunto</a></p>
+        }
+        <form asp-action="AttachPolicy" asp-route-policyId="@policy.PolizaId" method="post" enctype="multipart/form-data" class="hyt-payroll-form">
+            <input type="hidden" name="operationId" value="@Guid.NewGuid()" />
+            @if (policy.ArchivoId.HasValue)
+            {
+                <input type="hidden" name="previousFileId" value="@policy.ArchivoId" />
+            }
+            <div class="hyt-field">
+                <label for="sctr-attachment">Archivo de la póliza</label>
+                <input id="sctr-attachment" type="file" name="attachment" accept=".pdf,.png,.jpg,.jpeg"
+                       aria-describedby="sctr-attachment-help" required />
+                <small id="sctr-attachment-help">PDF, PNG o JPG de hasta 15 MB.</small>
+            </div>
+            <div class="hyt-payroll-actions">
+                <button type="submit" class="hyt-button-primary">@(policy.ArchivoId.HasValue ? "Reemplazar adjunto" : "Adjuntar póliza")</button>
             </div>
         </form>
     </section>

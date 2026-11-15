@@ -13,6 +13,20 @@ public sealed record CommercialPage(string Scope, JsonElement Data, bool CanEdit
     public static string Text(JsonElement row, string key) => row.ValueKind == JsonValueKind.Object ? BudgetRecord.Text(row, key) : "";
     public static decimal Amount(JsonElement row, string key)
         => row.TryGetProperty(key, out var value) && value.TryGetDecimal(out var number) ? number : 0;
+    public static decimal SalesBalance(JsonElement row)
+        => row.TryGetProperty("SaldoPendiente", out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetDecimal(out var balance)
+            ? balance : Text(row, "Tipo") == "07" ? 0 : Amount(row, "Importe") - Amount(row, "DetraccionDocumento");
+
+    public static string FactoringStatus(string status) => status switch
+    {
+        "ACEPTADO" => "Aceptado",
+        "CERRADO" => "Cerrado",
+        _ => "Registrado"
+    };
+
+    public static string WithholdingRate(JsonElement row)
+        => row.TryGetProperty("PorcentajeDetraccion", out var value) && value.ValueKind == JsonValueKind.Number &&
+            value.TryGetDecimal(out var rate) ? rate.ToString("0.####", CultureInfo.GetCultureInfo("es-PE")) + "%" : "—";
     public static string Money(decimal value) => value.ToString("N2", CultureInfo.GetCultureInfo("es-PE"));
     public static string Date(string value) => DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture,
         DateTimeStyles.None, out var date) ? date.ToString("dd/MM/yyyy") : value;

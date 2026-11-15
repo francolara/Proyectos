@@ -1,3 +1,6 @@
+using GestionServicios.Application.Followup;
+using GestionServicios.Application.Maintenance;
+using GestionServicios.Web.Services;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Security.Claims;
@@ -11,9 +14,10 @@ using Microsoft.Data.SqlClient;
 namespace GestionServicios.Web.Controllers;
 
 // Firma: FRANCO LARA - 11/11/2026 | Reportes de obligaciones mensuales y cobertura SCTR.
+// Firma: FRANCO LARA - 14/11/2026 | Guarda y descarga el adjunto privado de cada póliza SCTR.
 [Authorize(Policy = "perm:OBLIGACIONES.CONSULTAR")]
 [Route("Planillas/Obligaciones")]
-public sealed class PayrollObligationsController(IPayrollObligationsRepository repository, TimeProvider clock) : Controller
+public sealed class PayrollObligationsController(IPayrollObligationsRepository repository, TimeProvider clock, IDocumentFileStore files) : Controller
 {
     private string Actor => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
     private bool CanEdit => User.HasClaim(AccessService.PermissionClaim, "OBLIGACIONES.EDITAR");
@@ -96,6 +100,55 @@ public sealed class PayrollObligationsController(IPayrollObligationsRepository r
     [Authorize(Policy = "perm:OBLIGACIONES.EDITAR")]
     public Task<IActionResult> SctrForm(long? policyId, CancellationToken ct)
         => ShowAsync(null, null, policyId, "SctrForm", ct);
+
+    [HttpPost("/Planillas/SCTR/{policyId:long}/Adjunto")]
+    [Authorize(Policy = "perm:OBLIGACIONES.EDITAR")]
+    [RequestSizeLimit(18 * 1024 * 1024)]
+    public async Task<IActionResult> AttachPolicy(long policyId, long? previousFileId, Guid operationId, IFormFile? attachment, CancellationToken ct)
+    {
+        if (policyId <= 0 || operationId == Guid.Empty || !ModelState.IsValid) return BadRequest();
+        if (attachment is null) return FinishSctr("Selecciona el archivo de la póliza.", true, policyId);
+
+        var today = TimeZoneInfo.ConvertTime(clock.GetUtcNow(), TimeZoneInfo.FindSystemTimeZoneById("America/Lima"));
+        var data = await repository.ObligationsAsync(Actor, new DateOnly(today.Year, today.Month, 1), ct);
+        var policy = data.Polizas.FirstOrDefault(item => item.PolizaId == policyId);
+        if (policy is null) return NotFound();
+        if (policy.ArchivoId != previousFileId)
+            return FinishSctr("El adjunto cambió. Revisa el archivo actual antes de reemplazarlo.", true, policyId);
+
+        try
+        {
+            var folder = DocumentUploadRules.Folder("SCTR", policyId.ToString(CultureInfo.InvariantCulture));
+            var file = await files.SaveAsync(attachment, new DocumentKind("sctr", "SCTR", "Póliza SCTR", "OBLIGACIONES"),
+                operationId, ct, folder);
+            await repository.AttachPolicyAsync(Actor, policyId, previousFileId, file, ct);
+            TempData["ObligationMessage"] = "Adjunto de la póliza guardado.";
+            return RedirectToAction(nameof(SctrForm), new { policyId });
+        }
+        catch (MaintenanceException error) { return FinishSctr(error.Message, true, policyId); }
+        catch (SqlException error) when (error.Number is 50000 or 2601 or 2627)
+        {
+            return FinishSctr("No se pudo vincular el adjunto. Revisa la póliza antes de reintentar.", true, policyId);
+        }
+    }
+
+    [HttpGet("/Planillas/SCTR/{policyId:long}/Adjunto")]
+    public async Task<IActionResult> DownloadPolicy(long policyId, CancellationToken ct)
+    {
+        if (policyId <= 0) return BadRequest();
+        try
+        {
+            var file = await repository.PolicyAttachmentAsync(Actor, policyId, ct);
+            if (file is null) return NotFound();
+            var bytes = await files.ReadAsync(file, ct);
+            if (bytes is null) return NotFound("El archivo no está disponible.");
+            Response.Headers["X-Content-Type-Options"] = "nosniff";
+            Response.Headers["Cache-Control"] = "private, no-store";
+            Response.Headers["Content-Security-Policy"] = "sandbox; default-src 'none'; frame-ancestors 'self'";
+            return File(bytes, file.TipoContenido, file.NombreOriginal);
+        }
+        catch (MaintenanceException error) { return Conflict(error.Message); }
+    }
 
     private async Task<IActionResult> ShowAsync(string? month, long? obligationId, long? policyId, string view, CancellationToken ct)
     {
@@ -200,10 +253,12 @@ public sealed class PayrollObligationsController(IPayrollObligationsRepository r
         try
         {
             var workers = input.WorkerIds.Distinct().Select(id => new SctrWorker(id, "")).ToArray();
-            await repository.SavePolicyAsync(Actor,
+            var policyId = await repository.SavePolicyAsync(Actor,
                 new(input.Id, input.Insurer, input.Number, input.Coverage, input.From!.Value, input.To!.Value,
                     version, "", workers), ct);
-            return FinishSctr("Póliza guardada.");
+            if (input.Id > 0) return FinishSctr("Póliza guardada.");
+            TempData["ObligationMessage"] = "Póliza guardada. Puedes adjuntar el archivo en esta ficha.";
+            return RedirectToAction(nameof(SctrForm), new { policyId });
         }
         catch (SqlException error) when (error.Number is 50000 or 2601 or 2627)
         {
