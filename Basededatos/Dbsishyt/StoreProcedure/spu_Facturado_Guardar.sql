@@ -1,3 +1,4 @@
+-- Firma: FRANCO LARA | Create date: 17/11/2026 | Bloquea la edición manual de una referencia de Emisión.
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   03/11/2026
@@ -40,6 +41,9 @@ BEGIN
         IF @Bloqueo IS NULL THROW 51504,N'[HYT_VALIDACION] La OC no existe.',1;
         IF NOT EXISTS(SELECT 1 FROM dbo.OrdenCompraCliente AS oc WITH(UPDLOCK,HOLDLOCK) WHERE oc.OrdenCompraId=@OrdenCompraId AND oc.VersionFila=@VersionOC AND oc.Estado<>N'CANCELADA')
             THROW 51505,N'[HYT_CONCURRENCIA] La OC cambió o está cancelada. Vuelve a consultarla.',1;
+        IF EXISTS (SELECT 1 FROM dbo.ReferenciaComprobanteExterno AS referencia WITH(UPDLOCK,HOLDLOCK)
+            WHERE referencia.OrdenCompraId=@OrdenCompraId AND referencia.Vigente=1 AND referencia.ComprobanteId IS NOT NULL)
+            THROW 51507,N'[HYT_VALIDACION] El comprobante se administra desde Emisión de comprobantes.',1;
         DECLARE @ConfirmacionId BIGINT,@Anterior NVARCHAR(MAX),@Nuevo NVARCHAR(MAX),@EstadoAnterior NVARCHAR(30);
         SELECT @ConfirmacionId=confirmacion.ConfirmacionId FROM dbo.ConfirmacionFacturacion AS confirmacion WITH(UPDLOCK,HOLDLOCK) WHERE confirmacion.OrdenCompraId=@OrdenCompraId AND confirmacion.Vigente=1;
         IF @Retirar=0 AND @ConfirmacionId IS NULL THROW 51506,N'[HYT_VALIDACION] Registra primero la confirmación del cliente de esta OC.',1;
@@ -70,6 +74,11 @@ BEGIN
         UPDATE dbo.OrdenCompraCliente SET FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE OrdenCompraId=@OrdenCompraId;
         UPDATE dbo.Presupuesto SET FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE PresupuestoId=@PresupuestoId;
         INSERT INTO dbo.DocumentoOperacion(OperacionId,TipoOperacion,PadreId,RegistroId,Huella,UsuarioId) VALUES(@CorrelacionId,N'FACTURADO_GUARDAR',@OrdenCompraId,@ReferenciaId,@Huella,@UsuarioId);
+        IF @Retirar=1 AND OBJECT_ID(N'dbo.spu_Facturado_SincronizarEmision',N'P') IS NOT NULL
+        BEGIN
+            DECLARE @Ordenes NVARCHAR(MAX)=CONCAT(N'[',@OrdenCompraId,N']');
+            EXEC dbo.spu_Facturado_SincronizarEmision @Ordenes;
+        END;
         COMMIT;SET @Propia=0;SELECT @ReferenciaId AS ReferenciaId;
     END TRY
     BEGIN CATCH

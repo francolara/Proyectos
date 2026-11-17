@@ -1,3 +1,4 @@
+// Firma: FRANCO LARA - 17/11/2026 | Conserva la marca UTF-8 al abrir CSV en Excel y evita la directiva sep que provoca mojibake.
 // Firma: FRANCO LARA - 10/11/2026 | Impresión y CSV para Excel con títulos, detalle y totales en celdas separadas.
 document.querySelector('[data-report-print]')?.addEventListener('click', () => window.print());
 
@@ -25,7 +26,7 @@ document.querySelector('[data-report-csv]')?.addEventListener('click', () => {
         const value = element.innerText.trim();
         return value ? [encodeCell(value)] : [];
     });
-    const csv = new Blob(['\uFEFF', 'sep=', separator, '\r\n', sections.join('\r\n')], {
+    const csv = new Blob(['\uFEFF', sections.join('\r\n')], {
         type: 'text/csv;charset=utf-8'
     });
     const url = URL.createObjectURL(csv);

@@ -57,13 +57,18 @@ public sealed class SqlMaintenanceRepository(SqlConnectionFactory connections) :
         },async command=>Convert.ToInt64(await command.ExecuteScalarAsync(ct)),ct);
 
     public Task<MaintenancePage> ListAsync(EntityDefinition entity, string actorId, string? search, int page,
-        long? parentId = null, bool activeOnly = false, CancellationToken cancellationToken = default)
+        long? parentId = null, bool activeOnly = false, CancellationToken cancellationToken = default,bool? active=null,bool? affectedByWithholding=null)
         => Execute(Procedure(entity, "Listar"), actorId, p =>
         {
             p.Add("@Pagina", SqlDbType.Int).Value = page;
             p.Add("@Busqueda", SqlDbType.NVarChar, 200).Value = (object?)search ?? DBNull.Value;
             p.Add("@PadreId", SqlDbType.BigInt).Value = (object?)parentId ?? DBNull.Value;
             p.Add("@SoloActivos", SqlDbType.Bit).Value = activeOnly;
+            if(entity.Key=="materiales")
+            {
+                p.Add("@Activo",SqlDbType.Bit).Value=(object?)active??DBNull.Value;
+                p.Add("@AfectoDetraccion",SqlDbType.Bit).Value=(object?)affectedByWithholding??DBNull.Value;
+            }
         }, async command =>
         {
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -71,7 +76,8 @@ public sealed class SqlMaintenanceRepository(SqlConnectionFactory connections) :
             while (await reader.ReadAsync(cancellationToken))
                 rows.Add(new(Convert.ToInt64(reader.GetValue(0)), reader.GetString(1), reader.GetString(2), reader.GetString(3), Text(reader, 4),
                     Utc(reader, 5), reader.GetString(6), reader.IsDBNull(7) ? null : Utc(reader, 7), Text(reader, 8), entity.Key is "tiendas" or "contactos" ? Text(reader,9) : null, entity.Key is "tiendas" or "contactos" ? Text(reader,10) : null,
-                    entity.Key == "contactos" && reader.FieldCount > 11 ? Text(reader, 11) : null));
+                    entity.Key == "contactos" && reader.FieldCount > 11 ? Text(reader, 11) : null,
+                    entity.Key=="materiales" && reader.FieldCount>9 ? reader.GetBoolean(9) : null));
             await reader.NextResultAsync(cancellationToken);
             var total = await reader.ReadAsync(cancellationToken) ? reader.GetInt64(0) : 0;
             return new MaintenancePage(rows, total, page);
@@ -119,7 +125,8 @@ public sealed class SqlMaintenanceRepository(SqlConnectionFactory connections) :
             foreach (var name in new[] { "Currency", "TaxTreatment", "Departments", "Provinces", "Districts", "Withholding" })
             {
                 var options = new List<CatalogOption>();
-                while (await reader.ReadAsync(cancellationToken)) options.Add(new(reader.GetString(0), reader.GetString(1)));
+                while (await reader.ReadAsync(cancellationToken)) options.Add(new(reader.GetString(0), reader.GetString(1),
+                    name=="Withholding" && reader.FieldCount>2 && !reader.IsDBNull(2) ? reader.GetDecimal(2) : null));
                 result.Add(name, options);
                 await reader.NextResultAsync(cancellationToken);
             }

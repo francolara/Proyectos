@@ -73,6 +73,10 @@ public sealed class SqlCommercialDocumentRepository(SqlConnectionFactory connect
         => ExecuteAsync("Guardar", actor, [("@EsVenta", SqlDbType.Bit, sales), ("@Id", SqlDbType.BigInt, id),
             ("@Datos", SqlDbType.NVarChar, JsonSerializer.Serialize(document))], Convert.ToInt64, ct);
 
+    public Task DeleteAsync(string actor,bool sales,long id,string version,CancellationToken ct)
+        => ExecuteAsync("Eliminar",actor,[("@EsVenta",SqlDbType.Bit,sales),("@Id",SqlDbType.BigInt,id),
+            ("@VersionEdicion",SqlDbType.VarChar,version)],Convert.ToInt64,ct);
+
     public async Task ImportBatchAsync(string actor, bool sales,
         IReadOnlyList<(string File, CommercialDocument Document)> files, CancellationToken ct)
     {

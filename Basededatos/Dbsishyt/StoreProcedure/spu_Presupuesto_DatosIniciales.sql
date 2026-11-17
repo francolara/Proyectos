@@ -1,3 +1,4 @@
+-- Firma: FRANCO LARA | Create date: 17/11/2026 | Ofrece firmas nombradas y su predeterminada al presupuesto.
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   03/11/2026
@@ -21,6 +22,8 @@ BEGIN
         IF @TiendaId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM dbo.Tienda AS tienda WHERE tienda.TiendaId=@TiendaId AND tienda.ClienteId=@ClienteId)
             THROW 51312,N'[HYT_VALIDACION] La tienda no pertenece al cliente.',1;
         SELECT (SELECT
+            JSON_QUERY(COALESCE((SELECT firma.FirmaId,firma.Nombre,firma.Predeterminada
+                FROM dbo.FirmaPresupuestoHYT AS firma WHERE firma.Activo=1 ORDER BY firma.Predeterminada DESC,firma.Nombre FOR JSON PATH),N'[]')) AS Firmas,
             JSON_QUERY((SELECT tasa.FechaDesde,tasa.Valor FROM dbo.TasaIGV AS tasa WHERE tasa.FechaDesde<=@Fecha AND (tasa.FechaHasta IS NULL OR tasa.FechaHasta>@Fecha) FOR JSON PATH,WITHOUT_ARRAY_WRAPPER)) AS Tasa,
             JSON_QUERY((SELECT empresa.Ruc,empresa.RazonSocial,empresa.Direccion,empresa.Telefono,empresa.Correo,empresa.NombreFirmante,empresa.CargoFirmante,empresa.ConsideracionesPresupuesto FROM dbo.ConfiguracionHYT AS empresa WHERE empresa.Id=1 FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)) AS Empresa,
             JSON_QUERY((SELECT cliente.ClienteId,cliente.Codigo,CASE WHEN cliente.TipoEntidad=N'NATURAL' THEN CONCAT(cliente.Nombres,N' ',cliente.Apellidos) ELSE cliente.RazonSocial END AS Nombre,cliente.NumeroIdentificacion,CONCAT_WS(N' / ',NULLIF(cliente.DireccionFiscal,N''),(SELECT CONCAT_WS(N' / ',departamento.Nombre,provincia.Nombre,distrito.Nombre) FROM dbo.UbigeoDistritos AS distrito INNER JOIN dbo.UbigeoProvincias AS provincia ON provincia.CodigoProvincia=distrito.CodigoProvincia INNER JOIN dbo.UbigeoDepartamentos AS departamento ON departamento.CodigoDepartamento=distrito.CodigoDepartamento WHERE distrito.CodigoUbigeo=cliente.CodigoUbigeo)) AS DireccionFiscal

@@ -15,9 +15,11 @@ sealed class TestMaintenanceRepository : IMaintenanceRepository
     {SaveCount++;LastPayload=JsonSerializer.Serialize(new{MaterialId=materialId,CodigoTipoIGV=tax,PrecioPEN=pen,PrecioUSD=usd,Activo=active});return Task.FromResult(id??3L);}
     public Task<MaterialTariffPage> MaterialTariffsAsync(string actorId,long materialId,int page,CancellationToken ct=default,string? search=null)
         =>Task.FromResult(new MaterialTariffPage([JsonSerializer.SerializeToElement(new{Id=1,MaterialId=1L,MaterialCodigo="MAT-000001",MaterialDescripcion="Material de prueba",VersionId=1,Tarifario="Tarifario de prueba",NumeroVersion=1,Estado="BORRADOR",Editable=true,Posicion="001",CodigoMaterialSAP="SAP-01",CodigoMoneda="PEN",CodigoTipoIGV="SIN_IGV",PrecioPEN=100m,PrecioUSD=(decimal?)null,Activo=true,TipoServicio="Servicio",Zonas="Sur",FechaRegistro="2026-11-05T17:00:00Z",UsuarioRegistro="Operador",FechaActualizacion=(string?)null,UsuarioActualizacion=(string?)null})],1,page));
-    public Task<MaintenancePage> ListAsync(EntityDefinition entity, string actorId, string? search, int page, long? parentId = null, bool activeOnly = false, CancellationToken cancellationToken = default)
+    public bool? LastActive {get;private set;}
+    public bool? LastAffected {get;private set;}
+    public Task<MaintenancePage> ListAsync(EntityDefinition entity, string actorId, string? search, int page, long? parentId = null, bool activeOnly = false, CancellationToken cancellationToken = default,bool? active=null,bool? affectedByWithholding=null)
     {
-        LastPage = page; LastSearch = search;
+        LastPage = page; LastSearch = search;LastActive=active;LastAffected=affectedByWithholding;
         return Task.FromResult(new MaintenancePage([new(entity.Key == "zonas" ? (page - 1) * 20 + 1 : 1, "0001-A", entity.Key == "zonas" ? page == 1 ? "Sur" : "Centro" : "Cliente <script>prueba</script>", "ACTIVO", "Sur · Centro", DateTimeOffset.UtcNow, "Operador", null, null, entity.Key is "tiendas" or "contactos" ? "CLI-000099" : null, entity.Key is "tiendas" or "contactos" ? "Cliente de prueba" : null, entity.Key == "contactos" ? "Tienda de prueba" : null)], search == "prueba-reporte" ? 1 : 41, page));
     }
     public Task<RecordSnapshot?> GetAsync(EntityDefinition entity, string actorId, long id, int auditPage = 1, CancellationToken cancellationToken = default)
@@ -35,7 +37,7 @@ sealed class TestMaintenanceRepository : IMaintenanceRepository
     { if (ConcurrentSave) throw new MaintenanceException("El registro cambió. Vuelve a consultarlo."); SaveCount++; LastPayload = payload; return Task.FromResult(id ?? 3); }
     public Task<IReadOnlyDictionary<string, IReadOnlyList<CatalogOption>>> CatalogsAsync(string actorId, CancellationToken cancellationToken = default)
         => Task.FromResult<IReadOnlyDictionary<string, IReadOnlyList<CatalogOption>>>(new Dictionary<string, IReadOnlyList<CatalogOption>>
-        { ["Departments"]=[new("15","LIMA"),new("07","CALLAO")],["Provinces"]=[new("1501","LIMA"),new("0701","CALLAO")],["Districts"]=[new("150101","LIMA"),new("150132","SAN JUAN DE LURIGANCHO"),new("070101","CALLAO")], ["EntityType"] = [new("JURIDICA", "Persona jurídica"), new("NATURAL", "Persona natural")], ["Currency"] = [new("PEN", "Soles")], ["TaxTreatment"] = [new("SIN_IGV", "Sin IGV")] });
+        { ["Withholding"]=[new("022","022 · Otros servicios empresariales",12m)], ["Departments"]=[new("15","LIMA"),new("07","CALLAO")],["Provinces"]=[new("1501","LIMA"),new("0701","CALLAO")],["Districts"]=[new("150101","LIMA"),new("150132","SAN JUAN DE LURIGANCHO"),new("070101","CALLAO")], ["EntityType"] = [new("JURIDICA", "Persona jurídica"), new("NATURAL", "Persona natural")], ["Currency"] = [new("PEN", "Soles")], ["TaxTreatment"] = [new("SIN_IGV", "Sin IGV")] });
     public Task PublishVersionAsync(string actorId, long versionId, byte[] expectedVersion, CancellationToken cancellationToken = default) { Publications++; return Task.CompletedTask; }
     public Task<long> CloneVersionAsync(string actorId, long versionId, byte[] expectedVersion, CancellationToken cancellationToken = default) { Copies++; return Task.FromResult(3L); }
 }

@@ -9,6 +9,7 @@ public sealed class TestCommercialDocumentRepository : ICommercialDocumentReposi
     public bool? HasFactoring { get; private set; }
     private string factoringStatus = "REGISTRADO";
     public long? LinkedOrderId { get; private set; }
+    public long? SavedDocumentId { get; private set; }
     public CommercialDocument? Saved { get; private set; }
     public Task<JsonElement> ReadAsync(string actor, bool sales, long? id, DateOnly? from, DateOnly? to,
         string? type, string? search, int page, long? clientId, long? budgetId, CancellationToken ct, bool withoutFactoring = false, bool? hasFactoring = null,
@@ -33,7 +34,7 @@ public sealed class TestCommercialDocumentRepository : ICommercialDocumentReposi
         }
         var doc = new
         {
-            ComprobanteId=1L,Tipo="01",Serie="F001",Numero="123",Fecha="2026-11-10",Moneda="PEN",RucHYT="20100000001",
+            MotivoEliminacion=DeletionBlocked?"Tiene pagos registrados.":null,ComprobanteId=1L,VersionEdicion="0x0000000000000001",Tipo="01",Serie="F001",Numero="123",Fecha="2026-11-10",FechaVencimiento="2026-11-10",Moneda="PEN",RucHYT="20100000001",
             DocumentoTercero="20600000001",NombreTercero="Tercero de prueba",ClienteId=1L,ProveedorId=1L,FormaPago="Contado",Importe=118m,
             ImporteDetraccion=12m,MonedaDetraccion="PEN",EstadoSunat="PENDIENTE",Importado=true,
             Detalle=new[]{new CommercialLine("A","Producto de prueba","NIU",1,100,100)},
@@ -42,8 +43,9 @@ public sealed class TestCommercialDocumentRepository : ICommercialDocumentReposi
         return Task.FromResult(JsonSerializer.SerializeToElement(new
         {
             DetraccionMaterial=materialCodes?.Contains("ITEM-A") == true ? new{Codigo="022",Porcentaje=12m} : null,
+            SeriesComprobante=new[]{new{Tipo="01",Serie="F001"},new{Tipo="01",Serie="F002"},new{Tipo="03",Serie="B001"},new{Tipo="07",Serie="FC01"}},
             CatalogoDetracciones=new[]{new{Codigo="022",Nombre="Comisión mercantil",Porcentaje=12m}},
-            RucHYT="20100000001",TasaIgv=0.18m,Documento=id.HasValue?doc:null,Filas=new[]{new{ComprobanteId=1L,Tipo="01",Serie="F001",Numero="123",Fecha="2026-11-10",NombreTercero="Tercero de prueba",Moneda="PEN",MonedaDetraccion="PEN",Importe=118m,ImporteDetraccion=12m,Detraido=0m,Pagado=0m,EstadoSunat="PENDIENTE",LoteId=hasFactoring == true ? 1L : (long?)null,
+            RucHYT="20100000001",TasaIgv=0.18m,Documento=id.HasValue?doc:null,Filas=new[]{new{MotivoEliminacion=DeletionBlocked?"Tiene pagos registrados.":null,ComprobanteId=1L,Tipo="01",Serie="F001",Numero="123",Fecha="2026-11-10",NombreTercero="Tercero de prueba",Moneda="PEN",MonedaDetraccion="PEN",Importe=118m,ImporteDetraccion=12m,Detraido=0m,Pagado=0m,EstadoSunat="PENDIENTE",LoteId=hasFactoring == true ? 1L : (long?)null,
                 FactoringFechaDesembolso=hasFactoring == true ? "2026-11-12" : null,TotalFilas=21}},
             Cliente=clientId.HasValue?new{ClienteId=1,DocumentoTercero="20600000001",NombreTercero="Tercero de prueba"}:null,
             FacturasNotaCredito=invoiceLookup && clientId == 1 && search is null or "" or "F001" ?
@@ -52,7 +54,7 @@ public sealed class TestCommercialDocumentRepository : ICommercialDocumentReposi
             OpcionesUnidad=new[]{new{Codigo="UND",Descripcion="Unidad",CodigoSunat="NIU"}},
             OpcionesOrdenCompra=orderLookup ? new[]{new{OrdenCompraId=1L,NumeroOCCliente="OC-QA",NumeroPresupuesto="202611000002",NumeroConfirmacion="CONF-QA"}} : [],
             OpcionesCliente=Array.Empty<object>(),OpcionesProveedor=Array.Empty<object>(),
-            OpcionesPresupuesto=new[]{new{PresupuestoId=2L,NumeroPresupuesto="202611000002",Descripcion="Trabajo",CodigoMoneda="PEN",Total=100m}},
+            OpcionesPresupuesto=new[]{new{PresupuestoId=2L,OrdenCompraId=1L,NumeroOCCliente="OC-QA",NumeroPresupuesto="202611000002",Descripcion="Trabajo",CodigoMoneda="PEN",Total=100m}},
             OpcionesCosto=new[]{new{CostoProveedorId=2L,NumeroPresupuesto="202611000002",Descripcion="Trabajo uno",Importe=50m},
                 new{CostoProveedorId=3L,NumeroPresupuesto="202611000003",Descripcion="Trabajo dos",Importe=40m}}
                 .Where(row => string.IsNullOrEmpty(search) || row.NumeroPresupuesto.Contains(search) ||
@@ -85,7 +87,14 @@ public sealed class TestCommercialDocumentRepository : ICommercialDocumentReposi
     }
 
     public Task<long> SaveAsync(string actor,bool sales,CommercialDocument document,long? id,CancellationToken ct)
-    { Saved=document;return Task.FromResult(1L); }
+    { Saved=document;SavedDocumentId=id;return Task.FromResult(id??1L); }
+    public bool DeletionBlocked {get;set;}
+    public long? DeletedId {get;private set;}
+    public Task DeleteAsync(string actor,bool sales,long id,string version,CancellationToken ct)
+    {
+        DeletedId=id;
+        return Task.CompletedTask;
+    }
     public Task ImportBatchAsync(string actor,bool sales,IReadOnlyList<(string File,CommercialDocument Document)> files,CancellationToken ct)
     { Saved=files.Last().Document;return Task.CompletedTask; }
     public Task LinkAsync(string actor,bool sales,long id,IReadOnlyList<long> ids,long? budgetId,string? description,decimal? amount,CancellationToken ct,Guid? operationId=null)

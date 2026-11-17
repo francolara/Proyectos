@@ -6,7 +6,7 @@ public sealed record FieldDefinition(string Name, string Label, string Kind, boo
 public sealed record EntityDefinition(string Key, string Title, string DatabaseName, string Permission,
     IReadOnlyList<FieldDefinition> Fields, string? ParentField, bool HasZones);
 public sealed record MaintenanceRow(long Id, string Code, string Description, string Status, string? Extra,
-    DateTimeOffset CreatedAt, string CreatedBy, DateTimeOffset? UpdatedAt, string? UpdatedBy, string? ClientCode = null, string? ClientName = null, string? StoreName = null);
+    DateTimeOffset CreatedAt, string CreatedBy, DateTimeOffset? UpdatedAt, string? UpdatedBy, string? ClientCode = null, string? ClientName = null, string? StoreName = null, bool? AffectedByWithholding = null);
 public sealed record MaintenancePage(IReadOnlyList<MaintenanceRow> Rows, long Total, int Page);
 public sealed record AuditEntry(string Action, string User, DateTimeOffset RecordedAt, string? PreviousState, string? NewState, string? Changes);
 public sealed record RecordSnapshot(long Id, IReadOnlyDictionary<string, JsonElement> Values,
@@ -14,7 +14,7 @@ public sealed record RecordSnapshot(long Id, IReadOnlyDictionary<string, JsonEle
 {
     public string Text(string key) => Values.TryGetValue(key, out var value) && value.ValueKind is not (JsonValueKind.Null or JsonValueKind.Undefined) ? value.ToString() : "";
 }
-public sealed record CatalogOption(string Code, string Label);
+public sealed record CatalogOption(string Code, string Label,decimal? Percentage=null);
 public sealed record ValidationIssue(string Field, string Message);
 public sealed class MaintenanceException(string message) : Exception(message);
 
@@ -25,7 +25,7 @@ public interface IMaintenanceRepository
     Task<long> SaveMaterialTariffAsync(string actor,long materialId,long? id,byte[]? version,string tax,decimal? pen,decimal? usd,bool active,CancellationToken ct=default);
     Task<MaterialTariffPage> MaterialTariffsAsync(string actorId,long materialId,int page,CancellationToken ct=default,string? search=null);
     Task<MaintenancePage> ListAsync(EntityDefinition entity, string actorId, string? search, int page,
-        long? parentId = null, bool activeOnly = false, CancellationToken cancellationToken = default);
+        long? parentId = null, bool activeOnly = false, CancellationToken cancellationToken = default,bool? active=null,bool? affectedByWithholding=null);
     Task<RecordSnapshot?> GetAsync(EntityDefinition entity, string actorId, long id, int auditPage = 1, CancellationToken cancellationToken = default);
     Task<long> SaveAsync(EntityDefinition entity, string actorId, long? id, byte[]? version, string payload, CancellationToken cancellationToken = default);
     Task<IReadOnlyDictionary<string, IReadOnlyList<CatalogOption>>> CatalogsAsync(string actorId, CancellationToken cancellationToken = default);

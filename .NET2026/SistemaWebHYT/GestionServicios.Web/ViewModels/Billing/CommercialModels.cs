@@ -34,7 +34,7 @@ public sealed record CommercialPage(string Scope, JsonElement Data, bool CanEdit
     public static string Number(JsonElement row) => Text(row, "Serie") is { Length: > 0 } series ? $"{series}-{Text(row,"Numero")}" : "Borrador";
 }
 
-public sealed record CommercialForm(string Scope, JsonElement Data, CommercialInput Input, long? ClientId, long? BudgetId, DateOnly Today)
+public sealed record CommercialForm(string Scope, JsonElement Data, CommercialInput Input, long? ClientId, long? BudgetId, DateOnly Today, long? DocumentId = null)
 {
     public bool Sales => Scope == "ventas";
     public decimal? TaxRate => ReadTaxRate(Data);
@@ -59,6 +59,8 @@ public sealed class CommercialInput
     public string? NombreTercero { get; set; }
     public string FormaPago { get; set; } = "Contado";
     public int? PlazoPagoDias { get; set; }
+    public DateOnly? FechaVencimientoEdicion { get; set; }
+    public string? VersionEdicion { get; set; }
     public long? OrdenCompraId { get; set; }
     public string? CodigoDetraccion { get; set; }
     public string? MonedaDetraccion { get; set; }
@@ -77,12 +79,14 @@ public sealed class CommercialInput
         _ => null
     };
 
-    public CommercialDocument ToDocument(decimal rate, bool sales)
+    public CommercialDocument ToDocument(decimal rate, bool sales, bool editing = false)
     {
-        var dueDate = DueDate;
-        if (dueDate is null)
+        var dueDate = editing ? FechaVencimientoEdicion : DueDate;
+        if (!editing && dueDate is null)
             throw new FormatException("Selecciona Contado o Crédito con un plazo que permita calcular una fecha de vencimiento válida.");
-        if (Detalle.Any(line => line.Cantidad != decimal.Truncate(line.Cantidad)))
+        if (editing && dueDate < Fecha)
+            throw new FormatException("El vencimiento no puede ser anterior a la fecha de emisión.");
+        if (!editing && Detalle.Any(line => line.Cantidad != decimal.Truncate(line.Cantidad)))
             throw new FormatException("La cantidad de cada ítem debe ser un número entero.");
 
         var lines = Detalle.Select(line => line with { Importe = BudgetAmounts.Round(line.Cantidad * line.Precio) }).ToArray();
@@ -102,6 +106,6 @@ public sealed class CommercialInput
             withholdingCurrency, withholdingCode, isCreditNote ? ReferenciaNota?.Trim() : null,
             isCreditNote && !sales ? MotivoNota?.Trim() : null, Presupuestos,
             OperacionId: OperacionId, FechaVencimiento: dueDate, OrdenCompraId: sales ? OrdenCompraId : null,
-            CodigoMotivoNota: isCreditNote && sales ? CodigoMotivoNota : null);
+            CodigoMotivoNota: isCreditNote && sales ? CodigoMotivoNota : null, VersionEdicion: editing ? VersionEdicion : null);
     }
 }

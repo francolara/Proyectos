@@ -11,6 +11,8 @@
 -- Description:   Actualiza consultas y filtros del dashboard, navegación comercial y resultados vacíos según fuentes de esta etapa.
 -- =============================================
 
+-- Firma: FRANCO LARA | Create date: 17/11/2026 | Actualiza la integración de Facturado de OC con Emisión de comprobantes.
+
 -- Fuente: Tablas/PresupuestoCorrelativoMensual.sql
 USE [SistemaWebHYT];
 GO
@@ -536,6 +538,9 @@ BEGIN
             revision.CodigoMoneda,revision.Subtotal,revision.Impuesto,revision.Total,revision.FechaAprobacion,
             p.FechaRegistro,creador.Nombres AS UsuarioRegistro,p.FechaActualizacion,editor.Nombres AS UsuarioActualizacion,
             oc.OrdenCompraId,oc.NumeroOCCliente,oc.Estado AS EstadoOC,oc.RevisionId AS RevisionOC,guia.GuiaId,guia.NumeroActa,guia.Estado AS EstadoGuia,ejecucion.EjecucionId,
+            CONVERT(BIT,CASE WHEN dbo.fn_HYTPermiso(@UsuarioId,N'FACTURADO.CONSULTAR')=1 AND (
+                (oc.OrdenCompraId IS NULL AND EXISTS(SELECT 1 FROM dbo.ComprobanteHYTPresupuesto AS v INNER JOIN dbo.ComprobanteHYT AS c ON c.ComprobanteId=v.ComprobanteId WHERE v.PresupuestoId=p.PresupuestoId AND c.EsVenta=1 AND c.Tipo IN('01','03') AND c.Serie IS NOT NULL))
+                OR EXISTS(SELECT 1 FROM dbo.ReferenciaComprobanteExterno AS factura WHERE factura.OrdenCompraId=oc.OrdenCompraId AND factura.Vigente=1)) THEN 1 ELSE 0 END) AS Facturado,
             (SELECT COUNT_BIG(1) FROM dbo.GuiaArchivo AS vinculo INNER JOIN dbo.ArchivoAdjunto AS archivo ON archivo.ArchivoId=vinculo.ArchivoId AND archivo.Retirado=0 WHERE vinculo.GuiaId=guia.GuiaId) AS AdjuntosGuia
         INTO #Pagina FROM dbo.Presupuesto AS p
         OUTER APPLY (SELECT TOP (1) r.RevisionId,r.NumeroRevision,r.ClienteNombre,r.TiendaNombre,r.Estado,r.CodigoMoneda,r.Subtotal,r.Impuesto,r.Total,r.FechaAprobacion,r.FechaActualizacion,r.UsuarioActualizacion
@@ -547,10 +552,25 @@ BEGIN
         LEFT JOIN dbo.Ejecucion AS ejecucion ON ejecucion.PresupuestoId=p.PresupuestoId
         WHERE p.FechaRegistro>=@Desde AND p.FechaRegistro<@HastaExclusiva AND (@TipoAtencion IS NULL OR p.TipoAtencion=@TipoAtencion) AND (@PendienteGuia=0 OR guia.GuiaId IS NULL) AND (@PendienteOC=0 OR oc.OrdenCompraId IS NULL)
           AND (@Cliente IS NULL OR revision.ClienteNombre LIKE N'%'+@Cliente+N'%') AND (@Tienda IS NULL OR revision.TiendaNombre LIKE N'%'+@Tienda+N'%')
-            AND (@Busqueda IS NULL OR p.NumeroPresupuesto LIKE @Patron ESCAPE N'~' OR p.Descripcion LIKE @Patron ESCAPE N'~' OR revision.ClienteNombre LIKE @Patron ESCAPE N'~' OR revision.TiendaNombre LIKE @Patron ESCAPE N'~');
+            AND (@Busqueda IS NULL OR p.NumeroPresupuesto LIKE @Patron ESCAPE N'~' OR p.Descripcion LIKE @Patron ESCAPE N'~' OR revision.ClienteNombre LIKE @Patron ESCAPE N'~' OR revision.TiendaNombre LIKE @Patron ESCAPE N'~'
+                OR EXISTS (SELECT 1 FROM dbo.PresupuestoPartida AS partida
+                    WHERE partida.RevisionId=revision.RevisionId AND partida.Descripcion LIKE @Patron ESCAPE N'~'));
         SELECT pagina.PresupuestoId,pagina.NumeroInterno,pagina.Descripcion,pagina.TipoAtencion,pagina.ClienteId,pagina.TiendaId,
             pagina.RevisionId,pagina.NumeroRevision,pagina.ClienteNombre,pagina.TiendaNombre,pagina.Estado,pagina.CodigoMoneda,pagina.Subtotal,pagina.Impuesto,pagina.Total,pagina.FechaAprobacion,
-            pagina.FechaRegistro,pagina.UsuarioRegistro,pagina.FechaActualizacion,pagina.UsuarioActualizacion,pagina.OrdenCompraId,pagina.NumeroOCCliente,pagina.GuiaId,pagina.NumeroActa,pagina.EstadoGuia,pagina.AdjuntosGuia,pagina.EjecucionId
+            pagina.FechaRegistro,pagina.UsuarioRegistro,pagina.FechaActualizacion,pagina.UsuarioActualizacion,pagina.OrdenCompraId,pagina.NumeroOCCliente,pagina.GuiaId,pagina.NumeroActa,pagina.EstadoGuia,pagina.AdjuntosGuia,pagina.EjecucionId,pagina.Facturado,
+            CASE WHEN pagina.Facturado=1 THEN (
+                SELECT STRING_AGG(CONVERT(NVARCHAR(MAX), comprobantes.Numero),N', ') WITHIN GROUP (ORDER BY comprobantes.Numero)
+                FROM (
+                    SELECT CONCAT(c.Serie,N'-',c.Numero) AS Numero
+                    FROM dbo.ComprobanteHYTPresupuesto AS vinculo
+                    INNER JOIN dbo.ComprobanteHYT AS c ON c.ComprobanteId=vinculo.ComprobanteId
+                    WHERE pagina.OrdenCompraId IS NULL AND vinculo.PresupuestoId=pagina.PresupuestoId AND c.EsVenta=1 AND c.Tipo IN ('01','03') AND c.Serie IS NOT NULL
+                    UNION
+                    SELECT CONCAT(referencia.Serie,N'-',referencia.NumeroDocumento)
+                    FROM dbo.ReferenciaComprobanteExterno AS referencia
+                    WHERE referencia.OrdenCompraId=pagina.OrdenCompraId AND referencia.Vigente=1
+                ) AS comprobantes
+            ) END AS Comprobantes
         FROM #Pagina AS pagina WHERE (@Estado IS NULL OR pagina.Estado=@Estado) ORDER BY pagina.FechaRegistro DESC,pagina.PresupuestoId DESC OFFSET (CONVERT(BIGINT,@Pagina)-1)*20 ROWS FETCH NEXT 20 ROWS ONLY;
         SELECT COUNT_BIG(1) AS Total FROM #Pagina AS pagina WHERE (@Estado IS NULL OR pagina.Estado=@Estado);
         SELECT pagina.Estado,COUNT_BIG(1) AS Cantidad FROM #Pagina AS pagina GROUP BY pagina.Estado;
@@ -593,6 +613,76 @@ BEGIN
 END;
 GO
 
+-- Fuente: Tablas/ReferenciaComprobanteHistorial.sql
+USE [SistemaWebHYT];
+GO
+SET NOCOUNT ON;
+IF OBJECT_ID(N'dbo.ReferenciaComprobanteHistorial',N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ReferenciaComprobanteHistorial
+    (
+        ReferenciaId BIGINT NOT NULL CONSTRAINT PK_ReferenciaComprobanteHistorial PRIMARY KEY,
+        OrdenCompraId BIGINT NOT NULL REFERENCES dbo.OrdenCompraCliente(OrdenCompraId),
+        ComprobanteId BIGINT NOT NULL,
+        FechaDocumento DATE NOT NULL,
+        CodigoTipoDocumento NVARCHAR(2) NOT NULL,
+        Serie NVARCHAR(30) NOT NULL,
+        NumeroDocumento NVARCHAR(50) NOT NULL,
+        FechaRegistro DATETIME2(3) NOT NULL,
+        UsuarioRegistro NVARCHAR(128) NOT NULL REFERENCES dbo.AspNetUsers(Id),
+        FechaRetiro DATETIME2(3) NOT NULL,
+        MotivoRetiro NVARCHAR(1000) NOT NULL
+    );
+    CREATE INDEX IX_ReferenciaComprobanteHistorial_Orden
+        ON dbo.ReferenciaComprobanteHistorial(OrdenCompraId,ReferenciaId DESC);
+END;
+GO
+
+-- Fuente: Script/065_ReferenciaComprobanteEmitido.sql
+USE [SistemaWebHYT];
+GO
+SET NOCOUNT ON;
+IF COL_LENGTH(N'dbo.ReferenciaComprobanteExterno',N'ComprobanteId') IS NULL
+    ALTER TABLE dbo.ReferenciaComprobanteExterno ADD ComprobanteId BIGINT NULL;
+GO
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID(N'dbo.ReferenciaComprobanteExterno')
+        AND name=N'ConfirmacionId' AND is_nullable=0)
+    ALTER TABLE dbo.ReferenciaComprobanteExterno ALTER COLUMN ConfirmacionId BIGINT NULL;
+GO
+IF OBJECT_ID(N'dbo.CK_ReferenciaComprobante_Origen',N'C') IS NULL
+    ALTER TABLE dbo.ReferenciaComprobanteExterno ADD CONSTRAINT CK_ReferenciaComprobante_Origen
+        CHECK ((ComprobanteId IS NULL AND ConfirmacionId IS NOT NULL)
+            OR (ComprobanteId IS NOT NULL AND ConfirmacionId IS NULL AND Vigente=1));
+GO
+CREATE OR ALTER TRIGGER dbo.tr_ReferenciaComprobante_Requisitos
+ON dbo.ReferenciaComprobanteExterno
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    IF EXISTS
+    (
+        SELECT 1 FROM inserted AS referencia
+        INNER JOIN dbo.OrdenCompraCliente AS oc WITH (UPDLOCK, HOLDLOCK) ON oc.OrdenCompraId = referencia.OrdenCompraId
+        INNER JOIN dbo.ConfirmacionFacturacion AS confirmacion WITH (UPDLOCK, HOLDLOCK)
+            ON confirmacion.ConfirmacionId = referencia.ConfirmacionId
+        WHERE referencia.Vigente = 1 AND referencia.ComprobanteId IS NULL AND
+        (
+            confirmacion.Vigente = 0 OR oc.Estado = N'CANCELADA'
+            OR NOT EXISTS (SELECT 1 FROM dbo.GuiaConformidad AS guia WITH (UPDLOCK, HOLDLOCK)
+                WHERE guia.PresupuestoId = oc.PresupuestoId)
+            OR confirmacion.OrdenCompraId <> oc.OrdenCompraId
+            OR (oc.Estado NOT IN (N'TRABAJO_COMPLETADO', N'CERRADA_OPERATIVAMENTE') AND
+                (NOT EXISTS (SELECT 1 FROM dbo.Ejecucion AS ejecucion WITH (UPDLOCK, HOLDLOCK)
+                    WHERE ejecucion.PresupuestoId = oc.PresupuestoId AND ejecucion.Estado = N'TERMINADA')
+                OR EXISTS (SELECT 1 FROM dbo.Ejecucion AS pendiente WITH (UPDLOCK, HOLDLOCK)
+                    WHERE pendiente.PresupuestoId = oc.PresupuestoId AND pendiente.Estado NOT IN (N'TERMINADA', N'CANCELADA'))))
+        )
+    )
+        THROW 51013, N'El marcado Facturado requiere OC valida, trabajo terminado, guia registrada y confirmacion vigente.', 1;
+END;
+GO
+
 -- Fuente: StoreProcedure/spu_Presupuesto_Obtener.sql
 USE [SistemaWebHYT];
 GO
@@ -623,7 +713,12 @@ BEGIN
         WHERE EXISTS(SELECT 1 FROM dbo.OrdenCompraArchivo AS vinculo INNER JOIN @Referencias AS referencia ON referencia.Entidad=N'OrdenCompraCliente' AND referencia.RegistroId=CONVERT(NVARCHAR(100),vinculo.OrdenCompraId) WHERE vinculo.ArchivoId=archivo.ArchivoId)
            OR EXISTS(SELECT 1 FROM dbo.GuiaArchivo AS vinculo INNER JOIN @Referencias AS referencia ON referencia.Entidad=N'GuiaConformidad' AND referencia.RegistroId=CONVERT(NVARCHAR(100),vinculo.GuiaId) WHERE vinculo.ArchivoId=archivo.ArchivoId)
            OR EXISTS(SELECT 1 FROM dbo.ConfirmacionArchivo AS vinculo INNER JOIN @Referencias AS referencia ON referencia.Entidad=N'ConfirmacionFacturacion' AND referencia.RegistroId=CONVERT(NVARCHAR(100),vinculo.ConfirmacionId) WHERE vinculo.ArchivoId=archivo.ArchivoId);
-        SELECT (SELECT p.PresupuestoId,p.NumeroPresupuesto AS NumeroInterno,p.ClienteId,p.TiendaId,p.TipoAtencion,p.Descripcion,p.FechaSolicitud,p.FechaRegistro,p.FechaActualizacion,p.VersionFila,
+        SELECT (SELECT p.PresupuestoId,p.NumeroPresupuesto AS NumeroInterno,
+            CONVERT(BIT,CASE WHEN ((oc.OrdenCompraId IS NULL AND EXISTS(SELECT 1 FROM dbo.ComprobanteHYTPresupuesto AS v INNER JOIN dbo.ComprobanteHYT AS c ON c.ComprobanteId=v.ComprobanteId
+                WHERE v.PresupuestoId=p.PresupuestoId AND c.EsVenta=1 AND c.Tipo IN('01','03') AND c.Serie IS NOT NULL))
+                OR EXISTS(SELECT 1 FROM dbo.ReferenciaComprobanteExterno AS referenciaEmitida
+                    WHERE referenciaEmitida.OrdenCompraId=oc.OrdenCompraId AND referenciaEmitida.Vigente=1 AND referenciaEmitida.ComprobanteId IS NOT NULL))
+                AND EXISTS(SELECT 1 FROM @Permisos AS vista WHERE vista.Codigo=N'FACTURADO.CONSULTAR') THEN 1 ELSE 0 END) AS FacturadoComprobante,p.ClienteId,p.TiendaId,p.TipoAtencion,p.Descripcion,p.FechaSolicitud,p.FechaRegistro,p.FechaActualizacion,p.VersionFila,
             creador.Nombres AS UsuarioRegistro,editor.Nombres AS UsuarioActualizacion,contactosTienda.Nombres AS ContactosTienda,
             JSON_QUERY((SELECT revision.RevisionId, revision.PresupuestoId, revision.NumeroRevision, revision.FechaEmision, revision.NumeroCotizacionCliente, revision.ClienteNombre, revision.ClienteDocumento, revision.ClienteDireccion, revision.TiendaNombre, revision.TiendaDireccion, revision.FechaEjecucion, revision.Trimestre, revision.VigenciaTexto, revision.CodigoSAPProveedor, revision.ContratoMarco, revision.Especialidad, revision.Coordinador, revision.Encargado, revision.Consideraciones, revision.Firmante, revision.CargoFirmante, revision.CodigoMoneda, revision.CodigoTipoIGV, revision.FechaDesdeTasaIGV, revision.TasaIGVAplicada, revision.Estado, revision.Subtotal, revision.Impuesto, revision.Total, revision.FechaRegistro, revision.UsuarioRegistro, revision.FechaActualizacion, revision.UsuarioActualizacion, revision.VersionFila, revision.ZonaTexto, revision.EmpresaSnapshotJson, revision.PoliticaCalculo, revision.FechaAprobacion, revision.DescripcionTrabajo, revision.SimboloMoneda, revision.TiendaCodigo FROM dbo.PresupuestoRevision AS revision WHERE revision.RevisionId=@RevisionId AND revision.PresupuestoId=p.PresupuestoId FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)) AS Revision,
             JSON_QUERY((SELECT partida.PartidaId, partida.NumeroLinea, partida.Grupo, partida.MaterialId, partida.PartidaTarifarioId, partida.Posicion, partida.CodigoInterno, partida.CodigoMaterialSAP, COALESCE(NULLIF(LTRIM(RTRIM(partida.CentroSAPFICO)),N''),tienda.CentroSAPFICO) AS CentroSAPFICO, partida.NumeroNecesidad, partida.TipoServicio, partida.Descripcion, partida.Unidad, partida.Cantidad, partida.PrecioOrigen, partida.CodigoMonedaOrigen, partida.CodigoTipoIGVOrigen, partida.PrecioUnitario, partida.BaseImponible, partida.Impuesto, partida.Total, partida.ZonasTexto, partida.OrigenPrecio, partida.MotivoPrecioManual FROM dbo.PresupuestoPartida AS partida WHERE partida.RevisionId=@RevisionId ORDER BY partida.NumeroLinea FOR JSON PATH,INCLUDE_NULL_VALUES)) AS Partidas,

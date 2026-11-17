@@ -1,3 +1,4 @@
+// Firma: FRANCO LARA - 17/11/2026 | Muestra guía y OC en la ayuda de presupuestos para ventas. Permite cambiar cliente y presupuestos en la edición sin salir del formulario y filtra las series de emisión por tipo.
 // Firma: FRANCO LARA - 10/11/2026 | Ayudas de terceros, búsqueda de presupuestos y cálculo automático de importes, subtotal, IGV, total y detracción con moneda de depósito en compras.
 import { setDialog } from "./hyt-ui.js";
 function searchOptions(form, inputSelector, selectSelector, statusSelector, endpoint, idKey, label) {
@@ -39,7 +40,24 @@ if (form) {
     const currency = form.querySelector('[name="Input.Moneda"]');
     const date = form.querySelector('[name="Input.Fecha"]');
     const type = form.querySelector('[name="Input.Tipo"]');
-    const payment = form.querySelector('[data-commercial-payment]');
+    const series = form.querySelector('[data-commercial-series]');
+    if (series) {
+        const note = form.querySelector('[data-commercial-series-note]');
+        const filterSeries = () => {
+            const options = [...series.querySelectorAll('[data-series-type]')];
+            const selected = series.value;
+            for (const option of options)
+                option.disabled = option.hidden = option.dataset.seriesType !== type.value;
+            const allowed = options.filter(option => !option.disabled);
+            const match = allowed.find(option => option.value === selected);
+            series.selectedIndex = match ? match.index : 0;
+            note.hidden = allowed.length > 0;
+        };
+        type.addEventListener('change', filterSeries);
+        filterSeries();
+    }
+
+    const payment = form.querySelector('[data-commercial-payment]:not([data-commercial-payment=manual])');
     if (payment) {
         const method = payment.querySelector('[name="Input.FormaPago"]');
         const term = payment.querySelector('[name="Input.PlazoPagoDias"]');
@@ -298,7 +316,26 @@ if (lookup && form) {
                 button.className = 'hyt-button-secondary hyt-action-button';
                 button.textContent = 'Seleccionar';
                 button.addEventListener('click', () => {
-                    if (sales) {
+                    if (sales && form.dataset.commercialEdit === 'true') {
+                        const client = form.querySelector('[name="clienteId"]');
+                        if (client.value !== String(party.ClienteId)) {
+                            client.value = party.ClienteId;
+                            form.querySelector('[data-order-clear]')?.click();
+                            form.querySelector('[data-commercial-edit-budgets]')?.replaceChildren();
+                            const noteReference = form.querySelector('[data-credit-note-reference]');
+                            if (noteReference) noteReference.value = '';
+                            for (const [element, key] of [
+                                [form.querySelector('[data-commercial-order-picker]'), 'orderUrl'],
+                                [document.querySelector('#commercial-budget-lookup'), 'budgetUrl'],
+                                [document.querySelector('#commercial-invoice-lookup'), 'invoiceUrl']
+                            ]) {
+                                if (!element?.dataset[key]) continue;
+                                const url = new URL(element.dataset[key], location.origin);
+                                url.searchParams.set('clienteId', party.ClienteId);
+                                element.dataset[key] = url.href;
+                            }
+                        }
+                    } else if (sales) {
                         const page = new URL(lookup.dataset.commercialNewUrl, location.origin);
                         page.searchParams.set('clienteId', party.ClienteId);
                         location.assign(page);
@@ -417,6 +454,33 @@ if (budgetLookup) {
                 const row = results.insertRow();
                 row.insertCell().textContent = budget.NumeroPresupuesto;
                 row.insertCell().textContent = budget.Descripcion;
+                row.insertCell().textContent = budget.NumeroGuia ?? "—";
+                row.insertCell().textContent = budget.NumeroOCCliente;
+                const selectedBudgets = form?.querySelector('[data-commercial-edit-budgets]');
+                if (selectedBudgets) {
+                    const add = document.createElement('button');
+                    add.type = 'button';
+                    add.className = 'hyt-button-secondary hyt-action-button';
+                    add.textContent = 'Agregar';
+                    add.addEventListener('click', () => {
+                        let check = [...selectedBudgets.querySelectorAll('input')]
+                            .find(item => item.value === String(budget.PresupuestoId));
+                        if (!check) {
+                            const label = document.createElement('label');
+                            label.className = 'hyt-budget-revalue';
+                            check = document.createElement('input');
+                            check.type = 'checkbox';
+                            check.name = 'Input.Presupuestos';
+                            check.value = budget.PresupuestoId;
+                            label.append(check, ' ' + budget.NumeroPresupuesto);
+                            selectedBudgets.append(label);
+                        }
+                        check.checked = true;
+                        setDialog(budgetLookup, false);
+                    });
+                    row.insertCell().append(add);
+                    continue;
+                }
                 const page = new URL(budgetLookup.dataset.budgetNewUrl, location.origin);
                 page.searchParams.set('presupuestoId', budget.PresupuestoId);
                 const select = document.createElement('a');
@@ -426,7 +490,7 @@ if (budgetLookup) {
                 row.insertCell().append(select);
             }
             status.textContent = budgets.length === 100 ? 'Se muestran 100 presupuestos. Usa la búsqueda para acotar los resultados.'
-                : budgets.length ? '' : 'No se encontraron presupuestos para este cliente.';
+                : budgets.length ? '' : 'No se encontraron presupuestos con OC pendiente de facturar.';
         } catch {
             if (!request.signal.aborted) status.textContent = 'No se pudo consultar la lista de presupuestos. Vuelve a intentarlo.';
         }

@@ -1,3 +1,4 @@
+// Firma: FRANCO LARA - 17/11/2026 | Precarga y recupera la firma elegida del presupuesto.
 // Firma: FRANCO LARA - 06/11/2026 | Consulta de tarifas genéricas con cliente pendiente; cambio de moneda automático en detalle neto. Estados desde listado, nombres comerciales y edición de observados. Botón y columna documental identificados como Guía. Botones documentales con borde rojo cuando existen y acceso directo al detalle/adjuntos. Columna Revisión retirada del listado de presupuestos. OC registrada abre el mismo pop-up de edición que su listado, con retorno a presupuestos. KPI SQL por estado, tipo y pendientes; sin filtros visibles separados de cliente/tienda. Guía abre consulta compartida en popup; Ejecución abre ficha de registro/edición sin pantalla antigua de estados.
 using System.Globalization;
 using System.Security.Claims;
@@ -93,6 +94,9 @@ public sealed class BudgetController(IBudgetRepository repository,TimeProvider c
         var defaults=await repository.DefaultsAsync(Actor,Today,null,null,ct);
         if(defaults.TryGetProperty("Empresa",out var company)&&company.ValueKind==JsonValueKind.Object)
         { input.Draft.Revision["Consideraciones"]=BudgetRecord.Text(company,"ConsideracionesPresupuesto"); }
+        if(defaults.TryGetProperty("Firmas",out var signatures))
+            input.Draft.Revision["FirmaId"]=signatures.EnumerateArray().FirstOrDefault(item=>item.GetProperty("Predeterminada").GetBoolean()).ValueKind==JsonValueKind.Object
+                ? signatures.EnumerateArray().First(item=>item.GetProperty("Predeterminada").GetBoolean()).GetProperty("FirmaId").ToString() : null;
         return View("Form",new BudgetFormModel(input,null,defaults,false,CanEdit,"Sin seleccionar","Sin seleccionar"));
     }
 
@@ -101,6 +105,21 @@ public sealed class BudgetController(IBudgetRepository repository,TimeProvider c
     [HttpGet("{id:long}/Editar")]
     [Authorize(Policy="perm:PRESUPUESTOS.MODIFICAR")]
     public Task<IActionResult> Edit(long id,long? revisionId,string? returnUrl,CancellationToken ct)=>Read(id,revisionId,returnUrl,false,false,1,ct);
+    [HttpPost("{id:long}/Firma")]
+    public async Task<IActionResult> SelectSignature(long id,long revisionId,long signatureId,string? version,string? returnUrl,CancellationToken ct)
+    {
+        if(!CanEdit)return Forbid();
+        try
+        {
+            byte[] bytes;
+            try {bytes=Convert.FromBase64String(version??"");}catch(FormatException){return BadRequest("Vuelve a abrir el presupuesto.");}
+            if(bytes.Length!=8||signatureId<=0)return BadRequest("Selecciona una firma activa.");
+            await repository.SetSignatureAsync(Actor,id,revisionId,bytes,signatureId,ct);
+        }
+        catch(MaintenanceException error){TempData["Notice"]=error.Message;}
+        return RedirectToAction(nameof(Details),new{id,revisionId,returnUrl=Back(returnUrl)});
+    }
+
     [HttpGet("{id:long}/NuevaRevision")]
     [Authorize(Policy="perm:PRESUPUESTOS.MODIFICAR")]
     public Task<IActionResult> NewRevision(long id,long revisionId,string? returnUrl,CancellationToken ct)=>Read(id,revisionId,returnUrl,false,true,1,ct);
@@ -127,6 +146,13 @@ public sealed class BudgetController(IBudgetRepository repository,TimeProvider c
         if(string.IsNullOrEmpty(input.Draft.Descripcion))input.Draft.Descripcion=record.Text("Descripcion");
         input.Draft.FechaSolicitud=record.Text("FechaSolicitud") is {Length:>=10} requested?requested[..10]:null;
         foreach(var field in BudgetDraftRules.HeaderFields)input.Draft.Revision[field.Name]=BudgetRecord.Text(revision,field.Name);
+        var signatureSnapshot=BudgetRecord.Text(revision,"EmpresaSnapshotJson");
+        if(!string.IsNullOrWhiteSpace(signatureSnapshot))
+        {
+            using var snapshot=JsonDocument.Parse(signatureSnapshot);
+            if(snapshot.RootElement.TryGetProperty("FirmaId",out var signatureId))
+                input.Draft.Revision["FirmaId"]=signatureId.ToString();
+        }
         foreach(var line in record.Data.GetProperty("Partidas").EnumerateArray())
         {
             long? Id(string name)=>line.GetProperty(name).ValueKind==JsonValueKind.Null?null:line.GetProperty(name).GetInt64();

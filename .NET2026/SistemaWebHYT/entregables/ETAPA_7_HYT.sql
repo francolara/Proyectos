@@ -7,6 +7,8 @@
 
 -- Firma: FRANCO LARA | Create date: 06/11/2026 | Guía como documento sin estados. Facturado admite OC completada con guía y confirmación vigente.
 
+-- Firma: FRANCO LARA | Create date: 17/11/2026 | Actualiza la integración de Facturado de OC con Emisión de comprobantes.
+
 -- Fuente: StoreProcedure/spu_Facturado_Guardar.sql
 USE [SistemaWebHYT];
 GO
@@ -44,6 +46,9 @@ BEGIN
         IF @Bloqueo IS NULL THROW 51504,N'[HYT_VALIDACION] La OC no existe.',1;
         IF NOT EXISTS(SELECT 1 FROM dbo.OrdenCompraCliente AS oc WITH(UPDLOCK,HOLDLOCK) WHERE oc.OrdenCompraId=@OrdenCompraId AND oc.VersionFila=@VersionOC AND oc.Estado<>N'CANCELADA')
             THROW 51505,N'[HYT_CONCURRENCIA] La OC cambió o está cancelada. Vuelve a consultarla.',1;
+        IF EXISTS (SELECT 1 FROM dbo.ReferenciaComprobanteExterno AS referencia WITH(UPDLOCK,HOLDLOCK)
+            WHERE referencia.OrdenCompraId=@OrdenCompraId AND referencia.Vigente=1 AND referencia.ComprobanteId IS NOT NULL)
+            THROW 51507,N'[HYT_VALIDACION] El comprobante se administra desde Emisión de comprobantes.',1;
         DECLARE @ConfirmacionId BIGINT,@Anterior NVARCHAR(MAX),@Nuevo NVARCHAR(MAX),@EstadoAnterior NVARCHAR(30);
         SELECT @ConfirmacionId=confirmacion.ConfirmacionId FROM dbo.ConfirmacionFacturacion AS confirmacion WITH(UPDLOCK,HOLDLOCK) WHERE confirmacion.OrdenCompraId=@OrdenCompraId AND confirmacion.Vigente=1;
         IF @Retirar=0 AND @ConfirmacionId IS NULL THROW 51506,N'[HYT_VALIDACION] Registra primero la confirmación del cliente de esta OC.',1;
@@ -74,6 +79,11 @@ BEGIN
         UPDATE dbo.OrdenCompraCliente SET FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE OrdenCompraId=@OrdenCompraId;
         UPDATE dbo.Presupuesto SET FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@UsuarioId WHERE PresupuestoId=@PresupuestoId;
         INSERT INTO dbo.DocumentoOperacion(OperacionId,TipoOperacion,PadreId,RegistroId,Huella,UsuarioId) VALUES(@CorrelacionId,N'FACTURADO_GUARDAR',@OrdenCompraId,@ReferenciaId,@Huella,@UsuarioId);
+        IF @Retirar=1 AND OBJECT_ID(N'dbo.spu_Facturado_SincronizarEmision',N'P') IS NOT NULL
+        BEGIN
+            DECLARE @Ordenes NVARCHAR(MAX)=CONCAT(N'[',@OrdenCompraId,N']');
+            EXEC dbo.spu_Facturado_SincronizarEmision @Ordenes;
+        END;
         COMMIT;SET @Propia=0;SELECT @ReferenciaId AS ReferenciaId;
     END TRY
     BEGIN CATCH
@@ -84,7 +94,6 @@ BEGIN
     END CATCH
 END;
 GO
-
 
 -- Fuente: StoreProcedure/spu_Facturado_Obtener.sql
 USE [SistemaWebHYT];
@@ -98,11 +107,20 @@ BEGIN
         IF NOT EXISTS(SELECT 1 FROM dbo.AspNetUsers AS usuario INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId=usuario.Id INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId WHERE usuario.Id=@UsuarioId AND usuario.Activo=1 AND permiso.CodigoPermiso=N'FACTURADO.CONSULTAR')
             THROW 51500,N'[HYT_PERMISO] No tiene permiso para esta referencia de facturación.',1;
         IF @Pagina<1 OR @Pagina>100000000 THROW 51502,N'[HYT_VALIDACION] Página no válida.',1;
+        WITH historial AS (
+            SELECT referencia.ReferenciaId,referencia.OrdenCompraId,referencia.ComprobanteId,referencia.FechaDocumento,
+                referencia.CodigoTipoDocumento,referencia.Serie,referencia.NumeroDocumento,referencia.Vigente,referencia.MotivoRetiro
+            FROM dbo.ReferenciaComprobanteExterno AS referencia WHERE referencia.OrdenCompraId=@OrdenCompraId
+            UNION ALL
+            SELECT archivo.ReferenciaId,archivo.OrdenCompraId,archivo.ComprobanteId,archivo.FechaDocumento,
+                archivo.CodigoTipoDocumento,archivo.Serie,archivo.NumeroDocumento,CONVERT(BIT,0),archivo.MotivoRetiro
+            FROM dbo.ReferenciaComprobanteHistorial AS archivo WHERE archivo.OrdenCompraId=@OrdenCompraId
+        )
         SELECT (SELECT oc.OrdenCompraId,oc.NumeroRegistroInterno,oc.NumeroOCCliente,oc.PresupuestoId,oc.Estado,oc.VersionFila,
             confirmacion.ConfirmacionId,confirmacion.NumeroConfirmacion,confirmacion.FechaConfirmacion,
-            JSON_QUERY((SELECT referencia.ReferenciaId,referencia.ConfirmacionId,referencia.FechaDocumento,referencia.CodigoTipoDocumento,referencia.Serie,referencia.NumeroDocumento,referencia.VersionFila,referencia.FechaRegistro,autor.Nombres AS UsuarioRegistro,referencia.FechaActualizacion,editor.Nombres AS UsuarioActualizacion FROM dbo.ReferenciaComprobanteExterno AS referencia INNER JOIN dbo.AspNetUsers AS autor ON autor.Id=referencia.UsuarioRegistro LEFT JOIN dbo.AspNetUsers AS editor ON editor.Id=referencia.UsuarioActualizacion WHERE referencia.OrdenCompraId=oc.OrdenCompraId AND referencia.Vigente=1 FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)) AS Referencia,
-            JSON_QUERY((SELECT referencia.ReferenciaId,referencia.FechaDocumento,referencia.CodigoTipoDocumento,referencia.Serie,referencia.NumeroDocumento,referencia.Vigente,referencia.MotivoRetiro FROM dbo.ReferenciaComprobanteExterno AS referencia WHERE referencia.OrdenCompraId=oc.OrdenCompraId ORDER BY referencia.ReferenciaId DESC OFFSET (CONVERT(BIGINT,@Pagina)-1)*20 ROWS FETCH NEXT 20 ROWS ONLY FOR JSON PATH,INCLUDE_NULL_VALUES)) AS Historial,
-            (SELECT COUNT_BIG(1) FROM dbo.ReferenciaComprobanteExterno AS referencia WHERE referencia.OrdenCompraId=oc.OrdenCompraId) AS TotalHistorial,
+            JSON_QUERY((SELECT referencia.ReferenciaId,referencia.ComprobanteId,referencia.ConfirmacionId,referencia.FechaDocumento,referencia.CodigoTipoDocumento,referencia.Serie,referencia.NumeroDocumento,referencia.VersionFila,referencia.FechaRegistro,autor.Nombres AS UsuarioRegistro,referencia.FechaActualizacion,editor.Nombres AS UsuarioActualizacion FROM dbo.ReferenciaComprobanteExterno AS referencia INNER JOIN dbo.AspNetUsers AS autor ON autor.Id=referencia.UsuarioRegistro LEFT JOIN dbo.AspNetUsers AS editor ON editor.Id=referencia.UsuarioActualizacion WHERE referencia.OrdenCompraId=oc.OrdenCompraId AND referencia.Vigente=1 FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)) AS Referencia,
+            JSON_QUERY((SELECT referencia.ReferenciaId,referencia.FechaDocumento,referencia.CodigoTipoDocumento,referencia.Serie,referencia.NumeroDocumento,referencia.Vigente,referencia.MotivoRetiro FROM historial AS referencia ORDER BY referencia.ReferenciaId DESC OFFSET (CONVERT(BIGINT,@Pagina)-1)*20 ROWS FETCH NEXT 20 ROWS ONLY FOR JSON PATH,INCLUDE_NULL_VALUES)) AS Historial,
+            (SELECT COUNT_BIG(1) FROM historial) AS TotalHistorial,
             JSON_QUERY((SELECT evento.EventoId,evento.Accion,evento.FechaRegistro,evento.FechaEvento,usuario.Nombres AS Usuario,evento.Motivo,evento.CambiosJson
                 FROM dbo.EventoAuditoria AS evento INNER JOIN dbo.AspNetUsers AS usuario ON usuario.Id=evento.UsuarioId
                 WHERE evento.Entidad=N'ReferenciaComprobanteExterno' AND EXISTS(SELECT 1 FROM dbo.ReferenciaComprobanteExterno AS vinculo WHERE vinculo.OrdenCompraId=oc.OrdenCompraId AND CONVERT(NVARCHAR(100),vinculo.ReferenciaId)=evento.RegistroId)
@@ -117,7 +135,6 @@ BEGIN
     END CATCH
 END;
 GO
-
 
 -- Fuente: Script/018_PermisosEtapa7.sql
 USE [SistemaWebHYT];

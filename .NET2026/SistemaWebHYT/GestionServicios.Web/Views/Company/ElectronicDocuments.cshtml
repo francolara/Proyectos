@@ -1,0 +1,37 @@
+@using GestionServicios.Application.Maintenance
+@using GestionServicios.Web.ViewModels.Billing
+@model (IReadOnlyList<DocumentSeries> Series,bool CanEdit)
+@* Firma: FRANCO LARA - 17/11/2026 | Alta y consulta de series de comprobantes por tipo. *@
+@{ ViewData["Title"]="Comprobantes electrónicos"; }
+<header class="hyt-page-header">
+    <div><h1>Comprobantes electrónicos</h1><p>Series disponibles en Emisión de comprobantes.</p></div>
+    <a asp-action="Index" class="hyt-button-secondary">Volver a Configuración HYT</a>
+</header>
+@if (TempData["Notice"] is string notice) { <p role="status">@notice</p> }
+@if (Model.CanEdit)
+{
+    <form method="post" asp-action="AddDocumentSeries" class="hyt-panel hyt-master-form" data-hyt-save>
+        <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+        <div class="hyt-master-fields">
+            <div class="hyt-field"><label for="series-type">Tipo de comprobante</label>
+                <select name="tipo" id="series-type" required>
+                    <option value="">Selecciona un tipo</option>
+                    <option value="01">Factura</option><option value="03">Boleta</option><option value="07">Nota de crédito</option>
+                </select>
+            </div>
+            <div class="hyt-field"><label for="series-value">Serie</label><input id="series-value" name="serie" maxlength="30" required /></div>
+        </div>
+        <button type="submit" class="hyt-button-primary">Agregar serie</button>
+    </form>
+}
+<section class="hyt-panel hyt-master-form">
+    <h2>Series registradas</h2>
+    @if (Model.Series.Count==0) { <p>Aún no hay series configuradas.</p> }
+    else
+    {
+        <div class="hyt-table-wrap"><table class="hyt-table">
+            <thead><tr><th scope="col">Tipo de comprobante</th><th scope="col">Serie</th></tr></thead>
+            <tbody>@foreach(var item in Model.Series){<tr><td>@CommercialPage.TypeLabel(item.Tipo)</td><td>@item.Serie</td></tr>}</tbody>
+        </table></div>
+    }
+</section>

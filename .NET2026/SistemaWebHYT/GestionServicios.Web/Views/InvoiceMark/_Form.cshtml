@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 17/11/2026 | Consulta de solo lectura para comprobantes de Emisión con historial de referencias archivadas. *@
 @* Firma: FRANCO LARA - 06/11/2026 | Bloquea captura de Facturado sin confirmación vigente del cliente e informa el requisito antes de guardar. *@
 @using GestionServicios.Application.Budgets
 @using GestionServicios.Web.ViewModels.Billing
@@ -8,7 +9,28 @@
 @* Firma: FRANCO LARA - 03/11/2026 | Captura de fecha, tipo 01/03, serie/número y retiro con motivo. *@
 @* Firma: FRANCO LARA - 05/11/2026 | Acciones presentadas como botones HYT; Responsables en franja sin historial general de acciones en edición. *@
 @{var input=Model.Input;var hasConfirmation=long.TryParse(BudgetRecord.Text(Model.Data,"ConfirmacionId"),out var confirmationId)&&confirmationId>0;var canCapture=Model.CanEdit&&(hasConfirmation||input.ReferenceId.HasValue);}
-<form asp-controller="InvoiceMark" asp-action="Save" asp-route-orderId="@input.OrderId" asp-route-popup="@Model.Popup" method="post" class="hyt-panel hyt-master-form" data-hyt-save data-document-form data-document-title="Referencia Facturado">
+@{
+    var fromEmission = Model.Data.TryGetProperty("Referencia",out var activeReference)
+        && activeReference.ValueKind == JsonValueKind.Object
+        && long.TryParse(BudgetRecord.Text(activeReference,"ComprobanteId"),out _);
+}
+<section class="hyt-panel hyt-master-form" data-document-title="Referencia Facturado">
+@if (fromEmission)
+{
+    <p>@BudgetRecord.Text(Model.Data,"NumeroRegistroInterno") · OC cliente @BudgetRecord.Text(Model.Data,"NumeroOCCliente")</p>
+    <p>Comprobante registrado desde Emisión de comprobantes.</p>
+    <dl class="hyt-document-summary">
+        <dt>Fecha del comprobante</dt><dd>@DateOnly.Parse(BudgetRecord.Text(activeReference,"FechaDocumento")[..10],CultureInfo.InvariantCulture).ToString("dd/MM/yyyy")</dd>
+        <dt>Tipo de comprobante</dt><dd>@(BudgetRecord.Text(activeReference,"CodigoTipoDocumento")=="01" ? "Factura (01)" : "Boleta (03)")</dd>
+        <dt>Serie</dt><dd>@BudgetRecord.Text(activeReference,"Serie")</dd>
+        <dt>Número</dt><dd>@BudgetRecord.Text(activeReference,"NumeroDocumento")</dd>
+    </dl>
+    @if (Model.Popup) { <button type="button" class="hyt-button-secondary" data-hyt-close>Cerrar</button> }
+    else { <a class="hyt-button-secondary" href="@input.ReturnUrl">Volver a la OC</a> }
+}
+else
+{
+<form asp-controller="InvoiceMark" asp-action="Save" asp-route-orderId="@input.OrderId" asp-route-popup="@Model.Popup" method="post" data-hyt-save data-document-form data-document-title="Referencia Facturado">
 <input type="hidden" name="OrderId" value="@input.OrderId" /><input type="hidden" name="OrderVersion" value="@input.OrderVersion" /><input type="hidden" name="ReferenceId" value="@input.ReferenceId" /><input type="hidden" name="ReferenceVersion" value="@input.ReferenceVersion" /><input type="hidden" name="OperationId" value="@input.OperationId" /><input type="hidden" name="ReturnUrl" value="@input.ReturnUrl" />
 <p>@BudgetRecord.Text(Model.Data,"NumeroRegistroInterno") · OC cliente @BudgetRecord.Text(Model.Data,"NumeroOCCliente")</p>
 <p>Este registro no emite comprobantes ni los envía a SUNAT.</p>
@@ -28,6 +50,8 @@
 <div class="hyt-form-actions">@if(canCapture){<button type="submit" class="hyt-button-primary">Guardar referencia</button>}
 @if(Model.Popup){<button type="button" class="hyt-button-secondary" data-hyt-close>Cancelar</button>}else{<a class="hyt-button-secondary" href="@input.ReturnUrl">Volver a la OC</a>}
 </div>
+</form>
+}
 @if(Model.Data.TryGetProperty("Historial",out var history)&&history.ValueKind==JsonValueKind.Array&&history.GetArrayLength()>0)
 {
 <h2>Referencias registradas</h2><div class="hyt-table-wrap"><table class="hyt-table"><thead><tr><th>Fecha</th><th>Tipo</th><th>Serie</th><th>Número</th><th>Estado</th><th>Motivo de retiro</th></tr></thead><tbody>
@@ -40,5 +64,5 @@
 </nav>
 }
 
-</form>
+</section>
 @if(Model.Data.TryGetProperty("Referencia",out var traceReference)&&traceReference.ValueKind==JsonValueKind.Object){<partial name="_TraceSummary" model="@(TraceSummary.From(key=>BudgetRecord.Text(traceReference,key)))" />}

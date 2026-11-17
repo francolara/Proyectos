@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 17/11/2026 | Selector de detracciones en diálogo compartido con comprobantes. *@
 @* Firma: FRANCO LARA - 07/11/2026 | Acciones visibles según los permisos del perfil. *@
 @using GestionServicios.Web.ViewModels.Maintenance
 @using GestionServicios.Application.Maintenance
@@ -31,7 +32,7 @@
     var activationLocked = field.Name == "Activo" && Model.Input.Id.HasValue &&
         !User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim, Model.Entity.Permission + ".ACTIVAR");
     var disabled = activationLocked || Model.ReadOnly || field.Kind is "ReadOnly" or "AutoCode" || field.Name=="MaterialId"&&Model.Input.MaterialContextId.HasValue || Model.Input.Id.HasValue && field.Name == Model.Entity.ParentField;
-    <div class="hyt-field @(field.Kind is "LongText" or "Ubigeo"?"hyt-field-wide":null)" data-field="@field.Name">@if (field.Kind != "Date") { <label for="field-@field.Name">@field.Label @(required ? "*" : "")</label> }
+    <div class="hyt-field @(field.Kind is "LongText" or "Ubigeo"?"hyt-field-wide":null)" data-field="@field.Name">@if (field.Kind != "Date") { <label for="@(field.Catalog=="Withholding"?"material-withholding-label":"field-"+field.Name)">@field.Label @(required ? "*" : "")</label> }
     @if (field.Kind == "Reference")
     {
         <div class="hyt-reference" data-reference="@field.Name" data-lookup="@field.Lookup">
@@ -50,6 +51,24 @@
     else if(field.Kind=="LongText")
     {
         <textarea id="field-@field.Name" name="Fields[@field.Name]" rows="3" maxlength="@field.MaxLength" required="@required" readonly="@disabled">@value</textarea>
+    }
+    else if (field.Catalog == "Withholding")
+    {
+        var options=Model.Catalogs.GetValueOrDefault("Withholding")??[];
+        var label=options.FirstOrDefault(option=>option.Code==value)?.Label??value;
+        <div class="hyt-catalog-field">
+            <input id="field-@field.Name" name="Fields[@field.Name]" type="hidden" value="@value" disabled="@disabled" />
+            <input id="material-withholding-label" type="text" readonly value="@label" placeholder="Sin detracción" aria-label="Detracción seleccionada" />
+            @if(!disabled)
+            {
+                <button type="button" class="hyt-button-secondary" data-hyt-open="material-withholding-lookup">Buscar detracción</button>
+                <button type="button" class="hyt-button-secondary" data-withholding-clear="field-@field.Name" data-withholding-label="material-withholding-label">Quitar</button>
+            }
+        </div>
+        @if(!disabled)
+        {
+            <partial name="_WithholdingLookup" model='("material-withholding-lookup","field-"+field.Name,"material-withholding-label",options)' />
+        }
     }
     else if (field.Kind == "Select")
     {

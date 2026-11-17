@@ -1,0 +1,32 @@
+@using GestionServicios.Web.ViewModels.Billing
+@model CommercialPage
+@* Firma: FRANCO LARA - 17/11/2026 | Confirma eliminación de compra o venta sin pagos ni factoring. *@
+@{
+    ViewData["Title"]=Model.Sales ? "Eliminar comprobante" : "Eliminar registro de compra";
+    var record=Model.Data.GetProperty("Documento");
+    var reason=CommercialPage.Text(record,"MotivoEliminacion");
+}
+<header class="hyt-page-header">
+    <div><h1>@ViewData["Title"]</h1><p>@CommercialPage.Number(record) · @CommercialPage.Text(record,"NombreTercero")</p></div>
+    <a class="hyt-button-secondary" asp-action="Index" asp-route-scope="@Model.Scope">Volver al listado</a>
+</header>
+<section class="hyt-panel hyt-master-form">
+    <div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
+    @if(reason.Length>0)
+    {
+        <p role="alert">@reason</p>
+    }
+    else
+    {
+        <p>Se eliminará este registro y sus vínculos @(Model.Sales ? "con los presupuestos y la OC del cliente" : "con los trabajos").</p>
+        @if(Model.Sales){<p>La referencia automática de Facturado pasará al historial de la OC.</p>}
+        else {<p>También se eliminará su detracción pendiente.</p>}
+        <form method="post" asp-action="DeleteConfirmed" asp-route-scope="@Model.Scope" asp-route-id="@CommercialPage.Text(record,"ComprobanteId")" data-hyt-save>
+            <input type="hidden" name="version" value="@CommercialPage.Text(record,"VersionEdicion")" />
+            <div class="hyt-form-actions">
+                <button type="submit" class="hyt-button-primary">Confirmar eliminación</button>
+                <a class="hyt-button-secondary" asp-action="Index" asp-route-scope="@Model.Scope">Cancelar</a>
+            </div>
+        </form>
+    }
+</section>

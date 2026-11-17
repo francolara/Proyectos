@@ -33,15 +33,23 @@
   },
   {
     "path": "StoreProcedure/spu_Presupuesto_Listar.sql",
-    "sha256": "a3980abfaba3551ec048236c8f6ee6b0b4d4aea739293e864c1b281226588e98"
+    "sha256": "0e1f7e5056fc0310549f0e0b96bd4e8b2ce27e2295c25f394f32467d96409283"
   },
   {
     "path": "StoreProcedure/spu_Presupuesto_ListarImpresiones.sql",
     "sha256": "25cf7b472f8b97513a336734d66706655c34ef04562613accd6a5a5b8bc90393"
   },
   {
+    "path": "Tablas/ReferenciaComprobanteHistorial.sql",
+    "sha256": "837d09773f7ff616d8de0a9c502fbf254d503f7c9d4242f028422014f97399da"
+  },
+  {
+    "path": "Script/065_ReferenciaComprobanteEmitido.sql",
+    "sha256": "63252804976bd98694c582631ed0a8b578d3cb322fdee735614c04c331d1a364"
+  },
+  {
     "path": "StoreProcedure/spu_Presupuesto_Obtener.sql",
-    "sha256": "cd08039f8af4a3f032a834acc1f5718da40142873ef86270c64200837bbb3edc"
+    "sha256": "048f5faf1d24c50f3af58f98afc9ffa85ac455b4a7ba0a7b1ce2f44345484327"
   },
   {
     "path": "StoreProcedure/spu_Presupuesto_ObtenerImpresion.sql",
@@ -62,5 +70,9 @@
   {
     "path": "Script/015_PermisosEtapa5.sql",
     "sha256": "bcfe4f9d30b3c583566fafd581a728710880b081045aeca321810f8510a47c48"
+  },
+  {
+    "path": "ETAPA_5_HYT.sql",
+    "sha256": "c45b268b9b00dc93e9da0e532d9d34ca132ea2680471f9b07897ccbe52cabcf7"
   }
 ]

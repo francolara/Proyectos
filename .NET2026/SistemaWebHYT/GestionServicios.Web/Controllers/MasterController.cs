@@ -1,3 +1,4 @@
+// Firma: FRANCO LARA - 17/11/2026 | Filtros de materiales por estado y afectación a detracción, con impresión coherente.
 // Firma: FRANCO LARA - 06/11/2026 | Encabezados Dirección y Cliente simplificados.
 // Firma: FRANCO LARA - 11/11/2026 | Identifica la homologación SUNAT en unidades y muestra Cliente y Tienda en contactos. Agrega reporte filtrado de materiales y servicios.
 using System.Security.Claims;
@@ -26,7 +27,7 @@ public sealed class MasterController(IMaintenanceRepository repository, ILogger<
     private static bool ValidPage(int page) => page is >= 1 and <= 100000000;
 
     [HttpGet("")]
-    public async Task<IActionResult> Index(string entity, string? search, int page = 1, long? parentId = null, CancellationToken ct = default, bool print = false)
+    public async Task<IActionResult> Index(string entity, string? search, int page = 1, long? parentId = null, CancellationToken ct = default, bool print = false,bool? active=null,bool? affectedByWithholding=null)
     {
         if (print && entity != "materiales") return NotFound();
         if(entity=="tarifarios")return RedirectToAction("IndexGlobal","MaterialTariff",new{search,page});
@@ -36,50 +37,53 @@ public sealed class MasterController(IMaintenanceRepository repository, ILogger<
         var definition = MaintenanceDefinitions.Find(entity);
         if (definition is null) return NotFound();
         if (!Allowed(definition, "CONSULTAR")) return Forbid();
-        if (!ValidPage(page) || search?.Length > 200 || parentId <= 0) return BadRequest();
+        if (!ModelState.IsValid || !ValidPage(page) || search?.Length > 200 || parentId <= 0) return BadRequest();
+        if(entity!="materiales") { active=null; affectedByWithholding=null; }
         if (print)
         {
             if (!User.HasClaim(AccessService.PermissionClaim, "REPORTES.IMPRIMIR")) return Forbid();
-            try { return await MaterialListingReport(definition, search, parentId, ct); }
+            try { return await MaterialListingReport(definition, search, parentId, active, affectedByWithholding, ct); }
             catch (MaintenanceException ex) { return BadRequest(ex.Message); }
         }
         MaintenancePage data = new([], 0, page);
         string? error = null;
-        try { data = await repository.ListAsync(definition, Actor, search, page, parentId, cancellationToken: ct); }
+        try { data = await repository.ListAsync(definition, Actor, search, page, parentId, cancellationToken: ct,active:active,affectedByWithholding:affectedByWithholding); }
         catch (Exception ex) when (ex is not OperationCanceledException)
         { logger.LogError(ex, "No se pudo consultar {Entity}", entity); error = "No se pudo cargar el listado. Vuelve a intentarlo."; }
         var query = new Dictionary<string, string> { ["entity"] = entity, ["search"] = search ?? "" };
         if (parentId.HasValue) query["parentId"] = parentId.Value.ToString();
-        var returnUrl = Url.Action(nameof(Index), new { entity, search, page, parentId })!;
+        if(active.HasValue)query["active"]=active.Value.ToString().ToLowerInvariant();
+        if(affectedByWithholding.HasValue)query["affectedByWithholding"]=affectedByWithholding.Value.ToString().ToLowerInvariant();
+        var returnUrl = Url.Action(nameof(Index), new { entity, search, page, parentId,active,affectedByWithholding })!;
         var canEdit = Allowed(definition, "MODIFICAR");
         var showStore = entity == "contactos";
         var showClient = showStore || entity == "tiendas";
         return View(new MaintenanceListModel
         {
-            Entity = definition, Search = search ?? "", ParentId = parentId, CanEdit = Allowed(definition, "CREAR"),
+            Entity = definition, Active=active,AffectedByWithholding=affectedByWithholding, Search = search ?? "", ParentId = parentId, CanEdit = Allowed(definition, "CREAR"),
             Grid = new GridModel
             {
                 Label = definition.Title, Controller = "Master", Query = query, RowQuery = new() { ["entity"] = entity, ["returnUrl"] = returnUrl },
-                Headers = (entity=="unidades"?new[]{"Código interno","Abreviatura"}:new[]{entity=="versiones-tarifario"?"Versión":entity=="partidas-tarifario"?"Posición":"Código interno"}).Concat(new[]{"Descripción"}).Concat(showClient ? ["Código de cliente", "Cliente"] : Array.Empty<string>()).Concat(showStore ? ["Tienda"] : Array.Empty<string>()).Concat(new[]{"Estado",entity=="unidades"?"Código SUNAT":entity is "clientes" or "tiendas"?"Dirección":"Información","Registro","Registrado por","Actualización","Actualizado por"}).ToArray(),
-                Rows = data.Rows.Select(row => new GridRow(row.Id.ToString(), (entity=="unidades"?new[]{row.Id.ToString()}:Array.Empty<string>()).Concat(new[]{row.Code, row.Description}).Concat(showClient ? [row.ClientCode ?? "—", row.ClientName ?? "—"] : Array.Empty<string>()).Concat(showStore ? [row.StoreName ?? "Sin tienda"] : Array.Empty<string>()).Concat(new[]{row.Status, row.Extra ?? "", PeruDate.Display(row.CreatedAt), row.CreatedBy,
+                Headers = (entity=="unidades"?new[]{"Código interno","Abreviatura"}:new[]{entity=="versiones-tarifario"?"Versión":entity=="partidas-tarifario"?"Posición":"Código interno"}).Concat(new[]{"Descripción"}).Concat(showClient ? ["Código de cliente", "Cliente"] : Array.Empty<string>()).Concat(showStore ? ["Tienda"] : Array.Empty<string>()).Concat(entity=="materiales"?new[]{"Afecto a detracción"}:Array.Empty<string>()).Concat(new[]{"Estado",entity=="unidades"?"Código SUNAT":entity is "clientes" or "tiendas"?"Dirección":"Información","Registro","Registrado por","Actualización","Actualizado por"}).ToArray(),
+                Rows = data.Rows.Select(row => new GridRow(row.Id.ToString(), (entity=="unidades"?new[]{row.Id.ToString()}:Array.Empty<string>()).Concat(new[]{row.Code, row.Description}).Concat(showClient ? [row.ClientCode ?? "—", row.ClientName ?? "—"] : Array.Empty<string>()).Concat(showStore ? [row.StoreName ?? "Sin tienda"] : Array.Empty<string>()).Concat(entity=="materiales"?new[]{row.AffectedByWithholding==true?"Sí":"No"}:Array.Empty<string>()).Concat(new[]{row.Status, row.Extra ?? "", PeruDate.Display(row.CreatedAt), row.CreatedBy,
                     row.UpdatedAt.HasValue ? PeruDate.Display(row.UpdatedAt.Value) : "—", row.UpdatedBy ?? "—"}).ToArray(), true, canEdit)).ToArray(),
                 TotalRecords = data.Total, Page = page, Error = error
             }
         });
     }
 
-    private async Task<IActionResult> MaterialListingReport(EntityDefinition definition, string? search, long? parentId, CancellationToken ct)
+    private async Task<IActionResult> MaterialListingReport(EntityDefinition definition, string? search, long? parentId,bool? active,bool? affectedByWithholding, CancellationToken ct)
     {
         var materials = await ListingReport.AllAsync(async page =>
         {
-            var data = await repository.ListAsync(definition, Actor, search, page, parentId, cancellationToken: ct);
+            var data = await repository.ListAsync(definition, Actor, search, page, parentId, cancellationToken: ct,active:active,affectedByWithholding:affectedByWithholding);
             return (data.Rows, data.Total);
         }, row => row.Id);
         var canSeeTariff = User.HasClaim(AccessService.PermissionClaim, "TARIFARIOS.CONSULTAR");
         var canSeeUnits = User.HasClaim(AccessService.PermissionClaim, "UNIDADES.CONSULTAR");
         var headers = new List<string> { "Código interno", "Código SAP", "Descripción", "Unidad" };
         if (canSeeUnits) headers.Add("Código SUNAT");
-        headers.AddRange(["Especialidad", "Detracción", "Zonas", "Estado"]);
+        headers.AddRange(["Especialidad", "Afecto a detracción","Detracción", "Zonas", "Estado"]);
         if (canSeeTariff) headers.AddRange(["Tarifa PEN", "Tarifa USD"]);
 
         var units = new Dictionary<long, string>();
@@ -99,7 +103,7 @@ public sealed class MasterController(IMaintenanceRepository repository, ILogger<
                 }
                 cells.Add(sunatCode ?? "");
             }
-            cells.AddRange([record.Text("EspecialidadIdLabel"), record.Text("CodigoDetraccion"), material.Extra ?? "", material.Status]);
+            cells.AddRange([record.Text("EspecialidadIdLabel"),string.IsNullOrWhiteSpace(record.Text("CodigoDetraccion"))?"No":"Sí", record.Text("CodigoDetraccion"), material.Extra ?? "", material.Status]);
             if (canSeeTariff)
             {
                 var tariffs = await repository.MaterialTariffsAsync(Actor, material.Id, 1, ct);
@@ -109,7 +113,9 @@ public sealed class MasterController(IMaintenanceRepository repository, ILogger<
             }
             rows.Add(cells.ToArray());
         }
-        return View("ListingReport", new ListingReport(definition.Title, [ListingReport.Filter("Buscar", search)], rows.Count,
+        return View("ListingReport", new ListingReport(definition.Title, [ListingReport.Filter("Buscar", search),
+            ListingReport.Filter("Estado",active.HasValue?(active.Value?"Activo":"Inactivo"):"Todos"),
+            ListingReport.Filter("Afecto a detracción",affectedByWithholding.HasValue?(affectedByWithholding.Value?"Sí":"No"):"Todos")], rows.Count,
             new ListingTable(null, headers.ToArray(), rows)));
     }
 

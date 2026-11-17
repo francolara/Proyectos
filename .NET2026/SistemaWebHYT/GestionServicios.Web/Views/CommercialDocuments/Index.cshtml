@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 17/11/2026 | Ofrece edición de comprobantes de venta y compra y unifica el tamaño de las acciones y ofrece eliminar registros sin pagos ni factoring. *@
 @* Firma: FRANCO LARA - 14/11/2026 | Muestra el estado del lote y el saldo de ventas después de aplicar factoring o notas de crédito. *@
 @* Firma: FRANCO LARA - 12/11/2026 | Agrega la impresión del listado con los filtros de la consulta. *@
 @* Firma: FRANCO LARA - 10/11/2026 | Listado de compras y ventas con filtros, pagos y controles compartidos de HYT y fecha de vencimiento. Filtra facturas sin factoring y permite vincular trabajos o presupuestos desde el listado. *@
@@ -91,10 +92,25 @@ else
 {
 <td>@currency @CommercialPage.Money(paid)</td><td>@(det>0?$"{dc} {CommercialPage.Money(dp)} / {CommercialPage.Money(det)}":"—")</td>
 <td>@(CommercialPage.Text(row,"Tipo")=="07"?"Nota de crédito":balance<=0&&dp>=det?"Pagado":paid>0||dp>0?"Pago parcial":"Pendiente")</td>}
-<td><div class="hyt-grid-actions"><a class="hyt-button-secondary hyt-action-button hyt-record-action" asp-action="Details" asp-route-scope="@Model.Scope" asp-route-id="@id">Ver</a>
+<td><div class="hyt-grid-actions hyt-commercial-actions"><a class="hyt-button-secondary hyt-action-button hyt-record-action" asp-action="Details" asp-route-scope="@Model.Scope" asp-route-id="@id">Ver</a>
+@if(Model.CanEdit){
+<a class="hyt-button-secondary hyt-action-button hyt-record-action" asp-action="Edit" asp-route-scope="@Model.Scope" asp-route-id="@id">Editar</a>
+}
 @if(canLink){
 <a class="hyt-button-secondary hyt-action-button" asp-action="LinkForm" asp-route-scope="@Model.Scope" asp-route-id="@id"
    asp-route-retorno="@returnUrl" data-document-open>@(Model.Sales ? "Vincular presupuestos" : "Vincular trabajos")</a>
+}
+@if(Model.CanEdit)
+{
+    var deletionReason=CommercialPage.Text(row,"MotivoEliminacion");
+    if(deletionReason.Length==0)
+    {
+        <a class="hyt-button-secondary hyt-action-button" asp-action="Delete" asp-route-scope="@Model.Scope" asp-route-id="@id">Eliminar</a>
+    }
+    else
+    {
+        <span class="hyt-button-secondary hyt-action-button" aria-disabled="true" title="@deletionReason">Eliminar</span>
+    }
 }
 </div></td></tr>
 }

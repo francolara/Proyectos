@@ -54,33 +54,50 @@ for (const sparkline of document.querySelectorAll('[data-sparkline]')) {
         node('path', { d: 'M ' + line, fill: 'none', stroke: seriesColors[key], 'stroke-width': 2, 'stroke-linejoin': 'round' }));
     sparkline.removeAttribute('hidden');
 }
+// Firma: FRANCO LARA - 17/11/2026 | Pestañas con teclado y detalle del gráfico por rango o punto.
 const coveragePanel = document.querySelector('[data-budget-coverage]');
-coveragePanel?.addEventListener('click', event => {
-    const button = event.target.closest('[data-coverage-select]');
-    if (!button || button.getAttribute('aria-pressed') === 'true') return;
-    const selected = button.dataset.coverageSelect;
-    coveragePanel.querySelectorAll('[data-coverage-select]').forEach(control => {
-        control.setAttribute('aria-pressed', String(control === button));
+const coverageTabs = [...(coveragePanel?.querySelectorAll('[data-coverage-select]') ?? [])];
+function selectCoverage(tab) {
+    coverageTabs.forEach(control => {
+        const active = control === tab;
+        control.setAttribute('aria-selected', String(active));
+        control.tabIndex = active ? 0 : -1;
     });
     coveragePanel.querySelectorAll('[data-coverage-view]').forEach(view => {
-        view.hidden = view.dataset.coverageView !== selected;
+        view.hidden = view.dataset.coverageView !== tab.dataset.coverageSelect;
+    });
+}
+coverageTabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => selectCoverage(tab));
+    tab.addEventListener('keydown', event => {
+        const length = coverageTabs.length;
+        const targets = { ArrowLeft: (index + length - 1) % length, ArrowRight: (index + 1) % length, Home: 0, End: length - 1 };
+        if (!Object.hasOwn(targets, event.key)) return;
+        event.preventDefault();
+        const next = coverageTabs[targets[event.key]];
+        selectCoverage(next);
+        next.focus();
     });
 });
 
 const trend=document.querySelector('[data-chart=trend]'),readout=document.querySelector('[data-chart-readout]'),note=document.querySelector('[data-chart-note]');
-const controls=document.querySelector('.hyt-chart-controls');
-let selector;
+const trendLink = document.querySelector('[data-chart-link]');
 let firstTrendRender = true;
-if(controls){const label=document.createElement('label');label.textContent='Detalle por fecha ';selector=document.createElement('select');selector.setAttribute('aria-label','Consultar intervalo del gráfico');label.append(selector);controls.append(label);}
 const labelFor=bucket=>date(bucket.date)+(bucket.end>bucket.date?' – '+date(bucket.end):'');
-function read(index){const bucket=buckets[index];if(!bucket)return;const selected=[...document.querySelectorAll('[data-chart-series]:checked')].map(input=>input.dataset.chartSeries);readout.textContent=labelFor(bucket)+' · '+selected.map(key=>seriesLabels[key]+': '+bucket[key].toLocaleString('es-PE')).join(' · ');}
+function showCounts(label, keys, count) {
+    readout.textContent = keys.length ? label + ' · ' + keys.map(key =>
+        seriesLabels[key] + ': ' + count(key).toLocaleString('es-PE')).join(' · ') : '';
+}
 function renderTrend(){
-if(!trend)return;const linked=document.querySelector('[data-chart-link]');if(linked)linked.hidden=true;trend.replaceChildren();selector?.replaceChildren();
+if (!trend) return;
+trendLink.hidden = true;
+trend.replaceChildren();
 const keys=[...document.querySelectorAll('[data-chart-series]:checked')].map(input=>input.dataset.chartSeries);
+showCounts('Total del rango', keys, key => buckets.reduce((total, bucket) => total + bucket[key], 0));
 const hasRecords=buckets.some(bucket=>keys.some(key=>bucket[key]>0));
-trend.style.display=keys.length&&hasRecords?'':'none';if(selector)selector.disabled=!keys.length||!hasRecords;
+trend.style.display=keys.length&&hasRecords?'':'none';
 note.textContent=!keys.length?'Selecciona una serie para consultar los registros.':!hasRecords?'No hay registros de las series seleccionadas en este período.':grouping==='month'?'Intervalos por mes, hasta 90 grupos; detalle exacto al seleccionar.':step>1?`Cada punto reúne ${step} días desde el inicio del período; hasta 90 intervalos.`:'Cada punto representa un día, incluidos los días sin registros.';
-if(!keys.length||!hasRecords){readout.textContent='';return;}
+if(!keys.length||!hasRecords)return;
 const maximum=Math.max(4,Math.ceil(Math.max(0,...buckets.flatMap(bucket=>keys.map(key=>bucket[key])))/4)*4),left=52,right=740,top=18,bottom=220;
 const x=index=>buckets.length===1?(left+right)/2:left+index*(right-left)/(buckets.length-1),y=count=>bottom-count/maximum*(bottom-top);
 for(let tick=0;tick<=4;tick++){const count=maximum*tick/4,position=y(count);trend.append(node('line',{x1:left,x2:right,y1:position,y2:position,stroke:'var(--hyt-border)'}));trend.append(node('text',{x:42,y:position+4,'text-anchor':'end'},Math.ceil(count).toLocaleString('es-PE')));}
@@ -97,17 +114,48 @@ if (seriesIndex === 0 && points.length > 1) {
     }));
 }
 plot.append(node('path',{d:path,fill:'none',stroke:color,'stroke-width':3,'stroke-linecap':'round','stroke-dasharray':key==='Confirmaciones'?'8 5':key==='Marcados'?'3 5':'none'}));
-buckets.forEach((bucket,index)=>{const text=labelFor(bucket)+' · '+seriesLabels[key]+': '+bucket[key],circle=title(node('circle',{cx:x(index),cy:y(bucket[key]),r:4,fill:color,tabindex:0,role:'img','aria-label':text}),text);circle.addEventListener('focus',()=>{if(selector)selector.value=String(index);read(index);});circle.addEventListener('pointerenter',()=>read(index));const select=()=>{read(index);const link=document.querySelector('[data-chart-link]');if(!link)return;link.hidden=!['Presupuestos','Ordenes'].includes(key);if(link.hidden)return;const url=new URL(key==='Presupuestos'?'/Presupuestos':'/Seguimiento/oc-cliente',location.origin);url.searchParams.set('from',new Date(bucket.date).toISOString().slice(0,10));url.searchParams.set('to',new Date(bucket.end).toISOString().slice(0,10));if(model.client)url.searchParams.set('client',model.client);if(model.store)url.searchParams.set('store',model.store);link.href=url.pathname+url.search;link.textContent='Abrir '+seriesLabels[key]+' del intervalo';};circle.addEventListener('click',select);circle.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();select();}});plot.append(circle);});
+buckets.forEach((bucket, index) => {
+    const text = labelFor(bucket) + ' · ' + seriesLabels[key] + ': ' + bucket[key];
+    const circle = title(node('circle', {
+        cx: x(index), cy: y(bucket[key]), r: 4, fill: color, tabindex: 0, role: 'img', 'aria-label': text
+    }), text);
+    const inspect = () => {
+        trendLink.hidden = true;
+        showCounts(labelFor(bucket), keys, series => bucket[series]);
+    };
+    circle.addEventListener('focus', inspect);
+    circle.addEventListener('pointerenter', inspect);
+    const select = () => {
+        inspect();
+        if (key !== 'Presupuestos' && key !== 'Ordenes') return;
+        const params = new URLSearchParams({
+            from: new Date(bucket.date).toISOString().slice(0, 10),
+            to: new Date(bucket.end).toISOString().slice(0, 10)
+        });
+        if (model.client) params.set('client', model.client);
+        if (model.store) params.set('store', model.store);
+        const route = key === 'Presupuestos' ? '/Presupuestos' : '/Seguimiento/oc-cliente';
+        trendLink.href = route + '?' + params;
+        trendLink.textContent = 'Abrir ' + seriesLabels[key] + ' del intervalo';
+        trendLink.hidden = false;
+    };
+    circle.addEventListener('click', select);
+    circle.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        select();
+    });
+    plot.append(circle);
+});
 }
 trend.append(node('text',{x:left,y:252},date(from)),node('text',{x:right,y:252,'text-anchor':'end'},date(until)));
-buckets.forEach((bucket,index)=>{const option=document.createElement('option');option.value=String(index);option.textContent=labelFor(bucket);selector?.append(option);});if(selector){selector.value=String(buckets.length-1);}read(buckets.length-1);
 }
-document.querySelector('[data-chart-group]')?.addEventListener('change',()=>{regroup();renderTrend();const link=document.querySelector('[data-chart-link]');if(link)link.hidden=true;});
-selector?.addEventListener('change', () => {
-    const link = document.querySelector('[data-chart-link]');
-    if (link) link.hidden = true;
-    read(Number(selector.value));
-});document.querySelectorAll('[data-chart-series]').forEach(input=>input.addEventListener('change',renderTrend));renderTrend();
+document.querySelector('[data-chart-group]')?.addEventListener('change', () => {
+    regroup();
+    renderTrend();
+});
+document.querySelectorAll('[data-chart-series]').forEach(input => input.addEventListener('change', renderTrend));
+renderTrend();
 for(const states of document.querySelectorAll('[data-state-source]')){
 const isBudget=states.dataset.stateSource==='PRESUPUESTO',rows=isBudget?data.EstadosPresupuesto:data.EstadosOC;
 if(states){states.replaceChildren();if(!rows.length){states.style.display='none';const empty=document.createElement('p');empty.textContent='Sin documentos para distribuir por estado.';states.after(empty);}else{

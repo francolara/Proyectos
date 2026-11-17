@@ -6,6 +6,61 @@ namespace GestionServicios.Infrastructure.Maintenance;
 
 public sealed class SqlCompanySettingsRepository(SqlConnectionFactory connections):ICompanySettingsRepository
 {
+    public async Task<IReadOnlyList<BudgetSignatureOption>> ListBudgetSignaturesAsync(string actor,CancellationToken ct)
+    {
+        await using var connection=connections.CreateConnection();
+        await connection.OpenAsync(ct);
+        await using var command=new SqlCommand("dbo.spu_FirmaPresupuestoHYT_Listar",connection){CommandType=CommandType.StoredProcedure};
+        command.Parameters.Add("@UsuarioId",SqlDbType.NVarChar,128).Value=actor;
+        return await command.ExecuteScalarAsync(ct) is string json ? JsonSerializer.Deserialize<BudgetSignatureOption[]>(json)??[] : [];
+    }
+
+    public async Task SaveBudgetSignatureAsync(string actor,string? name,string? payload,bool defaultSignature,long? id,bool? active,CancellationToken ct)
+    {
+        try
+        {
+            await using var connection=connections.CreateConnection();
+            await connection.OpenAsync(ct);
+            await using var command=new SqlCommand("dbo.spu_FirmaPresupuestoHYT_Guardar",connection){CommandType=CommandType.StoredProcedure};
+            command.Parameters.Add("@UsuarioId",SqlDbType.NVarChar,128).Value=actor;
+            command.Parameters.Add("@Nombre",SqlDbType.NVarChar,150).Value=(object?)name??DBNull.Value;
+            command.Parameters.Add("@Datos",SqlDbType.NVarChar,2000).Value=(object?)payload??DBNull.Value;
+            command.Parameters.Add("@Predeterminada",SqlDbType.Bit).Value=defaultSignature;
+            command.Parameters.Add("@FirmaId",SqlDbType.BigInt).Value=(object?)id??DBNull.Value;
+            command.Parameters.Add("@Activo",SqlDbType.Bit).Value=(object?)active??DBNull.Value;
+            await command.ExecuteNonQueryAsync(ct);
+        }
+        catch(SqlException error)when(error.Message.Contains("[HYT_",StringComparison.Ordinal))
+        {throw new MaintenanceException(error.Message[(error.Message.IndexOf(']')+1)..].Trim());}
+        catch(SqlException error)when(error.Number is 2601 or 2627)
+        {throw new MaintenanceException("Ya existe una firma con ese nombre.");}
+    }
+
+    public async Task<IReadOnlyList<DocumentSeries>> ListSeriesAsync(string actor,CancellationToken ct)
+    {
+        await using var connection=connections.CreateConnection();
+        await connection.OpenAsync(ct);
+        await using var command=new SqlCommand("dbo.spu_SerieComprobanteHYT_Listar",connection){CommandType=CommandType.StoredProcedure};
+        command.Parameters.Add("@UsuarioId",SqlDbType.NVarChar,128).Value=actor;
+        return await command.ExecuteScalarAsync(ct) is string json ? JsonSerializer.Deserialize<DocumentSeries[]>(json) ?? [] : [];
+    }
+
+    public async Task AddSeriesAsync(string actor,string type,string series,CancellationToken ct)
+    {
+        try
+        {
+            await using var connection=connections.CreateConnection();
+            await connection.OpenAsync(ct);
+            await using var command=new SqlCommand("dbo.spu_SerieComprobanteHYT_Guardar",connection){CommandType=CommandType.StoredProcedure};
+            command.Parameters.Add("@UsuarioId",SqlDbType.NVarChar,128).Value=actor;
+            command.Parameters.Add("@Tipo",SqlDbType.VarChar,20).Value=type;
+            command.Parameters.Add("@Serie",SqlDbType.NVarChar,100).Value=series;
+            await command.ExecuteNonQueryAsync(ct);
+        }
+        catch(SqlException error)when(error.Message.Contains("[HYT_",StringComparison.Ordinal))
+        {throw new MaintenanceException(error.Message[(error.Message.IndexOf(']')+1)..].Trim());}
+    }
+
     public async Task<RecordSnapshot?> GetAsync(string actor,int page,CancellationToken ct)
     {
         await using var connection=connections.CreateConnection();await connection.OpenAsync(ct);

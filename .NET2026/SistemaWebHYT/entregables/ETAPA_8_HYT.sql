@@ -12,6 +12,8 @@
 -- Description:   Actualiza consultas y filtros del dashboard, navegación comercial y resultados vacíos según fuentes de esta etapa.
 -- =============================================
 
+-- Firma: FRANCO LARA | Create date: 17/11/2026 | Actualiza la integración de Facturado de OC con Emisión de comprobantes.
+
 -- Fuente: StoreProcedure/spu_Dashboard_Obtener.sql
 USE [SistemaWebHYT];
 GO
@@ -37,7 +39,11 @@ BEGIN
         LEFT JOIN dbo.GuiaConformidad AS guia ON guia.PresupuestoId=oc.PresupuestoId
         LEFT JOIN dbo.Ejecucion AS ejecucion ON ejecucion.PresupuestoId=oc.PresupuestoId
         LEFT JOIN dbo.ConfirmacionFacturacion AS confirmacion ON confirmacion.OrdenCompraId=oc.OrdenCompraId AND confirmacion.Vigente=1
-        LEFT JOIN dbo.ReferenciaComprobanteExterno AS referencia ON referencia.OrdenCompraId=oc.OrdenCompraId AND referencia.Vigente=1
+        OUTER APPLY (
+            SELECT r.ReferenciaId,r.CodigoTipoDocumento,r.Serie,r.NumeroDocumento,r.FechaDocumento,r.FechaRegistro
+            FROM dbo.ReferenciaComprobanteExterno AS r
+            WHERE r.OrdenCompraId=oc.OrdenCompraId AND r.Vigente=1
+        ) AS referencia
         WHERE @VerOC=1 AND oc.FechaRegistro>=@Desde AND oc.FechaRegistro<@HastaExclusiva AND (@Cliente IS NULL OR revision.ClienteNombre LIKE N'%'+@Cliente+N'%') AND (@Tienda IS NULL OR revision.TiendaNombre LIKE N'%'+@Tienda+N'%');
         IF @PaginaPendientes<1 OR @PaginaPendientes>100000000 THROW 51601,N'[HYT_VALIDACION] Página no válida.',1;
         DECLARE @VerPendientes BIT=0;
@@ -55,7 +61,8 @@ BEGIN
             AND (oc.OrdenCompraId IS NULL OR guia.GuiaId IS NULL OR (p.TipoAtencion=N'EMERGENCIA' AND revision.Estado<>N'APROBADO'));
         SELECT evento.FechaRegistro,evento.Tipo INTO #Eventos
         FROM (SELECT confirmacion.OrdenCompraId,confirmacion.FechaRegistro,N'CONFIRMACION' AS Tipo FROM dbo.ConfirmacionFacturacion AS confirmacion WHERE confirmacion.Vigente=1
-            UNION ALL SELECT referencia.OrdenCompraId,referencia.FechaRegistro,N'FACTURADO' FROM dbo.ReferenciaComprobanteExterno AS referencia WHERE referencia.Vigente=1) AS evento
+            UNION ALL SELECT r.OrdenCompraId,r.FechaRegistro,N'FACTURADO'
+            FROM dbo.ReferenciaComprobanteExterno AS r WHERE r.Vigente=1) AS evento
         INNER JOIN dbo.OrdenCompraCliente AS oc ON oc.OrdenCompraId=evento.OrdenCompraId
         INNER JOIN dbo.PresupuestoRevision AS revision ON revision.RevisionId=oc.RevisionId
         WHERE @VerOC=1 AND oc.Estado<>N'CANCELADA' AND evento.FechaRegistro>=@Desde AND evento.FechaRegistro<@HastaExclusiva
@@ -114,6 +121,8 @@ AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
+        IF @Exportar=1 AND dbo.fn_HYTPermiso(@UsuarioId,N'REPORTES.IMPRIMIR')=0
+            THROW 51700,N'[HYT_PERMISO] No tiene permiso para imprimir reportes.',1;
         DECLARE @VerPresupuesto BIT=0,@VerOC BIT=0,@VerGuia BIT=0,@VerConfirmacion BIT=0,@VerFactura BIT=0,@VerEjecucion BIT=0;
         IF NOT EXISTS(SELECT 1 FROM dbo.AspNetUsers AS usuario INNER JOIN dbo.AspNetUserRoles AS rol ON rol.UserId=usuario.Id INNER JOIN dbo.RolPermiso AS permiso ON permiso.RoleId=rol.RoleId WHERE usuario.Id=@UsuarioId AND usuario.Activo=1 AND permiso.CodigoPermiso=N'REPORTES.CONSULTAR')
             THROW 51600,N'[HYT_PERMISO] No tiene permiso para consultar reportes.',1;
@@ -168,7 +177,11 @@ BEGIN
         LEFT JOIN dbo.GuiaConformidad AS guia ON guia.PresupuestoId=p.PresupuestoId
         LEFT JOIN dbo.Ejecucion AS ejecucion ON ejecucion.PresupuestoId=p.PresupuestoId
         LEFT JOIN dbo.ConfirmacionFacturacion AS confirmacion ON confirmacion.OrdenCompraId=oc.OrdenCompraId AND confirmacion.Vigente=1
-        LEFT JOIN dbo.ReferenciaComprobanteExterno AS referencia ON referencia.OrdenCompraId=oc.OrdenCompraId AND referencia.Vigente=1
+        OUTER APPLY (
+            SELECT r.ReferenciaId,r.CodigoTipoDocumento,r.Serie,r.NumeroDocumento,r.FechaDocumento,r.FechaRegistro
+            FROM dbo.ReferenciaComprobanteExterno AS r
+            WHERE r.OrdenCompraId=oc.OrdenCompraId AND r.Vigente=1
+        ) AS referencia
         WHERE ((@Reporte=N'PRESUPUESTO' AND p.FechaRegistro>=@Desde AND p.FechaRegistro<@HastaExclusiva) OR (@Reporte=N'OC_CLIENTE' AND oc.FechaRegistro>=@Desde AND oc.FechaRegistro<@HastaExclusiva))
             AND (@Estado IS NULL OR (@Reporte=N'PRESUPUESTO' AND actual.Estado=@Estado) OR (@Reporte=N'OC_CLIENTE' AND oc.Estado=@Estado))
             AND (@TipoAtencion IS NULL OR p.TipoAtencion=@TipoAtencion)
@@ -199,7 +212,6 @@ BEGIN
     END CATCH
 END;
 GO
-
 
 -- Fuente: Script/019_PermisosEtapa8.sql
 USE [SistemaWebHYT];

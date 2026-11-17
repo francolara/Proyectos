@@ -69,7 +69,7 @@
   },
   {
     "path": "StoreProcedure/spu_SeguimientoOC_Listar.sql",
-    "sha256": "28dcfc7d1e54a75000e8db9eb2226ec20e7448f4ed09af7fee8589d1c3fd5848"
+    "sha256": "1e83d49b512940341e1354870ceb8dd7480bd676ae08e01964587135b873af7b"
   },
   {
     "path": "StoreProcedure/spu_SeguimientoOC_Obtener.sql",
@@ -82,5 +82,9 @@
   {
     "path": "Script/017_PermisosEtapa6.sql",
     "sha256": "8abac0e6faff7197dbaf8c35c4ef7d95248315692d25cc4ec22f804451e8251b"
+  },
+  {
+    "path": "ETAPA_6_HYT.sql",
+    "sha256": "f25d991815edf4a6dfc4828e8a1b9f641373c9ac0a8f3ee945436a8685788b5a"
   }
 ]

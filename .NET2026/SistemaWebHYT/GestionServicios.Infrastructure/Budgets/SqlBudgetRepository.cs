@@ -31,6 +31,15 @@ public sealed class SqlBudgetRepository(SqlConnectionFactory connections) : IBud
         catch (SqlException error) when (error.Number is 8115 or 2628 or 8152)
         { throw new MaintenanceException("Un importe o texto excede su longitud permitida. Revisa los datos."); }
     }
+    public Task SetSignatureAsync(string actor,long budgetId,long revisionId,byte[] version,long signatureId,CancellationToken ct)
+        => Execute("dbo.spu_Presupuesto_FirmaGuardar",actor,p=>
+        {
+            p.Add("@PresupuestoId",SqlDbType.BigInt).Value=budgetId;
+            p.Add("@RevisionId",SqlDbType.BigInt).Value=revisionId;
+            p.Add("@Version",SqlDbType.Binary,8).Value=version;
+            p.Add("@FirmaId",SqlDbType.BigInt).Value=signatureId;
+        },async command=>{await command.ExecuteNonQueryAsync(ct);return true;},ct);
+
     private static string? Text(SqlDataReader reader,int index) => reader.IsDBNull(index)?null:reader.GetString(index);
     private static decimal? Money(SqlDataReader reader,int index) => reader.IsDBNull(index)?null:reader.GetDecimal(index);
     private static long? Id(SqlDataReader reader,int index) => reader.IsDBNull(index)?null:Convert.ToInt64(reader.GetValue(index));

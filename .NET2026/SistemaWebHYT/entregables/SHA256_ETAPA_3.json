@@ -57,7 +57,7 @@
   },
   {
     "path": "StoreProcedure/spu_MantCatalogos.sql",
-    "sha256": "50368ffea7f03d5445b330dd5fe9f0e2c9eabc7f22f911d093b7af8325206c51"
+    "sha256": "b1402bc65587d4d413b073993c47aa9f7d2c8be3b33a6ff094e6843327ccb430"
   },
   {
     "path": "StoreProcedure/spu_MantCliente_Listar.sql",
@@ -161,7 +161,7 @@
   },
   {
     "path": "StoreProcedure/spu_MantServicioMaterial_Listar.sql",
-    "sha256": "7450e385f8ff40cfdcf35d3033038d61fe40ac273a051de832c8a2d4c3469ffd"
+    "sha256": "3029c258b1253efd160fc5a37e9f16bd05905c2600a5978e26639b530eb73b8f"
   },
   {
     "path": "StoreProcedure/spu_MantServicioMaterial_Obtener.sql",
@@ -177,6 +177,6 @@
   },
   {
     "path": "ETAPA_3_HYT.sql",
-    "sha256": "77fad47a06f6d6bfe565d6ae566e30f0db8acbf53c26a48122e88d2d72bfdf32"
+    "sha256": "ff75a2053dc536751a5b59cfa2fa4e81b14a4b50f09275fb6844b56c4386ffa9"
   }
 ]

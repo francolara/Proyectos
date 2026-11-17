@@ -1,3 +1,4 @@
+-- Firma: FRANCO LARA | Create date: 17/11/2026 | Conserva la firma elegida y sus metadatos en la revisión del presupuesto.
 -- Firma: FRANCO LARA | Create date: 10/11/2026 | Asigna el número de presupuesto como número de cotización al guardar.
 -- =============================================
 -- Author:        FRANCO LARA
@@ -188,6 +189,24 @@ BEGIN
             FROM dbo.Cliente AS cliente INNER JOIN dbo.Tienda AS tienda ON tienda.ClienteId=cliente.ClienteId AND tienda.TiendaId=@TiendaId WHERE cliente.ClienteId=@ClienteId;
         IF @Empresa IS NULL OR @NuevaRevision=1
             SELECT @Empresa=(SELECT empresa.Ruc,empresa.RazonSocial,empresa.Direccion,empresa.Telefono,empresa.Correo,empresa.NombreFirmante,empresa.CargoFirmante FROM dbo.ConfiguracionHYT AS empresa WHERE empresa.Id=1 FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES);
+        DECLARE @FirmaId BIGINT=TRY_CONVERT(BIGINT,JSON_VALUE(@Datos,N'$.Revision.FirmaId'));
+        IF NULLIF(JSON_VALUE(@Datos,N'$.Revision.FirmaId'),N'') IS NOT NULL AND (@FirmaId IS NULL OR @FirmaId<=0)
+            THROW 51305,N'[HYT_VALIDACION] Selecciona una firma disponible.',1;
+        DECLARE @FirmaJson NVARCHAR(2000),@NombreFirma NVARCHAR(150);
+        IF @FirmaId IS NULL AND @EsNuevo=0 AND NOT EXISTS(SELECT 1 FROM OPENJSON(@Datos,N'$.Revision') AS campo WHERE campo.[key]=N'FirmaId')
+            SET @FirmaId=TRY_CONVERT(BIGINT,JSON_VALUE(@Empresa,N'$.FirmaId'));
+        IF @FirmaId IS NULL AND @EsNuevo=1
+            SELECT @FirmaId=firma.FirmaId FROM dbo.FirmaPresupuestoHYT AS firma WITH(HOLDLOCK) WHERE firma.Predeterminada=1 AND firma.Activo=1;
+        IF @FirmaId IS NOT NULL
+        BEGIN
+            SELECT @FirmaJson=firma.ArchivoJson,@NombreFirma=firma.Nombre
+            FROM dbo.FirmaPresupuestoHYT AS firma WITH(HOLDLOCK) WHERE firma.FirmaId=@FirmaId AND firma.Activo=1;
+            IF @FirmaJson IS NULL THROW 51305,N'[HYT_VALIDACION] Selecciona una firma disponible.',1;
+        END;
+        SET @Empresa=JSON_MODIFY(COALESCE(@Empresa,N'{}'),N'$.FirmaSeleccionada',CONVERT(BIT,1));
+        SET @Empresa=JSON_MODIFY(@Empresa,N'$.FirmaId',@FirmaId);
+        SET @Empresa=JSON_MODIFY(@Empresa,N'$.NombreFirma',@NombreFirma);
+        SET @Empresa=JSON_MODIFY(@Empresa,N'$.FirmaPresupuestoJson',JSON_QUERY(@FirmaJson));
         IF @TiendaCodigo IS NULL SELECT @TiendaCodigo=tienda.Codigo FROM dbo.Tienda AS tienda WHERE tienda.TiendaId=@TiendaId;
         IF @EsNuevo=1
         BEGIN

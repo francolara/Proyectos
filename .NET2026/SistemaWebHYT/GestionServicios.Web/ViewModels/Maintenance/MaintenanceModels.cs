@@ -8,6 +8,8 @@ public sealed class MaintenanceListModel
 {
     public required EntityDefinition Entity { get; init; }
     public required GridModel Grid { get; init; }
+    public bool? Active {get;init;}
+    public bool? AffectedByWithholding {get;init;}
     public string Search { get; init; } = "";
     public long? ParentId { get; init; }
     public bool CanEdit { get; init; }

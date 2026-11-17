@@ -1,3 +1,4 @@
+-- Firma: FRANCO LARA | Create date: 17/11/2026 | Permite editar ventas con versión de fila, conserva XML y audita los cambios. Extiende edición a compras, protege saldos y valida las series configuradas de venta.
 -- Firma: FRANCO LARA | Create date: 10/11/2026 | Operaciones de provisiones y ventas. Admite carga atómica y alta de clientes desde XML y conserva la fecha de vencimiento y calcula la detracción manual con el catálogo de FralseCont y admite depósito en otra moneda con equivalente calculado.
 -- Firma: FRANCO LARA | Create date: 11/11/2026 | Calcula la detracción de ventas por materiales o conserva los datos declarados en XML y vincula la orden de compra del cliente y valida la factura y el motivo SUNAT en notas de crédito manuales de venta.
 -- Firma: FRANCO LARA | Create date: 14/11/2026 | Verifica la moneda de la factura referenciada por una NC manual.
@@ -102,6 +103,14 @@ BEGIN
             THROW 51601,N'[HYT_VALIDACION] Revisa las partidas del comprobante.',1;
         DECLARE @OperacionRegistro UNIQUEIDENTIFIER=COALESCE(TRY_CONVERT(UNIQUEIDENTIFIER,JSON_VALUE(@Datos,N'$.OperacionId')),NEWID()),
             @Huella VARBINARY(32)=HASHBYTES('SHA2_256',@Datos),@Existente BIGINT;
+        DECLARE @TokenEdicion NVARCHAR(4000)=JSON_VALUE(@Datos,N'$.VersionEdicion');
+        DECLARE @VersionEdicion BINARY(8)=TRY_CONVERT(BINARY(8),@TokenEdicion,1);
+        DECLARE @EsEdicion BIT=CASE WHEN @TokenEdicion IS NULL THEN 0 ELSE 1 END;
+        IF @EsEdicion=1 AND (@Id IS NULL OR @Xml IS NOT NULL OR LEN(@TokenEdicion)<>18 OR @VersionEdicion IS NULL)
+            THROW 51601,N'[HYT_VALIDACION] Vuelve a abrir el comprobante para editarlo.',1;
+        IF @EsEdicion=1 AND @FechaVencimiento<@Fecha
+            THROW 51601,N'[HYT_VALIDACION] El vencimiento no puede ser anterior a la fecha de emisión.',1;
+        DECLARE @Anterior NVARCHAR(MAX),@Nuevo NVARCHAR(MAX);
         BEGIN TRANSACTION;
         IF @Id IS NULL
         BEGIN
@@ -175,6 +184,7 @@ BEGIN
         IF @EsVenta=1 AND @Tipo='07' AND @Xml IS NULL AND NOT EXISTS (
             SELECT 1 FROM dbo.ComprobanteHYT AS factura WITH(HOLDLOCK)
             WHERE factura.EsVenta=1 AND factura.Tipo='01' AND factura.ClienteId=@ClienteId AND factura.Moneda=@Moneda
+                AND (@Id IS NULL OR factura.ComprobanteId<>@Id)
                 AND factura.Serie IS NOT NULL AND factura.Numero IS NOT NULL
                 AND factura.EstadoSunat NOT IN(N'RECHAZADO',N'ANULADO',N'BAJA')
                 AND CONCAT(factura.Serie,N'-',factura.Numero)=@Ref)
@@ -190,6 +200,69 @@ BEGIN
             WHERE EsVenta=@EsVenta AND RucHYT=@RucHYT AND DocumentoTercero=@Tercero AND Tipo=@Tipo AND Serie=@Serie AND Numero=@Numero
             AND (@Id IS NULL OR ComprobanteId<>@Id))
             THROW 51601,N'[HYT_VALIDACION] El comprobante ya se registró.',1;
+        IF @EsVenta=1 AND @Xml IS NULL AND @Serie IS NOT NULL
+            AND EXISTS (SELECT 1 FROM dbo.SerieComprobanteHYT WITH(HOLDLOCK) WHERE Tipo=@Tipo)
+            AND NOT EXISTS (SELECT 1 FROM dbo.SerieComprobanteHYT WITH(HOLDLOCK) WHERE Tipo=@Tipo AND Serie=@Serie)
+            AND NOT EXISTS (SELECT 1 FROM dbo.ComprobanteHYT WHERE ComprobanteId=@Id AND Tipo=@Tipo AND Serie=@Serie)
+            THROW 51601,N'[HYT_VALIDACION] Selecciona una serie configurada para este tipo de comprobante.',1;
+
+        IF @EsEdicion=1
+        BEGIN
+            SELECT @Anterior=(SELECT actual.Tipo,actual.Serie,actual.Numero,actual.Fecha,actual.FechaVencimiento,
+                actual.Moneda,actual.ProveedorId,actual.ClienteId,actual.OrdenCompraId,actual.FormaPago,actual.Importe,
+                actual.CodigoDetraccion,actual.ReferenciaNota,actual.CodigoMotivoNota,JSON_QUERY(actual.Detalle) AS Detalle,
+                JSON_QUERY((SELECT vinculo.PresupuestoId FROM dbo.ComprobanteHYTPresupuesto AS vinculo
+                    WHERE vinculo.ComprobanteId=actual.ComprobanteId FOR JSON PATH)) AS Presupuestos
+                FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)
+            FROM dbo.ComprobanteHYT AS actual WITH(UPDLOCK,HOLDLOCK)
+            WHERE actual.ComprobanteId=@Id AND actual.EsVenta=@EsVenta AND actual.VersionFila=@VersionEdicion;
+            IF @Anterior IS NULL
+                THROW 51601,N'[HYT_CONCURRENCIA] El comprobante cambió. Vuelve a abrirlo antes de guardar.',1;
+            IF EXISTS (
+                SELECT 1 FROM dbo.ComprobanteHYT AS actual
+                INNER JOIN dbo.ComprobanteHYT AS nota WITH(UPDLOCK,HOLDLOCK)
+                    ON nota.EsVenta=1 AND nota.Tipo='07' AND nota.ClienteId=actual.ClienteId
+                    AND nota.RucHYT=actual.RucHYT AND nota.Moneda=actual.Moneda
+                    AND LTRIM(RTRIM(nota.ReferenciaNota))=CONCAT(actual.Serie,N'-',actual.Numero)
+                WHERE actual.ComprobanteId=@Id AND actual.Tipo IN ('01','03') AND actual.Serie IS NOT NULL
+                    AND (actual.Tipo<>@Tipo OR actual.Serie<>ISNULL(@Serie,N'') OR actual.Numero<>ISNULL(@Numero,N'')
+                         OR actual.ClienteId<>@ClienteId OR actual.Moneda<>@Moneda)
+            )
+                THROW 51601,N'[HYT_VALIDACION] El comprobante tiene notas de crédito vinculadas. Conserva su tipo, numeración, cliente y moneda.',1;
+            IF @EsVenta=0
+            BEGIN
+                IF EXISTS(SELECT 1 FROM dbo.ComprobanteHYTPago WHERE ComprobanteId=@Id)
+                    AND EXISTS(SELECT 1 FROM dbo.ComprobanteHYT AS actual WHERE actual.ComprobanteId=@Id
+                        AND (actual.ProveedorId<>@ProveedorId OR actual.Moneda<>@Moneda
+                            OR actual.MonedaDetraccion<>@MonedaDetraccion OR @Tipo='07'))
+                    THROW 51601,N'[HYT_VALIDACION] El comprobante tiene pagos. Conserva el proveedor, las monedas y un tipo que admita pagos.',1;
+                IF EXISTS (SELECT 1 FROM dbo.ComprobanteHYTPago AS pago WHERE pago.ComprobanteId=@Id
+                    GROUP BY pago.EsDetraccion HAVING SUM(pago.Importe)>CASE WHEN pago.EsDetraccion=1 THEN @Detraccion ELSE @Importe-@DetraccionDocumento END)
+                    THROW 51601,N'[HYT_VALIDACION] El importe corregido no puede ser menor que los pagos ya registrados.',1;
+                IF EXISTS (SELECT 1 FROM dbo.ComprobanteHYTCosto AS vinculo
+                    INNER JOIN dbo.CostoProveedorPresupuesto AS costo ON costo.CostoProveedorId=vinculo.CostoProveedorId
+                    WHERE vinculo.ComprobanteId=@Id AND (costo.ProveedorId<>@ProveedorId OR costo.MonedaCodigo<>@Moneda))
+                    THROW 51601,N'[HYT_VALIDACION] Los trabajos vinculados deben corresponder al proveedor y moneda del comprobante.',1;
+            END;
+            UPDATE dbo.ComprobanteHYT SET Tipo=@Tipo,Serie=@Serie,Numero=@Numero,Fecha=@Fecha,FechaVencimiento=@FechaVencimiento,
+                Moneda=@Moneda,DocumentoTercero=@Tercero,NombreTercero=@Nombre,ProveedorId=@ProveedorId,ClienteId=@ClienteId,OrdenCompraId=@OrdenCompraId,
+                FormaPago=@Forma,Importe=@Importe,Detalle=@Detalle,CodigoDetraccion=@CodigoDetraccion,
+                PorcentajeDetraccion=@PorcentajeDetraccion,ImporteDetraccion=@Detraccion,
+                DetraccionDocumento=@DetraccionDocumento,MonedaDetraccion=@MonedaDetraccion,
+                ReferenciaNota=@Ref,MotivoNota=@Motivo,CodigoMotivoNota=@CodigoMotivo
+            WHERE ComprobanteId=@Id;
+            IF @EsVenta=1
+            DELETE vinculo FROM dbo.ComprobanteHYTPresupuesto AS vinculo
+            WHERE vinculo.ComprobanteId=@Id AND NOT EXISTS (
+                SELECT 1 FROM OPENJSON(@Presupuestos) AS elegido WHERE TRY_CONVERT(BIGINT,elegido.value)=vinculo.PresupuestoId
+            );
+            SET @Nuevo=(SELECT @Tipo AS Tipo,@Serie AS Serie,@Numero AS Numero,@Fecha AS Fecha,@FechaVencimiento AS FechaVencimiento,
+                @Moneda AS Moneda,@ClienteId AS ClienteId,@OrdenCompraId AS OrdenCompraId,@Forma AS FormaPago,@Importe AS Importe,
+                @CodigoDetraccion AS CodigoDetraccion,@Ref AS ReferenciaNota,@CodigoMotivo AS CodigoMotivoNota,
+                JSON_QUERY(@Detalle) AS Detalle,JSON_QUERY(@Presupuestos) AS Presupuestos
+                FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES);
+        END
+        ELSE
         IF @Id IS NULL
         BEGIN
             INSERT INTO dbo.ComprobanteHYT(OperacionId,Huella,EsVenta,Tipo,Serie,Numero,Fecha,FechaVencimiento,Moneda,RucHYT,DocumentoTercero,NombreTercero,ProveedorId,ClienteId,OrdenCompraId,FormaPago,Importe,
@@ -213,7 +286,11 @@ BEGIN
             SELECT DISTINCT @Id,CONVERT(BIGINT,seleccionado.value) FROM OPENJSON(@Presupuestos) AS seleccionado
             WHERE NOT EXISTS(SELECT 1 FROM dbo.ComprobanteHYTPresupuesto AS vinculo WHERE vinculo.ComprobanteId=@Id AND vinculo.PresupuestoId=TRY_CONVERT(BIGINT,seleccionado.value));
         DECLARE @Registro NVARCHAR(50)=CONVERT(NVARCHAR(50),@Id),@Operacion UNIQUEIDENTIFIER=NEWID();
-        EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@Operacion,N'ComprobanteHYT',@Registro,N'REGISTRAR';
+        DECLARE @Accion NVARCHAR(40)=CASE WHEN @EsEdicion=1 THEN N'EDITAR' ELSE N'REGISTRAR' END;
+        DECLARE @Cambios NVARCHAR(MAX)=CASE WHEN @EsEdicion=1 THEN (
+            SELECT JSON_QUERY(@Anterior) AS Anterior,JSON_QUERY(@Nuevo) AS Nuevo FOR JSON PATH,WITHOUT_ARRAY_WRAPPER
+        ) END;
+        EXEC dbo.spu_RegistrarAuditoria @UsuarioId,@Operacion,N'ComprobanteHYT',@Registro,@Accion,@CambiosJson=@Cambios;
         COMMIT TRANSACTION;
         SELECT @Id;
     END TRY

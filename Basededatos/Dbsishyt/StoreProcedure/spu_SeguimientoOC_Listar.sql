@@ -1,3 +1,4 @@
+-- Firma: FRANCO LARA | Create date: 17/11/2026 | Usa la referencia vigente para el listado de OC, su comprobante y sus pendientes.
 -- Firma: FRANCO LARA | Create date: 10/11/2026 | Integra comprobantes emitidos y sus OC facturadas.
 -- =============================================
 -- Author:        FRANCO LARA
@@ -38,12 +39,10 @@ BEGIN
         INNER JOIN dbo.Presupuesto AS p ON p.PresupuestoId=documento.PresupuestoId INNER JOIN dbo.PresupuestoRevision AS fuente ON fuente.RevisionId=documento.RevisionId LEFT JOIN dbo.ConfirmacionFacturacion AS confirmacion ON confirmacion.OrdenCompraId=documento.OrdenCompraId AND confirmacion.Vigente=1
         OUTER APPLY
         (
-            SELECT TOP (1) c.ComprobanteId, CONCAT(c.Serie,N'-',c.Numero) AS NumeroComprobante
-            FROM dbo.ComprobanteHYTPresupuesto AS vinculo
-            INNER JOIN dbo.ComprobanteHYT AS c ON c.ComprobanteId=vinculo.ComprobanteId
-            WHERE vinculo.PresupuestoId=p.PresupuestoId AND c.EsVenta=1 AND c.Tipo IN ('01','03')
-                AND c.Serie IS NOT NULL AND dbo.fn_HYTPermiso(@UsuarioId,N'FACTURADO.CONSULTAR')=1
-            ORDER BY c.FechaRegistro DESC,c.ComprobanteId DESC
+            SELECT referencia.ComprobanteId,CONCAT(referencia.Serie,N'-',referencia.NumeroDocumento) AS NumeroComprobante
+            FROM dbo.ReferenciaComprobanteExterno AS referencia
+            WHERE referencia.OrdenCompraId=documento.OrdenCompraId AND referencia.Vigente=1
+                AND referencia.ComprobanteId IS NOT NULL AND dbo.fn_HYTPermiso(@UsuarioId,N'FACTURADO.CONSULTAR')=1
         ) AS emitido
         LEFT JOIN dbo.GuiaConformidad AS guia ON guia.PresupuestoId=p.PresupuestoId AND EXISTS
             (SELECT 1 FROM dbo.AspNetUserRoles AS rolGuia INNER JOIN dbo.RolPermiso AS permisoGuia ON permisoGuia.RoleId=rolGuia.RoleId WHERE rolGuia.UserId=@UsuarioId AND permisoGuia.CodigoPermiso=N'GUIAS.CONSULTAR')
@@ -54,9 +53,7 @@ BEGIN
             AND (@Busqueda IS NULL OR CONVERT(NVARCHAR(100),documento.NumeroRegistroInterno) LIKE @Patron ESCAPE N'~' OR documento.NumeroOCCliente LIKE @Patron ESCAPE N'~' OR p.NumeroPresupuesto LIKE @Patron ESCAPE N'~' OR fuente.ClienteNombre LIKE @Patron ESCAPE N'~' OR fuente.TiendaNombre LIKE @Patron ESCAPE N'~')
             AND (@Confirmada IS NULL OR (@Confirmada=1 AND confirmacion.ConfirmacionId IS NOT NULL) OR (@Confirmada=0 AND confirmacion.ConfirmacionId IS NULL))
             AND (@PendienteConfirmacion=0 OR confirmacion.ConfirmacionId IS NULL)
-            AND (@PendienteFacturar=0 OR NOT EXISTS(SELECT 1 FROM dbo.ReferenciaComprobanteExterno AS pendiente WHERE pendiente.OrdenCompraId=documento.OrdenCompraId AND pendiente.Vigente=1)
-                AND NOT EXISTS(SELECT 1 FROM dbo.ComprobanteHYTPresupuesto AS v INNER JOIN dbo.ComprobanteHYT AS c ON c.ComprobanteId=v.ComprobanteId
-                    WHERE v.PresupuestoId=p.PresupuestoId AND c.EsVenta=1 AND c.Tipo IN('01','03') AND c.Serie IS NOT NULL));
+            AND (@PendienteFacturar=0 OR NOT EXISTS(SELECT 1 FROM dbo.ReferenciaComprobanteExterno AS pendiente WHERE pendiente.OrdenCompraId=documento.OrdenCompraId AND pendiente.Vigente=1));
         SELECT (SELECT pagina.Id,pagina.PadreId,pagina.PresupuestoId,pagina.PresupuestoNumero,pagina.TipoAtencion,pagina.ClienteNombre,pagina.TiendaNombre,pagina.NumeroInterno,pagina.NumeroDocumento,
             pagina.Estado,pagina.FechaDocumento,pagina.CodigoMoneda,pagina.Importe,pagina.FechaRegistro,pagina.UsuarioRegistro,pagina.FechaActualizacion,pagina.UsuarioActualizacion,pagina.VersionFila,pagina.VersionPadre,pagina.Adjuntos,pagina.PrimerArchivoId,
             pagina.GuiaId,pagina.NumeroGuia,pagina.AdjuntosGuia,pagina.ConfirmacionId,pagina.NumeroConfirmacion,pagina.FechaConfirmacion,pagina.AdjuntosConfirmacion,pagina.ComprobanteId,pagina.NumeroComprobante,pagina.FechaRecepcionOC,JSON_QUERY(pagina.Facturado) AS Facturado

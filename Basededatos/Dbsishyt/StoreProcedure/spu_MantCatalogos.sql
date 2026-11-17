@@ -1,3 +1,4 @@
+-- Firma: FRANCO LARA | Create date: 17/11/2026 | Devuelve el porcentaje de detracción para la ayuda compartida.
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   03/11/2026
@@ -21,7 +22,7 @@ BEGIN
         SELECT d.CodigoDepartamento,d.Nombre FROM dbo.UbigeoDepartamentos AS d WHERE d.Activo=1 ORDER BY d.Nombre;
         SELECT p.CodigoProvincia,p.Nombre FROM dbo.UbigeoProvincias AS p WHERE p.Activo=1 ORDER BY p.Nombre;
         SELECT d.CodigoUbigeo,d.Nombre FROM dbo.UbigeoDistritos AS d WHERE d.Activo=1 ORDER BY d.Nombre;
-        SELECT catalogo.Codigo, CONCAT(catalogo.Codigo,N' · ',catalogo.Nombre) AS Nombre
+        SELECT catalogo.Codigo, CONCAT(catalogo.Codigo,N' · ',catalogo.Nombre) AS Nombre,catalogo.Porcentaje
         FROM dbo.DetraccionCatalogoHYT AS catalogo WHERE catalogo.Activo=1 ORDER BY catalogo.Codigo;
     END TRY
     BEGIN CATCH

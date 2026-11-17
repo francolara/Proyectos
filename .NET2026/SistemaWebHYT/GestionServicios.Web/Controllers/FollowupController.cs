@@ -1,3 +1,4 @@
+// Firma: FRANCO LARA - 17/11/2026 | Abre en la OC el diálogo Facturado para referencias manuales y de Emisión.
 // Firma: FRANCO LARA - 10/11/2026 | Abre el comprobante emitido vinculado desde la acción Facturado de OC.
 // Firma: FRANCO LARA - 06/11/2026 | OC enlazada automáticamente a la revisión de presupuesto asociada, sin selector editable. Listado OC sin columnas de registro, actualización ni responsable/fecha del marcado facturado. Consulta de comprobante y adjuntos OC/confirmación/Guía desde celdas. Estado OC en pop-up con trazabilidad y tarjetas enlazadas a presupuesto/Guía. Confirmación compacta en una sola columna abre consulta con fecha, datos y adjuntos. Nuevas cargas en carpetas de tipo y número de documento. Columna Facturado retirada; borde de confirmación/facturado según registro vigente. Guía compacta Sí/- abre consulta de registro y adjuntos. Guía sin estados, misma ficha en consulta bloqueada y edición. KPI OC y filtros de pendientes; adjuntos de Guía consultables desde grilla. Retira botón duplicado Ver confirmación, conservando consulta en la celda del número. Guía/Ejecución reutilizan ficha de consulta y edición en popup; consulta permite abrir edición.
 using System.Security.Claims;
@@ -255,10 +256,8 @@ public sealed class FollowupController(IDocumentRepository repository,IDocumentF
             actions.Add(new("Confirmación del cliente",Url.Action(nameof(Register),new{kind="confirmaciones",parentId=id,returnUrl=Request.Path+Request.QueryString,popup=true})!,true,HasRecord:long.TryParse(BudgetRecord.Text(row,"ConfirmacionId"),out _)));
         if(kind.Code=="OC"&&User.HasClaim(AccessService.PermissionClaim,"FACTURADO.CONSULTAR"))
         {
-            if(long.TryParse(BudgetRecord.Text(row,"ComprobanteId"),out var invoiceId))
-                actions.Add(new("Facturado",Url.Action("Details","CommercialDocuments",new{scope="ventas",id=invoiceId})!,false,HasRecord:true));
-            else
-                actions.Add(new("Facturado",Url.Action("Index","InvoiceMark",new{orderId=id,returnUrl=Request.Path+Request.QueryString,popup=true})!,true,HasRecord:row.TryGetProperty("Facturado",out var marked)&&marked.ValueKind==System.Text.Json.JsonValueKind.Object));
+            actions.Add(new("Facturado",Url.Action("Index","InvoiceMark",new{orderId=id,returnUrl=Request.Path+Request.QueryString,popup=true})!,true,
+                HasRecord:row.TryGetProperty("Facturado",out var marked)&&marked.ValueKind==System.Text.Json.JsonValueKind.Object));
         }
         return actions;
     }    [HttpGet("Archivos/{fileId:long}")]

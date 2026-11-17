@@ -114,7 +114,11 @@ try
             }
             installation.RemoveAll(source => bundled.Contains(source) ||
                 Path.GetFileName(source) is "spu_Auditoria_Listar.sql" or "spu_Auditoria_Obtener.sql" or "032_PermisosAdministracion.sql");
+            var emissionSync = installation.Where(source => Path.GetFileName(source) is
+                "spu_Facturado_SincronizarEmision.sql" or "066_SincronizacionFacturadoEmision.sql").ToArray();
+            installation.RemoveAll(emissionSync.Contains);
             foreach(var stage in new[]{5,6,7,8})installation.Add(Path.Combine(project,$"entregables/ETAPA_{stage}_HYT.sql"));
+            installation.AddRange(emissionSync);
             installation.Add(Path.Combine(project,"entregables/ADMINISTRACION_HYT.sql"));
             Console.WriteLine("Instalación aislada desde paquetes incrementales de etapas 5/6/7/8 y administración.");
         }
@@ -1156,6 +1160,15 @@ try
     Check(materialRecord.Text("CodigoDetraccion")=="022" &&
         (await masters.CatalogsAsync(actor))["Withholding"].Any(option=>option.Code=="022"),
         "El maestro de materiales conserva el código de detracción del catálogo");
+    var materialEntity=GestionServicios.Application.Maintenance.MaintenanceDefinitions.Find("materiales")!;
+    var withDetraction=await masters.ListAsync(materialEntity,actor,"Material con precios",1,active:true,affectedByWithholding:true);
+    var withoutDetraction=await masters.ListAsync(materialEntity,actor,"Material con precios",1,active:true,affectedByWithholding:false);
+    var inactiveMaterials=await masters.ListAsync(materialEntity,actor,"Material con precios",1,active:false,affectedByWithholding:true);
+    Check(withDetraction.Total==1&&withDetraction.Rows.Single().Id==material&&withDetraction.Rows[0].AffectedByWithholding==true&&
+        withoutDetraction.Total==0&&inactiveMaterials.Total==0,
+        "Materiales filtra estado y afectación antes del conteo y paginación SQL");
+    Check((await masters.CatalogsAsync(actor))["Withholding"].Single(option=>option.Code=="022").Percentage>0,
+        "El catálogo compartido incluye el porcentaje de detracción");
     var price=await MasterSave("partidas-tarifario",new{VersionId=tariffVersion,MaterialId=material,Posicion="01-A",CodigoMaterialSAP="000SAP-A",TipoServicioId=serviceType,CodigoMoneda="PEN",CodigoTipoIGV="SIN_IGV",PrecioPEN=12.34m,PrecioUSD=(decimal?)null,Activo=true,ZonaIds=new[]{zone}});
     var prices=await masters.MaterialTariffsAsync(actor,material,1);
     Check(prices.Total==1&&prices.Rows.Single().GetProperty("Id").GetInt64()==price&&prices.Rows[0].GetProperty("PrecioPEN").GetDecimal()==12.34m&&prices.Rows[0].GetProperty("PrecioUSD").ValueKind==JsonValueKind.Null,"Precios de ficha recuperan moneda, zonas y USD vacío desde SQL");
@@ -1487,6 +1500,27 @@ try
         var emptyList = await commercial.ReadAsync(actor,sales,null,new DateOnly(2026,11,1),new DateOnly(2026,11,30),null,"HYT-QA-SIN-COINCIDENCIAS",1,null,null,default);
         Check(emptyList.GetProperty("Filas").GetArrayLength()==0,"La consulta sin coincidencias conserva el arreglo Filas en compras y ventas");
     }
+    var seriesRepository = new GestionServicios.Infrastructure.Maintenance.SqlCompanySettingsRepository(
+        new GestionServicios.Infrastructure.SqlConnectionFactory(connection.ConnectionString));
+    Check((await seriesRepository.ListSeriesAsync(actor,default)).Count==0,
+        "La consulta de configuración devuelve una colección vacía antes de agregar series");
+    var noSeries=await commercial.ReadAsync(actor,true,null,null,null,null,null,1,null,null,default);
+    Check(noSeries.GetProperty("SeriesComprobante").GetArrayLength()==0,
+        "Emisión mantiene el arreglo de series vacío cuando todavía no se configuraron");
+    await seriesRepository.AddSeriesAsync(actor,"01","FQA1",default);
+    await seriesRepository.AddSeriesAsync(actor,"01","FQA2",default);
+    await seriesRepository.AddSeriesAsync(actor,"03","BQA1",default);
+    var configuredSeries = await seriesRepository.ListSeriesAsync(actor,default);
+    Check(configuredSeries.Count(item=>item.Tipo=="01")==2 && configuredSeries.Any(item=>item.Tipo=="03"&&item.Serie=="BQA1"),
+        "Configuración conserva múltiples series por tipo de comprobante");
+    await ExpectDomainFailure(()=>seriesRepository.AddSeriesAsync(actor,"01","FQA1",default),"ya existe",
+        "La configuración rechaza una serie duplicada para el mismo tipo");
+    var seriesForEmission = await commercial.ReadAsync(actor,true,null,null,null,null,null,1,null,null,default);
+    Check(seriesForEmission.GetProperty("SeriesComprobante").GetArrayLength()==3,
+        "La consulta de emisión devuelve las series configuradas por tipo");
+    await ExpectDomainFailure(()=>commercial.SaveAsync(actor,true,Purchase("QA-SERIE",buyerDocument),null,default),
+        "serie configurada","El servidor valida la serie elegida en la emisión manual");
+    await Execute(connection,"DELETE FROM dbo.SerieComprobanteHYT WHERE Serie IN(N'FQA1',N'FQA2',N'BQA1');");
     var purchaseId = await commercial.SaveAsync(actor,false,Purchase("100") with { FechaVencimiento=new DateOnly(2026,12,10) },null,default);
     var purchaseData = await commercial.ReadAsync(actor,false,purchaseId,null,null,null,null,1,null,null,default);
     var emptyPurchase = purchaseData.GetProperty("Documento");
@@ -1494,6 +1528,17 @@ try
     Check(emptyPurchase.GetProperty("Pagos").GetArrayLength()==0 && emptyPurchase.GetProperty("Costos").GetArrayLength()==0 &&
         emptyPurchase.GetProperty("Presupuestos").GetArrayLength()==0 && purchaseData.GetProperty("OpcionesCosto").GetArrayLength()==0,
         "La provisión nueva conserva sus arreglos vacíos de pagos y vínculos");
+    var purchaseVersion = emptyPurchase.GetProperty("VersionEdicion").GetString();
+    var correctedPurchase = Purchase("100") with { VersionEdicion=purchaseVersion,FechaVencimiento=new DateOnly(2026,12,20),
+        Detalle=[new("ITEM-A","Compra corregida","NIU",1m,100m,100m)] };
+    Check(await commercial.SaveAsync(actor,false,correctedPurchase,purchaseId,default)==purchaseId,
+        "La edición de compra mantiene el ID y permite corregir el registro completo");
+    var purchaseAfterEdit = (await commercial.ReadAsync(actor,false,purchaseId,null,null,null,null,1,null,null,default)).GetProperty("Documento");
+    Check(purchaseAfterEdit.GetProperty("Detalle")[0].GetProperty("Descripcion").GetString()=="Compra corregida" &&
+        purchaseAfterEdit.GetProperty("FechaVencimiento").GetString()=="2026-12-20",
+        "La compra corregida conserva sus partidas y vencimiento");
+    await ExpectDomainFailure(()=>commercial.SaveAsync(actor,false,correctedPurchase,purchaseId,default),
+        "El comprobante cambió","La edición de compra rechaza una versión obsoleta");
     var supplierHelp = await commercial.ReadAsync(actor,false,null,null,null,null,"20699999991",1,null,null,default);
     Check(supplierHelp.GetProperty("OpcionesProveedor").EnumerateArray().Any(row => row.GetProperty("DocumentoTercero").GetString()=="20699999991"),
         "La ayuda busca en el maestro al proveedor registrado");
@@ -1520,6 +1565,13 @@ try
         "Pago y detracción se registran por separado y el reintento no duplica el pago");
     await ExpectDomainFailure(()=>commercial.PayAsync(actor,purchaseId,false,new DateOnly(2026,11,10),1m,"EXCESO",default),
         "saldo","El pago al proveedor respeta el neto de detracción");
+    var paidPurchase=(await commercial.ReadAsync(actor,false,purchaseId,null,null,null,null,1,null,null,default)).GetProperty("Documento");
+    await ExpectDomainFailure(()=>commercial.SaveAsync(actor,false,Purchase("100") with {
+        VersionEdicion=paidPurchase.GetProperty("VersionEdicion").GetString(),Importe=10m,
+        Detalle=[new("ITEM-A","Compra inferior a pagos","NIU",1,8.47m,8.47m)]
+    },purchaseId,default),"pagos ya registrados","La edición de compra conserva la coherencia con abonos existentes");
+    await ExpectDomainFailure(()=>commercial.DeleteAsync(actor,false,purchaseId,paidPurchase.GetProperty("VersionEdicion").GetString()!,default),
+        "pagos","La eliminación bloquea compras con abonos o detracciones pagadas");
     var paidWithholdings=await commercial.ReadWithholdingsAsync(actor,"PAGADA","20699999991","CONSTANCIA-1",1,default);
     Check(paidWithholdings.EnumerateArray().Any(row=>row.GetProperty("ComprobanteId").GetInt64()==purchaseId &&
         row.GetProperty("Saldo").GetDecimal()==0),"El pago deja la detracción pagada y permite buscar por operación");
@@ -1527,8 +1579,8 @@ try
     var commercialBudget2 = await Save(connection,Payload([Manual()],description:"Segundo presupuesto vinculado a comprobantes"));
     var salesBudgetMatches = (await commercial.ReadAsync(actor,true,null,null,null,null,"Segundo presupuesto",1,1,null,default))
         .GetProperty("OpcionesPresupuesto").EnumerateArray().ToArray();
-    Check(salesBudgetMatches.Length == 1 && salesBudgetMatches[0].GetProperty("PresupuestoId").GetInt64() == commercialBudget2.BudgetId,
-        "La ayuda de ventas filtra presupuestos del cliente por descripción");
+    Check(salesBudgetMatches.Length == 0,
+        "La ayuda de ventas excluye un presupuesto sin OC aunque coincida la descripción");
     await commercial.LinkAsync(actor,false,purchaseId,[],commercialBudget.BudgetId,"Costo desde la provisión",50m,default);
     var commercialCostId=Convert.ToInt64(await Scalar(connection,$"SELECT CostoProveedorId FROM dbo.ComprobanteHYTCosto WHERE ComprobanteId={purchaseId}"));
     await commercial.LinkAsync(actor,false,purchaseId,[commercialCostId],null,null,null,default);
@@ -1558,8 +1610,32 @@ try
         foreignDeposit.GetProperty("DetraccionDocumento").GetDecimal()==14.16m &&
         foreignDeposit.GetProperty("MonedaDetraccion").GetString()=="PEN",
         "El depósito en otra moneda conserva el equivalente calculado sobre el total de compra");
+    var purchaseForDelete=await commercial.SaveAsync(actor,false,Purchase("ELIMINAR-COMPRA"),null,default);
+    var workForDelete=await payroll.SaveCostAsync(actor,new(Guid.NewGuid(),commercialBudget.BudgetId,providerAuto,"Trabajo liberado",25m,"PEN",null),default);
+    await commercial.LinkAsync(actor,false,purchaseForDelete,[workForDelete],null,null,null,default);
+    var purchaseForDeleteData=(await commercial.ReadAsync(actor,false,purchaseForDelete,null,null,null,null,1,null,null,default)).GetProperty("Documento");
+    await commercial.DeleteAsync(actor,false,purchaseForDelete,purchaseForDeleteData.GetProperty("VersionEdicion").GetString()!,default);
+    Check(Convert.ToInt32(await Scalar(connection,$"SELECT COUNT(1) FROM dbo.ComprobanteHYT WHERE ComprobanteId={purchaseForDelete}"))==0 &&
+        Convert.ToInt32(await Scalar(connection,$"SELECT COUNT(1) FROM dbo.ComprobanteHYTCosto WHERE ComprobanteId={purchaseForDelete}"))==0 &&
+        Convert.ToInt32(await Scalar(connection,$"SELECT COUNT(1) FROM dbo.CostoProveedorPresupuesto WHERE CostoProveedorId={workForDelete}"))==1,
+        "Eliminar una compra retira sus vínculos y conserva los trabajos");
+    var remainingWithholdings=await commercial.ReadWithholdingsAsync(actor,"PENDIENTE",null,null,1,default);
+    Check(!remainingWithholdings.EnumerateArray().Any(row=>row.GetProperty("ComprobanteId").GetInt64()==purchaseForDelete),
+        "Eliminar la compra también retira su detracción pendiente");
+
     var salesDocument=Purchase("200") with { DocumentoTercero=buyerDocument,NombreTercero="",ImporteDetraccion=0,
         Presupuestos=[commercialBudget.BudgetId,commercialBudget2.BudgetId] };
+    var factoringDeleteId=await commercial.SaveAsync(actor,true,salesDocument with {Numero="ELIMINAR-FACTORING",Presupuestos=[]},null,default);
+    await Execute(connection,$"""
+        INSERT INTO dbo.FactoringLoteHYT(Financiera,FechaNegociacion,Porcentaje,Moneda,OperacionId,Huella,UsuarioRegistro)
+        VALUES(N'Prueba eliminar','20261110',3,'PEN',NEWID(),0x01,N'{actor}');
+        INSERT INTO dbo.FactoringFacturaHYT(ComprobanteId,LoteId) VALUES({factoringDeleteId},SCOPE_IDENTITY());
+        """);
+    var factoringDeleteData=(await commercial.ReadAsync(actor,true,factoringDeleteId,null,null,null,null,1,null,null,default)).GetProperty("Documento");
+    Check(factoringDeleteData.GetProperty("MotivoEliminacion").GetString()!.Contains("factoring"),
+        "La consulta informa que el lote de factoring bloquea la eliminación");
+    await ExpectDomainFailure(()=>commercial.DeleteAsync(actor,true,factoringDeleteId,factoringDeleteData.GetProperty("VersionEdicion").GetString()!,default),
+        "lote de factoring","Eliminar factura bloquea cualquier vínculo con factoring");
     var initialClientHelp=await commercial.ReadAsync(actor,true,null,null,null,null,"",1,null,null,default);
     Check(initialClientHelp.GetProperty("OpcionesCliente").GetArrayLength()>0,"La ayuda de ventas carga clientes activos del maestro sin filtro");
     var clientHelp=await commercial.ReadAsync(actor,true,null,null,null,null,buyerDocument,1,null,null,default);
@@ -1571,6 +1647,8 @@ try
         VALUES(N'OC-INTERNA-QA',N'OC-VENTA-QA',{commercialBudget.BudgetId},{commercialBudget.RevisionId},
             '20261110','20261110',N'{actor}');
         DECLARE @Orden BIGINT=SCOPE_IDENTITY();
+        INSERT INTO dbo.GuiaConformidad(PresupuestoId,FechaActa,NumeroActa,UsuarioRegistro)
+        VALUES({commercialBudget.BudgetId},'20261110',N'GUIA-VENTA-QA',N'{actor}');
         INSERT INTO dbo.ConfirmacionFacturacion(OrdenCompraId,FechaConfirmacion,NumeroConfirmacion,UsuarioRegistro)
         VALUES(@Orden,'20261110',N'CONF-VENTA-QA',N'{actor}');
         SELECT @Orden;
@@ -1581,7 +1659,36 @@ try
         orderLookup:true)).GetProperty("OpcionesOrdenCompra");
     Check(orderOptions.EnumerateArray().Single().GetProperty("OrdenCompraId").GetInt64()==customerOrderId &&
         otherOrders.GetArrayLength()==0, "La ayuda de órdenes permite buscar por confirmación y limita los resultados al cliente");
+    foreach (var reference in new[] { "GUIA-VENTA", "OC-VENTA", "Presupuesto vinculado" })
+    {
+        var matches = (await commercial.ReadAsync(actor,true,null,null,null,null,reference,1,1,null,default))
+            .GetProperty("OpcionesPresupuesto");
+        var otherClientMatches = (await commercial.ReadAsync(actor,true,null,null,null,null,reference,1,2,null,default))
+            .GetProperty("OpcionesPresupuesto");
+        var match = matches.EnumerateArray().Single();
+        Check(match.GetProperty("PresupuestoId").GetInt64() == commercialBudget.BudgetId &&
+            match.GetProperty("NumeroGuia").GetString() == "GUIA-VENTA-QA" &&
+            match.GetProperty("NumeroOCCliente").GetString() == "OC-VENTA-QA" &&
+            otherClientMatches.GetArrayLength() == 0,
+            "La ayuda de presupuestos encuentra " + reference + " solo para el cliente seleccionado");
+    }
+    await Execute(connection, $"UPDATE dbo.OrdenCompraCliente SET Estado=N'TRABAJO_COMPLETADO' WHERE OrdenCompraId={customerOrderId}");
+    await Execute(connection, $"""
+        INSERT INTO dbo.ReferenciaComprobanteExterno(OrdenCompraId,ConfirmacionId,FechaDocumento,CodigoTipoDocumento,Serie,NumeroDocumento,UsuarioRegistro)
+        SELECT confirmacion.OrdenCompraId,confirmacion.ConfirmacionId,'20261110',N'01',N'F001',N'999',N'{actor}'
+        FROM dbo.ConfirmacionFacturacion AS confirmacion WHERE confirmacion.OrdenCompraId={customerOrderId};
+        """);
+    var externallyBilled = await commercial.ReadAsync(actor,true,null,null,null,null,null,1,1,commercialBudget.BudgetId,default);
+    Check(externallyBilled.GetProperty("OpcionesPresupuesto").GetArrayLength() == 0,
+        "La ayuda excluye la OC con marca externa vigente incluso al solicitar el presupuesto por ID");
+    await Execute(connection, $"UPDATE dbo.ReferenciaComprobanteExterno SET Vigente=0 WHERE OrdenCompraId={customerOrderId}");
+    var eligibleAgain = await commercial.ReadAsync(actor,true,null,null,null,null,null,1,1,commercialBudget.BudgetId,default);
+    Check(eligibleAgain.GetProperty("OpcionesPresupuesto").GetArrayLength() == 1,
+        "La marca externa retirada permite volver a elegir el presupuesto");
     var salesId=await commercial.SaveAsync(actor,true,salesDocument with { OrdenCompraId=customerOrderId },null,default);
+    var billed = await commercial.ReadAsync(actor,true,null,null,null,null,"OC-VENTA-QA",1,1,null,default);
+    Check(billed.GetProperty("OpcionesPresupuesto").GetArrayLength() == 0,
+        "La ayuda excluye el presupuesto cuando ya tiene una factura numerada vinculada");
     var salesOrderRows = (await commercial.ReadAsync(actor,true,null,new(2026,11,1),new(2026,11,30),
         null,null,1,null,null,default)).GetProperty("Filas");
     Check(salesOrderRows.EnumerateArray().Single(row => row.GetProperty("ComprobanteId").GetInt64()==salesId)
@@ -1598,7 +1705,64 @@ try
         "La ayuda de notas de crédito filtra facturas por cliente, fecha y número");
     var manualCredit = salesDocument with { Tipo="07", Numero="NC-QA", ReferenciaNota="F001-200",
         CodigoMotivoNota="07", Presupuestos=[] };
+    var saleBeforeEdit = (await commercial.ReadAsync(actor,true,salesId,null,null,null,null,1,null,null,default)).GetProperty("Documento");
+    var editVersion = saleBeforeEdit.GetProperty("VersionEdicion").GetString();
+    var saleEdition = salesDocument with { OrdenCompraId=customerOrderId, VersionEdicion=editVersion,
+        FechaVencimiento=new DateOnly(2026,12,15), Detalle=salesDocument.Detalle.Select(line=>line with { Descripcion="Partida comercial editada" }).ToArray() };
+    Check(await commercial.SaveAsync(actor,true,saleEdition,salesId,default)==salesId,
+        "La edición de venta actualiza el mismo comprobante");
+    var saleEdited = (await commercial.ReadAsync(actor,true,salesId,null,null,null,null,1,null,null,default)).GetProperty("Documento");
+    Check(saleEdited.GetProperty("FechaVencimiento").GetString()=="2026-12-15" &&
+        saleEdited.GetProperty("Detalle")[0].GetProperty("Descripcion").GetString()=="Partida comercial editada" &&
+        saleEdited.GetProperty("Presupuestos").GetArrayLength()==2 && saleEdited.GetProperty("OrdenCompraId").GetInt64()==customerOrderId,
+        "Editar guarda vencimiento, detalle y vínculos de la venta");
+    await ExpectDomainFailure(()=>commercial.SaveAsync(actor,true,saleEdition,salesId,default),"El comprobante cambió",
+        "Una versión obsoleta no puede sobrescribir la edición de un comprobante");
+    var activeReference = await Scalar(connection, $"SELECT ReferenciaId FROM dbo.ReferenciaComprobanteExterno WHERE OrdenCompraId={customerOrderId} AND ComprobanteId={salesId} AND Vigente=1");
+    Check(activeReference is long, "Emisión registra la factura vinculada en la referencia vigente de la OC");
+    var issuedReference = (await invoiceRepository.GetAsync(actor,customerOrderId,1,default))!.Value;
+    Check(issuedReference.GetProperty("Referencia").GetProperty("ComprobanteId").GetInt64()==salesId,
+        "El diálogo consulta el comprobante emitido desde la tabla de referencias");
+    var issuedOrderVersion = Convert.FromBase64String(issuedReference.GetProperty("VersionFila").GetString()!);
+    await ExpectDomainFailure(()=>invoiceRepository.SaveAsync(actor,new(customerOrderId,issuedOrderVersion,Guid.NewGuid(),
+        new DateOnly(2026,11,10),"01","F001","MANUAL",null,null,false,null),default),
+        "Emisión de comprobantes","La OC con una factura emitida rechaza el marcado manual");
+    var partialCredit = manualCredit with { Numero="NC-QA-PARCIAL", Importe=10m,
+        Detalle=[new(null,"Crédito parcial","UND",1,10m,10m)] };
+    var partialCreditId = await commercial.SaveAsync(actor,true,partialCredit,null,default);
+    Check(Equals(activeReference,await Scalar(connection,$"SELECT ReferenciaId FROM dbo.ReferenciaComprobanteExterno WHERE OrdenCompraId={customerOrderId} AND Vigente=1")),
+        "La nota de crédito parcial mantiene la misma referencia activa");
+    await Execute(connection,$"DELETE FROM dbo.ComprobanteHYT WHERE ComprobanteId={partialCreditId}");
     var manualCreditId = await commercial.SaveAsync(actor,true,manualCredit,null,default);
+    Check(Convert.ToInt32(await Scalar(connection,$"SELECT COUNT(1) FROM dbo.ReferenciaComprobanteExterno WHERE ReferenciaId={activeReference}"))==0 &&
+        Convert.ToInt32(await Scalar(connection,$"SELECT COUNT(1) FROM dbo.ReferenciaComprobanteHistorial WHERE ReferenciaId={activeReference} AND ComprobanteId={salesId}"))==1,
+        "La nota de crédito total elimina la referencia operativa y conserva el comprobante en historial");
+    var archivedReference = (await invoiceRepository.GetAsync(actor,customerOrderId,1,default))!.Value;
+    Check(archivedReference.GetProperty("Referencia").ValueKind==JsonValueKind.Null &&
+        archivedReference.GetProperty("Historial").EnumerateArray().Any(item=>
+            item.GetProperty("ReferenciaId").GetInt64()==(long)activeReference! && !item.GetProperty("Vigente").GetBoolean()),
+        "El diálogo muestra en el historial la referencia anulada sin tratarla como vigente");
+    var orderAfterCredit = await commercial.ReadAsync(actor,true,null,null,null,null,"OC-VENTA-QA",1,1,null,default);
+    Check(orderAfterCredit.GetProperty("OpcionesPresupuesto").GetArrayLength()==1,
+        "La OC vuelve a estar pendiente en la ayuda después de una nota de crédito total");
+    var replacementId = await commercial.SaveAsync(actor,true,salesDocument with { Numero="200-REEMPLAZO",
+        OrdenCompraId=customerOrderId, Presupuestos=[commercialBudget.BudgetId] },null,default);
+    var replacementReference = await Scalar(connection,$"SELECT ReferenciaId FROM dbo.ReferenciaComprobanteExterno WHERE OrdenCompraId={customerOrderId} AND ComprobanteId={replacementId}");
+    Check(replacementReference is long,"Una factura asociada directamente a la OC también genera la referencia");
+    var replacementData=(await commercial.ReadAsync(actor,true,replacementId,null,null,null,null,1,null,null,default)).GetProperty("Documento");
+    var replacementVersion=replacementData.GetProperty("VersionEdicion").GetString()!;
+    await commercial.DeleteAsync(actor,true,replacementId,replacementVersion,default);
+    Check(Convert.ToInt32(await Scalar(connection,$"SELECT COUNT(1) FROM dbo.ComprobanteHYTPresupuesto WHERE ComprobanteId={replacementId}"))==0 &&
+        Convert.ToInt32(await Scalar(connection,$"SELECT COUNT(1) FROM dbo.Presupuesto WHERE PresupuestoId={commercialBudget.BudgetId}"))==1,
+        "Eliminar la venta retira su vínculo con el presupuesto y conserva el presupuesto");
+    await commercial.DeleteAsync(actor,true,replacementId,replacementVersion,default);
+    Check(Convert.ToInt32(await Scalar(connection,$"SELECT COUNT(1) FROM dbo.ReferenciaComprobanteExterno WHERE ReferenciaId={replacementReference}"))==0 &&
+        Convert.ToInt32(await Scalar(connection,$"SELECT COUNT(1) FROM dbo.ReferenciaComprobanteHistorial WHERE ReferenciaId={replacementReference} AND ComprobanteId={replacementId}"))==1,
+        "Eliminar la factura traslada su referencia automática al historial");
+    await Execute(connection,$"DELETE FROM dbo.ComprobanteHYT WHERE ComprobanteId={manualCreditId}");
+    Check(Convert.ToInt32(await Scalar(connection,$"SELECT COUNT(1) FROM dbo.ReferenciaComprobanteExterno WHERE OrdenCompraId={customerOrderId} AND ComprobanteId={salesId} AND Vigente=1"))==1,
+        "Al eliminar la nota de crédito se restaura la referencia de la factura vigente");
+    manualCreditId = await commercial.SaveAsync(actor,true,manualCredit,null,default);
     var savedCredit = (await commercial.ReadAsync(actor,true,manualCreditId,null,null,null,null,1,null,null,default)).GetProperty("Documento");
     Check(savedCredit.GetProperty("CodigoMotivoNota").GetString()=="07" &&
         savedCredit.GetProperty("MotivoNota").GetString()=="Devolución por ítem",

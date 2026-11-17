@@ -15,6 +15,7 @@ sealed class TestBudgetRepository : IBudgetRepository
     public DateTimeOffset From {get;private set;}
     public DateTimeOffset Until {get;private set;}
     public string? LastPayload {get;private set;}
+    public Task SetSignatureAsync(string actor,long budgetId,long revisionId,byte[] version,long signatureId,CancellationToken ct) => Task.CompletedTask;
     public Task<BudgetPage> ListAsync(string actor,DateTimeOffset from,DateTimeOffset until,string? search,int page,string? state,CancellationToken ct,string? client=null,string? store=null,string? type=null,bool pendingGuide=false,bool pendingOrder=false)
     {
         RequestedPage=page;From=from;Until=until;LastType=type;PendingGuide=pendingGuide;PendingOrder=pendingOrder;

@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 17/11/2026 | Selecciona la firma activa por nombre y conserva su identificador. *@
 @* Firma: FRANCO LARA - 10/11/2026 | Retira la ayuda de tarifa y el campo manual de número de cotización. Muestra la facturación por comprobante vinculado. *@
 @* Firma: FRANCO LARA - 07/11/2026 | Acciones visibles según los permisos del perfil. *@
 @* Firma: FRANCO LARA - 06/11/2026 | Estados comerciales y edición directa de observado; retira revisiones y cambio de estado de consulta/edición, disponible solo desde listado.  Número visible del presupuesto en tarjeta con borde superior rojo. Columnas de SAP y U.M; elimina confirmación de moneda. Impresión de ambos formatos en subtarjeta del encabezado, sin acceso a impresiones conservadas. *@
@@ -12,6 +13,8 @@
     ViewData["Wide"]=true;ViewData["Title"]="Presupuesto";var input=Model.Input;var record=Model.Record;var state=record is null?"BORRADOR":BudgetRecord.Text(record.Revision,"Estado");
     var rate=record is not null&&!input.NewRevision?record.Revision.GetProperty("TasaIGVAplicada").GetDecimal():Model.Defaults.TryGetProperty("Tasa",out var rateData)&&rateData.ValueKind==JsonValueKind.Object?rateData.GetProperty("Valor").GetDecimal():(decimal?)null;
     string Header(string name)=>input.Draft.Revision.GetValueOrDefault(name)??"";
+    var availableSignatures=Model.Defaults.TryGetProperty("Firmas",out var signatureOptions) ? signatureOptions.EnumerateArray().ToArray() : [];
+    var selectedSignature=availableSignatures.FirstOrDefault(item=>item.GetProperty("FirmaId").ToString()==Header("FirmaId"));
     string Address(string entity,string field,string snapshot)
     {
         if(record is not null&&input.Draft.ClienteId==record.Data.GetProperty("ClienteId").GetInt64()&&input.Draft.TiendaId==record.Data.GetProperty("TiendaId").GetInt64())return BudgetRecord.Text(record.Revision,snapshot);
@@ -59,7 +62,7 @@
 </div><div class="hyt-field"><label for="budget-description">Descripción del trabajo *</label><textarea id="budget-description" name="Draft.Descripcion" maxlength="1500" rows="3" required>@input.Draft.Descripcion</textarea></div>
 <h2>Datos comerciales y de impresión</h2><p>Se conservan por revisión. Los dos formatos HTML utilizan estos mismos datos.</p>
 <div class="hyt-master-fields">
-@foreach(var field in BudgetDraftRules.HeaderFields.Where(f=>f.Name is not ("Coordinador" or "Encargado" or "Firmante" or "CargoFirmante" or "Consideraciones" or "CodigoTipoIGV")))
+@foreach(var field in BudgetDraftRules.HeaderFields.Where(f=>f.Name is not ("FirmaId" or "Coordinador" or "Encargado" or "Firmante" or "CargoFirmante" or "Consideraciones" or "CodigoTipoIGV")))
 {
     var value=Header(field.Name);var name="Draft.Revision["+field.Name+"]";var id="budget-"+field.Name;
     <div class="hyt-field">
@@ -92,10 +95,57 @@
 </section>
 
 <section class="hyt-budget-totals" aria-label="Resumen de importes"><p data-calculation-status role="status">@(Model.ReadOnly?"Importes guardados en el servidor.":"Previsualización de los importes del detalle.")</p><dl><dt>Base imponible</dt><dd data-budget-net>@(record is not null?BudgetRecord.Text(record.Revision,"Subtotal"):"—")</dd><dt>IGV</dt><dd data-budget-tax>@(record is not null?BudgetRecord.Text(record.Revision,"Impuesto"):"—")</dd><dt>Total</dt><dd data-budget-total>@(record is not null?BudgetRecord.Text(record.Revision,"Total"):"—")</dd></dl></section>
+@if(!Model.ReadOnly)
+{
+<div class="hyt-field">
+    <label for="budget-signature">Firma para presupuesto</label>
+    @if(Model.ReadOnly)
+    {
+        <input id="budget-signature" type="text" readonly value="@(selectedSignature.ValueKind==JsonValueKind.Object?BudgetRecord.Text(selectedSignature,"Nombre"):"")" placeholder="Selecciona una firma activa" />
+    }
+    else
+    {
+        <select id="budget-signature" name="Draft.Revision[FirmaId]">
+            <option value="">Selecciona una firma</option>
+            @foreach(var signature in availableSignatures)
+            {
+                <option value="@signature.GetProperty("FirmaId")" selected="@(signature.GetProperty("FirmaId").ToString()==Header("FirmaId"))">@BudgetRecord.Text(signature,"Nombre")</option>
+            }
+        </select>
+    }
+</div>
+}
 <div class="hyt-field"><label for="budget-Consideraciones">Consideraciones</label><textarea id="budget-Consideraciones" name="Draft.Revision[Consideraciones]" rows="6" maxlength="20000">@Header("Consideraciones")</textarea></div>
 @foreach(var hidden in new[]{"Coordinador","Encargado","Firmante","CargoFirmante"}){<input type="hidden" name="Draft.Revision[@hidden]" value="@Header(hidden)"/>}
 @if(!Model.ReadOnly){<button type="submit" class="hyt-button-primary">Guardar presupuesto</button>}
 </fieldset></form>
+@if(Model.ReadOnly)
+{
+    <section class="hyt-panel hyt-master-form">
+    @if(User.HasClaim(GestionServicios.Web.Security.AccessService.PermissionClaim,"PRESUPUESTOS.MODIFICAR"))
+    {
+        <form method="post" asp-action="SelectSignature" asp-route-id="@input.Id" data-hyt-save>
+            <input type="hidden" name="revisionId" value="@input.RevisionId" />
+            <input type="hidden" name="version" value="@input.RevisionVersion" />
+            <input type="hidden" name="returnUrl" value="@input.ReturnUrl" />
+            <div class="hyt-field"><label for="saved-budget-signature">Firma para presupuesto</label>
+            <select id="saved-budget-signature" name="signatureId" required>
+                <option value="">Selecciona una firma activa</option>
+                @foreach(var signature in availableSignatures)
+                {
+                    <option value="@signature.GetProperty("FirmaId")" selected="@(signature.GetProperty("FirmaId").ToString()==Header("FirmaId"))">@BudgetRecord.Text(signature,"Nombre")</option>
+                }
+            </select></div>
+            <button type="submit" class="hyt-button-primary">Guardar firma</button>
+        </form>
+    }
+    else
+    {
+        <p>Firma para presupuesto</p><p>@(selectedSignature.ValueKind==JsonValueKind.Object?BudgetRecord.Text(selectedSignature,"Nombre"):"Sin firma activa seleccionada")</p>
+    }
+    </section>
+}
+
 @if(Model.ReadOnly&&Model.CanEdit&&state is "BORRADOR" or "OBSERVADO"){<p><a class="hyt-button-primary" asp-action="Edit" asp-route-id="@input.Id" asp-route-revisionId="@input.RevisionId" asp-route-returnUrl="@input.ReturnUrl">Editar presupuesto</a></p>}
 @if(record is not null)
 {

@@ -173,7 +173,7 @@
   },
   {
     "path": "StoreProcedure/spu_Reporte_Listar.sql",
-    "sha256": "0ae804e4600ef65e578974d0826df10968d8ffb604e5cd68a67ba076d5654abf"
+    "sha256": "90d7392ddc4f6f228b3c5bb0dbaedc0655abd022e396a49d41de24491eb6b0ec"
   },
   {
     "path": "StoreProcedure/spu_Usuarios_Listar.sql",
@@ -221,6 +221,6 @@
   },
   {
     "path": "ADMINISTRACION_HYT.sql",
-    "sha256": "a99301ec6017cd8dcd4b519005da70eec1ccfad35e9e30654e24daaa5be80064"
+    "sha256": "eff6dd3a1fc5aca2477726e5a7ca79b49e3db3498073d37a3b606822d9c834e7"
   }
 ]

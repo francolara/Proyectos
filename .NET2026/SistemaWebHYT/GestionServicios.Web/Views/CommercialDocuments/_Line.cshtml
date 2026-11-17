@@ -1,8 +1,9 @@
+@* Firma: FRANCO LARA - 17/11/2026 | Admite cantidades decimales al editar comprobantes existentes. *@
 @* Firma: FRANCO LARA - 10/11/2026 | Partidas editables con el botón de eliminación estándar de HYT e importe calculado. *@
 @* Firma: FRANCO LARA - 11/11/2026 | Muestra el número de ítem de la partida como texto y permite editar y ampliar la descripción y muestra la cantidad entera sin ceros decimales y sugiere unidades del maestro homologado. *@
 @using System.Globalization
 @using GestionServicios.Application.Billing
-@model (string Index,CommercialLine Line)
+@model (string Index,CommercialLine Line,bool Editing)
 @{
     var prefix = $"Input.Detalle[{Model.Index}]";
     var item = int.TryParse(Model.Index, out var index) ? index + 1 : (int?)null;
@@ -13,7 +14,7 @@
 <td><input name="@(prefix+".Codigo")" value="@Model.Line.Codigo" maxlength="100" aria-label="Código" /></td>
 <td><textarea name="@(prefix+".Descripcion")" rows="1" maxlength="1500" aria-label="Descripción" required>@Model.Line.Descripcion</textarea></td>
 <td><input name="@(prefix+".Unidad")" value="@Model.Line.Unidad" maxlength="30" list="commercial-units" aria-label="Unidad" required /></td>
-<td><input name="@(prefix+".Cantidad")" value="@quantity" type="number" step="1" min="0" aria-label="Cantidad" required /></td>
+<td><input name="@(prefix+".Cantidad")" value="@quantity" type="number" step="@(Model.Editing ? "any" : "1")" min="0" aria-label="Cantidad" required /></td>
 <td><input name="@(prefix+".Precio")" value="@Model.Line.Precio.ToString(CultureInfo.InvariantCulture)" type="number" step="any" min="0" aria-label="Precio sin IGV" required /></td>
 <td><input name="@(prefix+".Importe")" value="@Model.Line.Importe.ToString(CultureInfo.InvariantCulture)" type="number" step="any" min="0" aria-label="Importe calculado" readonly /></td>
 <td>

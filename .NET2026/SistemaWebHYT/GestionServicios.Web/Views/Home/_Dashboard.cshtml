@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 17/11/2026 | Jerarquía de pendientes y gráfico con detalle por punto y rango del filtro superior. *@
 @* Firma: FRANCO LARA - 11/11/2026 | Rediseña Inicio con indicadores compactos, gráficos de gestión y expedientes junto a la tendencia y cobertura de guía y OC en presupuestos aceptados. Consolida el rediseño con filtros, prioridades y minigráficos del período. *@
 @* Firma: FRANCO LARA - 06/11/2026 | Estados comerciales en el detalle accesible del panel. Guía registrada sin aceptación adicional. Panel centrado en estados vigentes y pendientes documentales; accesos al reporte integral. Series legibles Confirmación del cliente y Facturado con registros vigentes, sin denominaciones de primeros eventos. *@
 @using System.Text.Json
@@ -93,16 +94,16 @@ else
             @if (budgets && orders)
             {
                 <a asp-controller="Reports" asp-action="Index" asp-route-kind="PRESUPUESTO" asp-route-pendingOrder="true"
-                   asp-route-from="@from" asp-route-to="@to" asp-route-client="@Model.Client" asp-route-store="@Model.Store"><strong>@Count("PresupuestosSinOC").ToString("N0")</strong> Sin OC del cliente</a>
+                   asp-route-from="@from" asp-route-to="@to" asp-route-client="@Model.Client" asp-route-store="@Model.Store"><strong data-pending="@(Count("PresupuestosSinOC") > 0 ? "true" : "false")">@Count("PresupuestosSinOC").ToString("N0")</strong><span>Sin OC del cliente</span><span class="hyt-priority-arrow" aria-hidden="true">↗</span></a>
             }
             @if (budgets && canSeeGuide)
             {
                 <a asp-controller="Reports" asp-action="Index" asp-route-kind="PRESUPUESTO" asp-route-pendingGuide="true"
-                   asp-route-from="@from" asp-route-to="@to" asp-route-client="@Model.Client" asp-route-store="@Model.Store"><strong>@Count("PresupuestosSinGuia").ToString("N0")</strong> Sin guía</a>
+                   asp-route-from="@from" asp-route-to="@to" asp-route-client="@Model.Client" asp-route-store="@Model.Store"><strong data-pending="@(Count("PresupuestosSinGuia") > 0 ? "true" : "false")">@Count("PresupuestosSinGuia").ToString("N0")</strong><span>Sin guía</span><span class="hyt-priority-arrow" aria-hidden="true">↗</span></a>
             }
             @if (orders && canSeeInvoice)
             {
-                <span title="Trabajo completado, guía registrada y confirmación vigente"><strong>@Count("ListasParaMarcar").ToString("N0")</strong> Listas para marcar Facturado</span>
+                <span title="Trabajo completado, guía registrada y confirmación vigente"><strong data-pending="@(Count("ListasParaMarcar") > 0 ? "true" : "false")">@Count("ListasParaMarcar").ToString("N0")</strong><span>Por marcar como facturado</span></span>
             }
         </div>
     }
@@ -110,8 +111,38 @@ else
 @if(budgets||orders)
 {
 <div class="hyt-dashboard-primary @(hasQueue ? "hyt-dashboard-with-queue" : "")">
-<section class="hyt-panel hyt-dashboard-chart hyt-dashboard-trend"><header><h2>Registros en el tiempo</h2><p>Registros por fecha en Perú. Confirmación del cliente y Facturado muestran registros vigentes.</p></header><div class="hyt-chart-controls">@if(budgets){<label><input type="checkbox" data-chart-series="Presupuestos" checked /> Presupuestos</label>}@if(orders){<label><input type="checkbox" data-chart-series="Ordenes" checked /> OC del cliente</label><label><input type="checkbox" data-chart-series="Confirmaciones" /> Confirmación del cliente</label><label><input type="checkbox" data-chart-series="Marcados" /> Facturado</label>}<label>Agrupar por<select data-chart-group><option value="day">Día</option><option value="week">Semana</option><option value="month">Mes</option></select></label></div>
-<svg data-chart="trend" viewBox="0 0 760 270" role="img" aria-label="Evolución de registros de presupuestos, órdenes, confirmaciones y facturación"></svg><p data-chart-note></p><output data-chart-readout aria-live="polite">Selecciona un punto para consultar su fecha y cantidad.</output><a class="hyt-button-secondary hyt-action-button" data-chart-link hidden></a></section>
+<section class="hyt-panel hyt-dashboard-chart hyt-dashboard-trend" id="registros-en-el-tiempo" aria-labelledby="dashboard-trend-title">
+    <header class="hyt-trend-header">
+        <h2 id="dashboard-trend-title">Registros en el tiempo</h2>
+        <label class="hyt-trend-select">
+            Agrupar por
+            <select data-chart-group>
+                <option value="day">Día</option>
+                <option value="week">Semana</option>
+                <option value="month">Mes</option>
+            </select>
+        </label>
+    </header>
+    <p>Registros por fecha en Perú. Confirmación del cliente y Facturado muestran registros vigentes.</p>
+    <div class="hyt-trend-legend" role="group" aria-label="Series del gráfico">
+        @if (budgets)
+        {
+            <label><input type="checkbox" data-chart-series="Presupuestos" checked /> Presupuestos</label>
+        }
+        @if (orders)
+        {
+            <label><input type="checkbox" data-chart-series="Ordenes" checked /> OC del cliente</label>
+            <label><input type="checkbox" data-chart-series="Confirmaciones" /> Confirmación del cliente</label>
+            <label><input type="checkbox" data-chart-series="Marcados" /> Facturado</label>
+        }
+    </div>
+    <svg data-chart="trend" viewBox="0 0 760 270" role="img" aria-label="Evolución de los registros seleccionados"></svg>
+    <p data-chart-note></p>
+    <div class="hyt-trend-detail">
+        <output data-chart-readout aria-live="polite"></output>
+        <a class="hyt-button-secondary hyt-action-button" data-chart-link hidden></a>
+    </div>
+</section>
 @if(hasQueue)
 {
 <section class="hyt-panel hyt-dashboard-chart hyt-dashboard-queue"><h2>Expedientes por completar</h2><p><strong>@Count("PendientesPeriodo")</strong> del período · <strong>@Count("TotalPendientes")</strong> acumulados al @Model.To.ToString("dd/MM/yyyy")</p>

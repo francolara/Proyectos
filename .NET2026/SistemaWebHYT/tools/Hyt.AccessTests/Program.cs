@@ -389,6 +389,20 @@ Check(Regex.IsMatch(masterList, "<a[^>]*data-hyt-record-action=\"view\"[^>]*>Ver
     "La grilla compartida marca Ver y Editar para el estilo compacto y conserva sus etiquetas");
 var previousMasterAccount = repository.Account;
 repository.Account = previousMasterAccount with { Permissions = [.. previousMasterAccount.Permissions, "MATERIALES.CONSULTAR"] };
+var beforeMaterialLookup=repository.Account;
+repository.Account=repository.Account with {Permissions=[..repository.Account.Permissions,"MATERIALES.CREAR","REPORTES.IMPRIMIR"]};
+var withholdingForm=await maintenanceClient.GetStringAsync("/Maestros/materiales/Nuevo");
+Check(withholdingForm.Contains("material-withholding-lookup")&&withholdingForm.Contains("Buscar detracción")&&
+    !withholdingForm.Contains("<select id=\"field-CodigoDetraccion\""),"Materiales reutiliza el diálogo de detracciones de comprobantes");
+var filteredMaterials=await maintenanceClient.GetStringAsync("/Maestros/materiales?active=false&affectedByWithholding=true&search=prueba-reporte");
+Check(maintenanceFactory.Maintenance.LastActive==false&&maintenanceFactory.Maintenance.LastAffected==true&&
+    filteredMaterials.Contains("name=\"active\"")&&filteredMaterials.Contains("affectedByWithholding=true"),
+    "Materiales envía los filtros de estado y detracción y los conserva en los enlaces");
+var filteredMaterialPrint=await maintenanceClient.GetStringAsync("/Maestros/materiales?active=false&affectedByWithholding=true&search=prueba-reporte&print=true");
+Check(maintenanceFactory.Maintenance.LastActive==false&&maintenanceFactory.Maintenance.LastAffected==true&&
+    WebUtility.HtmlDecode(filteredMaterialPrint).Contains("Afecto a detracción")&&filteredMaterialPrint.Contains("Inactivo"),
+    "La impresión aplica los filtros e incluye el estado y la afectación a detracción");
+repository.Account=beforeMaterialLookup;
 var materialTariffHtml = await maintenanceClient.GetStringAsync("/Maestros/materiales/1");
 repository.Account = previousMasterAccount;
 Check(Regex.IsMatch(materialTariffHtml, "<a(?=[^>]*data-material-price-open)(?=[^>]*data-hyt-record-action=\"view\")[^>]*>Ver</a>") &&
@@ -497,7 +511,7 @@ var signatureBytes=Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQ
 async Task<HttpResponseMessage> UploadSignatureForTest(byte[] bytes,string filename)
 {
     var token=await MaintenanceToken("/Configuracion/HYT");
-    using var body=new MultipartFormDataContent();body.Add(new StringContent(token),"__RequestVerificationToken");body.Add(new StringContent(Convert.ToBase64String(new byte[8])),"rowVersion");body.Add(new ByteArrayContent(bytes),"signature",filename);
+    using var body=new MultipartFormDataContent();body.Add(new StringContent("Firma de prueba"),"signatureName");body.Add(new StringContent(token),"__RequestVerificationToken");body.Add(new StringContent(Convert.ToBase64String(new byte[8])),"rowVersion");body.Add(new ByteArrayContent(bytes),"signature",filename);
     return await maintenanceClient.PostAsync("/Configuracion/HYT/Firma",body);
 }
 await UploadSignatureForTest("<svg/>"u8.ToArray(),"firma.svg");
@@ -753,6 +767,12 @@ Check(noConfirmationInvoice.Contains("Registra primero la confirmación del clie
 maintenanceFactory.InvoiceMarks.HasConfirmation=true;
 var receiptSummary=await maintenanceClient.GetStringAsync("/OCCliente/1/Facturado/Consulta");
 Check(receiptSummary.Contains("F001")&&receiptSummary.Contains("000012A")&&!receiptSummary.Contains("<form"),"Consulta de comprobante presenta datos sin edición");
+maintenanceFactory.InvoiceMarks.IssuedDocumentId=123;
+var issuedReferenceHtml=await maintenanceClient.GetStringAsync("/OCCliente/1/Facturado?popup=true");
+Check(issuedReferenceHtml.Contains("Emisión de comprobantes")&&issuedReferenceHtml.Contains("000012A")&&
+    issuedReferenceHtml.Contains("03/11/2026")&&issuedReferenceHtml.Contains("Operador")&&!issuedReferenceHtml.Contains("<form")&&
+    !issuedReferenceHtml.Contains("Retirar el marcado"),"Facturado consulta un comprobante de Emisión sin controles de edición o retiro");
+maintenanceFactory.InvoiceMarks.IssuedDocumentId=null;
 repository.Account=repository.Account with {Permissions=["OC_CLIENTE.CONSULTAR","FACTURADO.CONSULTAR"]};
 Check((await maintenanceClient.PostAsync("/OCCliente/1/Facturado",new FormUrlEncodedContent(markFields))).StatusCode==HttpStatusCode.Redirect,"Consulta de Facturado no concede edición");
 Check((await maintenanceClient.GetAsync("/Seguimiento/guias/1/Adjuntos")).StatusCode==HttpStatusCode.Redirect,"Adjuntos de guía exigen su permiso de consulta");
@@ -1158,12 +1178,84 @@ foreach(var scope in new[]{"compras","ventas"})
     var printHtml=await payrollClient.GetStringAsync("/Comprobantes/"+scope+"/1?print=true");
     Check(printHtml.Contains("data-report-csv")&&!printHtml.Contains("data-commercial-form"),"Impresión y CSV del comprobante: "+scope);
 }
+foreach(var deleteScope in new[]{"compras","ventas"})
+{
+    var deleteHtml=await payrollClient.GetStringAsync("/Comprobantes/"+deleteScope+"/1/Eliminar");
+    Check(deleteHtml.Contains("Confirmar eliminación")&&deleteHtml.Contains("0x0000000000000001"),
+        "Eliminar abre confirmación con versión en "+deleteScope);
+    var deleteToken=Regex.Match(deleteHtml,"name=\"__RequestVerificationToken\"[^>]+value=\"([^\"]+)\"").Groups[1].Value;
+    var deletedResponse=await payrollClient.PostAsync("/Comprobantes/"+deleteScope+"/1/Eliminar",new FormUrlEncodedContent(new Dictionary<string,string>{
+        ["__RequestVerificationToken"]=deleteToken,["version"]="0x0000000000000001"
+    }));
+    Check(deletedResponse.StatusCode==HttpStatusCode.Redirect&&payrollFactory.Commercial.DeletedId==1,
+        "La confirmación elimina el ID solicitado en "+deleteScope);
+}
+payrollFactory.Commercial.DeletionBlocked=true;
+foreach(var blockedScope in new[]{"compras","ventas"})
+{
+    var blockedList=await payrollClient.GetStringAsync("/Comprobantes/"+blockedScope);
+    var blockedDelete=await payrollClient.GetStringAsync("/Comprobantes/"+blockedScope+"/1/Eliminar");
+    Check(blockedList.Contains("aria-disabled=\"true\" title=\"Tiene pagos registrados.") &&
+        !blockedDelete.Contains("Confirmar eliminación") && blockedDelete.Contains("Tiene pagos registrados."),
+        "El listado y la confirmación bloquean eliminar con pagos en "+blockedScope);
+}
+payrollFactory.Commercial.DeletionBlocked=false;
+var purchaseEditHtml = await payrollClient.GetStringAsync("/Comprobantes/compras/1/Editar");
+Check(purchaseEditHtml.Contains("Guardar cambios") && purchaseEditHtml.Contains("Producto de prueba") &&
+    purchaseEditHtml.Contains("name=\"Input.Serie\"") && !purchaseEditHtml.Contains("data-commercial-series"),
+    "Editar compras conserva serie libre y carga datos y partidas");
+var purchaseEditToken = Regex.Match(purchaseEditHtml, "name=\"__RequestVerificationToken\"[^>]+value=\"([^\"]+)\"").Groups[1].Value;
+var purchaseEditFields = new Dictionary<string,string>{
+    ["__RequestVerificationToken"]=purchaseEditToken,["Input.VersionEdicion"]="0x0000000000000001",
+    ["Input.Fecha"]="2026-11-10",["Input.FechaVencimientoEdicion"]="2026-12-20",["Input.Tipo"]="01",
+    ["Input.Serie"]="F999",["Input.Numero"]="123",["Input.Moneda"]="PEN",["Input.FormaPago"]="Crédito",
+    ["Input.DocumentoTercero"]="20600000001",["Input.NombreTercero"]="Proveedor corregido",
+    ["Input.Detalle[0].Descripcion"]="Compra corregida",["Input.Detalle[0].Unidad"]="UND",
+    ["Input.Detalle[0].Cantidad"]="1",["Input.Detalle[0].Precio"]="100"
+};
+var purchaseEdited=await payrollClient.PostAsync("/Comprobantes/compras/1/Editar",new FormUrlEncodedContent(purchaseEditFields));
+Check(purchaseEdited.StatusCode==HttpStatusCode.Redirect && payrollFactory.Commercial.SavedDocumentId==1 &&
+    payrollFactory.Commercial.Saved?.Serie=="F999","Guardar compra edita el mismo registro con la serie del proveedor");
+var preSeriesPermissions=payrollAccess.Account.Permissions;
+payrollAccess.Account=payrollAccess.Account with {Permissions=[..preSeriesPermissions,"CONFIGURACION.CONSULTAR","CONFIGURACION.EDITAR"]};
+var electronicSettings = await payrollClient.GetStringAsync("/Configuracion/HYT/ComprobantesElectronicos");
+var seriesToken = Regex.Match(electronicSettings, "name=\"__RequestVerificationToken\"[^>]+value=\"([^\"]+)\"").Groups[1].Value;
+var seriesSaved = await payrollClient.PostAsync("/Configuracion/HYT/ComprobantesElectronicos",new FormUrlEncodedContent(new Dictionary<string,string>{
+    ["__RequestVerificationToken"]=seriesToken,["tipo"]="01",["serie"]="F900"
+}));
+Check(seriesSaved.StatusCode==HttpStatusCode.Redirect &&
+    (await payrollClient.GetStringAsync("/Configuracion/HYT/ComprobantesElectronicos")).Contains("F900"),
+    "Configuración permite agregar y consultar una serie de factura");
+payrollAccess.Account=payrollAccess.Account with {Permissions=preSeriesPermissions};
+var salesListingForEdit = await payrollClient.GetStringAsync("/Comprobantes/ventas");
+Check(salesListingForEdit.Contains("/Comprobantes/ventas/1/Editar"),"Emisión ofrece Editar desde el listado de ventas");
+var editSale = await payrollClient.GetStringAsync("/Comprobantes/ventas/1/Editar");
+Check(editSale.Contains("Editar comprobante") && editSale.Contains("Producto de prueba") &&
+    editSale.Contains("0x0000000000000001") && editSale.Contains("Guardar cambios"),"Editar carga datos, partidas y versión del comprobante");
+var editSaleToken=Regex.Match(editSale, "name=\"__RequestVerificationToken\"[^>]+value=\"([^\"]+)\"").Groups[1].Value;
+var editFields=new Dictionary<string,string>{
+    ["__RequestVerificationToken"]=editSaleToken,["clienteId"]="1",["Input.VersionEdicion"]="0x0000000000000001",
+    ["Input.Fecha"]="2026-11-10",["Input.FechaVencimientoEdicion"]="2026-12-12",["Input.Tipo"]="01",["Input.Serie"]="F001",
+    ["Input.Numero"]="123",["Input.Moneda"]="PEN",["Input.FormaPago"]="Crédito",["Input.DocumentoTercero"]="20600000001",
+    ["Input.NombreTercero"]="Tercero de prueba",["Input.Detalle[0].Descripcion"]="Partida corregida",
+    ["Input.Detalle[0].Unidad"]="NIU",["Input.Detalle[0].Cantidad"]="1",["Input.Detalle[0].Precio"]="100"
+};
+var editedSale=await payrollClient.PostAsync("/Comprobantes/ventas/1/Editar",new FormUrlEncodedContent(editFields));
+Check(editedSale.StatusCode==HttpStatusCode.Redirect && payrollFactory.Commercial.SavedDocumentId==1 &&
+    payrollFactory.Commercial.Saved?.Detalle.Single().Descripcion=="Partida corregida",
+    "Guardar cambios actualiza el mismo ID de venta con sus partidas editadas");
 var salesForm = await payrollClient.GetStringAsync("/Comprobantes/ventas/Nuevo?clienteId=1");
 var salesBudgetOptions = await payrollClient.GetStringAsync("/Comprobantes/ventas/Presupuestos?clienteId=1&buscar=202611000002");
 Check(salesForm.Contains("data-commercial-budget-open") && salesForm.Contains("commercial-budget-lookup") &&
     !salesForm.Contains("<select id=\"commercial-presupuestoId\"") &&
     salesBudgetOptions.Contains("202611000002"),
     "La precarga de ventas abre la ayuda de presupuestos del cliente");
+Check(salesForm.Contains("data-commercial-series") && salesForm.Contains("data-series-type=\"01\"") &&
+    salesForm.Contains("F002") && salesForm.Contains("B001"),"Ventas ofrece varias series y su tipo para filtrar el combo");
+var saleWithBudget = await payrollClient.GetStringAsync("/Comprobantes/ventas/Nuevo?clienteId=1&presupuestoId=2");
+Check(saleWithBudget.Contains("name=\"Input.OrdenCompraId\" value=\"1\"") &&
+    saleWithBudget.Contains("id=\"commercial-order-number\" value=\"OC-QA\""),
+    "Elegir un presupuesto de venta precarga la OC vinculada y muestra su número");
 foreach(var linkScope in new[]{"compras","ventas"})
 {
     var listing=await payrollClient.GetStringAsync("/Comprobantes/"+linkScope);

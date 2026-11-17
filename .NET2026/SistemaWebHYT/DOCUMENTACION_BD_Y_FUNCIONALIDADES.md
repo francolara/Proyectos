@@ -840,3 +840,48 @@ La estructura XML se contrastó con las guías UBL de factura y nota de crédito
 - El script 064 agrega el vínculo opcional PolizaSctrHYT.ArchivoId a ArchivoAdjunto. spu_ObligacionesHYT_Consultar devuelve el identificador y nombre del adjunto vigente. spu_PolizaSctrHYT_Adjunto consulta el archivo o lo reemplaza con control de concurrencia y auditoría.
 - La ficha de una póliza guardada admite un PDF, PNG o JPG de hasta 15 MB. Se utiliza el almacenamiento privado de HYT en Cloudflare R2, bajo SCTR/<PolizaId>/<operación>.<ext>. El reemplazo retira el vínculo anterior y conserva el historial del archivo.
 - OBLIGACIONES.CONSULTAR permite descargar desde el listado cuando existe el archivo. Adjuntar o reemplazar requiere además OBLIGACIONES.EDITAR.
+
+## 17/11/2026 — Búsqueda de presupuestos en emisión de comprobantes
+
+- La sección `OpcionesPresupuesto` de `spu_ComprobanteHYT_Consultar` admite coincidencias parciales por número de guía o acta no anulada y por número de OC del cliente no cancelada. Conserva la búsqueda por número o descripción del presupuesto y el alcance del cliente seleccionado.
+- Al precargar un comprobante nuevo, la ayuda muestra el número de guía y el número de OC. Solo ofrece presupuestos con una OC no cancelada, sin referencia externa vigente ni factura o boleta numerada asociada al presupuesto. La ficha de un comprobante existente conserva sus opciones de vinculación.
+
+- `OpcionesPresupuesto` también devuelve el identificador de la OC. Al cargar las partidas del presupuesto, el formulario de venta selecciona esa orden automáticamente.
+
+## 17/11/2026 — Facturado de OC desde Emisión de comprobantes
+
+- La referencia activa en `ReferenciaComprobanteExterno` identifica el origen Emisión mediante `ComprobanteId`. El registro automático toma los datos y el responsable del comprobante. El marcado manual conserva la confirmación, la guía y el trabajo terminado como requisitos, y rechaza cambios si la referencia vigente viene de Emisión.
+- La sincronización prioriza la OC vinculada directamente. Cuando el comprobante se vincula solo a un presupuesto, utiliza la OC de ese presupuesto. Si hay varias ventas vigentes para una OC, conserva la primera por identificador y, si pierde vigencia, usa la siguiente. Las referencias manuales vigentes existentes se conservan hasta que el usuario las retire.
+- Al eliminar, desvincular o anular totalmente un comprobante, se copia su referencia a `ReferenciaComprobanteHistorial` y se elimina la fila operativa en la misma transacción. Se considera el importe bruto de las notas de crédito vigentes. Una nota parcial mantiene la referencia. La ficha de OC muestra el historial y los datos de la referencia automática en solo lectura.
+- Inicio, el reporte de OC, el listado de OC y la ayuda de presupuestos leen la referencia vigente. El manifiesto de comprobantes instala la migración y sincroniza las ventas existentes con sus OC.
+
+## 17/11/2026 — Edición de comprobantes de venta
+
+- El script 067 agrega `ComprobanteHYT.VersionFila`. `spu_ComprobanteHYT_Consultar` devuelve la versión y `spu_ComprobanteHYT_Guardar` la verifica antes de actualizar el comprobante, sus partidas y sus vínculos con el presupuesto y la OC. `spu_ComprobanteHYT_Vincular` renueva la versión cuando agrega presupuestos.
+- Emisión ofrece **Editar** desde el listado para usuarios con permiso de edición. El guardado registra los cambios en auditoría y conserva el XML de origen y los datos de envío. El estado SUNAT no bloquea la edición. Si existen notas de crédito vinculadas, se conservan el tipo, la numeración, el cliente y la moneda que identifican la factura para esas notas.
+
+## 17/11/2026 — Edición de compras y series de emisión
+
+- Registro de compras ofrece **Editar** y reutiliza el formulario completo con versión de fila. El guardado actualiza la cabecera, partidas, vencimiento, detracción y proveedor en el mismo comprobante y conserva los pagos y vínculos existentes. Se validan los importes frente a los pagos registrados y la coherencia de proveedor y moneda con los trabajos vinculados.
+- `SerieComprobanteHYT` registra varias series por tipo 01 (factura), 03 (boleta) y 07 (nota de crédito). `spu_SerieComprobanteHYT_Listar` y `spu_SerieComprobanteHYT_Guardar` permiten consultarlas y agregarlas con los permisos de Configuración HYT, evitando duplicados y dejando auditoría.
+- Configuración HYT incluye **Comprobantes electrónicos**. El registro y edición de ventas usa un combo que muestra las series del tipo elegido. Se conserva la serie original de los comprobantes históricos aunque todavía no esté configurada. Las compras mantienen la serie del proveedor como texto libre.
+
+## 17/11/2026 — Eliminación de ventas y compras
+
+- `spu_ComprobanteHYT_Eliminar` exige permisos de consulta y edición, verifica la versión y bloquea la eliminación cuando existe un pago o abono en `ComprobanteHYTPago`, incluido el pago de detracción, o un vínculo en `FactoringFacturaHYT` de cualquier estado.
+- Elimina los vínculos con presupuestos y trabajos y el comprobante en una transacción con auditoría. Los triggers de facturación trasladan la referencia automática de OC al historial y vuelven a calcular su vigencia. Los presupuestos, OC y trabajos mantienen su registro propio.
+- La detracción pendiente se consulta desde el comprobante y desaparece al eliminarlo. Los listados ofrecen Eliminar deshabilitado con el motivo cuando existen pagos o factoring. La confirmación vuelve a validar estas condiciones en el servidor.
+
+## 17/11/2026 — Detracción y filtros de materiales y servicios
+
+- La ficha de materiales reutiliza el diálogo de detracciones de los comprobantes, con búsqueda por código o nombre, porcentaje, selección y opción Quitar. `spu_MantCatalogos` devuelve el porcentaje del catálogo activo.
+- `spu_MantServicioMaterial_Listar` incorpora los parámetros opcionales `@Activo` y `@AfectoDetraccion`, aplicados antes del conteo y la paginación. Un material se considera afecto cuando tiene un código de detracción asignado. Se preserva el parámetro `@SoloActivos` usado por las ayudas.
+- El listado y su impresión conservan los filtros de estado y afectación. Ambos presentan Estado y Afecto a detracción y la impresión incluye los criterios seleccionados.
+
+### Firmas de presupuesto — 17/11/2026
+
+Catálogo `FirmaPresupuestoHYT`: identificador único, nombre, metadatos del archivo, estado activo y una firma predeterminada. Las firmas se inactivan o reactivan; no se eliminan. El script `068_MigrarFirmaPresupuestoHYT.sql` conserva la firma anterior como predeterminada.
+
+`spu_FirmaPresupuestoHYT_Listar` consulta el catálogo y `spu_FirmaPresupuestoHYT_Guardar` agrega firmas, establece la predeterminada y cambia su estado. `spu_Presupuesto_DatosIniciales` devuelve las firmas activas; `spu_Presupuesto_Guardar` conserva el identificador seleccionado en `EmpresaSnapshotJson`. `spu_Presupuesto_FirmaGuardar` permite cambiar únicamente la firma de una revisión con control de concurrencia y auditoría. La impresión omite una firma seleccionada que esté inactiva.
+
+Despliegue local ejecutado el 17/11/2026 en `localhost\SQLEXPRESS`, base `SistemaWebHYT`: tabla, migración y cinco procedimientos; definiciones verificadas con `sp_refreshsqlmodule`. Se verificó la conservación de la firma existente.

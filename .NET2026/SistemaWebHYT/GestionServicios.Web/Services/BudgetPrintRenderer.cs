@@ -1,3 +1,5 @@
+// Firma: FRANCO LARA - 17/11/2026 | Imprime la firma elegida del presupuesto únicamente mientras está activa.
+using System.Text.Json;
 using GestionServicios.Application.Budgets;
 using GestionServicios.Application.Maintenance;
 using System.Security.Claims;
@@ -19,6 +21,21 @@ public sealed class BudgetPrintRenderer(ICompositeViewEngine engine,ITempDataPro
         var company=await companies.GetAsync(context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)!,1,ct);
         model.Subtitle=company?.Text("SubtituloCotizacion")??"";
         var signature=BudgetSignature.Metadata(company);
+        var snapshotText=BudgetRecord.Text(record.Revision,"EmpresaSnapshotJson");
+        if(!string.IsNullOrWhiteSpace(snapshotText))
+        {
+            using var snapshot=JsonDocument.Parse(snapshotText);
+            if(snapshot.RootElement.TryGetProperty("FirmaSeleccionada",out _))
+            {
+                signature=null;
+                if(snapshot.RootElement.TryGetProperty("FirmaId",out var selectedId))
+                {
+                    var selected=(await companies.ListBudgetSignaturesAsync(context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)!,ct))
+                        .FirstOrDefault(item=>item.FirmaId==selectedId.GetInt64()&&item.Activo);
+                    if(selected is not null)signature=JsonSerializer.Deserialize<GestionServicios.Application.Followup.DocumentAttachment>(selected.ArchivoJson);
+                }
+            }
+        }
         if(signature is not null)
         {
             var bytes=await files.ReadAsync(signature,ct);

@@ -1,3 +1,4 @@
+// Firma: FRANCO LARA - 17/11/2026 | Exporta CSV UTF-8 con BOM y conserva tildes en Excel sin la directiva sep.
 using System.Globalization;
 using System.Security.Claims;
 using System.Text;
@@ -107,7 +108,7 @@ public sealed class PayrollReportsController(IPersonalPaymentsRepository reposit
         filter.Search = filter.Search?.Trim();
         report = FilterRows(report, kind, filter);
         var page = new PayrollReportPage(filter, [], report, [], false);
-        var csv = new StringBuilder("sep=;\r\n");
+        var csv = new StringBuilder();
         void AddRow(params string[] cells) => csv.AppendJoin(';', cells).Append("\r\n");
 
         AddRow(Cell(page.Title));

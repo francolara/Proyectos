@@ -1,3 +1,4 @@
+-- Firma: FRANCO LARA | Create date: 17/11/2026 | Consulta la referencia vigente como fuente de facturación de la OC.
 -- Firma: FRANCO LARA | Create date: 10/11/2026 | Incluye comprobantes de venta vinculados en los indicadores de facturación. Consolida los eventos de facturación por OC sin duplicados.
 -- =============================================
 -- Author:        FRANCO LARA
@@ -36,15 +37,9 @@ BEGIN
         LEFT JOIN dbo.Ejecucion AS ejecucion ON ejecucion.PresupuestoId=oc.PresupuestoId
         LEFT JOIN dbo.ConfirmacionFacturacion AS confirmacion ON confirmacion.OrdenCompraId=oc.OrdenCompraId AND confirmacion.Vigente=1
         OUTER APPLY (
-            SELECT TOP (1) origen.ReferenciaId,origen.CodigoTipoDocumento,origen.Serie,origen.NumeroDocumento,origen.FechaDocumento,origen.FechaRegistro
-            FROM (
-                SELECT r.ReferenciaId,r.CodigoTipoDocumento,r.Serie,r.NumeroDocumento,r.FechaDocumento,r.FechaRegistro
-                FROM dbo.ReferenciaComprobanteExterno AS r WHERE r.OrdenCompraId=oc.OrdenCompraId AND r.Vigente=1
-                UNION ALL
-                SELECT -c.ComprobanteId,c.Tipo,c.Serie,c.Numero,c.Fecha,c.FechaRegistro
-                FROM dbo.ComprobanteHYTPresupuesto AS v INNER JOIN dbo.ComprobanteHYT AS c ON c.ComprobanteId=v.ComprobanteId
-                WHERE v.PresupuestoId=p.PresupuestoId AND c.EsVenta=1 AND c.Tipo IN('01','03') AND c.Serie IS NOT NULL
-            ) AS origen ORDER BY origen.FechaRegistro DESC,origen.ReferenciaId
+            SELECT r.ReferenciaId,r.CodigoTipoDocumento,r.Serie,r.NumeroDocumento,r.FechaDocumento,r.FechaRegistro
+            FROM dbo.ReferenciaComprobanteExterno AS r
+            WHERE r.OrdenCompraId=oc.OrdenCompraId AND r.Vigente=1
         ) AS referencia
         WHERE @VerOC=1 AND oc.FechaRegistro>=@Desde AND oc.FechaRegistro<@HastaExclusiva AND (@Cliente IS NULL OR revision.ClienteNombre LIKE N'%'+@Cliente+N'%') AND (@Tienda IS NULL OR revision.TiendaNombre LIKE N'%'+@Tienda+N'%');
         IF @PaginaPendientes<1 OR @PaginaPendientes>100000000 THROW 51601,N'[HYT_VALIDACION] Página no válida.',1;
@@ -63,14 +58,8 @@ BEGIN
             AND (oc.OrdenCompraId IS NULL OR guia.GuiaId IS NULL OR (p.TipoAtencion=N'EMERGENCIA' AND revision.Estado<>N'APROBADO'));
         SELECT evento.FechaRegistro,evento.Tipo INTO #Eventos
         FROM (SELECT confirmacion.OrdenCompraId,confirmacion.FechaRegistro,N'CONFIRMACION' AS Tipo FROM dbo.ConfirmacionFacturacion AS confirmacion WHERE confirmacion.Vigente=1
-            UNION ALL SELECT ocFactura.OrdenCompraId,MAX(origen.FechaRegistro),N'FACTURADO'
-            FROM dbo.OrdenCompraCliente AS ocFactura
-            CROSS APPLY (
-                SELECT r.FechaRegistro FROM dbo.ReferenciaComprobanteExterno AS r WHERE r.OrdenCompraId=ocFactura.OrdenCompraId AND r.Vigente=1
-                UNION ALL
-                SELECT c.FechaRegistro FROM dbo.ComprobanteHYTPresupuesto AS v INNER JOIN dbo.ComprobanteHYT AS c ON c.ComprobanteId=v.ComprobanteId
-                WHERE v.PresupuestoId=ocFactura.PresupuestoId AND c.EsVenta=1 AND c.Tipo IN('01','03') AND c.Serie IS NOT NULL
-            ) AS origen GROUP BY ocFactura.OrdenCompraId) AS evento
+            UNION ALL SELECT r.OrdenCompraId,r.FechaRegistro,N'FACTURADO'
+            FROM dbo.ReferenciaComprobanteExterno AS r WHERE r.Vigente=1) AS evento
         INNER JOIN dbo.OrdenCompraCliente AS oc ON oc.OrdenCompraId=evento.OrdenCompraId
         INNER JOIN dbo.PresupuestoRevision AS revision ON revision.RevisionId=oc.RevisionId
         WHERE @VerOC=1 AND oc.Estado<>N'CANCELADA' AND evento.FechaRegistro>=@Desde AND evento.FechaRegistro<@HastaExclusiva

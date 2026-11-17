@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 17/11/2026 | Reutiliza la ayuda de detracciones compartida con materiales. *@
 @* Firma: FRANCO LARA - 10/11/2026 | Ayuda de detracciones del catálogo FralseCont para compras con importe automático, moneda de depósito y equivalente. *@
 @* Firma: FRANCO LARA - 11/11/2026 | Presenta la detracción automática por material y la selección de respaldo en facturas de venta. *@
 @using System.Globalization
@@ -50,35 +51,7 @@
             </div>
         }
     </div>
-    <dialog id="commercial-withholding-lookup" class="hyt-modal" aria-labelledby="commercial-withholding-title"
-            data-payroll-catalog data-target="commercial-withholding-code">
-        <header class="hyt-modal-header">
-            <h2 id="commercial-withholding-title">Ayuda de detracciones</h2>
-            <button type="button" class="hyt-modal-close" data-hyt-close aria-label="Cerrar ayuda">×</button>
-        </header>
-        <div class="hyt-modal-body">
-            <div class="hyt-field"><label for="commercial-withholding-search">Buscar por código o nombre</label>
-                <input id="commercial-withholding-search" type="search" data-catalog-search autofocus />
-            </div>
-            <div class="hyt-table-wrap" tabindex="0" role="region" aria-label="Códigos de detracción">
-                <table class="hyt-table">
-                    <thead><tr><th>Código</th><th>Nombre</th><th>Porcentaje</th><th>Acción</th></tr></thead>
-                    <tbody>
-                    @foreach(var row in catalog.EnumerateArray())
-                    {
-                        var code = CommercialPage.Text(row,"Codigo");
-                        var name = CommercialPage.Text(row,"Nombre");
-                        var rate = CommercialPage.Amount(row,"Porcentaje");
-                        <tr data-catalog-row>
-                            <td>@code</td><td>@name</td><td>@rate.ToString("0.####")%</td>
-                            <td><button type="button" class="hyt-button-secondary" data-catalog-select="@code"
-                                data-catalog-label="@($"{code} · {name}")" data-withholding-rate="@rate.ToString(CultureInfo.InvariantCulture)">Seleccionar</button></td>
-                        </tr>
-                    }
-                    <tr data-catalog-empty hidden><td colspan="4" class="hyt-grid-message">No se encontraron códigos.</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </dialog>
+    <partial name="_WithholdingLookup" model='("commercial-withholding-lookup","commercial-withholding-code",(string?)null,
+        (IReadOnlyList<GestionServicios.Application.Maintenance.CatalogOption>)catalog.EnumerateArray()
+            .Select(row=>new GestionServicios.Application.Maintenance.CatalogOption(CommercialPage.Text(row,"Codigo"),CommercialPage.Text(row,"Nombre"),CommercialPage.Amount(row,"Porcentaje"))).ToArray())' />
 </fieldset>

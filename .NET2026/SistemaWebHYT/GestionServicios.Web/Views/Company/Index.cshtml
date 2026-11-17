@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 17/11/2026 | Agrega acceso a series y administra firmas nombradas con estado y predeterminada. *@
 @* Firma: FRANCO LARA - 06/11/2026 | Configuración HYT con ubigeo, tarjeta de configuración de presupuesto con subtítulo, firmante, cargo y consideraciones y firma JPG/PNG en Cloudflare con tarjeta y cabecera compactas. *@
 @using GestionServicios.Web.ViewModels.Maintenance
 @using GestionServicios.Application.Maintenance
@@ -6,7 +7,7 @@
 @* Firma: FRANCO LARA - 05/11/2026 | Acciones presentadas como botones HYT; Franja común de responsables sin historial en edición. Consideraciones predeterminadas editables para presupuestos. *@
 @* Firma: FRANCO LARA - 10/11/2026 | Acceso al mantenimiento de la cuenta de cargo de Telecrédito BCP. *@
 @{ViewData["Title"]="Datos de HYT";}
-<header class="hyt-page-header"><div><h1>Datos de HYT</h1><p>Identificación y contacto utilizados al preparar nuevas revisiones de presupuesto.</p></div><div class="hyt-payroll-actions"><a class="hyt-button-secondary" asp-controller="TaxRate" asp-action="Index">Vigencias del IGV</a><a class="hyt-button-secondary" asp-controller="TelecreditSettings" asp-action="Index">Telecrédito BCP</a></div></header>
+<header class="hyt-page-header"><div><h1>Datos de HYT</h1><p>Identificación y contacto utilizados al preparar nuevas revisiones de presupuesto.</p></div><div class="hyt-payroll-actions"><a class="hyt-button-secondary" asp-controller="TaxRate" asp-action="Index">Vigencias del IGV</a><a class="hyt-button-secondary" asp-controller="TelecreditSettings" asp-action="Index">Telecrédito BCP</a><a class="hyt-button-secondary" asp-action="ElectronicDocuments">Comprobantes electrónicos</a></div></header>
 @if(TempData["Notice"] is string notice){<p role="status">@notice</p>}
 <form asp-action="Save" method="post" class="hyt-panel hyt-master-form" data-hyt-save><div asp-validation-summary="All" class="hyt-validation" role="alert"></div>
 <input name="Id" type="hidden" value="@Model.Input.Id" /><input name="RowVersion" type="hidden" value="@Model.Input.RowVersion" />
@@ -24,9 +25,44 @@
 </div></section>
 }
 @if(Model.CanEdit){<button type="submit" class="hyt-button-primary">Guardar datos de HYT</button>}</fieldset></form>
-<section class="hyt-panel hyt-company-signature" aria-labelledby="company-signature-heading"><header class="hyt-signature-heading"><h2 id="company-signature-heading">Subir firma para presupuesto</h2></header>
-@if(!string.IsNullOrWhiteSpace(Model.Record?.Text("FirmaPresupuestoJson"))){<img src="@Url.Action("Signature")" alt="Firma para presupuesto" class="hyt-signature-preview" />}
-@if(Model.CanEdit){<form method="post" asp-action="UploadSignature" enctype="multipart/form-data" class="hyt-signature-form" data-hyt-save><input type="hidden" name="rowVersion" value="@Model.Input.RowVersion" /><div class="hyt-field"><label for="budget-signature">Firma en JPG o PNG</label><input id="budget-signature" type="file" name="signature" accept="image/png,image/jpeg,.png,.jpg,.jpeg" required /></div><p>Hasta 2 MB. La firma se utilizará en las nuevas impresiones.</p><button type="submit" class="hyt-button-primary">Subir firma para presupuesto</button></form>}
+<section class="hyt-panel hyt-master-form" aria-labelledby="company-signature-heading">
+    <h2 id="company-signature-heading">Firmas para presupuestos</h2>
+    @if(Model.CanEdit)
+    {
+        <form method="post" asp-action="UploadSignature" enctype="multipart/form-data" data-hyt-save>
+            <h3>Subir firma para presupuesto</h3>
+            <div class="hyt-master-fields">
+                <div class="hyt-field"><label for="signature-name">Nombre de la firma</label><input id="signature-name" name="signatureName" maxlength="150" required /></div>
+                <div class="hyt-field"><label for="budget-signature">Firma en JPG o PNG</label><input id="budget-signature" type="file" name="signature" accept="image/png,image/jpeg,.png,.jpg,.jpeg" required /></div>
+            </div>
+            <label class="hyt-budget-revalue"><input type="checkbox" name="defaultSignature" value="true" /> Usar como predeterminada</label>
+            <p>Hasta 2 MB por imagen.</p>
+            <button type="submit" class="hyt-button-primary">Agregar firma</button>
+        </form>
+    }
+    @if(Model.Signatures.Count>0)
+    {
+        <div class="hyt-table-wrap"><table class="hyt-table">
+            <thead><tr><th>Firma</th><th>Nombre</th><th>Estado</th><th>Predeterminada</th>@if(Model.CanEdit){<th>Acciones</th>}</tr></thead>
+            <tbody>
+            @foreach(var signature in Model.Signatures)
+            {
+                <tr>
+                    <td><img src="@Url.Action("Signature",new{id=signature.FirmaId})" alt="@signature.Nombre" class="hyt-signature-preview" loading="lazy" /></td>
+                    <td>@signature.Nombre</td><td>@(signature.Activo?"Activa":"Inactiva")</td><td>@(signature.Predeterminada?"Sí":"—")</td>
+                    @if(Model.CanEdit)
+                    {
+                        <td>
+                            @if(signature.Activo&&!signature.Predeterminada)
+                            {<form method="post" asp-action="SignatureState"><input type="hidden" name="id" value="@signature.FirmaId" /><button class="hyt-button-secondary" type="submit">Usar por defecto</button></form>}
+                            <form method="post" asp-action="SignatureState"><input type="hidden" name="id" value="@signature.FirmaId" /><input type="hidden" name="active" value="@(!signature.Activo?"true":"false")" /><button class="hyt-button-secondary" type="submit">@(signature.Activo?"Inactivar":"Reactivar")</button></form>
+                        </td>
+                    }
+                </tr>
+            }
+            </tbody>
+        </table></div>
+    }
 </section>
 @if(Model.Record is not null){<partial name="_TraceSummary" model="@(TraceSummary.From(Model.Record.Text))" />}
 

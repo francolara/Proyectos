@@ -1,3 +1,4 @@
+// Firma: FRANCO LARA - 17/11/2026 | Muestra y limpia la detracción elegida en materiales.
 // Firma: FRANCO LARA - 10/11/2026 | Permite buscar el código y nombre de detracciones en el diálogo compartido.
 // Firma: FRANCO LARA - 09/11/2026 | Búsqueda y selección de bancos y previsión en diálogo HYT.
 import {setDialog} from './hyt-ui.js';
@@ -28,11 +29,20 @@ document.addEventListener('click', event => {
         return;
     }
 
+    const clear=event.target.closest('[data-withholding-clear]');
+    if(clear){
+        const field=document.getElementById(clear.dataset.withholdingClear);
+        field.value='';
+        document.getElementById(clear.dataset.withholdingLabel).value='';
+        field.dispatchEvent(new Event('change',{bubbles:true}));
+        return;
+    }
     const choice = event.target.closest('[data-catalog-select]');
     if (!choice) return;
     const dialog = choice.closest('[data-payroll-catalog]');
     const field = document.getElementById(dialog.dataset.target);
     field.value = choice.dataset.catalogSelect;
+    if(dialog.dataset.labelTarget)document.getElementById(dialog.dataset.labelTarget).value=choice.dataset.catalogLabel;
     field.dispatchEvent(new Event('change', {bubbles: true}));
     setDialog(dialog, false);
 });

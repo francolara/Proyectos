@@ -8,7 +8,9 @@ public sealed record CommercialLine(string? Codigo, string Descripcion, string U
 public sealed record CommercialDocument(string Tipo, string? Serie, string? Numero, DateOnly Fecha, string Moneda,
     string DocumentoTercero, string NombreTercero, string FormaPago, decimal Importe, IReadOnlyList<CommercialLine> Detalle,
     decimal ImporteDetraccion, string MonedaDetraccion, string? CodigoDetraccion, string? ReferenciaNota, string? MotivoNota,
-    IReadOnlyList<long> Presupuestos, string? RucHYT = null, string? XmlOriginal = null, Guid? OperacionId = null, decimal? DetraccionDocumento = null, DateOnly? FechaVencimiento = null, decimal? PorcentajeDetraccion = null, long? OrdenCompraId = null, string? CodigoMotivoNota = null);
+    IReadOnlyList<long> Presupuestos, string? RucHYT = null, string? XmlOriginal = null, Guid? OperacionId = null, decimal? DetraccionDocumento = null, DateOnly? FechaVencimiento = null, decimal? PorcentajeDetraccion = null, long? OrdenCompraId = null, string? CodigoMotivoNota = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    string? VersionEdicion = null);
 
 public interface ICommercialDocumentRepository
 {
@@ -16,6 +18,7 @@ public interface ICommercialDocumentRepository
         string? search, int page, long? clientId, long? budgetId, CancellationToken ct, bool withoutFactoring = false, bool? hasFactoring = null,
         IReadOnlyList<string>? materialCodes = null, bool orderLookup = false, bool invoiceLookup = false);
     Task<long> SaveAsync(string actor, bool sales, CommercialDocument document, long? id, CancellationToken ct);
+    Task DeleteAsync(string actor,bool sales,long id,string version,CancellationToken ct);
     Task ImportBatchAsync(string actor, bool sales, IReadOnlyList<(string File, CommercialDocument Document)> files, CancellationToken ct);
     Task LinkAsync(string actor, bool sales, long id, IReadOnlyList<long> ids, long? budgetId,
         string? description, decimal? amount, CancellationToken ct, Guid? operationId = null);

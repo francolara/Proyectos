@@ -1,6 +1,7 @@
 @using System.Globalization
 @using System.Text.Json
 @model JsonElement
+@* Firma: FRANCO LARA - 17/11/2026 | Pestañas accesibles para el seguimiento de presupuestos. *@
 @* Firma: FRANCO LARA - 11/11/2026 | Gráfico de aceptación y cobertura documental de presupuestos. *@
 @{
     var total = Model.GetProperty("Presupuestos").GetInt64();
@@ -30,18 +31,21 @@
     <h2 id="budget-coverage-title">Seguimiento de presupuestos</h2>
     @if (views.Count > 1)
     {
-        <div class="hyt-budget-coverage-controls" role="group" aria-label="Indicador de presupuestos">
+        <div class="hyt-budget-coverage-controls" role="tablist" aria-label="Indicador de presupuestos">
             @foreach (var view in views)
             {
-                <button type="button" class="hyt-button-secondary" data-coverage-select="@view.Key"
+                <button type="button" id="budget-tab-@view.Key" role="tab" data-coverage-select="@view.Key"
                         aria-controls="budget-coverage-@view.Key"
-                        aria-pressed="@(view.Key == "acceptance" ? "true" : "false")">@view.Label</button>
+                        tabindex="@(view.Key == "acceptance" ? 0 : -1)"
+                        aria-selected="@(view.Key == "acceptance" ? "true" : "false")">@view.Label</button>
             }
         </div>
     }
     @foreach (var view in views)
     {
-        <div id="budget-coverage-@view.Key" data-coverage-view="@view.Key" hidden="@(view.Key != "acceptance")">
+        <div id="budget-coverage-@view.Key" data-coverage-view="@view.Key"
+             role="@(views.Count > 1 ? "tabpanel" : null)" aria-labelledby="@(views.Count > 1 ? $"budget-tab-{view.Key}" : null)"
+             tabindex="@(views.Count > 1 ? "0" : null)" hidden="@(view.Key != "acceptance")">
             <p>@view.Total.ToString("N0") @(view.Key == "acceptance" ? "presupuestos del período" : "presupuestos aceptados del período")</p>
             @if (view.Total == 0)
             {

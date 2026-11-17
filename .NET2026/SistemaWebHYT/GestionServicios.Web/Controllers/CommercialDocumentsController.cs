@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GestionServicios.Web.Controllers;
 
+// Firma: FRANCO LARA - 17/11/2026 | Edición y eliminación de compras y ventas con precarga completa y control de concurrencia.
 // Firma: FRANCO LARA - 10/11/2026 | Compras y comprobantes, carga UBL individual o atómica por lote, registro manual con totales calculados, ayudas, pagos y vínculos desde ficha y listado.
 // Firma: FRANCO LARA - 11/11/2026 | Filtra las ventas por presencia de factoring y consulta la detracción de las partidas y permite buscar y asociar órdenes de compra y buscar trabajos disponibles por factura y presupuestos del cliente para precargar y facturas emitidas para notas de crédito.
 // Firma: FRANCO LARA - 12/11/2026 | Imprime el listado completo de compras y ventas con los filtros activos.
@@ -109,6 +110,75 @@ public sealed class CommercialDocumentsController(ICommercialDocumentRepository 
     private string LocalReturn(string scope, string? target)
         => Url.IsLocalUrl(target) ? target! : Url.Action(nameof(Index), new { scope })!;
 
+    [HttpGet("{id:long}/Eliminar")]
+    public async Task<IActionResult> Delete(string scope,long id,CancellationToken ct)
+    {
+        if (!Allowed(scope,"CONSULTAR") || !Allowed(scope,"EDITAR")) return Forbid();
+        var data=await documents.ReadAsync(Actor,scope=="ventas",id,null,null,null,null,1,null,null,ct);
+        if (!data.TryGetProperty("Documento",out var record) || record.ValueKind!=JsonValueKind.Object) return NotFound();
+        return View(new CommercialPage(scope,data,true,Today));
+    }
+
+    [HttpPost("{id:long}/Eliminar")]
+    public async Task<IActionResult> DeleteConfirmed(string scope,long id,string? version,CancellationToken ct)
+    {
+        if (!Allowed(scope,"CONSULTAR") || !Allowed(scope,"EDITAR")) return Forbid();
+        if (id<=0 || version is not {Length:18}) return BadRequest("Vuelve a abrir el registro para eliminarlo.");
+        try
+        {
+            await documents.DeleteAsync(Actor,scope=="ventas",id,version,ct);
+            TempData["CommercialNotice"]="Registro eliminado.";
+            return RedirectToAction(nameof(Index),new{scope});
+        }
+        catch(MaintenanceException error)
+        {
+            var data=await documents.ReadAsync(Actor,scope=="ventas",id,null,null,null,null,1,null,null,ct);
+            if (!data.TryGetProperty("Documento",out var record) || record.ValueKind!=JsonValueKind.Object) return NotFound();
+            ModelState.AddModelError("",error.Message);
+            return View("Delete",new CommercialPage(scope,data,true,Today));
+        }
+    }
+
+    [HttpGet("{id:long}/Editar")]
+    public async Task<IActionResult> Edit(string scope, long id, CancellationToken ct)
+    {
+        if (!Allowed(scope,"CONSULTAR") || !Allowed(scope,"EDITAR")) return Forbid();
+        var sales = scope == "ventas";
+        var data = await documents.ReadAsync(Actor,sales,id,null,null,null,null,1,null,null,ct);
+        if (!data.TryGetProperty("Documento",out var record) || record.ValueKind != JsonValueKind.Object) return NotFound();
+
+        var date = DateOnly.Parse(CommercialPage.Text(record,"Fecha"),CultureInfo.InvariantCulture);
+        var clientId = sales ? record.GetProperty("ClienteId").GetInt64() : (long?)null;
+        // La tasa del formulario corresponde a la fecha del comprobante.
+        data = await documents.ReadAsync(Actor,sales,id,date,null,null,null,1,clientId,null,ct);
+        if (!data.TryGetProperty("Documento",out record) || record.ValueKind != JsonValueKind.Object) return NotFound();
+        var input = new CommercialInput
+        {
+            VersionEdicion = CommercialPage.Text(record,"VersionEdicion"),
+            Tipo = CommercialPage.Text(record,"Tipo"),
+            Serie = CommercialPage.Text(record,"Serie"),
+            Numero = CommercialPage.Text(record,"Numero"),
+            Fecha = DateOnly.Parse(CommercialPage.Text(record,"Fecha"),CultureInfo.InvariantCulture),
+            FechaVencimientoEdicion = DateOnly.TryParse(CommercialPage.Text(record,"FechaVencimiento"),
+                CultureInfo.InvariantCulture,out var due) ? due : null,
+            Moneda = CommercialPage.Text(record,"Moneda"),
+            DocumentoTercero = CommercialPage.Text(record,"DocumentoTercero"),
+            NombreTercero = CommercialPage.Text(record,"NombreTercero"),
+            FormaPago = CommercialPage.Text(record,"FormaPago"),
+            OrdenCompraId = long.TryParse(CommercialPage.Text(record,"OrdenCompraId"),out var orderId) ? orderId : null,
+            CodigoDetraccion = CommercialPage.Text(record,"CodigoDetraccion"),
+            MonedaDetraccion = CommercialPage.Text(record,"MonedaDetraccion"),
+            ImporteDetraccion = CommercialPage.Amount(record,"ImporteDetraccion"),
+            ReferenciaNota = CommercialPage.Text(record,"ReferenciaNota"),
+            MotivoNota = CommercialPage.Text(record,"MotivoNota"),
+            CodigoMotivoNota = CommercialPage.Text(record,"CodigoMotivoNota"),
+            Detalle = record.GetProperty("Detalle").Deserialize<List<CommercialLine>>() ?? [],
+            Presupuestos = record.GetProperty("Presupuestos").EnumerateArray()
+                .Select(budget => budget.GetProperty("PresupuestoId").GetInt64()).ToList()
+        };
+        return View("New",new CommercialForm(scope,data,input,clientId,null,Today,id));
+    }
+
     [HttpGet("Nuevo")]
     public async Task<IActionResult> New(string scope, long? clienteId, long? presupuestoId, CancellationToken ct)
     {
@@ -120,16 +190,21 @@ public sealed class CommercialDocumentsController(ICommercialDocumentRepository 
         {
             input.DocumentoTercero = CommercialPage.Text(client, "DocumentoTercero");
             input.NombreTercero = CommercialPage.Text(client, "NombreTercero");
-            if (presupuestoId is > 0 && Has("PRESUPUESTOS.CONSULTAR") &&
-                data.GetProperty("OpcionesPresupuesto").EnumerateArray().Any(row => row.GetProperty("PresupuestoId").GetInt64() == presupuestoId))
+            var selectedBudget = presupuestoId is > 0 && Has("PRESUPUESTOS.CONSULTAR")
+                ? data.GetProperty("OpcionesPresupuesto").EnumerateArray()
+                    .FirstOrDefault(row => row.GetProperty("PresupuestoId").GetInt64() == presupuestoId)
+                : default;
+            if (selectedBudget.ValueKind == JsonValueKind.Object && presupuestoId is long selectedBudgetId)
             {
-                var budget = await budgets.GetAsync(Actor, presupuestoId.Value, null, 1, ct);
+                var budget = await budgets.GetAsync(Actor, selectedBudgetId, null, 1, ct);
                 if (budget is not null)
                 {
                     input.Moneda = BudgetRecord.Text(budget.Revision, "CodigoMoneda");
                     var includedTax = BudgetRecord.Text(budget.Revision, "CodigoTipoIGV") == "CON_IGV";
                     var divisor = includedTax ? 1 + CommercialPage.Amount(budget.Revision, "TasaIGVAplicada") : 1;
-                    input.Presupuestos = [presupuestoId.Value];
+                    input.Presupuestos = [selectedBudgetId];
+                    if (long.TryParse(CommercialPage.Text(selectedBudget,"OrdenCompraId"),out var orderId))
+                        input.OrdenCompraId = orderId;
                     input.Detalle = budget.Data.GetProperty("Partidas").EnumerateArray().Select(line => new CommercialLine(
                         BudgetRecord.Text(line,"CodigoInterno"), BudgetRecord.Text(line,"Descripcion"), BudgetRecord.Text(line,"Unidad"),
                         CommercialPage.Amount(line,"Cantidad"), BudgetAmounts.Round(CommercialPage.Amount(line,"PrecioUnitario") / divisor),
@@ -278,27 +353,53 @@ public sealed class CommercialDocumentsController(ICommercialDocumentRepository 
     }
 
     [HttpPost("Guardar")]
-    public async Task<IActionResult> Save(string scope, CommercialInput input, long? clienteId, long? presupuestoId, CancellationToken ct)
+    public Task<IActionResult> Save(string scope, CommercialInput input, long? clienteId, long? presupuestoId, CancellationToken ct)
+        => SaveForm(scope,input,clienteId,presupuestoId,null,ct);
+
+    [HttpPost("{id:long}/Editar")]
+    public Task<IActionResult> Update(string scope, long id, CommercialInput input, long? clienteId, CancellationToken ct)
+        => SaveForm(scope,input,clienteId,null,id,ct);
+
+    private async Task<IActionResult> SaveForm(string scope, CommercialInput input, long? clienteId, long? presupuestoId,
+        long? editingId, CancellationToken ct)
     {
         if (!Allowed(scope, "CONSULTAR") || !Allowed(scope, "EDITAR")) return Forbid();
         var sales = scope == "ventas";
-        var data = await documents.ReadAsync(Actor, sales, null, input.Fecha, null, null, null, 1, clienteId, presupuestoId, ct);
+        var editing = editingId.HasValue;
+        var data = await documents.ReadAsync(Actor, sales, editingId, input.Fecha, null, null, null, 1, clienteId, presupuestoId, ct);
+        JsonElement record = default;
+        if (editing && (!data.TryGetProperty("Documento",out record) || record.ValueKind != JsonValueKind.Object)) return NotFound();
         try
         {
             if (!ModelState.IsValid || input.Fecha == default) throw new FormatException("Revisa los campos del comprobante.");
+            if (editing && string.IsNullOrWhiteSpace(input.VersionEdicion))
+                throw new FormatException("Vuelve a abrir el comprobante para editarlo.");
             var rate = CommercialForm.ReadTaxRate(data) ?? throw new FormatException("No hay una tasa de IGV configurada para la fecha de emisión.");
-            var document = input.ToDocument(rate, sales);
+            var document = input.ToDocument(rate, sales, editing);
             if (sales && (!data.TryGetProperty("Cliente", out var client) ||
                 CommercialPage.Text(client, "DocumentoTercero") != document.DocumentoTercero))
                 throw new FormatException("Selecciona un cliente válido.");
+            if (editing && record.TryGetProperty("Importado",out var imported) && imported.ValueKind == JsonValueKind.True &&
+                document.Tipo == CommercialPage.Text(record,"Tipo") && document.Moneda == CommercialPage.Text(record,"Moneda") &&
+                document.Fecha.ToString("yyyy-MM-dd",CultureInfo.InvariantCulture) == CommercialPage.Text(record,"Fecha"))
+            {
+                var originalLines = record.GetProperty("Detalle").Deserialize<List<CommercialLine>>() ?? [];
+                if (originalLines.Count == document.Detalle.Count && originalLines.Zip(document.Detalle)
+                    .All(pair => pair.First.Cantidad == pair.Second.Cantidad && pair.First.Precio == pair.Second.Precio))
+                    document = document with
+                    {
+                        Importe = CommercialPage.Amount(record,"Importe"),
+                        Detalle = document.Detalle.Select((line,index) => line with { Importe = originalLines[index].Importe }).ToArray()
+                    };
+            }
             Validate(document);
-            var id = await documents.SaveAsync(Actor, sales, document, null, ct);
+            var id = await documents.SaveAsync(Actor, sales, document, editingId, ct);
             return RedirectToAction(nameof(Details), new { scope, id });
         }
         catch (Exception error) when (error is FormatException or MaintenanceException or OverflowException)
         {
             ModelState.AddModelError("", error is OverflowException ? "Revisa las cantidades y los precios del detalle." : error.Message);
-            return View("New", new CommercialForm(scope, data, input, clienteId, presupuestoId, Today));
+            return View("New", new CommercialForm(scope, data, input, clienteId, presupuestoId, Today, editingId));
         }
     }
 

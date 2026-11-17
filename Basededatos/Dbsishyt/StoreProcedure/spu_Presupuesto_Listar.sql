@@ -1,3 +1,4 @@
+-- Firma: FRANCO LARA | Create date: 17/11/2026 | Para presupuestos con OC, lee el comprobante de la referencia vigente.
 -- Firma: FRANCO LARA | Create date: 10/11/2026 | Incluye la descripción de las partidas de la última revisión en la búsqueda y la facturación por comprobante vinculado.
 -- =============================================
 -- Author:        FRANCO LARA
@@ -32,7 +33,7 @@ BEGIN
             p.FechaRegistro,creador.Nombres AS UsuarioRegistro,p.FechaActualizacion,editor.Nombres AS UsuarioActualizacion,
             oc.OrdenCompraId,oc.NumeroOCCliente,oc.Estado AS EstadoOC,oc.RevisionId AS RevisionOC,guia.GuiaId,guia.NumeroActa,guia.Estado AS EstadoGuia,ejecucion.EjecucionId,
             CONVERT(BIT,CASE WHEN dbo.fn_HYTPermiso(@UsuarioId,N'FACTURADO.CONSULTAR')=1 AND (
-                EXISTS(SELECT 1 FROM dbo.ComprobanteHYTPresupuesto AS v INNER JOIN dbo.ComprobanteHYT AS c ON c.ComprobanteId=v.ComprobanteId WHERE v.PresupuestoId=p.PresupuestoId AND c.EsVenta=1 AND c.Tipo IN('01','03') AND c.Serie IS NOT NULL)
+                (oc.OrdenCompraId IS NULL AND EXISTS(SELECT 1 FROM dbo.ComprobanteHYTPresupuesto AS v INNER JOIN dbo.ComprobanteHYT AS c ON c.ComprobanteId=v.ComprobanteId WHERE v.PresupuestoId=p.PresupuestoId AND c.EsVenta=1 AND c.Tipo IN('01','03') AND c.Serie IS NOT NULL))
                 OR EXISTS(SELECT 1 FROM dbo.ReferenciaComprobanteExterno AS factura WHERE factura.OrdenCompraId=oc.OrdenCompraId AND factura.Vigente=1)) THEN 1 ELSE 0 END) AS Facturado,
             (SELECT COUNT_BIG(1) FROM dbo.GuiaArchivo AS vinculo INNER JOIN dbo.ArchivoAdjunto AS archivo ON archivo.ArchivoId=vinculo.ArchivoId AND archivo.Retirado=0 WHERE vinculo.GuiaId=guia.GuiaId) AS AdjuntosGuia
         INTO #Pagina FROM dbo.Presupuesto AS p
@@ -57,7 +58,7 @@ BEGIN
                     SELECT CONCAT(c.Serie,N'-',c.Numero) AS Numero
                     FROM dbo.ComprobanteHYTPresupuesto AS vinculo
                     INNER JOIN dbo.ComprobanteHYT AS c ON c.ComprobanteId=vinculo.ComprobanteId
-                    WHERE vinculo.PresupuestoId=pagina.PresupuestoId AND c.EsVenta=1 AND c.Tipo IN ('01','03') AND c.Serie IS NOT NULL
+                    WHERE pagina.OrdenCompraId IS NULL AND vinculo.PresupuestoId=pagina.PresupuestoId AND c.EsVenta=1 AND c.Tipo IN ('01','03') AND c.Serie IS NOT NULL
                     UNION
                     SELECT CONCAT(referencia.Serie,N'-',referencia.NumeroDocumento)
                     FROM dbo.ReferenciaComprobanteExterno AS referencia

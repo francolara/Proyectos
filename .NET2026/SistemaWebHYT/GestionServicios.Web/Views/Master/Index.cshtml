@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 17/11/2026 | Filtros de estado y afectación a detracción en materiales e impresión. *@
 @{ViewData["Wide"]=true;}
 @using GestionServicios.Web.ViewModels.Maintenance
 @model MaintenanceListModel
@@ -19,6 +20,15 @@
 <form method="get" class="hyt-filters" asp-action="Index" asp-route-entity="@Model.Entity.Key">
 @if (Model.ParentId.HasValue) { <input type="hidden" name="parentId" value="@Model.ParentId" /> }
 <div class="hyt-field"><label for="master-search">@(Model.Entity.Key=="unidades"?"Buscar por código, abreviatura, descripción o código SUNAT":Model.Entity.Key=="contactos"?"Buscar por contacto, cliente o tienda":Model.Entity.Key=="tiendas"?"Buscar por código o descripción del registro o cliente":"Buscar por código o descripción")</label><input id="master-search" name="search" value="@Model.Search" maxlength="200" type="search" /></div>
+@if(Model.Entity.Key=="materiales")
+{
+    <div class="hyt-field"><label for="material-active">Estado</label><select id="material-active" name="active">
+        <option value="">Todos</option><option value="true" selected="@(Model.Active==true)">Activo</option><option value="false" selected="@(Model.Active==false)">Inactivo</option>
+    </select></div>
+    <div class="hyt-field"><label for="material-withholding">Afecto a detracción</label><select id="material-withholding" name="affectedByWithholding">
+        <option value="">Todos</option><option value="true" selected="@(Model.AffectedByWithholding==true)">Sí</option><option value="false" selected="@(Model.AffectedByWithholding==false)">No</option>
+    </select></div>
+}
 <button class="hyt-button-primary" type="submit">Buscar</button><a class="hyt-button-secondary" asp-action="Index" asp-route-entity="@Model.Entity.Key" asp-route-parentId="@Model.ParentId">Limpiar</a>
 </form>
 <div class="@(Model.Entity.Key is "tiendas" or "contactos" ? "hyt-client-related-list" : null)"><partial name="_Grid" model="Model.Grid" /></div>

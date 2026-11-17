@@ -25,6 +25,7 @@ public interface IBudgetRepository
     Task<BudgetPage> ListAsync(string actor,DateTimeOffset from,DateTimeOffset until,string? search,int page,string? state,CancellationToken ct,string? client=null,string? store=null,string? type=null,bool pendingGuide=false,bool pendingOrder=false);
     Task<BudgetRecord?> GetAsync(string actor,long id,long? revisionId,int auditPage,CancellationToken ct);
     Task<BudgetVersion> SaveAsync(string actor,string payload,BudgetVersion? original,bool newRevision,CancellationToken ct);
+    Task SetSignatureAsync(string actor,long budgetId,long revisionId,byte[] version,long signatureId,CancellationToken ct);
     Task ChangeStateAsync(string actor,BudgetVersion original,string newState,DateOnly eventDate,string responsible,string? reason,CancellationToken ct);
     Task<TariffChoicePage> TariffsAsync(string actor,long clientId,DateOnly date,string currency,string? search,int page,CancellationToken ct,long? materialId=null,long? tariffLineId=null);
     Task<JsonElement> DefaultsAsync(string actor,DateOnly date,long? clientId,long? storeId,CancellationToken ct);

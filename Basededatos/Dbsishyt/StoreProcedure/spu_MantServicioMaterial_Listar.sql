@@ -1,3 +1,4 @@
+-- Firma: FRANCO LARA | Create date: 17/11/2026 | Filtra materiales por estado y afectación a detracción en listado e impresión.
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   03/11/2026
@@ -8,7 +9,7 @@ USE [SistemaWebHYT];
 GO
 CREATE OR ALTER PROCEDURE dbo.spu_MantServicioMaterial_Listar
     @UsuarioId NVARCHAR(128), @Pagina INT = 1, @Busqueda NVARCHAR(200) = NULL,
-    @PadreId BIGINT = NULL, @SoloActivos BIT = 0
+    @PadreId BIGINT = NULL, @SoloActivos BIT = 0,@Activo BIT=NULL,@AfectoDetraccion BIT=NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -26,13 +27,16 @@ BEGIN
         IF @Busqueda IS NOT NULL SET @Patron = N'%' + REPLACE(REPLACE(REPLACE(REPLACE(@Busqueda,N'~',N'~~'),N'%',N'~%'),N'_',N'~_'),N'[',N'~[') + N'%';
         SELECT m.MaterialId AS Id, m.CodigoInterno AS Codigo, m.Descripcion AS Descripcion, CASE WHEN m.Activo = 1 THEN N'ACTIVO' ELSE N'INACTIVO' END AS Estado,
             (SELECT STRING_AGG(CONVERT(NVARCHAR(MAX), z.Descripcion), N', ') FROM dbo.MaterialZona AS mz INNER JOIN dbo.Zona AS z ON z.Id = mz.ZonaId WHERE mz.MaterialId = m.MaterialId) AS Informacion, m.FechaRegistro, creador.Nombres AS UsuarioRegistro,
-            m.FechaActualizacion, editor.Nombres AS UsuarioActualizacion
+            m.FechaActualizacion, editor.Nombres AS UsuarioActualizacion,
+            CONVERT(BIT,CASE WHEN NULLIF(TRIM(m.CodigoDetraccion),N'') IS NULL THEN 0 ELSE 1 END) AS AfectoDetraccion
         INTO #Pagina FROM dbo.ServicioMaterial AS m
         INNER JOIN dbo.AspNetUsers AS creador ON creador.Id = m.UsuarioRegistro
         LEFT JOIN dbo.AspNetUsers AS editor ON editor.Id = m.UsuarioActualizacion
-        WHERE (@Patron IS NULL OR m.CodigoInterno LIKE @Patron ESCAPE N'~' OR m.Descripcion LIKE @Patron ESCAPE N'~' OR m.CodigoMaterialSAP LIKE @Patron ESCAPE N'~') AND (@SoloActivos = 0 OR m.Activo = 1);
+        WHERE (@Patron IS NULL OR m.CodigoInterno LIKE @Patron ESCAPE N'~' OR m.Descripcion LIKE @Patron ESCAPE N'~' OR m.CodigoMaterialSAP LIKE @Patron ESCAPE N'~') AND (@SoloActivos = 0 OR m.Activo = 1)
+            AND (@Activo IS NULL OR m.Activo=@Activo)
+            AND (@AfectoDetraccion IS NULL OR CONVERT(BIT,CASE WHEN NULLIF(TRIM(m.CodigoDetraccion),N'') IS NULL THEN 0 ELSE 1 END)=@AfectoDetraccion);
         SELECT p.Id, p.Codigo, p.Descripcion, p.Estado, p.Informacion,
-            p.FechaRegistro, p.UsuarioRegistro, p.FechaActualizacion, p.UsuarioActualizacion
+            p.FechaRegistro, p.UsuarioRegistro, p.FechaActualizacion, p.UsuarioActualizacion,p.AfectoDetraccion
         FROM #Pagina AS p ORDER BY p.Codigo, p.Id
         OFFSET (CONVERT(BIGINT,@Pagina)-1)*20 ROWS FETCH NEXT 20 ROWS ONLY;
         SELECT COUNT_BIG(1) AS Total FROM #Pagina AS p;

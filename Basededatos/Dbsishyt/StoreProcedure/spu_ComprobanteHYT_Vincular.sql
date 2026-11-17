@@ -1,3 +1,4 @@
+-- Firma: FRANCO LARA | Create date: 17/11/2026 | Invalida la versión de edición al agregar presupuestos vinculados.
 -- Firma: FRANCO LARA | Create date: 10/11/2026 | Operaciones de provisiones de compras y comprobantes de venta.
 -- Firma: FRANCO LARA | Create date: 11/11/2026 | Asocia o retira la orden de compra de una venta registrada.
 USE [SistemaWebHYT];
@@ -37,6 +38,7 @@ BEGIN
             INSERT INTO dbo.ComprobanteHYTPresupuesto(ComprobanteId,PresupuestoId)
             SELECT DISTINCT @Id,CONVERT(BIGINT,elegido.value) FROM OPENJSON(@Ids) AS elegido
             WHERE NOT EXISTS(SELECT 1 FROM dbo.ComprobanteHYTPresupuesto AS v WHERE v.ComprobanteId=@Id AND v.PresupuestoId=TRY_CONVERT(BIGINT,elegido.value));
+            IF @@ROWCOUNT>0 UPDATE dbo.ComprobanteHYT SET ClienteId=ClienteId WHERE ComprobanteId=@Id;
         END
         ELSE
         BEGIN

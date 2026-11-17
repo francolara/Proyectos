@@ -3,12 +3,13 @@ using GestionServicios.Application.Billing;
 sealed class TestInvoiceMarkRepository:IInvoiceMarkRepository
 {
     public bool HasConfirmation {get;set;}=true;
+    public long? IssuedDocumentId {get;set;}
     public int Saves {get;private set;}
     public InvoiceMarkCommand? Last {get;private set;}
     private readonly Dictionary<long,InvoiceMarkCommand> references=[];
     private readonly Dictionary<Guid,long> operations=[];
     private readonly List<(long Order,object Data)> events=[];
-    private static object Reference(long id,InvoiceMarkCommand value)=>new{ReferenciaId=id,ConfirmacionId=1,FechaDocumento=value.Date!.Value.ToString("yyyy-MM-dd"),CodigoTipoDocumento=value.Type,Serie=value.Series,NumeroDocumento=value.Number,Vigente=!value.Withdraw,MotivoRetiro=value.Withdraw?value.Reason:null,VersionFila=Convert.ToBase64String(new byte[8]),FechaRegistro="2026-11-03T18:30:00Z",UsuarioRegistro="Operador"};
+    private object Reference(long id,InvoiceMarkCommand value)=>new{ReferenciaId=id,ComprobanteId=IssuedDocumentId,ConfirmacionId=1,FechaDocumento=value.Date!.Value.ToString("yyyy-MM-dd"),CodigoTipoDocumento=value.Type,Serie=value.Series,NumeroDocumento=value.Number,Vigente=!value.Withdraw,MotivoRetiro=value.Withdraw?value.Reason:null,VersionFila=Convert.ToBase64String(new byte[8]),FechaRegistro="2026-11-03T18:30:00Z",UsuarioRegistro="Operador"};
     public Task<JsonElement?> GetAsync(string actor,long orderId,int page,CancellationToken ct)
     {
         if(orderId==999)return Task.FromResult<JsonElement?>(null);

@@ -49,7 +49,7 @@ public static partial class BudgetDraftRules
         new("FechaEjecucion","Fecha de ejecución","Date",10),new("Trimestre","Trimestre","Text",40),new("VigenciaTexto","Vigencia de la oferta","Text",100),
         new("ZonaTexto","Zona informativa","Text",200),new("CodigoSAPProveedor","Código SAP de HYT como proveedor","Text",60),new("ContratoMarco","Contrato marco","Text",60),
         new("Especialidad","Especialidad","Text",150),new("Coordinador","Coordinador","Text",150),new("Encargado","Encargado","Text",150),
-        new("Firmante","Firmante","Text",150),new("CargoFirmante","Cargo del firmante","Text",150),new("Consideraciones","Consideraciones","LongText",20000)
+        new("FirmaId","Firma del presupuesto","Text",20),new("Firmante","Firmante","Text",150),new("CargoFirmante","Cargo del firmante","Text",150),new("Consideraciones","Consideraciones","LongText",20000)
     ];
     [GeneratedRegex(@"^\d{1,13}(\.\d{1,2})?$")]
     private static partial Regex DecimalPattern();
