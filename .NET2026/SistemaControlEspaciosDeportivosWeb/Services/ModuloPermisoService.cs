@@ -31,7 +31,7 @@ public class ModuloPermisoService(IConfiguration configuration) : IModuloPermiso
 
         if (await DebeBloquearPorPlanBasicoAsync(negocioId, moduloNormalizado))
         {
-            return ModuloPermisoContexto.SinAccesoPorPlanBasico("Esta funcionalidad esta disponible en el plan Full. Para usar esta opcion debes migrar de plan.");
+            return ModuloPermisoContexto.SinAccesoPorPlanBasico($"Esta funcionalidad está disponible en el plan {PlanComercialCatalog.Obtener(PlanComercialCatalog.Pro).Nombre}. Para activarla, revisa las opciones en Mi suscripción.");
         }
 
         await using var cn = new SqlConnection(_connectionString);

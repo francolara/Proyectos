@@ -18,7 +18,7 @@ public class CuentaDestinoReglaController(
     private const int TamanoAyudaCuenta = 100;
 
     [HttpGet]
-    public async Task<IActionResult> Index(string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default, bool vistaImpresion = false)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
         {
@@ -27,8 +27,43 @@ public class CuentaDestinoReglaController(
 
         ViewData["AdminShell"] = true;
 
-        var cuentasMovimiento = (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, null, null, 1, TamanoAyudaCuenta, false, false, cancellationToken)).Items.ToList();
-        var reglas = await cuentaDestinoReglaRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, textoBusqueda, pagina, TamanoPagina, cancellationToken);
+        var empresaId = currentCompanyAccessor.EmpresaId.Value;
+        var reglas = await cuentaDestinoReglaRepository.ListarPaginadoPorEmpresaAsync(
+            empresaId, textoBusqueda, vistaImpresion ? 1 : pagina, vistaImpresion ? 0 : TamanoPagina, cancellationToken);
+        if (vistaImpresion)
+        {
+            var filas = new List<string[]>();
+            foreach (var resumen in reglas.Items)
+            {
+                var regla = await cuentaDestinoReglaRepository.ObtenerAsync(resumen.IdCuentaDestinoRegla, cancellationToken);
+                if (regla is null || regla.IdEmpresa != empresaId)
+                {
+                    continue;
+                }
+
+                foreach (var tramo in regla.Detalles.OrderBy(detalle => detalle.Orden))
+                {
+                    filas.Add([
+                        regla.CodigoCuentaOrigen, regla.NombreCuentaOrigen,
+                        tramo.CodigoCuentaDestinoCargo, tramo.NombreCuentaDestinoCargo,
+                        tramo.CodigoCuentaDestinoAbono, tramo.NombreCuentaDestinoAbono,
+                        tramo.Porcentaje.ToString("0.####"),
+                        regla.Activo && tramo.Activo ? "Activo" : "Inactivo",
+                        regla.Observacion ?? string.Empty
+                    ]);
+                }
+            }
+
+            return View("ListadoImpresion", new ListadoImpresionViewModel(
+                "Cuentas destino", currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
+                [("Búsqueda", textoBusqueda?.Trim())],
+                ["Cuenta origen", "Nombre de la cuenta origen", "Cuenta destino", "Nombre de la cuenta destino",
+                    "Contrapartida", "Nombre de la contrapartida", "Porcentaje (%)", "Estado", "Observación"],
+                filas, Horizontal: true));
+        }
+
+        var cuentasMovimiento = (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(
+            empresaId, null, null, 1, TamanoAyudaCuenta, false, false, cancellationToken)).Items.ToList();
         var model = ConstruirViewModel(
             currentCompanyAccessor.EmpresaId.Value,
             currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",

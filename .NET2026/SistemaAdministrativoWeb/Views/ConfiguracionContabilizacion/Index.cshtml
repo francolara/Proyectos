@@ -1,4 +1,5 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.ConfiguracionContabilizacionIndexViewModel
+@* Firma: FRANCO LARA - 19/11/2026 | Habilita la impresión y exportación de la sección seleccionada de configuración contable. *@
 @using SistemaAdministrativoWeb.ViewModels.Contabilidad
 
 @* =============================================
@@ -93,6 +94,9 @@
 
             <div class="tab-content workspace-tab-content">
                 <div class="tab-pane fade show active" id="panel-provision" role="tabpanel" aria-labelledby="tab-provision">
+                    <div class="d-flex justify-content-end mb-2">
+                        <a asp-action="Imprimir" asp-route-seccion="provision" target="_blank" rel="noopener" class="btn btn-outline-secondary accounting-report-print">Imprimir</a>
+                    </div>
                     <div class="workspace-section">
                         <div class="workspace-section-head">
                             <div>
@@ -168,6 +172,9 @@
                     </div>
                 </div>
                 <div class="tab-pane fade" id="panel-documento" role="tabpanel" aria-labelledby="tab-documento">
+                    <div class="d-flex justify-content-end mb-2">
+                        <a asp-action="Imprimir" asp-route-seccion="documento" target="_blank" rel="noopener" class="btn btn-outline-secondary accounting-report-print">Imprimir</a>
+                    </div>
                     <div class="workspace-section">
                         <div class="workspace-section-head">
                             <div>
@@ -347,9 +354,15 @@
                     </div>
                 </div>
                 <div class="tab-pane fade" id="panel-impuesto" role="tabpanel" aria-labelledby="tab-impuesto">
+                    <div class="d-flex justify-content-end mb-2">
+                        <a asp-action="Imprimir" asp-route-seccion="impuesto" target="_blank" rel="noopener" class="btn btn-outline-secondary accounting-report-print">Imprimir</a>
+                    </div>
                     @await Html.PartialAsync("_ImpuestoContableTab", new ConfiguracionImpuestoTabViewModel { Titulo = "Impuesto", Items = Model.Impuestos })
                 </div>
                 <div class="tab-pane fade" id="panel-parametro" role="tabpanel" aria-labelledby="tab-parametro">
+                    <div class="d-flex justify-content-end mb-2">
+                        <a asp-action="Imprimir" asp-route-seccion="parametro" target="_blank" rel="noopener" class="btn btn-outline-secondary accounting-report-print">Imprimir</a>
+                    </div>
                     @await Html.PartialAsync("_ParametroContableTab", new ConfiguracionParametroTabViewModel { Titulo = "Parametros contables", Items = Model.Parametros })
                 </div>
             </div>

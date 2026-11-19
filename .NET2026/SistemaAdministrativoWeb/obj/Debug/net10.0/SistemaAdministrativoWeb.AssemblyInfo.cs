@@ -16,7 +16,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SistemaAdministrativoWeb")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2b6f3dcf791275a4168f82302592ebb26c08b23a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6363717daed7409869923eded788c306f1acdb4b")]
 [assembly: System.Reflection.AssemblyProductAttribute("SistemaAdministrativoWeb")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SistemaAdministrativoWeb")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

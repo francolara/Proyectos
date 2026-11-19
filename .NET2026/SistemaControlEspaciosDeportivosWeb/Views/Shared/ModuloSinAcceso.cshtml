@@ -1,9 +1,9 @@
-@* Firma: FRANCO LARA - 19/11/2026 | Distingue los avisos de suscripción, plan y permisos, incorpora el contacto de soporte y mejora su presentación en ambos temas. *@
+@* Firma: FRANCO LARA - 19/11/2026 | Distingue los avisos de suscripción, plan y permisos, incorpora el contacto de soporte y mejora su presentación en ambos temas y muestra el nombre comercial del plan. *@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ModuloBaseViewModel
 
 @{
     var titulo = Model.BloqueadoPorSuscripcion ? "Suscripción inactiva"
-        : Model.BloqueadoPorPlanBasico ? "Disponible en el plan Full" : "Acceso restringido";
+        : Model.BloqueadoPorPlanBasico ? $"Disponible en el plan {SistemaControlEspaciosDeportivosWeb.Services.PlanComercialCatalog.Obtener(SistemaControlEspaciosDeportivosWeb.Services.PlanComercialCatalog.Pro).Nombre}" : "Acceso restringido";
     ViewData["Title"] = titulo;
 }
 

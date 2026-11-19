@@ -50,6 +50,66 @@ public class ConfiguracionContabilizacionController(
         return View(model);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> Imprimir(string? seccion, CancellationToken cancellationToken)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        if (seccion is not ("provision" or "documento" or "impuesto" or "parametro"))
+        {
+            return BadRequest("Selecciona una sección de configuración contable.");
+        }
+
+        var model = await ConstruirPantallaAsync(cancellationToken, parametrosCompletos: seccion == "parametro");
+        var (titulo, columnas, filas) = seccion switch
+        {
+            "provision" => (
+                "Provisión",
+                new[] { "Operación", "Origen contable", "Asiento automático", "Estado" },
+                model.Provisiones.Select(x => new[]
+                {
+                    x.Titulo, x.Formulario.OrigenTexto,
+                    x.Formulario.GeneraAsientoAutomatico ? "Sí" : "No", Estado(x.Formulario.Activo)
+                }).ToArray()),
+            "documento" => (
+                "Documentos",
+                new[] { "Operación", "Código", "Documento", "Cuenta PEN", "Cuenta USD", "Estado" },
+                model.Documentos.Where(x => x.UsoVentas).Select(x => new[]
+                {
+                    "Ventas", x.CodigoTipoComprobante, x.Descripcion, Cuenta(x.CuentaVentaSolesTexto),
+                    Cuenta(x.CuentaVentaDolaresTexto), Estado(x.Activo)
+                }).Concat(model.Documentos.Where(x => x.UsoCompras).Select(x => new[]
+                {
+                    "Compras", x.CodigoTipoComprobante, x.Descripcion, Cuenta(x.CuentaCompraSolesTexto),
+                    Cuenta(x.CuentaCompraDolaresTexto), Estado(x.Activo)
+                })).ToArray()),
+            "impuesto" => (
+                "Impuestos",
+                new[] { "Código SUNAT", "Impuesto", "Cuenta contable", "Estado" },
+                model.Impuestos.Select(x => new[]
+                {
+                    x.CodigoSunat, x.NombreImpuesto, Cuenta(x.CuentaTexto), Estado(x.Activo)
+                }).ToArray()),
+            _ => (
+                "Parámetros",
+                new[] { "Código", "Descripción", "Cuenta contable", "Estado" },
+                model.Parametros.Select(x => new[]
+                {
+                    x.CodigoParametro, x.DescripcionParametro, Cuenta(x.CuentaTexto), Estado(x.Activo)
+                }).ToArray())
+        };
+
+        return View("ListadoImpresion", new ListadoImpresionViewModel(
+            $"Configuración contable · {titulo}", model.EmpresaNombre, [], columnas, filas,
+            Horizontal: seccion == "documento"));
+
+        static string Estado(bool activo) => activo ? "Activo" : "Inactivo";
+        static string Cuenta(string? cuenta) => string.IsNullOrWhiteSpace(cuenta) ? "Sin asignar" : cuenta;
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     [ModulePermission("CONFIGCONTABLE", ModulePermissionOperation.Edit)]
@@ -284,7 +344,7 @@ public class ConfiguracionContabilizacionController(
         return View("Formulario", ConstruirViewModel(configuraciones, origenes, cuentas, configuracionEditar));
     }
 
-    private async Task<ConfiguracionContabilizacionIndexViewModel> ConstruirPantallaAsync(CancellationToken cancellationToken)
+    private async Task<ConfiguracionContabilizacionIndexViewModel> ConstruirPantallaAsync(CancellationToken cancellationToken, bool parametrosCompletos = false)
     {
         var empresaId = currentCompanyAccessor.EmpresaId!.Value;
 
@@ -297,7 +357,7 @@ public class ConfiguracionContabilizacionController(
             .OrderBy(x => x.CodigoCuenta)
             .ToList();
         var configuracion = await configuracionRepository.ObtenerConfiguracionContableEmpresaAsync(empresaId, cancellationToken);
-        var parametros = (await parametroEmpresaRepository.ListarPaginadoPorEmpresaAsync(empresaId, null, null, 1, TamanoListaParametros, cancellationToken)).Items
+        var parametros = (await parametroEmpresaRepository.ListarPaginadoPorEmpresaAsync(empresaId, null, null, 1, parametrosCompletos ? 0 : TamanoListaParametros, cancellationToken)).Items
             .Where(x => !string.Equals(x.TipoParametro, "NA", StringComparison.OrdinalIgnoreCase))
             .OrderBy(x => x.TipoParametro)
             .ThenBy(x => x.CodigoParametro)
