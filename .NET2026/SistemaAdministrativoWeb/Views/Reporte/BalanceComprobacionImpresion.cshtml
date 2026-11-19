@@ -1,0 +1,20 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.BalanceComprobacionViewModel
+@* Firma: FRANCO LARA - 18/11/2026 | Usa la vista independiente común para impresión y exportación CSV del Balance. *@
+
+@{
+    Layout = "_ReporteImpresionLayout";
+    ViewData["Title"] = "Balance de comprobación";
+    ViewData["MostrarAccionesReporte"] = Model.Resultados.Count > 0;
+}
+
+@if (Model.Resultados.Count > 0)
+{
+    <partial name="_BalanceComprobacionDocumento" model="Model" />
+}
+else
+{
+    <section class="balance-document">
+        <h1>Balance de comprobación</h1>
+        <p>@(Model.MensajeError ?? "No se encontraron saldos para los filtros seleccionados.")</p>
+    </section>
+}

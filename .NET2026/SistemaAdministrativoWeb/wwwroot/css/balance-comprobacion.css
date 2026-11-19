@@ -1,0 +1,240 @@
+/* Firma: FRANCO LARA - 18/11/2026 | Estilos de consulta e impresión de los reportes HTML con acentos azules, barra de acciones celeste y botones en azul FralseTech. */
+:is(.balance-print-toolbar, .balance-document) {
+    --balance-accent: #0070f0;
+    --balance-light-blue: #edf5fb;
+}
+
+.balance-print-page {
+    margin: 0;
+    background: #f1f3f5;
+}
+
+.balance-print-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px clamp(12px, 3vw, 32px);
+    background: var(--balance-light-blue);
+    font: 14px Arial, sans-serif;
+}
+
+.balance-print-toolbar button {
+    padding: 10px 15px;
+    border: 1px solid var(--balance-accent);
+    border-radius: 6px;
+    background: var(--balance-accent);
+    color: #fff;
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.balance-print-toolbar button:focus-visible {
+    outline: 2px solid #17354c;
+    outline-offset: 3px;
+}
+
+.balance-print-page main {
+    box-sizing: content-box;
+    max-width: 1600px;
+    margin: 20px auto;
+    padding: 0 clamp(12px, 2vw, 32px);
+}
+
+.balance-document {
+    --balance-line: #ccd7e0;
+    box-sizing: border-box;
+    padding: clamp(12px, 2vw, 28px);
+    background: #fff;
+    border: 1px solid #dce3e8;
+    border-radius: 8px;
+    color: #172431;
+    font: 14px/1.4 Arial, sans-serif;
+    color-scheme: light;
+}
+
+.balance-document-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid var(--balance-accent);
+}
+
+.balance-document-company {
+    display: grid;
+    gap: 3px;
+    padding: 9px 13px;
+    border: 1px solid var(--balance-line);
+    border-left: 5px solid var(--balance-accent);
+    border-radius: 6px;
+    overflow-wrap: anywhere;
+}
+
+.balance-document-company strong { font-size: 16px; }
+
+.balance-document-company span,
+.balance-document-brand { color: #465568; font-size: 12px; }
+
+.balance-document-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.balance-document-brand img { object-fit: contain; }
+
+.balance-document-filters {
+    border-left: 6px solid var(--balance-accent);
+    background: #f2f4f5;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+}
+
+.balance-document-filters h1 {
+    margin: 0 0 8px;
+    color: inherit;
+    font: bold clamp(18px, 2vw, 24px)/1.2 Arial, sans-serif;
+}
+
+.balance-document-filters dl {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    margin: 0;
+    font-size: 12px;
+}
+
+.balance-document-filters dl div { display: flex; gap: 5px; }
+.balance-document-filters dt { font-weight: bold; }
+.balance-document-filters dd { margin: 0; }
+
+.balance-document-scroll { overflow-x: auto; }
+.balance-document-scroll:focus-visible { outline: 2px solid #315d81; }
+
+.balance-document-table {
+    width: 100%;
+    min-width: 1060px;
+    border-collapse: collapse;
+    color: inherit;
+    font: 12px/1.3 Arial, sans-serif;
+}
+
+.balance-document-table :is(th, td) {
+    border: 1px solid var(--balance-line);
+    padding: 6px 7px;
+}
+
+.balance-document-table th { background: var(--balance-light-blue); text-align: center; }
+.balance-document-table td { background: #fff; }
+.balance-document-table tbody td:nth-child(2) { overflow-wrap: anywhere; }
+.balance-document-table .balance-amount {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.balance-document-table tfoot td { background: #dcebf7; font-weight: bold; }
+.balance-document-table tfoot tr:first-child td { border-top: 2px solid #6b90af; }
+
+.balance-document-context {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    font-size: 12px;
+}
+
+.accounting-document .balance-document-table { min-width: 760px; }
+.accounting-document-wide .balance-document-table { min-width: 1320px; font-size: 11px; }
+.accounting-document-wide .balance-document-table :is(th, td) { padding-inline: 5px; }
+
+.accounting-document .balance-document-table td {
+    vertical-align: top;
+    overflow-wrap: anywhere;
+}
+
+.accounting-document .balance-document-table .balance-amount { overflow-wrap: normal; }
+.accounting-document .report-ledger-highlight-row td { background: #f4f7fa; }
+
+.accounting-document :is(.accounting-document-group, .accounting-document-summary, .accounting-document-cards, .voucher-glosa, .voucher-notes) {
+    margin-block: 12px;
+}
+
+.accounting-document :is(.accounting-document-group-header, .accounting-document-summary, .accounting-document-note) {
+    padding: 9px 12px;
+    background: #f2f4f5;
+    border: 1px solid var(--balance-line);
+    border-radius: 6px;
+}
+
+.accounting-document .accounting-document-group-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 6px 14px;
+    margin-bottom: 8px;
+    color: inherit;
+}
+
+.accounting-document .accounting-document-group-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+}
+
+.accounting-document :is(.accounting-document-cards, .voucher-notes) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr));
+    gap: 8px;
+}
+
+.accounting-document .accounting-document-card {
+    display: grid;
+    gap: 3px;
+    padding: 8px;
+    background: var(--balance-light-blue);
+    color: inherit;
+    border: 1px solid var(--balance-line);
+    border-radius: 6px;
+}
+
+.accounting-document :is(.accounting-document-note, .voucher-account, .voucher-doc) > :is(span, strong, small) {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.accounting-document .accounting-report-total-label { font-weight: bold; }
+
+@page accounting-portrait { size: A4 portrait; margin: 10mm; }
+@page balance-landscape { size: A4 landscape; margin: 10mm; }
+
+@media print {
+    .balance-print-page { page: balance-landscape; background: #fff; }
+    .balance-print-page.accounting-print-portrait { page: accounting-portrait; }
+    .balance-print-toolbar { display: none; }
+    .balance-print-page main { margin: 0; padding: 0; max-width: none; }
+    .balance-document { padding: 0; border: 0; print-color-adjust: exact; }
+    .balance-document-header { margin-bottom: 8px; padding-bottom: 6px; }
+    .balance-document-filters h1 { font-size: 16px; }
+    .balance-document-scroll { overflow: visible; }
+    .balance-document-table { min-width: 0; font-size: 8pt; }
+    .balance-document-table :is(th, td) { padding: 3px 4px; }
+    .accounting-document .balance-document-table { min-width: 0; }
+    .accounting-print-portrait .balance-document-table,
+    .accounting-document-wide .balance-document-table { font-size: 7pt; }
+    .accounting-print-portrait .balance-document-table :is(th, td),
+    .accounting-document-wide .balance-document-table :is(th, td) { padding: 2px; }
+    .accounting-document :is(.accounting-document-group-header, .accounting-document-summary, .accounting-document-card, .accounting-document-note) {
+        break-inside: avoid;
+    }
+    .accounting-document .accounting-document-group-header { break-after: avoid; }
+    .balance-document-table thead { display: table-header-group; }
+    .balance-document-table tfoot { display: table-row-group; break-inside: avoid; }
+    .balance-document-table tr,
+    .balance-document-header,
+    .balance-document-filters { break-inside: avoid; }
+}

@@ -42,19 +42,19 @@ public class ReporteController(
             return NotFound();
         }
 
-        var rucEmpresa = string.Empty;
+        EmpresaDisponibleDto? empresa = null;
         var aspNetUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!string.IsNullOrWhiteSpace(aspNetUserId))
         {
             var empresas = await empresaRepository.ListarPorUsuarioAsync(aspNetUserId, cancellationToken);
-            rucEmpresa = empresas.FirstOrDefault(x => x.IdEmpresa == currentCompanyAccessor.EmpresaId.Value)?.Ruc ?? string.Empty;
+            empresa = empresas.FirstOrDefault(x => x.IdEmpresa == asiento.IdEmpresa);
         }
 
         var model = new VoucherContableViewModel
         {
             IdEmpresa = asiento.IdEmpresa,
-            EmpresaNombre = currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
-            RucEmpresa = rucEmpresa,
+            EmpresaNombre = empresa?.RazonSocial ?? currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
+            RucEmpresa = empresa?.Ruc ?? string.Empty,
             IdAsiento = asiento.IdAsiento,
             Periodo = asiento.Periodo,
             NumeroAsiento = asiento.NumeroAsiento,
@@ -227,6 +227,7 @@ public class ReporteController(
         string? cuentaHasta = null,
         bool filtrarGrado = true,
         bool consultar = false,
+        bool vistaImpresion = false,
         CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
@@ -254,7 +255,7 @@ public class ReporteController(
             CuentaDesde = todasLasCuentas ? string.Empty : cuentaDesde?.Trim() ?? string.Empty,
             CuentaHasta = todasLasCuentas ? string.Empty : cuentaHasta?.Trim() ?? string.Empty,
             FiltrarGrado = filtrarGrado,
-            ConsultaEjecutada = consultar,
+            ConsultaEjecutada = consultar || vistaImpresion,
             AniosDisponibles = Enumerable.Range(anioTrabajo - 5, 11).Select(x => (short)x).ToList(),
             PeriodosDisponibles = ListarPeriodosContables(),
             MonedasDisponibles =
@@ -271,7 +272,7 @@ public class ReporteController(
                 .ToList()
         };
 
-        if (!consultar)
+        if (!model.ConsultaEjecutada)
         {
             return View(model);
         }
@@ -279,11 +280,20 @@ public class ReporteController(
         if (!model.TodasLasCuentas && EsRangoCuentaInvalido(model.CuentaDesde, model.CuentaHasta))
         {
             model.MensajeError = "Cuenta hasta debe ser mayor o igual que Cuenta desde.";
-            return View(model);
+            return vistaImpresion ? View("BalanceComprobacionImpresion", model) : View(model);
         }
 
         try
         {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!string.IsNullOrWhiteSpace(usuarioId))
+            {
+                var empresas = await empresaRepository.ListarPorUsuarioAsync(usuarioId, cancellationToken);
+                var empresa = empresas.FirstOrDefault(x => x.IdEmpresa == idEmpresa);
+                model.EmpresaNombre = empresa?.RazonSocial ?? model.EmpresaNombre;
+                model.RucEmpresa = empresa?.Ruc ?? string.Empty;
+            }
+
             var resultados = await balanceComprobacionRepository.ListarAsync(new BalanceComprobacionRequest
             {
                 IdEmpresa = idEmpresa,
@@ -371,7 +381,7 @@ public class ReporteController(
             model.MensajeError = "No se pudo generar el Balance de comprobación. Intente nuevamente o comuníquese con soporte.";
         }
 
-        return View(model);
+        return vistaImpresion ? View("BalanceComprobacionImpresion", model) : View(model);
     }
 
     [HttpGet]

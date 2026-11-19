@@ -726,6 +726,55 @@ sudo docker inspect fralse-sqlserver \
 - No reemplazar el volumen para actualizar la imagen de SQL Server.
 - Confirmar compatibilidad y backup antes de cambiar la versión mayor de SQL Server.
 
+### 10.3 Verificación posterior a la restauración de SistemaWebHYT
+
+El respaldo restaura los usuarios y roles de la base. Los logins de SQL Server pertenecen a la instancia. Si el respaldo viene de otra instancia, el usuario de base puede faltar o tener un SID distinto al del login del VPS. El 18/11/2026 faltaba el usuario de base de `hyt_app` y la web mostraba «No pudimos conectar con el servicio de acceso».
+
+1. Confirma que `SistemaWebHYT` esté `ONLINE` y `MULTI_USER`. Ejecuta `DBCC CHECKDB ([SistemaWebHYT]) WITH NO_INFOMSGS, ALL_ERRORMSGS;`.
+2. Confirma que la conexión de HYT usa el login `hyt_app` y ejecuta el siguiente bloque con una cuenta de administración en la instancia de destino. Si falta un login o el rol, revisa el aprovisionamiento de la instancia o los scripts de permisos de HYT antes de continuar.
+
+```sql
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   18/11/2026
+-- Description:   Restablece el acceso SQL de HYT tras una restauracion.
+-- =============================================
+USE [SistemaWebHYT];
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.server_principals
+    WHERE name = N'hyt_app' AND type = 'S' AND is_disabled = 0
+)
+    THROW 50001, 'El login SQL hyt_app debe existir y estar habilitado.', 1;
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.database_principals
+    WHERE name = N'hyt_app_executor' AND type = 'R'
+)
+    THROW 50002, 'Falta el rol hyt_app_executor en la base restaurada.', 1;
+
+BEGIN TRANSACTION;
+
+IF USER_ID(N'hyt_app') IS NULL
+    CREATE USER [hyt_app] FOR LOGIN [hyt_app];
+ELSE IF EXISTS (
+    SELECT 1 FROM sys.database_principals
+    WHERE name = N'hyt_app' AND sid <> SUSER_SID(N'hyt_app')
+)
+    ALTER USER [hyt_app] WITH LOGIN = [hyt_app];
+
+IF ISNULL(IS_ROLEMEMBER(N'hyt_app_executor', N'hyt_app'), 0) = 0
+    ALTER ROLE [hyt_app_executor] ADD MEMBER [hyt_app];
+
+COMMIT TRANSACTION;
+```
+
+3. Verifica que `hyt_app` pueda entrar a `SistemaWebHYT` y ejecutar `dbo.spu_ConsultarAcceso` y `dbo.spu_FinalizarAcceso`. La cuenta web usa el rol limitado `hyt_app_executor`. Reserva `db_owner` para la cuenta administrativa autorizada.
+4. Si la instancia usa `franco_admin` para administrar HYT, comprueba también su acceso. Si falta su usuario, créalo para el login existente. Si el SID difiere, vuelve a vincularlo con `ALTER USER [franco_admin] WITH LOGIN = [franco_admin];`. Verifica su rol administrativo por separado.
+5. Prueba el inicio de sesión completo en `https://hyt.fralsetech.com/Acceso` con una cuenta web válida y confirma que la aplicación abre una página autenticada.
+
 ---
 
 ## 11. Backups SQL cifrados en Cloudflare R2

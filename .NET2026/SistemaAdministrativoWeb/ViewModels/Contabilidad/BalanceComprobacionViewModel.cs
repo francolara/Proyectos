@@ -4,6 +4,7 @@ public sealed class BalanceComprobacionViewModel
 {
     public int IdEmpresa { get; set; }
     public string EmpresaNombre { get; set; } = string.Empty;
+    public string RucEmpresa { get; set; } = string.Empty;
     public short AnioSeleccionado { get; set; }
     public byte PeriodoDesdeSeleccionado { get; set; }
     public byte PeriodoHastaSeleccionado { get; set; }

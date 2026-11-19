@@ -1,0 +1,10 @@
+@* Firma: FRANCO LARA - 18/11/2026 | Conserva la ruta y los filtros al abrir un reporte en otra pestaña. *@
+@using Microsoft.AspNetCore.Http
+
+@{
+    var filtros = Context.Request.Query
+        .Where(filtro => !string.Equals(filtro.Key, "vistaImpresion", StringComparison.OrdinalIgnoreCase))
+        .Append(new KeyValuePair<string, Microsoft.Extensions.Primitives.StringValues>("vistaImpresion", "true"));
+    var url = Context.Request.PathBase.Add(Context.Request.Path).ToUriComponent() + QueryString.Create(filtros).ToUriComponent();
+}
+<a href="@url" target="_blank" rel="noopener" class="btn btn-outline-secondary accounting-report-print">Imprimir</a>

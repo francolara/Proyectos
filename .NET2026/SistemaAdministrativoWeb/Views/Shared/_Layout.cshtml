@@ -15,6 +15,7 @@
 @* Firma: FRANCO LARA - 31/08/2026 | Versiona el logotipo remoto con la clave global de recursos para evitar cache obsoleta. *@
 @* Firma: FRANCO LARA - 02/09/2026 | Publica el favicon corporativo, declara el sitemap de rutas publicas y simplifica el mensaje institucional a Sistema contable web. *@
 @* Firma: FRANCO LARA - 29/09/2026 | Incorpora Mapa Operativo debajo de Ayuda en el menú administrativo y mantiene resaltado el acceso activo. *@
+@* Firma: FRANCO LARA - 18/11/2026 | Aplica el diseño común de reportes y abre la impresión y exportación CSV en una pestaña independiente. *@
 <!DOCTYPE html>
 @{
     var adminShell = ViewData["AdminShell"] as bool? ?? false;
@@ -185,6 +186,10 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @if (ViewData["EstilosReporte"] is true)
+    {
+        <link rel="stylesheet" href="~/css/balance-comprobacion.css" asp-append-version="true" />
+    }
     <link rel="stylesheet" href="~/SistemaAdministrativoWeb.styles.css" asp-append-version="true" />
 </head>
 <body class="app-body @(adminShell || platformShell ? "app-shell-body" : "app-public-body")">

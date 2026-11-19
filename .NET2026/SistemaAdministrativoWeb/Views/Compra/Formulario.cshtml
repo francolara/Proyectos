@@ -1,4 +1,5 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.CompraIndexViewModel
+@* Firma: FRANCO LARA - 18/11/2026 | Alinea los filtros y controles seleccionados con el tema azul en ambos modos. *@
 @* Firma: FRANCO LARA - 19/09/2026 | Muestra la trazabilidad del registro al editar una compra. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Corrige la tarjeta visual de retencion en recibos por honorarios nuevos para que refleje el calculo inmediato en pantalla, igual que el importe neto total, y ajusta el modo oscuro en compras para mejorar contraste de toggles, tarjetas resumen y controles asociados del formulario. *@
 
@@ -742,24 +743,24 @@
         justify-content: space-between;
         gap: 1rem;
         padding: 0.95rem 1.15rem;
-        border: 1px solid rgba(31, 80, 67, 0.16);
+        border: 1px solid rgba(31, 78, 130, 0.16);
         border-radius: 1rem;
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(236, 245, 241, 0.96));
-        box-shadow: 0 14px 28px rgba(17, 54, 44, 0.08);
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(236, 244, 252, 0.96));
+        box-shadow: 0 14px 28px rgba(17, 54, 98, 0.08);
         cursor: pointer;
         transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background 0.2s ease;
     }
 
     .workspace-toggle-card:hover {
-        border-color: rgba(31, 80, 67, 0.28);
-        box-shadow: 0 18px 34px rgba(17, 54, 44, 0.12);
+        border-color: rgba(31, 78, 130, 0.28);
+        box-shadow: 0 18px 34px rgba(17, 54, 98, 0.12);
         transform: translateY(-1px);
     }
 
     .workspace-toggle-input:focus-visible + .workspace-toggle-card {
         outline: 0;
-        border-color: rgba(15, 105, 79, 0.52);
-        box-shadow: 0 0 0 0.24rem rgba(25, 135, 84, 0.16);
+        border-color: rgba(15, 105, 209, 0.52);
+        box-shadow: 0 0 0 0.24rem rgba(25, 120, 229, 0.16);
     }
 
     .workspace-toggle-card-copy {
@@ -771,12 +772,12 @@
 
     .workspace-toggle-card-title {
         font-weight: 700;
-        color: #154b3d;
+        color: var(--app-navy);
         line-height: 1.2;
     }
 
     .workspace-toggle-card-text {
-        color: #5b6e68;
+        color: var(--app-muted);
         font-size: 0.9rem;
         line-height: 1.35;
     }
@@ -795,7 +796,7 @@
         block-size: 1.9rem;
         padding: 0.18rem;
         border-radius: 999px;
-        background: linear-gradient(135deg, #d4dde0, #bcc9cd);
+        background: linear-gradient(135deg, #d4dfec, #bccbdb);
         box-shadow: inset 0 1px 3px rgba(16, 24, 40, 0.16);
         transition: background 0.2s ease;
     }
@@ -804,19 +805,19 @@
         inline-size: 1.54rem;
         block-size: 1.54rem;
         border-radius: 50%;
-        background: linear-gradient(135deg, #ffffff, #eef3f5);
+        background: linear-gradient(135deg, #ffffff, #eef3fa);
         box-shadow: 0 4px 12px rgba(16, 24, 40, 0.18);
         transition: transform 0.2s ease;
     }
 
     .workspace-toggle-input:checked + .workspace-toggle-card {
-        border-color: rgba(15, 105, 79, 0.34);
-        background: linear-gradient(135deg, rgba(236, 250, 245, 0.98), rgba(220, 244, 234, 0.98));
-        box-shadow: 0 18px 34px rgba(15, 105, 79, 0.14);
+        border-color: rgba(15, 105, 209, 0.34);
+        background: var(--app-brand-tint);
+        box-shadow: 0 18px 34px rgba(15, 105, 209, 0.14);
     }
 
     .workspace-toggle-input:checked + .workspace-toggle-card .workspace-toggle-pill-track {
-        background: linear-gradient(135deg, #1d8a67, #44c096);
+        background: linear-gradient(135deg, var(--app-action-start), var(--app-accent));
     }
 
     .workspace-toggle-input:checked + .workspace-toggle-card .workspace-toggle-pill-thumb {
@@ -857,9 +858,9 @@
     }
 
     html[data-theme="dark"] .workspace-toggle-input:checked + .workspace-toggle-card {
-        border-color: rgba(58, 159, 123, 0.42);
-        background: linear-gradient(135deg, rgba(16, 52, 42, 0.98), rgba(10, 37, 30, 0.96));
-        box-shadow: 0 18px 34px rgba(8, 33, 27, 0.28);
+        border-color: color-mix(in srgb, var(--app-focus) 42%, transparent);
+        background: var(--app-brand-tint);
+        box-shadow: 0 18px 34px rgba(8, 31, 60, 0.28);
     }
 
     @@media (max-width: 767.98px) {

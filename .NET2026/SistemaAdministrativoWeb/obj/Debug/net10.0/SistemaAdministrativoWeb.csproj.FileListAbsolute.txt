@@ -19482,4 +19482,6 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdminist
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\SistemaAdministrativoWeb.genruntimeconfig.cache
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\ref\SistemaAdministrativoWeb.dll
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\Debug\net10.0\.archify\mapa-operativo-contable-20260929-1645\mapa-operativo-administrador.html
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\rnf1c4oivs-{0}-nf5f8yy353-nf5f8yy353.gz
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\okkjuly45l-{0}-xalpzvz09f-xalpzvz09f.gz
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\ba6bwr13t0-{0}-tnd48l2lbg-tnd48l2lbg.gz
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\rnf1c4oivs-{0}-ybzuigirmd-ybzuigirmd.gz

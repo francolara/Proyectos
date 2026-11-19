@@ -1,0 +1,13 @@
+@model (string EmpresaNombre, string? RucEmpresa)
+@* Firma: FRANCO LARA - 18/11/2026 | Comparte la tarjeta de empresa y marca FralseTech entre los reportes. *@
+
+<header class="balance-document-header">
+    <div class="balance-document-company">
+        <strong>@Model.EmpresaNombre</strong>
+        <span>RUC @(string.IsNullOrWhiteSpace(Model.RucEmpresa) ? "—" : Model.RucEmpresa)</span>
+    </div>
+    <div class="balance-document-brand">
+        <img src="~/images/logo-fralse-tech-reporte.webp" asp-append-version="true" alt="" width="42" height="32" />
+        <span>Powered by <strong>FralseTech</strong></span>
+    </div>
+</header>

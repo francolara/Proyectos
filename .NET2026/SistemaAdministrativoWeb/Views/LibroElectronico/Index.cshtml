@@ -1,4 +1,5 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.LibroElectronicoViewModel
+@* Firma: FRANCO LARA - 18/11/2026 | Alinea los filtros y controles seleccionados con el tema azul en ambos modos. *@
 
 @* Firma: FRANCO LARA - 07/07/2026 | Crea el modulo Libros Electronicos con filtros, previsualizacion paginada, validacion, generacion TXT, descarga temporal e historial para PLE 5.1, 5.2 y 6.1. *@
 @* Firma: FRANCO LARA - 13/07/2026 | Fija Libros Electronicos a moneda PEN, retira el filtro visual de moneda y mantiene la previsualizacion/exportacion en soles. *@
@@ -601,7 +602,7 @@
 
     .ple-disclosure-toggle:hover,
     .ple-disclosure-input:focus-visible + .ple-disclosure-toggle {
-        border-color: rgba(31, 143, 105, 0.48);
+        border-color: color-mix(in srgb, var(--app-accent) 48%, transparent);
     }
 
     .ple-disclosure-copy {
@@ -612,12 +613,12 @@
     }
 
     .ple-disclosure-copy strong {
-        color: #153f35;
+        color: var(--app-navy);
         font-size: 0.9rem;
     }
 
     .ple-disclosure-copy small {
-        color: #667b75;
+        color: var(--app-muted);
         font-size: 0.76rem;
     }
 
@@ -628,7 +629,7 @@
         height: 1.65rem;
         padding: 0.18rem;
         border-radius: 999px;
-        background: #b9c6ca;
+        background: #bac9d9;
         transition: background 0.2s ease;
     }
 
@@ -643,12 +644,12 @@
     }
 
     .ple-disclosure-input:checked + .ple-disclosure-toggle {
-        border-color: rgba(31, 143, 105, 0.4);
-        background: rgba(232, 248, 241, 0.96);
+        border-color: color-mix(in srgb, var(--app-accent) 40%, transparent);
+        background: var(--app-brand-tint);
     }
 
     .ple-disclosure-input:checked + .ple-disclosure-toggle .ple-disclosure-switch {
-        background: linear-gradient(135deg, #177a5b, #43bc91);
+        background: linear-gradient(135deg, var(--app-action-start), var(--app-accent));
     }
 
     .ple-disclosure-input:checked + .ple-disclosure-toggle .ple-disclosure-switch > span {
@@ -676,7 +677,7 @@
 
     .ple-disclosure-input:checked + .ple-presentation-toggle {
         border-color: transparent;
-        background: rgba(31, 143, 105, 0.1);
+        background: color-mix(in srgb, var(--app-accent) 10%, transparent);
     }
 
     .ple-disclosure-input:disabled + .ple-presentation-toggle {
@@ -706,8 +707,8 @@
     }
 
     html[data-theme="dark"] .ple-disclosure-input:checked + .ple-disclosure-toggle {
-        border-color: rgba(58, 159, 123, 0.42);
-        background: rgba(12, 43, 35, 0.96);
+        border-color: color-mix(in srgb, var(--app-focus) 42%, transparent);
+        background: var(--app-brand-tint);
     }
 
     html[data-theme="dark"] .ple-presentation-toggle {
@@ -717,7 +718,7 @@
 
     html[data-theme="dark"] .ple-disclosure-input:checked + .ple-presentation-toggle {
         border-color: transparent;
-        background: rgba(58, 159, 123, 0.12);
+        background: color-mix(in srgb, var(--app-focus) 12%, transparent);
     }
 
     @@keyframes ple-detail-reveal {

@@ -1,0 +1,115 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.BalanceComprobacionViewModel
+@* Firma: FRANCO LARA - 18/11/2026 | Rediseña el Balance de comprobación y reutiliza el encabezado común en la vista de impresión y CSV. *@
+
+@{
+    var utilidadActivoPasivo = Model.TotalActivo < Model.TotalPasivo ? Model.TotalPasivo - Model.TotalActivo : 0m;
+    var perdidaActivoPasivo = Model.TotalActivo > Model.TotalPasivo ? Model.TotalActivo - Model.TotalPasivo : 0m;
+    var utilidadNaturaleza = Model.TotalPerdidaNaturaleza < Model.TotalGananciaNaturaleza ? Model.TotalGananciaNaturaleza - Model.TotalPerdidaNaturaleza : 0m;
+    var perdidaNaturaleza = Model.TotalPerdidaNaturaleza > Model.TotalGananciaNaturaleza ? Model.TotalPerdidaNaturaleza - Model.TotalGananciaNaturaleza : 0m;
+    var utilidadFuncion = Model.TotalPerdidaFuncion < Model.TotalGananciaFuncion ? Model.TotalGananciaFuncion - Model.TotalPerdidaFuncion : 0m;
+    var perdidaFuncion = Model.TotalPerdidaFuncion > Model.TotalGananciaFuncion ? Model.TotalPerdidaFuncion - Model.TotalGananciaFuncion : 0m;
+    var saldoCuentaTexto = Model.TodasLasCuentas ? "Todas las cuentas" : $"{Model.CuentaDesde} - {Model.CuentaHasta}";
+}
+
+<article class="balance-document" aria-labelledby="balance-document-title">
+    @await Component.InvokeAsync("ReporteEmpresa", new { empresaNombre = Model.EmpresaNombre, rucEmpresa = Model.RucEmpresa })
+
+    <section class="balance-document-filters">
+        <h1 id="balance-document-title">Balance de comprobación mensual</h1>
+        <dl>
+            <div><dt>Año</dt><dd>@Model.AnioSeleccionado</dd></div>
+            <div><dt>Períodos</dt><dd>@Model.PeriodoDesdeSeleccionado.ToString("00") – @Model.PeriodoHastaSeleccionado.ToString("00")</dd></div>
+            <div><dt>Moneda</dt><dd>@Model.MonedasDisponibles.FirstOrDefault(x => x.Valor == Model.MonedaSeleccionada)?.Texto</dd></div>
+            <div><dt>Grado</dt><dd>@(Model.FiltrarGrado ? Model.GradoSeleccionado.ToString() : "Todos")</dd></div>
+            <div><dt>Cuentas</dt><dd>@saldoCuentaTexto</dd></div>
+        </dl>
+    </section>
+
+    <div class="balance-document-scroll" tabindex="0" role="region" aria-label="Detalle del balance">
+        <table class="balance-document-table">
+            <colgroup span="2"></colgroup>
+            <colgroup span="2"></colgroup>
+            <colgroup span="2"></colgroup>
+            <colgroup span="2"></colgroup>
+            <colgroup span="2"></colgroup>
+            <colgroup span="2"></colgroup>
+            <thead>
+                <tr>
+                    <th scope="col" rowspan="2">Cuenta</th>
+                    <th scope="col" rowspan="2">Descripción</th>
+                    <th scope="colgroup" colspan="2">Sumas</th>
+                    <th scope="colgroup" colspan="2">Saldos</th>
+                    <th scope="colgroup" colspan="2">Inventario</th>
+                    <th scope="colgroup" colspan="2">Resultado por Naturaleza</th>
+                    <th scope="colgroup" colspan="2">Resultado por Función</th>
+                </tr>
+                <tr>
+                    <th scope="col" data-csv-label="Sumas - Debe">Debe</th>
+                    <th scope="col" data-csv-label="Sumas - Haber">Haber</th>
+                    <th scope="col" data-csv-label="Saldos - Deudor">Deudor</th>
+                    <th scope="col" data-csv-label="Saldos - Acreedor">Acreedor</th>
+                    <th scope="col" data-csv-label="Inventario - Activo">Activo</th>
+                    <th scope="col" data-csv-label="Inventario - Pasivo">Pasivo</th>
+                    <th scope="col" data-csv-label="Resultado por Naturaleza - Pérdida">Pérdida</th>
+                    <th scope="col" data-csv-label="Resultado por Naturaleza - Ganancia">Ganancia</th>
+                    <th scope="col" data-csv-label="Resultado por Función - Pérdida">Pérdida</th>
+                    <th scope="col" data-csv-label="Resultado por Función - Ganancia">Ganancia</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Resultados)
+                {
+                    <tr>
+                        <td class="balance-a4-account">@item.CodigoCuenta</td>
+                        <td class="balance-a4-description">@item.NombreCuenta</td>
+                        <td class="balance-amount">@item.Debe.ToString("N2")</td>
+                        <td class="balance-amount">@item.Haber.ToString("N2")</td>
+                        <td class="balance-amount">@item.ResultadoDebe.ToString("N2")</td>
+                        <td class="balance-amount">@item.ResultadoHaber.ToString("N2")</td>
+                        <td class="balance-amount">@item.Activo.ToString("N2")</td>
+                        <td class="balance-amount">@item.Pasivo.ToString("N2")</td>
+                        <td class="balance-amount">@item.PerdidaNaturaleza.ToString("N2")</td>
+                        <td class="balance-amount">@item.GananciaNaturaleza.ToString("N2")</td>
+                        <td class="balance-amount">@item.PerdidaFuncion.ToString("N2")</td>
+                        <td class="balance-amount">@item.GananciaFuncion.ToString("N2")</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="2">Totales</td>
+                    <td class="balance-amount">@Model.TotalDebe.ToString("N2")</td>
+                    <td class="balance-amount">@Model.TotalHaber.ToString("N2")</td>
+                    <td class="balance-amount">@Model.TotalResultadoDebe.ToString("N2")</td>
+                    <td class="balance-amount">@Model.TotalResultadoHaber.ToString("N2")</td>
+                    <td class="balance-amount">@Model.TotalActivo.ToString("N2")</td>
+                    <td class="balance-amount">@Model.TotalPasivo.ToString("N2")</td>
+                    <td class="balance-amount">@Model.TotalPerdidaNaturaleza.ToString("N2")</td>
+                    <td class="balance-amount">@Model.TotalGananciaNaturaleza.ToString("N2")</td>
+                    <td class="balance-amount">@Model.TotalPerdidaFuncion.ToString("N2")</td>
+                    <td class="balance-amount">@Model.TotalGananciaFuncion.ToString("N2")</td>
+                </tr>
+                <tr>
+                    <td colspan="4"></td>
+                    <td class="balance-amount">Utilidad</td>
+                    <td class="balance-amount">Pérdida</td>
+                    <td class="balance-amount">@utilidadActivoPasivo.ToString("N2")</td>
+                    <td class="balance-amount">@perdidaActivoPasivo.ToString("N2")</td>
+                    <td class="balance-amount">@perdidaNaturaleza.ToString("N2")</td>
+                    <td class="balance-amount">@utilidadNaturaleza.ToString("N2")</td>
+                    <td class="balance-amount">@perdidaFuncion.ToString("N2")</td>
+                    <td class="balance-amount">@utilidadFuncion.ToString("N2")</td>
+                </tr>
+                <tr>
+                    <td colspan="6"></td>
+                    <td class="balance-amount">@((Model.TotalActivo + utilidadActivoPasivo).ToString("N2"))</td>
+                    <td class="balance-amount">@((Model.TotalPasivo + perdidaActivoPasivo).ToString("N2"))</td>
+                    <td class="balance-amount">@((Model.TotalPerdidaNaturaleza + perdidaNaturaleza).ToString("N2"))</td>
+                    <td class="balance-amount">@((Model.TotalGananciaNaturaleza + utilidadNaturaleza).ToString("N2"))</td>
+                    <td class="balance-amount">@((Model.TotalPerdidaFuncion + perdidaFuncion).ToString("N2"))</td>
+                    <td class="balance-amount">@((Model.TotalGananciaFuncion + utilidadFuncion).ToString("N2"))</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</article>

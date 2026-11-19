@@ -1,4 +1,5 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.RegistroVentasViewModel
+@* Firma: FRANCO LARA - 18/11/2026 | Aplica el diseño común de reportes y abre la impresión y exportación CSV en una pestaña independiente. *@
 
 @* Firma: FRANCO LARA - 07/11/2026 | Unifica el estilo HTML e impreso del reporte con linea verde, tarjeta con filtros aplicados y rotulos de tabla en negro. Mejora el contraste de Imprimir en modo oscuro. *@
 
@@ -15,6 +16,24 @@
     var mesTexto = Model.MesesDisponibles.FirstOrDefault(x => x.Valor == Model.MesSeleccionado)?.Nombre ?? Model.MesSeleccionado.ToString("00");
     var tieneFiltrosAvanzados = !string.IsNullOrWhiteSpace(Model.CodigoPersona)
         || !string.IsNullOrWhiteSpace(Model.NumeroComprobante);
+    ViewData["EstilosReporte"] = true;
+    if (string.Equals(Context.Request.Query["vistaImpresion"].ToString(), "true", StringComparison.OrdinalIgnoreCase))
+    {
+        Layout = "_ReporteImpresionLayout";
+        ViewData["MostrarAccionesReporte"] = Model.Resultados.Count > 0;
+        if (Model.Resultados.Count > 0)
+        {
+            await RenderDocumentoAsync();
+        }
+        else
+        {
+            <section class="balance-document">
+                <h1>@ViewData["Title"]</h1>
+                <p>@(Model.MensajeError ?? "No se encontraron datos para los filtros seleccionados.")</p>
+            </section>
+        }
+        return;
+    }
 }
 
 <section class="dashboard-shell">
@@ -121,98 +140,12 @@
 
             @if (Model.Resultados.Count > 0)
             {
-                <section class="workspace-report-sheet accounting-report balance-a4-sheet report-landscape-page mt-4">
+                <div class="balance-document-preview mt-4">
                     <div class="report-action-bar no-print">
-                        <button type="button" class="btn btn-outline-secondary accounting-report-print" onclick="window.print()">Imprimir</button>
+                        <partial name="_ReporteAbrirImpresion" />
                     </div>
-
-                    <header class="balance-a4-header accounting-report-header">
-                        <div>
-                            <strong>@Model.EmpresaNombre</strong>
-                            <span>REGISTRO DE VENTAS - @textInfo.ToTitleCase(mesTexto) @Model.AnioSeleccionado</span>
-                        </div>
-                    </header>
-
-                    <div class="balance-a4-meta accounting-report-filters">
-                        <strong class="accounting-report-filters-title">Filtros aplicados</strong>
-                        <span>Periodo: @textInfo.ToTitleCase(mesTexto) @Model.AnioSeleccionado</span>
-                        <span>Codigo persona: @(string.IsNullOrWhiteSpace(Model.CodigoPersona) ? "Todos" : Model.CodigoPersona)</span>
-                        <span>Nro documento: @(string.IsNullOrWhiteSpace(Model.NumeroComprobante) ? "Todos" : Model.NumeroComprobante)</span>
-                        <span>Filas: @Model.Resultados.Count</span>
-                    </div>
-
-                    <div class="table-responsive balance-a4-table-wrap">
-                        <table class="table app-table balance-a4-table">
-                            <thead>
-                                <tr>
-                                    <th>F. emision</th>
-                                    <th>F. cont.</th>
-                                    <th>T.D.</th>
-                                    <th>Serie</th>
-                                    <th>Numero</th>
-                                    <th>Nro doc.</th>
-                                    <th>Cliente</th>
-                                    <th>Mon.</th>
-                                    <th>T.C.</th>
-                                    <th>Base imp.</th>
-                                    <th>Dscto.</th>
-                                    <th>Exon.</th>
-                                    <th>Inaf.</th>
-                                    <th>IGV</th>
-                                    <th>ISC</th>
-                                    <th>Otros</th>
-                                    <th>ICBPER</th>
-                                    <th>Red.</th>
-                                    <th>Total</th>
-                                    <th>Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in Model.Resultados)
-                                {
-                                    <tr>
-                                        <td>@item.FechaEmision.ToString("dd/MM/yyyy")</td>
-                                        <td>@item.FechaContabilizacion.ToString("dd/MM/yyyy")</td>
-                                        <td>@item.TipoComprobante</td>
-                                        <td>@item.Serie</td>
-                                        <td>@item.Numero</td>
-                                        <td>@item.NumeroDocumentoPersona</td>
-                                        <td class="balance-a4-description">@item.NombrePersona</td>
-                                        <td>@item.CodigoMoneda</td>
-                                        <td class="workspace-money-cell">@item.TipoCambio.ToString("N3")</td>
-                                        <td class="workspace-money-cell">@item.BaseImponible.ToString("N2")</td>
-                                        <td class="workspace-money-cell">@item.Descuento.ToString("N2")</td>
-                                        <td class="workspace-money-cell">@item.TotalExonerado.ToString("N2")</td>
-                                        <td class="workspace-money-cell">@item.TotalInafecto.ToString("N2")</td>
-                                        <td class="workspace-money-cell">@item.Igv.ToString("N2")</td>
-                                        <td class="workspace-money-cell">@item.Isc.ToString("N2")</td>
-                                        <td class="workspace-money-cell">@item.OtrosTributos.ToString("N2")</td>
-                                        <td class="workspace-money-cell">@item.Icbper.ToString("N2")</td>
-                                        <td class="workspace-money-cell">@item.Redondeo.ToString("N2")</td>
-                                        <td class="workspace-money-cell">@item.ImporteTotal.ToString("N2")</td>
-                                        <td>@item.Estado</td>
-                                    </tr>
-                                }
-                            </tbody>
-                            <tfoot>
-                                <tr class="balance-a4-total-row">
-                                    <td class="accounting-report-total-label" colspan="9">Totales</td>
-                                    <td class="workspace-money-cell">@Model.TotalBaseImponible.ToString("N2")</td>
-                                    <td class="workspace-money-cell">@Model.TotalDescuento.ToString("N2")</td>
-                                    <td class="workspace-money-cell">@Model.TotalExonerado.ToString("N2")</td>
-                                    <td class="workspace-money-cell">@Model.TotalInafecto.ToString("N2")</td>
-                                    <td class="workspace-money-cell">@Model.TotalIgv.ToString("N2")</td>
-                                    <td class="workspace-money-cell">@Model.TotalIsc.ToString("N2")</td>
-                                    <td class="workspace-money-cell">@Model.TotalOtrosTributos.ToString("N2")</td>
-                                    <td class="workspace-money-cell">@Model.TotalIcbper.ToString("N2")</td>
-                                    <td class="workspace-money-cell">@Model.TotalRedondeo.ToString("N2")</td>
-                                    <td class="workspace-money-cell">@Model.TotalImporte.ToString("N2")</td>
-                                    <td></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </section>
+                    @{ await RenderDocumentoAsync(); }
+                </div>
             }
         </div>
     </section>
@@ -225,3 +158,94 @@
         Titulo = "Ayuda de clientes",
         CodigoInputId = "codigoPersona"
     })" />
+
+@{
+    async Task RenderDocumentoAsync()
+    {
+        <article class="balance-document accounting-document accounting-document-wide" aria-labelledby="balance-document-title">
+            @await Component.InvokeAsync("ReporteEmpresa", new { empresaNombre = Model.EmpresaNombre, rucEmpresa = (string?)null })
+
+            <div class="balance-document-filters">
+                <h1 id="balance-document-title">Registro de ventas</h1>
+                <div class="balance-document-context">
+                    <span>Periodo: @textInfo.ToTitleCase(mesTexto) @Model.AnioSeleccionado</span>
+                    <span>Codigo persona: @(string.IsNullOrWhiteSpace(Model.CodigoPersona) ? "Todos" : Model.CodigoPersona)</span>
+                    <span>Nro documento: @(string.IsNullOrWhiteSpace(Model.NumeroComprobante) ? "Todos" : Model.NumeroComprobante)</span>
+                    <span>Filas: @Model.Resultados.Count</span>
+                </div>
+            </div>
+
+            <div class="balance-document-scroll" tabindex="0" role="region" aria-label="Detalle del reporte">
+                <table class="balance-document-table">
+                    <thead>
+                        <tr>
+                            <th>F. emision</th>
+                            <th>F. cont.</th>
+                            <th>T.D.</th>
+                            <th>Serie</th>
+                            <th>Numero</th>
+                            <th>Nro doc.</th>
+                            <th>Cliente</th>
+                            <th>Mon.</th>
+                            <th>T.C.</th>
+                            <th>Base imp.</th>
+                            <th>Dscto.</th>
+                            <th>Exon.</th>
+                            <th>Inaf.</th>
+                            <th>IGV</th>
+                            <th>ISC</th>
+                            <th>Otros</th>
+                            <th>ICBPER</th>
+                            <th>Red.</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Resultados)
+                        {
+                            <tr>
+                                <td>@item.FechaEmision.ToString("dd/MM/yyyy")</td>
+                                <td>@item.FechaContabilizacion.ToString("dd/MM/yyyy")</td>
+                                <td>@item.TipoComprobante</td>
+                                <td>@item.Serie</td>
+                                <td>@item.Numero</td>
+                                <td>@item.NumeroDocumentoPersona</td>
+                                <td class="balance-a4-description">@item.NombrePersona</td>
+                                <td>@item.CodigoMoneda</td>
+                                <td class="balance-amount">@item.TipoCambio.ToString("N3")</td>
+                                <td class="balance-amount">@item.BaseImponible.ToString("N2")</td>
+                                <td class="balance-amount">@item.Descuento.ToString("N2")</td>
+                                <td class="balance-amount">@item.TotalExonerado.ToString("N2")</td>
+                                <td class="balance-amount">@item.TotalInafecto.ToString("N2")</td>
+                                <td class="balance-amount">@item.Igv.ToString("N2")</td>
+                                <td class="balance-amount">@item.Isc.ToString("N2")</td>
+                                <td class="balance-amount">@item.OtrosTributos.ToString("N2")</td>
+                                <td class="balance-amount">@item.Icbper.ToString("N2")</td>
+                                <td class="balance-amount">@item.Redondeo.ToString("N2")</td>
+                                <td class="balance-amount">@item.ImporteTotal.ToString("N2")</td>
+                                <td>@item.Estado</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr class="balance-a4-total-row">
+                            <td class="accounting-report-total-label" colspan="9">Totales</td>
+                            <td class="balance-amount">@Model.TotalBaseImponible.ToString("N2")</td>
+                            <td class="balance-amount">@Model.TotalDescuento.ToString("N2")</td>
+                            <td class="balance-amount">@Model.TotalExonerado.ToString("N2")</td>
+                            <td class="balance-amount">@Model.TotalInafecto.ToString("N2")</td>
+                            <td class="balance-amount">@Model.TotalIgv.ToString("N2")</td>
+                            <td class="balance-amount">@Model.TotalIsc.ToString("N2")</td>
+                            <td class="balance-amount">@Model.TotalOtrosTributos.ToString("N2")</td>
+                            <td class="balance-amount">@Model.TotalIcbper.ToString("N2")</td>
+                            <td class="balance-amount">@Model.TotalRedondeo.ToString("N2")</td>
+                            <td class="balance-amount">@Model.TotalImporte.ToString("N2")</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </article>
+    }
+}

@@ -315,6 +315,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0ZVxCYWxhbmNlQ29tcHJvYmFjaW9uLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Reporte/BalanceComprobacionImpresion.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0ZVxCYWxhbmNlQ29tcHJvYmFjaW9uSW1wcmVzaW9uLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Reporte/LibroDiario.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0ZVxMaWJyb0RpYXJpby5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
@@ -335,12 +339,20 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0ZVxWb3VjaGVyQ29udGFibGUuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Reporte/_BalanceComprobacionDocumento.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0ZVxfQmFsYW5jZUNvbXByb2JhY2lvbkRvY3VtZW50by5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Reporte/_PersonaFiltroAyuda.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0ZVxfUGVyc29uYUZpbHRyb0F5dWRhLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Reporte/_PlanCuentaRangoAyuda.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0ZVxfUGxhbkN1ZW50YVJhbmdvQXl1ZGEuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Shared/Components/ReporteEmpresa/Default.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXENvbXBvbmVudHNcUmVwb3J0ZUVtcHJlc2FcRGVmYXVsdC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Shared/Error.cshtml]
@@ -357,6 +369,14 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Shared/_LoginPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9Mb2dpblBhcnRpYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Shared/_ReporteAbrirImpresion.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9SZXBvcnRlQWJyaXJJbXByZXNpb24uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Shared/_ReporteImpresionLayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9SZXBvcnRlSW1wcmVzaW9uTGF5b3V0LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Shared/_TrazabilidadRegistro.cshtml]

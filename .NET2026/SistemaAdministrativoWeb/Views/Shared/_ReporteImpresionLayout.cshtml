@@ -1,0 +1,22 @@
+@* Firma: FRANCO LARA - 18/11/2026 | Define la pestaña común de impresión y CSV de los reportes HTML. *@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - Fralse Cont</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/balance-comprobacion.css" asp-append-version="true" />
+    <script src="~/js/balance-comprobacion.js" asp-append-version="true" defer></script>
+</head>
+<body class="balance-print-page@(ViewData["ReporteVertical"] is true ? " accounting-print-portrait" : "")">
+    @if (ViewData["MostrarAccionesReporte"] is true)
+    {
+        <nav class="balance-print-toolbar" aria-label="Acciones del reporte">
+            <button type="button" data-balance-print>Imprimir / Guardar PDF</button>
+            <button type="button" data-balance-csv>Exportar CSV</button>
+        </nav>
+    }
+    <main>@RenderBody()</main>
+</body>
+</html>
