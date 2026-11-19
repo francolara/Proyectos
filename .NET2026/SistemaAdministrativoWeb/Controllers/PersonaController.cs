@@ -17,7 +17,7 @@ public class PersonaController(
     private const int TamanoPagina = 20;
 
     [HttpGet]
-    public async Task<IActionResult> Index(string? textoBusqueda = null, string? tipoPersona = null, bool soloClientes = false, bool soloProveedores = false, int pagina = 1, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(string? textoBusqueda = null, string? tipoPersona = null, bool soloClientes = false, bool soloProveedores = false, int pagina = 1, CancellationToken cancellationToken = default, bool vistaImpresion = false)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
         {
@@ -32,9 +32,37 @@ public class PersonaController(
             tipoPersona,
             soloClientes,
             soloProveedores,
-            pagina,
-            TamanoPagina,
+            vistaImpresion ? 1 : pagina,
+            vistaImpresion ? 0 : TamanoPagina,
             cancellationToken);
+
+        if (vistaImpresion)
+        {
+            // Firma: FRANCO LARA - 19/11/2026 | Incluye la relación y los datos de contacto en el listado imprimible.
+            return View("ListadoImpresion", new ListadoImpresionViewModel(
+                "Personas", currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
+                [("Búsqueda", textoBusqueda?.Trim()),
+                    ("Tipo de persona", tipoPersona?.Trim()?.ToUpperInvariant() switch { "N" => "Natural", "J" => "Jurídica", _ => null }),
+                    ("Solo clientes", soloClientes ? "Sí" : "No"),
+                    ("Solo proveedores", soloProveedores ? "Sí" : "No")],
+                ["Tipo de documento", "Documento", "Nombre o razón social", "Relación", "Contacto", "Estado"],
+                personas.Items.Select(x => new string[]
+                {
+                    x.NombreTipoDocumento,
+                    x.NumeroDocumento,
+                    x.NombreCompleto,
+                    (x.EsCliente, x.EsProveedor) switch
+                    {
+                        (true, true) => "Cliente / Proveedor",
+                        (true, false) => "Cliente",
+                        (false, true) => "Proveedor",
+                        _ => "Solo persona"
+                    },
+                    string.Join(" / ", new[] { x.CorreoElectronico, x.Telefono }
+                        .Where(contacto => !string.IsNullOrWhiteSpace(contacto)).DefaultIfEmpty("—")),
+                    x.Estado ? "Activo" : "Inactivo"
+                }).ToArray()));
+        }
 
         var model = await ConstruirListadoAsync(personas.Items, cancellationToken);
         model.TextoBusqueda = textoBusqueda?.Trim() ?? string.Empty;

@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 19/11/2026 | Aplica la cabecera verde compartida y deja la impresión bajo control del usuario. *@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaNegocioReporteViewModel
 @using SistemaControlEspaciosDeportivosWeb.Services
 @{
@@ -20,19 +21,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Reporte comercial - @item.NombreComercial</title>
     <partial name="_ReportePrintStyles" />
+    <link rel="stylesheet" href="~/css/listado-reporte.css" asp-append-version="true" />
+    <script src="~/js/listado-reporte.js" asp-append-version="true" defer></script>
 </head>
-<body>
-    <nav class="print-toolbar" aria-label="Acciones del reporte">
-        <button type="button" onclick="window.print()">Imprimir documento</button>
-        <button type="button" class="secondary" onclick="window.close()">Cerrar</button>
-    </nav>
+<body class="sc-impreso">
+    <partial name="_AccionesReporteImpreso" model="true" />
 
     <main class="report-document">
         <section class="report-page">
-            <header class="report-header">
+            <partial name="_MarcaReporteImpreso" model="@item.NombreComercial" />
+            <header class="report-header listado-filtros">
                 <div>
-                    <span class="report-eyebrow">Super Admin · Gestión comercial</span>
-                    <h1>@item.NombreComercial</h1>
+                    <h1>Reporte comercial del complejo</h1>
                     <p>Información de suscripción, límites operativos, cobros e historial comercial.</p>
                 </div>
                 <div class="report-issue">
@@ -122,6 +122,5 @@
             <footer class="report-footer"><span>La Zona Deportiva · Reporte comercial por complejo</span><span>@item.NombreComercial</span></footer>
         </section>
     </main>
-    <script>window.addEventListener('load', function () { window.setTimeout(function () { window.print(); }, 250); });</script>
 </body>
 </html>

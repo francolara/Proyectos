@@ -17,7 +17,7 @@ public class ReservasController(
     private const string CodigoDocumentoRucSunat = "6";
     private const string CodigoDocumentoNoDomiciliadoSinRucSunat = "0";
 
-    public async Task<IActionResult> Index(int? negocioId, DateOnly? fechaDesde, DateOnly? fechaHasta, int? sedeId, int? espacioDeportivoId, int? estado, DateOnly? listadoDesde, DateOnly? listadoHasta, string? listadoPreset, List<int>? estadosListado, string? estadosListadoCsv = null, int paginaListado = 1)
+    public async Task<IActionResult> Index(int? negocioId, DateOnly? fechaDesde, DateOnly? fechaHasta, int? sedeId, int? espacioDeportivoId, int? estado, DateOnly? listadoDesde, DateOnly? listadoHasta, string? listadoPreset, List<int>? estadosListado, string? estadosListadoCsv = null, int paginaListado = 1, bool imprimirListado = false)
     {
         var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
         if (!resolvedNegocioId.HasValue) return Forbid();
@@ -66,9 +66,6 @@ public class ReservasController(
             espacioDeportivoId = null;
         if (!espacioDeportivoId.HasValue && espacios.Count == 1 && int.TryParse(espacios[0].Value, out var unicoEspacioSedeId))
             espacioDeportivoId = unicoEspacioSedeId;
-        var tiposDocumentoClientes = await spService.CombosTiposDocumentoIdentidadSunatAsync();
-        var formasPago = await spService.PagosComboFormasPagoAsync(resolvedNegocioId.Value);
-        var configClub = await spService.ConfiguracionClubObtenerAsync(resolvedNegocioId.Value);
         var (filtroListadoDesde, filtroListadoHasta) = ResolverRangoListado(listadoDesde, listadoHasta, listadoPreset, desde, hasta);
         if (filtroListadoHasta < filtroListadoDesde) filtroListadoHasta = filtroListadoDesde;
         var estadosSeleccionados = estadosListado ?? new List<int>();
@@ -97,8 +94,8 @@ public class ReservasController(
             espacioDeportivoId,
             null,
             estadosListadoCsvNormalizado,
-            paginaActualListado,
-            tamanoPaginaListado);
+            imprimirListado ? 1 : paginaActualListado,
+            imprimirListado ? int.MaxValue : tamanoPaginaListado);
         var resumenListadoGlobal = await spService.ReservasListadoResumenAsync(
             resolvedNegocioId.Value,
             filtroListadoDesde,
@@ -107,6 +104,21 @@ public class ReservasController(
             espacioDeportivoId,
             null,
             estadosListadoCsvNormalizado);
+        if (imprimirListado)
+        {
+            var sedeTexto = sedes.FirstOrDefault(item => item.Value == sedeId?.ToString(CultureInfo.InvariantCulture))?.Text;
+            var espacioTexto = espacios.FirstOrDefault(item => item.Value == espacioDeportivoId?.ToString(CultureInfo.InvariantCulture))?.Text;
+            var estadosTexto = estadosListadoLimpios.Count == 0 ? "Todos" : string.Join(", ",
+                ObtenerEstadosFiltro().Where(item => int.TryParse(item.Value, out var id) && estadosListadoLimpios.Contains(id))
+                    .Select(item => item.Text));
+            return View("ImprimirListado", new ReservasListadoImpresionViewModel(
+                baseVm.NegocioNombre, filtroListadoDesde, filtroListadoHasta, sedeTexto ?? "Todas",
+                espacioTexto ?? "Todos", estadosTexto, reservas, resumenListadoGlobal));
+        }
+
+        var tiposDocumentoClientes = await spService.CombosTiposDocumentoIdentidadSunatAsync();
+        var formasPago = await spService.PagosComboFormasPagoAsync(resolvedNegocioId.Value);
+        var configClub = await spService.ConfiguracionClubObtenerAsync(resolvedNegocioId.Value);
         var totalPaginasListado = Math.Max(1, (int)Math.Ceiling(totalReservasListado / (double)tamanoPaginaListado));
         if (paginaActualListado > totalPaginasListado)
         {

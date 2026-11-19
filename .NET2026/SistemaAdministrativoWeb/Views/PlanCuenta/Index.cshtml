@@ -1,4 +1,5 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.PlanCuentaIndexViewModel
+@* Firma: FRANCO LARA - 19/11/2026 | Ofrece la impresión con los filtros aplicados y comparte las etiquetas contables de ambas vistas. *@
 @* Firma: FRANCO LARA - 25/08/2026 | Informa que la carga por defecto inicializa plan, parametros, cuentas destino, impuestos y documentos. *@
 
 @* =============================================
@@ -18,35 +19,6 @@
     var puedeCrear = await ModulePermissions.CanAccessModuleAsync(User, "PLANCUENTA", ModulePermissionOperation.Create);
     var puedeEditar = await ModulePermissions.CanAccessModuleAsync(User, "PLANCUENTA", ModulePermissionOperation.Edit);
     var puedeEliminar = await ModulePermissions.CanAccessModuleAsync(User, "PLANCUENTA", ModulePermissionOperation.Delete);
-
-    static string ObtenerColBalance(string colBalance) => colBalance switch
-    {
-        "S" => "S - Saldo",
-        "I" => "I - Inventario",
-        "N" => "N - Naturaleza",
-        "F" => "F - Funcion",
-        "R" => "R - Resultado",
-        _ => "-"
-    };
-
-    static string ObtenerTipoCambio(string tipoCambio) => tipoCambio switch
-    {
-        "V" => "Venta",
-        "C" => "Compra",
-        _ => "-"
-    };
-
-    static string NormalizarMonedaPlanCuenta(string idMoneda) => (idMoneda ?? string.Empty).Trim().ToUpperInvariant() switch
-    {
-        "S" => "PEN",
-        "D" => "USD",
-        var valor => valor
-    };
-
-    static string ObtenerModoDiferenciaCambio(string idMoneda, bool generaPorAnalisis) =>
-        !string.Equals(NormalizarMonedaPlanCuenta(idMoneda), "USD", StringComparison.OrdinalIgnoreCase)
-            ? "-"
-            : generaPorAnalisis ? "Analisis" : "Saldo";
 }
 
 <section class="dashboard-shell">
@@ -118,6 +90,7 @@
                 </div>
                 <div class="workspace-actions">
                     <button type="submit" class="btn btn-primary">Consultar</button>
+                    <partial name="_ReporteAbrirImpresion" />
                 </div>
             </form>
 
@@ -178,10 +151,10 @@
                                     <td class="workspace-tree-code">@cuenta.CodigoCuenta</td>
                                     <td class="text-start">@cuenta.NombreCuenta</td>
                                     <td>@cuenta.NivelCuenta</td>
-                                    <td>@ObtenerColBalance(cuenta.ColBalance)</td>
-                                    <td>@(string.IsNullOrWhiteSpace(cuenta.IdMoneda) ? "-" : NormalizarMonedaPlanCuenta(cuenta.IdMoneda))</td>
-                                    <td>@ObtenerTipoCambio(cuenta.TipoCambio)</td>
-                                    <td>@ObtenerModoDiferenciaCambio(cuenta.IdMoneda, cuenta.GeneraDiferenciaPorAnalisis)</td>
+                                    <td>@cuenta.ColBalanceTexto</td>
+                                    <td>@cuenta.MonedaTexto</td>
+                                    <td>@cuenta.TipoCambioTexto</td>
+                                    <td>@cuenta.DiferenciaCambioTexto</td>
                                     <td>@(cuenta.AceptaMovimiento ? "Si" : "No")</td>
                                     <td>@(cuenta.RequiereCentroCosto ? "Si" : "No")</td>
                                     <td>

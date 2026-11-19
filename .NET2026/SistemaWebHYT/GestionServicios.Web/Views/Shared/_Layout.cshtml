@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 19/11/2026 | Agrega el acceso al mapa operativo debajo de Inicio y adapta la tarjeta Apariencia al menú de HYT. *@
 @* Firma: FRANCO LARA - 07/11/2026 | Acceso al cambio de contraseña desde la cabecera y control común de visibilidad. *@
 @* Firma: FRANCO LARA - 06/11/2026 | Botón de cerrar sesión rojo con icono. *@
 @using GestionServicios.Web.Navigation
@@ -7,8 +8,25 @@
 <!DOCTYPE html><html lang="es"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><script src="~/hyt-theme-switch.js" asp-append-version="true"></script><title>@ViewData["Title"] | HYT</title><link rel="stylesheet" href="~/hyt-theme.css" asp-append-version="true" /><link rel="stylesheet" href="~/hyt-components.css" asp-append-version="true" /><link rel="stylesheet" href="~/hyt-loading.css" asp-append-version="true" /><link rel="stylesheet" href="~/hyt-interface.css" asp-append-version="true" /><script src="~/hyt-loading.js" asp-append-version="true" defer></script></head>
 <body><a class="skip-link" href="#contenido">Ir al contenido</a><div class="hyt-app-shell">
 <aside class="hyt-sidebar"><a class="hyt-brand" asp-controller="Home" asp-action="Index" aria-label="HYT, inicio"><img src="~/images/logo-hyt.png" alt="HYT Servicios Generales E.I.R.L." /></a>
-<button type="button" class="hyt-theme-toggle" data-hyt-theme-toggle aria-label="Modo oscuro" aria-pressed="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z"/></svg><span data-hyt-theme-label>Modo oscuro</span></button><button type="button" class="hyt-menu-toggle" aria-expanded="false" aria-controls="hyt-navigation" data-hyt-menu>Menú de navegación</button>
-<nav id="hyt-navigation" aria-label="Navegación principal">@if (!User.HasClaim(AccessService.MandatoryPasswordClaim, "true")) { <a class="hyt-nav-link @(Context.Request.Path == "/" ? "active" : "")" asp-controller="Home" asp-action="Index">Inicio</a> }
+<section class="hyt-theme-card" aria-label="Apariencia">
+    <div class="hyt-theme-copy">
+        <span>Apariencia</span>
+        <strong data-hyt-theme-label aria-live="polite">Modo claro</strong>
+    </div>
+    <button type="button" class="hyt-theme-toggle" data-hyt-theme-toggle aria-label="Modo oscuro" aria-pressed="false">
+        <span class="hyt-theme-track" aria-hidden="true">
+            <svg class="hyt-theme-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11 1.5 1.5M19 5l-1.5 1.5m-11 11L5 19" />
+            </svg>
+            <svg class="hyt-theme-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+                <path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z" />
+            </svg>
+        </span>
+    </button>
+</section>
+<button type="button" class="hyt-menu-toggle" aria-expanded="false" aria-controls="hyt-navigation" data-hyt-menu>Menú de navegación</button>
+<nav id="hyt-navigation" aria-label="Navegación principal">@if (!User.HasClaim(AccessService.MandatoryPasswordClaim, "true")) { <a class="hyt-nav-link @(Context.Request.Path == "/" ? "active" : "")" asp-controller="Home" asp-action="Index">Inicio</a> <a class="hyt-nav-link @(Context.Request.Path.StartsWithSegments("/MapaOperativo") ? "active" : "")" asp-controller="OperationalMap" asp-action="Index">Mapa operativo</a> }
 @foreach (var group in HytMenu.Items.Where(item => User.HasClaim(AccessService.PermissionClaim, item.Permission) || item.Code == "usuarios" && User.HasClaim(AccessService.PermissionClaim, "PERFILES.CONSULTAR")).GroupBy(item => item.Group))
 { <p class="hyt-nav-group">@group.Key</p>@foreach (var item in group) { <a class="hyt-nav-link @(Context.Request.Path.Equals("/modulo/" + item.Code) ? "active" : "")" href="@Url.Action("Index", "Module", new { code = item.Code })">@item.Label</a> } }
 </nav><span class="hyt-sidebar-company">H Y T Servicios Generales E.I.R.L.</span></aside>

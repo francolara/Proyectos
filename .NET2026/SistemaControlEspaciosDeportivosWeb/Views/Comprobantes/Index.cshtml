@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 19/11/2026 | Agrega el reporte filtrado del listado con impresión y CSV en una pestaña nueva. *@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobantesIndexViewModel
 @* Firma: FRANCO LARA - 01/09/2026 | Presenta el listado con un titulo operativo y directo. *@
 @* Firma: FRANCO LARA - 03/09/2026 | Sustituye las superficies azul petroleo del modo oscuro por la paleta antracita administrativa. *@
@@ -154,7 +155,15 @@
     </section>
 
     <section class="table-card">
-        <h2 class="section-title"><i class="bi bi-receipt me-1"></i>Comprobantes emitidos</h2>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+            <h2 class="section-title"><i class="bi bi-receipt me-1"></i>Comprobantes emitidos</h2>
+            <a class="btn btn-success" asp-action="Index" asp-route-negocioId="@Model.NegocioId"
+               asp-route-buscar="@Model.Buscar" asp-route-imprimirListado="true"
+               asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")"
+               asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")"
+               asp-route-codigoDocumento="@Model.CodigoDocumento"
+               target="_blank" rel="noopener"><i class="bi bi-printer me-1" aria-hidden="true"></i> Imprimir</a>
+        </div>
         @if (!Model.Comprobantes.Any())
         {
             <div class="empty-state">

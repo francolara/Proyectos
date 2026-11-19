@@ -4,6 +4,7 @@
 @* Firma: FRANCO LARA - 21/07/2026 | Agrega la impresion HTML del dashboard en formato ejecutivo A4 horizontal, con KPIs, indicadores, tendencias y distribucion del periodo. *@
 @* Firma: FRANCO LARA - 31/07/2026 | Adopta el patron global de titulo y subtitulos administrativos con iconos y degradado verde, conservando la impresion ejecutiva. *@
 @* Firma: FRANCO LARA - 05/08/2026 | Agrega el grafico historico bancario y diferencia semanticamente las torres: compras azules, ventas verdes y banca violeta. *@
+@* Firma: FRANCO LARA - 19/11/2026 | Ajusta el encabezado impreso del Dashboard con empresa, RUC, periodo y marca FralseTech. *@
 @{
     ViewData["Title"] = "Panel administrativo";
     ViewData["AdminShell"] = true;
@@ -31,9 +32,13 @@
 <section class="dashboard-shell dashboard-print-page">
     <header class="dashboard-print-header">
         <div>
-            <span>Reporte ejecutivo</span>
+            <span>Dashboard administrativo</span>
             <strong>@Model.NombreEmpresa</strong>
-            <small>Dashboard administrativo</small>
+            <small>RUC @(string.IsNullOrWhiteSpace(Model.Ruc) ? "—" : Model.Ruc)</small>
+        </div>
+        <div class="dashboard-print-brand">
+            <img src="~/images/logo-fralse-tech-reporte.webp" asp-append-version="true" alt="" width="36" height="27" />
+            <small>Powered by <strong>FralseTech</strong></small>
         </div>
         <div>
             <span>Periodo</span>

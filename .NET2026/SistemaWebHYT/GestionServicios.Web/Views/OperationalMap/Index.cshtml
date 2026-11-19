@@ -1,0 +1,64 @@
+@* Firma: FRANCO LARA - 19/11/2026 | Integra los mapas de Operación y Obligaciones con fichas y accesos autorizados para configuración documental, planillas y proveedores. *@
+@using GestionServicios.Web.Navigation
+@using GestionServicios.Web.Security
+@{
+    ViewData["Title"] = "Mapa operativo";
+    ViewData["Wide"] = true;
+    var areas = new[] { (Id: "operacion", Label: "Operación"), (Id: "planillas", Label: "Obligaciones") };
+}
+<section class="hyt-operational-map">
+    <header>
+        <h1>Mapa operativo</h1>
+        <p class="hyt-muted">Selecciona un cuadro para consultar sus reglas y acceder al proceso.</p>
+    </header>
+    <nav aria-label="Enfoque del mapa" class="hyt-map-tabs">
+        @foreach (var area in areas)
+        {
+            <a class="hyt-button-secondary" href="#@area.Id" data-map-area="@area.Id"
+               data-map-url="@Url.Action("Diagram", "OperationalMap", new { area = area.Id })">@area.Label</a>
+        }
+    </nav>
+    <section class="hyt-panel hyt-map-viewer" aria-label="Diagrama interactivo">
+        <iframe title="Mapa operativo de HYT" id="hyt-map-frame"></iframe>
+    </section>
+    <dialog id="hyt-map-detail" class="hyt-modal hyt-map-detail" aria-labelledby="hyt-map-detail-title">
+        <header class="hyt-modal-header">
+            <h2 id="hyt-map-detail-title"></h2>
+            <form method="dialog"><button class="hyt-modal-close" aria-label="Cerrar">×</button></form>
+        </header>
+        <div class="hyt-modal-body hyt-map-detail-body">
+            <h3>Contexto</h3>
+            <p data-map-summary></p>
+            <section class="hyt-map-conditions">
+                <h3>Condiciones para avanzar</h3>
+                <ul data-map-rules></ul>
+            </section>
+            <details class="hyt-map-validation">
+                <summary>Validaciones y qué hacer</summary>
+                <p data-map-validation></p>
+            </details>
+            <section>
+                <h3>Resultado y siguiente paso</h3>
+                <p data-map-result></p>
+                <div class="hyt-map-actions" data-map-actions></div>
+            </section>
+        </div>
+    </dialog>
+    <template id="hyt-map-module-links">
+        @if (User.HasClaim(AccessService.PermissionClaim, "CONFIGURACION.CONSULTAR"))
+        {
+            <a class="hyt-button-secondary" data-module="firmas-presupuesto" href="@Url.Action("Index", "Company", null, null, null, "company-signature-heading")">Firmas para presupuestos</a>
+            <a class="hyt-button-secondary" data-module="series-venta" asp-controller="Company" asp-action="ElectronicDocuments">Comprobantes electrónicos</a>
+            <a class="hyt-button-secondary" data-module="telecredito-config" asp-controller="TelecreditSettings" asp-action="Index">Configurar Telecrédito BCP</a>
+        }
+        @foreach (var item in HytMenu.Items.Where(item => User.HasClaim(AccessService.PermissionClaim, item.Permission) || item.Code == "usuarios" && User.HasClaim(AccessService.PermissionClaim, "PERFILES.CONSULTAR")))
+        {
+            <a class="hyt-button-secondary" data-module="@item.Code" href="@Url.Action("Index", "Module", new { code = item.Code })">@item.Label</a>
+        }
+    </template>
+</section>
+
+@section Scripts {
+    <link rel="stylesheet" href="~/hyt-operational-map.css" asp-append-version="true" />
+    <script type="module" src="~/hyt-operational-map.js" asp-append-version="true"></script>
+}

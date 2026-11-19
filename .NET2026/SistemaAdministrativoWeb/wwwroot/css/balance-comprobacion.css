@@ -1,3 +1,4 @@
+/* Firma: FRANCO LARA - 19/11/2026 | Estiliza las minitarjetas y el título con barra lateral del voucher y Estado de cuenta. */
 /* Firma: FRANCO LARA - 18/11/2026 | Estilos de consulta e impresión de los reportes HTML con acentos azules, barra de acciones celeste y botones en azul FralseTech. */
 :is(.balance-print-toolbar, .balance-document) {
     --balance-accent: #0070f0;
@@ -88,7 +89,8 @@
 
 .balance-document-brand img { object-fit: contain; }
 
-.balance-document-filters {
+.balance-document-filters,
+.accounting-document-heading h1 {
     border-left: 6px solid var(--balance-accent);
     background: #f2f4f5;
     margin-bottom: 16px;
@@ -202,6 +204,23 @@
     border-radius: 6px;
 }
 
+.accounting-document-heading h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.accounting-document-heading dt {
+    color: #465568;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.accounting-document-heading dd {
+    margin: 0;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
 .accounting-document :is(.accounting-document-note, .voucher-account, .voucher-doc) > :is(span, strong, small) {
     display: block;
     overflow-wrap: anywhere;
@@ -219,7 +238,22 @@
     .balance-print-page main { margin: 0; padding: 0; max-width: none; }
     .balance-document { padding: 0; border: 0; print-color-adjust: exact; }
     .balance-document-header { margin-bottom: 8px; padding-bottom: 6px; }
-    .balance-document-filters h1 { font-size: 16px; }
+    .balance-document-filters h1,
+    .accounting-document-heading h1 { font-size: 16px; }
+    .accounting-document-heading h1 {
+        padding: 8px 12px;
+        break-after: avoid;
+    }
+    .accounting-document-heading .accounting-document-cards {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 5px;
+        margin-block: 6px;
+    }
+    .accounting-document-heading .accounting-document-card {
+        padding: 5px;
+        font-size: 9pt;
+    }
+    .accounting-document-heading dt { font-size: 8pt; }
     .balance-document-scroll { overflow: visible; }
     .balance-document-table { min-width: 0; font-size: 8pt; }
     .balance-document-table :is(th, td) { padding: 3px 4px; }

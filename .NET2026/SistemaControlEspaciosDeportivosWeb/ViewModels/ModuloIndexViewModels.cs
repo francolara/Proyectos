@@ -17,6 +17,7 @@ public class ModuloBaseViewModel
     public bool PuedeEditar { get; set; }
     public bool PuedeEliminar { get; set; }
     public string? Mensaje { get; set; }
+    public bool BloqueadoPorSuscripcion { get; set; }
     public bool BloqueadoPorPlanBasico { get; set; }
 }
 
@@ -300,6 +301,17 @@ public class ReservaItemViewModel
     public string CodigoMoneda { get; set; } = "PEN";
     public string MonedaSimbolo { get; set; } = "S/";
     public string Estado { get; set; } = string.Empty;
+    public string EstadoNombre => Estado.Trim() switch
+    {
+        "1" => "Pendiente",
+        "2" => "Confirmada",
+        "3" or "4" => "Pagada",
+        "5" => "Cancelada",
+        "6" => "No asistió",
+        "" => "Sin estado",
+        var nombre when int.TryParse(nombre, out _) => "Estado desconocido",
+        var nombre => nombre
+    };
 }
 
 public class ReservaCalendarioEventoViewModel

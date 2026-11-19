@@ -4,10 +4,7 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Webp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
+using SkiaSharp;
 
 namespace SistemaControlEspaciosDeportivosWeb.Services;
 
@@ -297,7 +294,7 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
                     exigirHorizontal,
                     exigirVertical: targetHeight > targetWidth,
                     cancellationToken)
-                : await ProcesarImagenAsync(streamOrigen, nombreArchivo, targetWidth, targetHeight, maxOutputBytes, exigirHorizontal, cancellationToken);
+                : ProcesarImagen(streamOrigen, nombreArchivo, targetWidth, targetHeight, maxOutputBytes, exigirHorizontal, cancellationToken);
 
             var key = BuildObjectKey(categoria, negocioId, sedeId, espacioId, ".webp");
             imagenProcesada.Position = 0;
@@ -645,21 +642,21 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
             await sourceStream.CopyToAsync(output, cancellationToken);
             output.Position = 0;
 
-            var formato = await Image.DetectFormatAsync(output, cancellationToken);
-            if (!string.Equals(formato.DefaultMimeType, "image/webp", StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException($"El archivo {nombreArchivo} no contiene una imagen WebP valida.");
+            using (var codec = ProcesamientoImagen.CrearCodec(output, nombreArchivo, cancellationToken))
+            {
+                if (codec.EncodedFormat != SKEncodedImageFormat.Webp)
+                    throw new InvalidOperationException($"El archivo {nombreArchivo} no contiene una imagen WebP valida.");
 
-            output.Position = 0;
-            using var image = await Image.LoadAsync<Rgba32>(output, cancellationToken);
-            image.Mutate(ctx => ctx.AutoOrient());
-            if (image.Width <= 0 || image.Height <= 0)
-                throw new InvalidOperationException($"No se pudo leer la imagen {nombreArchivo}.");
+                using var imagen = ProcesamientoImagen.Decodificar(codec, nombreArchivo);
+                var dimensiones = ProcesamientoImagen.ObtenerDimensiones(codec);
 
-            if (exigirHorizontal && image.Width < image.Height)
-                throw new InvalidOperationException($"La imagen {nombreArchivo} debe ser horizontal.");
+                if (exigirHorizontal && dimensiones.Width < dimensiones.Height)
+                    throw new InvalidOperationException($"La imagen {nombreArchivo} debe ser horizontal.");
 
-            if (exigirVertical && image.Width >= image.Height)
-                throw new InvalidOperationException($"La imagen {nombreArchivo} debe ser vertical.");
+                if (exigirVertical && dimensiones.Width >= dimensiones.Height)
+                    throw new InvalidOperationException($"La imagen {nombreArchivo} debe ser vertical.");
+
+            }
 
             output.Position = 0;
             return output;
@@ -671,7 +668,7 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
         }
     }
 
-    private async Task<MemoryStream> ProcesarImagenAsync(
+    private static MemoryStream ProcesarImagen(
         Stream sourceStream,
         string nombreArchivo,
         int targetWidth,
@@ -680,60 +677,28 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
         bool exigirHorizontal,
         CancellationToken cancellationToken)
     {
-        using var image = await Image.LoadAsync<Rgba32>(sourceStream, cancellationToken);
-        image.Mutate(ctx => ctx.AutoOrient());
+        using var codec = ProcesamientoImagen.CrearCodec(sourceStream, nombreArchivo, cancellationToken);
+        using var imagen = ProcesamientoImagen.Decodificar(codec, nombreArchivo);
+        var dimensiones = ProcesamientoImagen.ObtenerDimensiones(codec);
 
-        if (exigirHorizontal && image.Width < image.Height)
+        if (exigirHorizontal && dimensiones.Width < dimensiones.Height)
             throw new InvalidOperationException($"La imagen {nombreArchivo} debe ser horizontal.");
 
         targetWidth = Math.Max(1, targetWidth);
         targetHeight = Math.Max(1, targetHeight);
-        var ratioObjetivo = targetWidth / (decimal)targetHeight;
-        var ratioActual = image.Width / (decimal)image.Height;
-
-        Rectangle cropRect;
-        if (ratioActual > ratioObjetivo)
-        {
-            var cropWidth = (int)Math.Round(image.Height * ratioObjetivo, MidpointRounding.AwayFromZero);
-            var x = Math.Max(0, (image.Width - cropWidth) / 2);
-            cropRect = new Rectangle(x, 0, cropWidth, image.Height);
-        }
-        else
-        {
-            var cropHeight = (int)Math.Round(image.Width / ratioObjetivo, MidpointRounding.AwayFromZero);
-            var y = Math.Max(0, (image.Height - cropHeight) / 2);
-            cropRect = new Rectangle(0, y, image.Width, cropHeight);
-        }
-
-        image.Mutate(ctx =>
-        {
-            ctx.Crop(cropRect);
-            ctx.Resize(new ResizeOptions
-            {
-                Size = new Size(targetWidth, targetHeight),
-                Mode = ResizeMode.Stretch,
-                Sampler = KnownResamplers.Lanczos3
-            });
-        });
-
-        var output = new MemoryStream();
+        using var ajustada = ProcesamientoImagen.Ajustar(imagen, codec.EncodedOrigin, dimensiones, targetWidth, targetHeight);
+        var imagenFinal = ajustada ?? imagen;
         var maxBytes = Math.Max(1, maxOutputBytes);
 
         for (var quality = 86; quality >= 52; quality -= 6)
         {
-            output.SetLength(0);
-            output.Position = 0;
-            var encoder = new WebpEncoder
-            {
-                FileFormat = WebpFileFormatType.Lossy,
-                Quality = quality
-            };
-            await image.SaveAsync(output, encoder, cancellationToken);
-            if (output.Length <= maxBytes)
-            {
-                output.Position = 0;
-                return output;
-            }
+            cancellationToken.ThrowIfCancellationRequested();
+            using var webp = imagenFinal.Encode(SKEncodedImageFormat.Webp, quality);
+            if (webp is null)
+                throw new InvalidOperationException($"No se pudo convertir la imagen {nombreArchivo} a WebP.");
+
+            if (webp.Size <= maxBytes)
+                return new MemoryStream(webp.ToArray(), writable: false);
         }
 
         throw new InvalidOperationException($"La imagen {nombreArchivo} no pudo comprimirse a {maxOutputBytes / 1024} KB manteniendo la resolucion estandar.");

@@ -1,6 +1,7 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservasIndexViewModel
 @using SistemaControlEspaciosDeportivosWeb.Services
 @inject IBusinessClock BusinessClock
+@* Firma: FRANCO LARA - 19/11/2026 | Abre el reporte completo de reservas registradas en una pestaña independiente y comparte los nombres de estado con el reporte. *@
 @* Firma: FRANCO LARA - 01/09/2026 | Presenta los listados de reservas con titulos operativos y directos. *@
 @* Firma: FRANCO LARA - 07/09/2026 | Usa la fecha y hora operativa de Peru en filtros, pagos y disponibilidad del calendario. *@
 @* Firma: FRANCO LARA - 17/09/2026 | Reduce el bloque de promociones y agrega trazabilidad de registro y actualizacion en el pop-up de reservas. *@
@@ -276,6 +277,7 @@
             <div>
                 <h2 class="section-title"><i class="bi bi-calendar-check me-1"></i>Reservas registradas</h2>
                 <p class="mb-0 text-muted small">Usa un rango y estados propios; mantiene la sede y espacio seleccionados en la operacion actual.</p>
+                <partial name="_ImprimirListadoAccion" model="Model" />
             </div>
             <div class="sc-reservas-metrics">
                 <div class="sc-reservas-metric">
@@ -393,19 +395,7 @@
                                 <td class="text-center">@item.MonedaSimbolo @item.Total.ToString("N2")</td>
                                 <td class="text-center">@item.MonedaSimbolo @item.SaldoPendiente.ToString("N2")</td>
                                 <td class="text-center">
-                                    @{
-                                    var estadoTexto = item.Estado switch
-                                    {
-                                        "1" => "Pendiente",
-                                        "2" => "Confirmada",
-                                        "3" => "Pagada",
-                                        "4" => "Pagada",
-                                        "5" => "Cancelada",
-                                        "6" => "No Asistio",
-                                        _ => item.Estado
-                                    };
-                                }
-                                <span class="badge @(item.Estado switch { "1" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle", "2" => "bg-success-subtle text-success-emphasis border border-success-subtle", "3" => "bg-info-subtle text-info-emphasis border border-info-subtle", "4" => "bg-info-subtle text-info-emphasis border border-info-subtle", "5" => "bg-danger-subtle text-danger-emphasis border border-danger-subtle", "6" => "sc-estado-noshow", _ => "bg-light text-dark border" })">@estadoTexto</span>
+                                    <span class="badge @(item.Estado switch { "1" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle", "2" => "bg-success-subtle text-success-emphasis border border-success-subtle", "3" => "bg-info-subtle text-info-emphasis border border-info-subtle", "4" => "bg-info-subtle text-info-emphasis border border-info-subtle", "5" => "bg-danger-subtle text-danger-emphasis border border-danger-subtle", "6" => "sc-estado-noshow", _ => "bg-light text-dark border" })">@item.EstadoNombre</span>
                             </td>
                             <td class="text-end">
                                 @if (Model.PuedeEditar)
@@ -592,6 +582,7 @@ else
             <div>
                 <h2 class="section-title"><i class="bi bi-calendar-check me-1"></i>Reservas registradas</h2>
                 <p class="mb-0 text-muted small">Consulta con filtro independiente de rango y estados multiples.</p>
+                <partial name="_ImprimirListadoAccion" model="Model" />
             </div>
             <div class="sc-reservas-metrics">
                 <div class="sc-reservas-metric">
@@ -704,19 +695,7 @@ else
                                 <td class="text-center">@item.MonedaSimbolo @item.Total.ToString("N2")</td>
                                 <td class="text-center">@item.MonedaSimbolo @item.SaldoPendiente.ToString("N2")</td>
                                 <td class="text-center">
-                                    @{
-                                    var estadoTexto = item.Estado switch
-                                    {
-                                        "1" => "Pendiente",
-                                        "2" => "Confirmada",
-                                        "3" => "Pagada",
-                                        "4" => "Pagada",
-                                        "5" => "Cancelada",
-                                        "6" => "No Asistio",
-                                        _ => item.Estado
-                                    };
-                                }
-                                <span class="badge @(item.Estado switch { "1" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle", "2" => "bg-success-subtle text-success-emphasis border border-success-subtle", "3" => "bg-info-subtle text-info-emphasis border border-info-subtle", "4" => "bg-info-subtle text-info-emphasis border border-info-subtle", "5" => "bg-danger-subtle text-danger-emphasis border border-danger-subtle", "6" => "sc-estado-noshow", _ => "bg-light text-dark border" })">@estadoTexto</span>
+                                    <span class="badge @(item.Estado switch { "1" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle", "2" => "bg-success-subtle text-success-emphasis border border-success-subtle", "3" => "bg-info-subtle text-info-emphasis border border-info-subtle", "4" => "bg-info-subtle text-info-emphasis border border-info-subtle", "5" => "bg-danger-subtle text-danger-emphasis border border-danger-subtle", "6" => "sc-estado-noshow", _ => "bg-light text-dark border" })">@item.EstadoNombre</span>
                             </td>
                                 <td class="text-end">
                                     @if (Model.PuedeEditar)

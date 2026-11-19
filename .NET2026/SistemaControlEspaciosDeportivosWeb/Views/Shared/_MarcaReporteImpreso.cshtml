@@ -1,0 +1,11 @@
+@model string
+@* Firma: FRANCO LARA - 19/11/2026 | Comparte la identidad visual de La Zona Deportiva en los reportes. *@
+
+<header class="listado-cabecera">
+    <strong class="listado-negocio">@(string.IsNullOrWhiteSpace(Model) ? "La Zona Deportiva" : Model)</strong>
+    <div class="listado-marca">
+        <span>Powered by</span>
+        <img src="https://pub-3afaea6b0b354821989565fa4b8bd250.r2.dev/logos/LaZonaDeportiva/LaZonaDeportiva_Logo.webp"
+             alt="La Zona Deportiva" width="140" height="30" />
+    </div>
+</header>

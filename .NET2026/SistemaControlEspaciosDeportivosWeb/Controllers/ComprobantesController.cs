@@ -22,7 +22,7 @@ public class ComprobantesController(
 {
     private readonly string _connectionString = configuration.GetConnectionString("DefaultConnection")
                                                ?? throw new InvalidOperationException("No se encontro DefaultConnection.");
-    public async Task<IActionResult> Index(int? negocioId, string? buscar = null, string? codigoDocumento = null, DateOnly? fechaDesde = null, DateOnly? fechaHasta = null, string? preset = null, int pagina = 1)
+    public async Task<IActionResult> Index(int? negocioId, string? buscar = null, string? codigoDocumento = null, DateOnly? fechaDesde = null, DateOnly? fechaHasta = null, string? preset = null, int pagina = 1, bool imprimirListado = false)
     {
         var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
         if (!resolvedNegocioId.HasValue) return Forbid();
@@ -47,8 +47,29 @@ public class ComprobantesController(
             codigoDocumentoFiltro,
             desde,
             hasta,
-            paginaActual,
-            tamanoPagina);
+            imprimirListado ? 1 : paginaActual,
+            imprimirListado ? int.MaxValue : tamanoPagina);
+        if (imprimirListado)
+        {
+            var tipo = tiposDocumentoFiltro.FirstOrDefault(item =>
+                string.Equals(item.Value, codigoDocumentoFiltro, StringComparison.OrdinalIgnoreCase))?.Text ?? "Todos";
+            var filas = comprobantes.Select(comprobante => new string?[]
+            {
+                comprobante.Tipo, comprobante.SerieNumero, comprobante.CodigoReserva,
+                comprobante.FechaEmision.ToString("dd/MM/yyyy"), comprobante.Cliente,
+                comprobante.EstadoCodigo is >= 1 and <= 5 ? comprobante.Estado : "Estado desconocido",
+                comprobante.Referencia, comprobante.CodigoMoneda, ListadoImpresionViewModel.Importe(comprobante.Total)
+            }).ToList();
+            var totales = comprobantes.GroupBy(comprobante => comprobante.CodigoMoneda, StringComparer.OrdinalIgnoreCase)
+                .Select(grupo => new string?[] { "Total del listado", null, null, null, null, null, null, grupo.Key,
+                    ListadoImpresionViewModel.Importe(grupo.Sum(comprobante => comprobante.Total)) }).ToList();
+
+            return View("~/Views/Shared/ListadoImpresion.cshtml", new ListadoImpresionViewModel(
+                baseVm.NegocioNombre, "Comprobantes emitidos", "comprobantes-emitidos", desde, hasta, buscar, tipo,
+                ["Documento", "Serie y número", "Reserva", "Fecha de emisión", "Cliente", "Estado", "Referencia", "Moneda", "Total"],
+                8, filas, totales));
+        }
+
         var totalPaginas = Math.Max(1, (int)Math.Ceiling(totalRegistros / (double)tamanoPagina));
         if (paginaActual > totalPaginas)
         {

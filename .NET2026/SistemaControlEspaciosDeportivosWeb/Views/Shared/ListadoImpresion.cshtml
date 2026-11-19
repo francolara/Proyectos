@@ -1,0 +1,72 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ListadoImpresionViewModel
+@* Firma: FRANCO LARA - 19/11/2026 | Comparte el formato imprimible de los listados de pagos y comprobantes. *@
+@{
+    Layout = null;
+}
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@Model.Titulo | La Zona Deportiva</title>
+    <link rel="stylesheet" href="~/css/listado-reporte.css" asp-append-version="true" />
+    <script src="~/js/listado-reporte.js" asp-append-version="true" defer></script>
+</head>
+<body class="listado-documento">
+    <partial name="_AccionesReporteImpreso" model="true" />
+    <main class="listado-hoja">
+        <partial name="_MarcaReporteImpreso" model="@Model.Negocio" />
+        <section class="listado-filtros">
+            <h1>@Model.Titulo</h1>
+            <dl>
+                <div><dt>Período</dt><dd>@Model.Desde.ToString("dd/MM/yyyy") al @Model.Hasta.ToString("dd/MM/yyyy")</dd></div>
+                <div><dt>Búsqueda</dt><dd>@(string.IsNullOrWhiteSpace(Model.Busqueda) ? "Todos" : Model.Busqueda)</dd></div>
+                @if (Model.Documento is not null)
+                {
+                    <div><dt>Tipo de documento</dt><dd>@Model.Documento</dd></div>
+                }
+                <div><dt>Registros</dt><dd>@Model.Filas.Count</dd></div>
+            </dl>
+        </section>
+        <div class="listado-tabla-wrap" tabindex="0" role="region" aria-label="@Model.Titulo">
+            <table data-listado-tabla="@Model.ArchivoCsv">
+                <thead>
+                    <tr>
+                        @for (var i = 0; i < Model.Columnas.Count; i++)
+                        {
+                            <th scope="col" class="@(i >= Model.PrimeraColumnaImporte ? "listado-importe" : null)">@Model.Columnas[i]</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Filas.Count == 0)
+                    {
+                        <tr data-listado-vacio><td colspan="@Model.Columnas.Count">No hay registros para los filtros aplicados.</td></tr>
+                    }
+                    @foreach (var fila in Model.Filas)
+                    {
+                        <tr>
+                            @for (var i = 0; i < fila.Length; i++)
+                            {
+                                <td class="@(i >= Model.PrimeraColumnaImporte ? "listado-importe" : null)">@fila[i]</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    @foreach (var fila in Model.Totales)
+                    {
+                        <tr>
+                            <th scope="row">@fila[0]</th>
+                            @for (var i = 1; i < fila.Length; i++)
+                            {
+                                <td class="@(i >= Model.PrimeraColumnaImporte ? "listado-importe" : null)">@fila[i]</td>
+                            }
+                        </tr>
+                    }
+                </tfoot>
+            </table>
+        </div>
+    </main>
+</body>
+</html>

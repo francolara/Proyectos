@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 19/11/2026 | Aplica la cabecera verde compartida y deja la impresión bajo control del usuario. *@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaDashboardReporteViewModel
 @{
     Layout = null;
@@ -14,17 +15,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Reporte del dashboard global</title>
     <partial name="_ReportePrintStyles" />
+    <link rel="stylesheet" href="~/css/listado-reporte.css" asp-append-version="true" />
+    <script src="~/js/listado-reporte.js" asp-append-version="true" defer></script>
 </head>
-<body>
-    <nav class="print-toolbar" aria-label="Acciones del reporte">
-        <button type="button" onclick="window.print()">Imprimir documento</button>
-        <button type="button" class="secondary" onclick="window.close()">Cerrar</button>
-    </nav>
+<body class="sc-impreso">
+    <partial name="_AccionesReporteImpreso" model="true" />
     <main class="report-document">
         <section class="report-page">
-            <header class="report-header">
+            <partial name="_MarcaReporteImpreso" model="@("La Zona Deportiva")" />
+            <header class="report-header listado-filtros">
                 <div>
-                    <span class="report-eyebrow">Super Admin · Control global</span>
                     <h1>Reporte del dashboard de plataforma</h1>
                     <p>Resumen operativo del ecosistema comercial, contenido y altas.</p>
                 </div>
@@ -87,6 +87,5 @@
             <footer class="report-footer"><span>La Zona Deportiva · Reporte global del Super Admin</span><span>Fecha de corte: @Model.FechaGeneracion.ToString("dd/MM/yyyy HH:mm")</span></footer>
         </section>
     </main>
-    <script>window.addEventListener('load', function () { window.setTimeout(function () { window.print(); }, 250); });</script>
 </body>
 </html>

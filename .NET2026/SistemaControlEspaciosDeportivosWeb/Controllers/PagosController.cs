@@ -10,7 +10,7 @@ public class PagosController(
     IReservationEmailNotificationService reservationEmailNotificationService)
     : ModuloControllerBase(moduloPermisoService)
 {
-    public async Task<IActionResult> Index(int? negocioId, string? buscar = null, DateOnly? fechaDesde = null, DateOnly? fechaHasta = null, string? preset = null, int pagina = 1)
+    public async Task<IActionResult> Index(int? negocioId, string? buscar = null, DateOnly? fechaDesde = null, DateOnly? fechaHasta = null, string? preset = null, int pagina = 1, bool imprimirListado = false)
     {
         var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
         if (!resolvedNegocioId.HasValue) return Forbid();
@@ -21,7 +21,29 @@ public class PagosController(
         var (desde, hasta) = ResolverRangoFechas(fechaDesde, fechaHasta, preset);
         const int tamanoPagina = 20;
         var paginaActual = pagina < 1 ? 1 : pagina;
-        var (pagos, totalRegistros) = await spService.PagosListarAsync(resolvedNegocioId.Value, AplicarSedeAsignada(baseVm, null), buscar, desde, hasta, paginaActual, tamanoPagina);
+        var (pagos, totalRegistros) = await spService.PagosListarAsync(resolvedNegocioId.Value, AplicarSedeAsignada(baseVm, null), buscar, desde, hasta, imprimirListado ? 1 : paginaActual, imprimirListado ? int.MaxValue : tamanoPagina);
+        if (imprimirListado)
+        {
+            var filas = pagos.Select(pago => new string?[]
+            {
+                pago.ReservaCodigo, pago.Fecha.ToString("dd/MM/yyyy"), pago.Cliente, pago.Sede, pago.Espacio,
+                pago.FormaPagoResumen, pago.Referencia, pago.CodigoMoneda,
+                ListadoImpresionViewModel.Importe(pago.MontoTotal),
+                ListadoImpresionViewModel.Importe(Math.Max(0m, pago.MontoTotal - pago.SaldoPendiente)),
+                ListadoImpresionViewModel.Importe(pago.SaldoPendiente)
+            }).ToList();
+            var totales = pagos.GroupBy(pago => pago.CodigoMoneda, StringComparer.OrdinalIgnoreCase)
+                .Select(grupo => new string?[] { "Totales", null, null, null, null, null, null, grupo.Key,
+                    ListadoImpresionViewModel.Importe(grupo.Sum(pago => pago.MontoTotal)),
+                    ListadoImpresionViewModel.Importe(grupo.Sum(pago => Math.Max(0m, pago.MontoTotal - pago.SaldoPendiente))),
+                    ListadoImpresionViewModel.Importe(grupo.Sum(pago => pago.SaldoPendiente)) }).ToList();
+
+            return View("~/Views/Shared/ListadoImpresion.cshtml", new ListadoImpresionViewModel(
+                baseVm.NegocioNombre, "Pagos registrados", "pagos-registrados", desde, hasta, buscar, null,
+                ["Reserva", "Fecha", "Cliente", "Sede", "Espacio", "Forma de pago", "Referencia", "Moneda", "Monto", "Pagado", "Saldo"],
+                8, filas, totales));
+        }
+
         var configClub = await spService.ConfiguracionClubObtenerAsync(resolvedNegocioId.Value);
         var totalPaginas = Math.Max(1, (int)Math.Ceiling(totalRegistros / (double)tamanoPagina));
         if (paginaActual > totalPaginas)

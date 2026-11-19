@@ -2,9 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
@@ -267,13 +264,12 @@ public class BannersController(
     private static async Task<(bool EsHorizontal, bool EsRelacionLoginValida)> ObtenerOrientacionAsync(IFormFile archivo, CancellationToken cancellationToken)
     {
         await using var stream = archivo.OpenReadStream();
-        using var image = await Image.LoadAsync<Rgba32>(stream, cancellationToken);
-        image.Mutate(ctx => ctx.AutoOrient());
-        if (image.Width <= 0 || image.Height <= 0)
-            throw new InvalidOperationException($"No se pudo leer la imagen {archivo.FileName}.");
+        using var codec = ProcesamientoImagen.CrearCodec(stream, archivo.FileName, cancellationToken);
+        using var imagen = ProcesamientoImagen.Decodificar(codec, archivo.FileName);
+        var dimensiones = ProcesamientoImagen.ObtenerDimensiones(codec);
 
-        var esHorizontal = image.Width >= image.Height;
-        var ratio = image.Width / (decimal)image.Height;
+        var esHorizontal = dimensiones.Width >= dimensiones.Height;
+        var ratio = dimensiones.Width / (decimal)dimensiones.Height;
         var ratioObjetivo = 1080m / 1350m; // 4:5
         var tolerancia = 0.03m; // +/-3%
         var esRelacionLoginValida = Math.Abs(ratio - ratioObjetivo) <= tolerancia;

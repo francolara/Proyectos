@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 19/11/2026 | Agrega el reporte filtrado del listado con impresión y CSV en una pestaña nueva. *@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PagosIndexViewModel
 @* Firma: FRANCO LARA - 01/09/2026 | Presenta el listado con un titulo operativo y directo. *@
 @* Firma: Codex - 01/10/2026 | Orienta la busqueda al correlativo visible de reserva por negocio. *@
@@ -118,7 +119,14 @@
     </section>
 
     <section class="table-card">
-        <h2 class="section-title"><i class="bi bi-cash-coin me-1"></i>Pagos registrados</h2>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+            <h2 class="section-title"><i class="bi bi-cash-coin me-1"></i>Pagos registrados</h2>
+            <a class="btn btn-success" asp-action="Index" asp-route-negocioId="@Model.NegocioId"
+               asp-route-buscar="@Model.Buscar" asp-route-imprimirListado="true"
+               asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")"
+               asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")"
+               target="_blank" rel="noopener"><i class="bi bi-printer me-1" aria-hidden="true"></i> Imprimir</a>
+        </div>
         @if (!Model.Pagos.Any())
         {
             <div class="empty-state">

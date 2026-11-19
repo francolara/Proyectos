@@ -47,6 +47,16 @@ public class PanelController(ISportCenterStoredProcedureService spService, IModu
         var contextoDashboard = await moduloPermisoService.ObtenerContextoAsync(User, negocioSeleccionadoId, "DASHBOARD");
         if (!contextoDashboard.Autorizado)
         {
+            if (contextoDashboard.BloqueadoPorSuscripcion)
+            {
+                return View("~/Views/Shared/ModuloSinAcceso.cshtml", new ModuloBaseViewModel
+                {
+                    NegocioId = negocioSeleccionadoId,
+                    Mensaje = contextoDashboard.Mensaje,
+                    BloqueadoPorSuscripcion = true
+                });
+            }
+
             return View(new PanelDashboardViewModel
             {
                 Mensaje = contextoDashboard.Mensaje,

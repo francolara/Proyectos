@@ -1,0 +1,316 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Operación",
+    "locale": "es",
+    "output": "GestionServicios.Web/OperationalMaps/operacion.html",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1234,
+      750
+    ]
+  },
+  "components": [
+    {
+      "id": "clientes",
+      "type": "database",
+      "label": "Clientes y tiendas",
+      "sublabel": "Contactos y zonas",
+      "pos": [
+        26,
+        338
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "presupuesto",
+      "type": "frontend",
+      "label": "Presupuesto",
+      "sublabel": "Invitación o Emergencia",
+      "pos": [
+        268,
+        338
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "orden",
+      "type": "frontend",
+      "label": "OC del cliente",
+      "sublabel": "Orden de compra",
+      "pos": [
+        510,
+        338
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "confirmacion",
+      "type": "backend",
+      "label": "Confirmación del cliente",
+      "sublabel": "Conformidad del trabajo",
+      "pos": [
+        752,
+        338
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "facturacion",
+      "type": "frontend",
+      "label": "Facturación",
+      "sublabel": "Marcado del expediente",
+      "pos": [
+        994,
+        338
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "catalogos",
+      "type": "database",
+      "label": "Catálogos y tarifarios",
+      "sublabel": "Materiales y servicios",
+      "pos": [
+        26,
+        486
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "guia",
+      "type": "frontend",
+      "label": "Guía",
+      "sublabel": "Documento y PDF",
+      "pos": [
+        252,
+        486
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "ejecucion",
+      "type": "backend",
+      "label": "Ejecución",
+      "sublabel": "Programación y término",
+      "pos": [
+        521,
+        486
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "reportes",
+      "type": "messagebus",
+      "label": "Reportes",
+      "sublabel": "Expediente comercial",
+      "pos": [
+        777,
+        486
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "ventas",
+      "type": "frontend",
+      "label": "Emisión de comprobantes",
+      "sublabel": "Ventas y notas de crédito",
+      "pos": [
+        994,
+        630
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "factoring",
+      "type": "cloud",
+      "label": "Negociación de factoring",
+      "sublabel": "Lotes de facturas",
+      "pos": [
+        752,
+        630
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "controles",
+      "type": "security",
+      "label": "Controles administrativos",
+      "sublabel": "Permisos y auditoría",
+      "pos": [
+        268,
+        630
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "configuracion",
+      "label": "Configuración documental",
+      "sublabel": "Parámetros de la empresa",
+      "pos": [
+        510,
+        23
+      ],
+      "type": "security",
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "firmas",
+      "label": "Firmas de presupuesto",
+      "sublabel": "Catálogo y firma predeterminada",
+      "pos": [
+        268,
+        153
+      ],
+      "type": "security",
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "series",
+      "label": "Comprobantes electrónicos",
+      "sublabel": "Series para ventas",
+      "pos": [
+        994,
+        153
+      ],
+      "type": "security",
+      "size": [
+        188,
+        72
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "clientes",
+      "to": "presupuesto",
+      "label": "cliente"
+    },
+    {
+      "from": "catalogos",
+      "to": "presupuesto",
+      "label": "tarifas"
+    },
+    {
+      "from": "presupuesto",
+      "to": "orden",
+      "label": "recibe OC"
+    },
+    {
+      "from": "presupuesto",
+      "to": "guia",
+      "label": "vincula guía"
+    },
+    {
+      "from": "orden",
+      "to": "confirmacion",
+      "label": "confirma"
+    },
+    {
+      "from": "confirmacion",
+      "to": "facturacion",
+      "label": "habilita"
+    },
+    {
+      "from": "guia",
+      "to": "ejecucion",
+      "label": "seguimiento"
+    },
+    {
+      "from": "ejecucion",
+      "to": "reportes",
+      "label": "consulta"
+    },
+    {
+      "from": "facturacion",
+      "to": "ventas",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "label": "vincula venta"
+    },
+    {
+      "from": "ventas",
+      "to": "factoring",
+      "label": "negocia"
+    },
+    {
+      "from": "configuracion",
+      "to": "firmas",
+      "label": "firma"
+    },
+    {
+      "from": "configuracion",
+      "to": "series",
+      "label": "series"
+    },
+    {
+      "from": "firmas",
+      "to": "presupuesto",
+      "label": "firma impresa",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "series",
+      "to": "ventas",
+      "label": "serie disponible",
+      "fromSide": "right",
+      "toSide": "right",
+      "via": [
+        [
+          1205,
+          189
+        ],
+        [
+          1205,
+          666
+        ]
+      ],
+      "labelDy": 24,
+      "labelDx": -55
+    }
+  ]
+}

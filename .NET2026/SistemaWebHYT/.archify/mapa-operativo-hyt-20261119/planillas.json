@@ -1,0 +1,389 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Obligaciones",
+    "locale": "es",
+    "output": "GestionServicios.Web/OperationalMaps/planillas.html",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1234,
+      750
+    ]
+  },
+  "components": [
+    {
+      "id": "maestros",
+      "type": "database",
+      "label": "Cargos y conceptos",
+      "sublabel": "Catálogos de planilla",
+      "pos": [
+        26,
+        58
+      ],
+      "size": [
+        155,
+        72
+      ]
+    },
+    {
+      "id": "trabajadores",
+      "type": "database",
+      "label": "Trabajadores",
+      "sublabel": "Ficha y vínculo laboral",
+      "pos": [
+        268,
+        58
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "plan",
+      "type": "backend",
+      "label": "Planificación de planilla",
+      "sublabel": "Semana, quincena o mes",
+      "pos": [
+        510,
+        58
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "pago",
+      "type": "cloud",
+      "label": "Confirmación de pago",
+      "sublabel": "Movimientos del período",
+      "pos": [
+        752,
+        58
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "reportes",
+      "type": "messagebus",
+      "label": "Reportes de planillas",
+      "sublabel": "Personal, AFP/ONP y proveedores",
+      "pos": [
+        994,
+        58
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "asistencia",
+      "type": "backend",
+      "label": "Asistencia y extras",
+      "sublabel": "Tiempo extra aprobado",
+      "pos": [
+        268,
+        206
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "vacaciones",
+      "type": "backend",
+      "label": "Vacaciones del personal",
+      "sublabel": "Días reconocidos y salidas",
+      "pos": [
+        510,
+        354
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "obligaciones",
+      "type": "cloud",
+      "label": "Obligaciones",
+      "sublabel": "AFP y ONP",
+      "pos": [
+        752,
+        206
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "sctr",
+      "type": "security",
+      "label": "SCTR",
+      "sublabel": "Pólizas y cobertura",
+      "pos": [
+        268,
+        354
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "ceses",
+      "label": "Ceses y reingresos",
+      "sublabel": "Historial del trabajador",
+      "pos": [
+        26,
+        206
+      ],
+      "type": "backend",
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "telecredito",
+      "label": "Exportar Telecrédito",
+      "sublabel": "Archivo de abonos BCP",
+      "pos": [
+        510,
+        206
+      ],
+      "type": "cloud",
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "proveedor",
+      "type": "database",
+      "label": "Proveedores",
+      "sublabel": "Maestro de terceros",
+      "pos": [
+        10,
+        500
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "trabajos",
+      "type": "backend",
+      "label": "Trabajos de proveedores",
+      "sublabel": "Costos del servicio",
+      "pos": [
+        248,
+        500
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "compras",
+      "type": "frontend",
+      "label": "Registro de compras",
+      "sublabel": "Provisión y XML",
+      "pos": [
+        523,
+        500
+      ],
+      "size": [
+        160,
+        72
+      ]
+    },
+    {
+      "id": "pagos",
+      "type": "cloud",
+      "label": "Pagos a proveedores",
+      "sublabel": "Saldos y pagos",
+      "pos": [
+        758,
+        500
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "reportes-proveedores",
+      "type": "messagebus",
+      "label": "Reporte de proveedores",
+      "sublabel": "Consulta de pagos",
+      "pos": [
+        1036,
+        500
+      ],
+      "size": [
+        176,
+        72
+      ]
+    },
+    {
+      "id": "detracciones",
+      "type": "cloud",
+      "label": "Pago de detracciones",
+      "sublabel": "Depósitos y constancias",
+      "pos": [
+        523,
+        638
+      ],
+      "size": [
+        188,
+        72
+      ]
+    },
+    {
+      "id": "configuracion",
+      "type": "security",
+      "label": "Configuración HYT",
+      "sublabel": "Cuenta de cargo de Telecrédito",
+      "pos": [
+        752,
+        354
+      ],
+      "size": [
+        188,
+        72
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "maestros",
+      "to": "trabajadores",
+      "label": "asigna cargo"
+    },
+    {
+      "from": "trabajadores",
+      "to": "plan",
+      "label": "planifica"
+    },
+    {
+      "from": "plan",
+      "to": "pago",
+      "label": "confirma"
+    },
+    {
+      "from": "pago",
+      "to": "reportes",
+      "label": "consolida"
+    },
+    {
+      "from": "trabajadores",
+      "to": "asistencia",
+      "label": "registra"
+    },
+    {
+      "from": "trabajadores",
+      "to": "vacaciones",
+      "label": "gestiona vacaciones",
+      "fromSide": "bottom",
+      "toSide": "left",
+      "via": [
+        [
+          362,
+          164
+        ],
+        [
+          480,
+          164
+        ],
+        [
+          480,
+          390
+        ]
+      ]
+    },
+    {
+      "from": "asistencia",
+      "to": "sctr",
+      "label": "cobertura"
+    },
+    {
+      "from": "obligaciones",
+      "to": "reportes",
+      "label": "aportes"
+    },
+    {
+      "from": "trabajadores",
+      "to": "ceses",
+      "label": "cese o retorno"
+    },
+    {
+      "from": "plan",
+      "to": "telecredito",
+      "label": "exporta TXT",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "proveedor",
+      "to": "trabajos",
+      "label": "asigna"
+    },
+    {
+      "from": "trabajos",
+      "to": "compras",
+      "label": "asocia costo"
+    },
+    {
+      "from": "compras",
+      "to": "pagos",
+      "label": "paga saldo"
+    },
+    {
+      "from": "compras",
+      "to": "detracciones",
+      "label": "deposita"
+    },
+    {
+      "from": "pagos",
+      "to": "reportes-proveedores",
+      "label": "solo consulta"
+    },
+    {
+      "from": "configuracion",
+      "to": "telecredito",
+      "label": "cuenta BCP"
+    },
+    {
+      "from": "reportes-proveedores",
+      "to": "reportes",
+      "label": "solo reportes",
+      "fromSide": "right",
+      "toSide": "right",
+      "via": [
+        [
+          1228,
+          536
+        ],
+        [
+          1228,
+          94
+        ]
+      ],
+      "labelAt": [
+        1161,
+        317
+      ]
+    }
+  ]
+}

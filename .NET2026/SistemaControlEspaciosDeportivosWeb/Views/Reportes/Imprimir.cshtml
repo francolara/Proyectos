@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 19/11/2026 | Aplica la cabecera verde compartida y deja la impresión bajo control del usuario. *@
 @* Firma: Codex - 01/10/2026 | Imprime codigos visibles de reservas y pagos por negocio. *@
 @* Firma: FRANCO LARA - 06/10/2026 | Filtra la impresion por moneda canonica y muestra su simbolo en resumen y detalle. *@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReportesIndexViewModel
@@ -60,30 +61,6 @@
             font-size: 12px;
         }
 
-        .print-toolbar {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            padding: 12px 24px;
-            background: #101d31;
-            box-shadow: 0 8px 24px rgba(16, 29, 49, .2);
-        }
-
-        .print-toolbar button {
-            border: 0;
-            border-radius: 7px;
-            padding: 9px 16px;
-            background: #1d67b1;
-            color: #fff;
-            font: inherit;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .print-toolbar button.secondary { background: #fff; color: #243654; }
 
         .report-document {
             width: min(1120px, calc(100% - 32px));
@@ -232,26 +209,25 @@
 
         @@media print {
             html, body { background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-            .print-toolbar { display: none !important; }
+
             .report-document { width: auto; margin: 0; box-shadow: none; }
             .report-page { padding: 0; }
             .panel, .metric, .mini-metric { break-inside: avoid; page-break-inside: avoid; }
         }
     </style>
+    <link rel="stylesheet" href="~/css/listado-reporte.css" asp-append-version="true" />
+    <script src="~/js/listado-reporte.js" asp-append-version="true" defer></script>
 </head>
-<body>
-    <nav class="print-toolbar" aria-label="Acciones del reporte">
-        <button type="button" onclick="window.print()">Imprimir documento</button>
-        <button type="button" class="secondary" onclick="window.close()">Cerrar</button>
-    </nav>
+<body class="sc-impreso">
+    <partial name="_AccionesReporteImpreso" model="true" />
 
     <main class="report-document">
         <section class="report-page">
-            <header class="report-header">
+            <partial name="_MarcaReporteImpreso" model="@Model.NegocioNombre" />
+            <header class="report-header listado-filtros">
                 <div>
-                    <div class="report-eyebrow">Informe ejecutivo de gestion</div>
-                    <h1>@Model.NegocioNombre</h1>
-                    <p><strong>@sedeTexto</strong> | Periodo @Model.FechaDesde.ToString("dd/MM/yyyy") al @Model.FechaHasta.ToString("dd/MM/yyyy")</p>
+                    <h1>Reporte ejecutivo de cobranza y reservas</h1>
+                    <p><strong>@sedeTexto</strong> | Periodo @Model.FechaDesde.ToString("dd/MM/yyyy") al @Model.FechaHasta.ToString("dd/MM/yyyy") · Moneda @Model.MonedaSimbolo</p>
                 </div>
                 <div class="report-issue">
                     <span>Documento emitido</span>
@@ -413,11 +389,5 @@
             <footer class="report-footer"><span>Detalle de reservas | @Model.NegocioNombre</span><span>Saldo total: @Model.MonedaSimbolo @totalPendiente.ToString("N2")</span></footer>
         </section>
     </main>
-
-    <script>
-        window.addEventListener('load', function () {
-            window.setTimeout(function () { window.print(); }, 250);
-        });
-    </script>
 </body>
 </html>

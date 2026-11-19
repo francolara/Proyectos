@@ -1,0 +1,28 @@
+@* Firma: FRANCO LARA - 19/11/2026 | Reutiliza los canales de soporte configurados en los avisos de acceso. *@
+@using Microsoft.Extensions.Options
+@using SistemaControlEspaciosDeportivosWeb.Configuration
+@inject IOptions<BusinessInformationOptions> BusinessOptions
+@{
+    var soporte = BusinessOptions.Value;
+    var whatsapp = string.IsNullOrWhiteSpace(soporte.WhatsAppNumber)
+        ? null
+        : $"https://wa.me/{soporte.WhatsAppNumber}?text={Uri.EscapeDataString("Hola, necesito ayuda para acceder a La Zona Deportiva.")}";
+}
+
+<div class="mt-3" aria-label="Canales de soporte">
+    <p class="fw-semibold mb-1">Contacta a soporte</p>
+    <ul class="list-unstyled mb-1">
+        @if (whatsapp is not null)
+        {
+            <li><a href="@whatsapp" target="_blank" rel="noopener noreferrer">WhatsApp @(string.IsNullOrWhiteSpace(soporte.WhatsAppDisplay) ? soporte.WhatsAppNumber : soporte.WhatsAppDisplay)</a></li>
+        }
+        @if (!string.IsNullOrWhiteSpace(soporte.SupportEmail))
+        {
+            <li><a href="mailto:@soporte.SupportEmail">@soporte.SupportEmail</a></li>
+        }
+    </ul>
+    @if (!string.IsNullOrWhiteSpace(soporte.SupportHours))
+    {
+        <small class="text-muted">@soporte.SupportHours</small>
+    }
+</div>

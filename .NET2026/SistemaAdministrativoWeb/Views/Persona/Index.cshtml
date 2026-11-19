@@ -1,4 +1,5 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.PersonaIndexViewModel
+@* Firma: FRANCO LARA - 19/11/2026 | Ofrece la impresión del listado con los filtros aplicados. *@
 @* Firma: FRANCO LARA - 29/08/2026 | Aplica permisos efectivos y agrega eliminacion segura desde el listado de personas. *@
 
 @{
@@ -93,6 +94,7 @@
                 </div>
                 <div class="workspace-actions">
                     <button type="submit" class="btn btn-primary">Consultar</button>
+                    <partial name="_ReporteAbrirImpresion" />
                 </div>
             </form>
 

@@ -17,7 +17,7 @@ public class CentroCostoController(
     private const int TamanoAyuda = 100;
 
     [HttpGet]
-    public async Task<IActionResult> Index(string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default, bool vistaImpresion = false)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
         {
@@ -29,10 +29,22 @@ public class CentroCostoController(
         var resultado = await centroCostoRepository.ListarPaginadoPorEmpresaAsync(
             currentCompanyAccessor.EmpresaId.Value,
             textoBusqueda,
-            pagina,
-            TamanoPagina,
+            vistaImpresion ? 1 : pagina,
+            vistaImpresion ? 0 : TamanoPagina,
             false,
             cancellationToken);
+
+        if (vistaImpresion)
+        {
+            return View("ListadoImpresion", new ListadoImpresionViewModel(
+                "Centros de costo", currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
+                [("Búsqueda", textoBusqueda?.Trim())],
+                ["Código", "Descripción", "Estado"],
+                resultado.Items.Select(x => new string[]
+                {
+                    x.CodigoCentroCosto, x.NombreCentroCosto, x.Estado ? "Activo" : "Inactivo"
+                }).ToArray()));
+        }
 
         var model = ConstruirViewModel(resultado.Items, null);
         model.TextoBusqueda = textoBusqueda?.Trim() ?? string.Empty;

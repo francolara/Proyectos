@@ -19,7 +19,7 @@ public class PlanCuentaController(
     private const int TamanoAyudaCuenta = 100;
 
     [HttpGet]
-    public async Task<IActionResult> Index(string? textoBusqueda = null, byte? nivelCuenta = null, int pagina = 1, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(string? textoBusqueda = null, byte? nivelCuenta = null, int pagina = 1, CancellationToken cancellationToken = default, bool vistaImpresion = false)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
         {
@@ -29,11 +29,35 @@ public class PlanCuentaController(
         ViewData["AdminShell"] = true;
 
         var nivelCuentaTrabajo = nivelCuenta is >= 1 and <= 5 ? nivelCuenta : null;
-        var cuentas = await planCuentaRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, textoBusqueda, nivelCuentaTrabajo, pagina, TamanoPagina, false, false, cancellationToken);
+        var cuentas = await planCuentaRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, textoBusqueda, nivelCuentaTrabajo, vistaImpresion ? 1 : pagina, vistaImpresion ? 0 : TamanoPagina, false, false, cancellationToken);
+
+        var model = ConstruirViewModel(cuentas.Items, null, null);
+
+        if (vistaImpresion)
+        {
+            return View("ListadoImpresion", new ListadoImpresionViewModel(
+                "Plan de cuentas", currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
+                [("Búsqueda", textoBusqueda?.Trim()),
+                    ("Nivel", nivelCuentaTrabajo?.ToString())],
+                ["Código", "Descripción", "Nivel", "Col. balance", "Moneda", "TC", "Dif. cambio", "Movimiento", "Centro costo", "Estado"],
+                model.Cuentas.Select(cuenta => new string[]
+                {
+                    cuenta.CodigoCuenta,
+                    cuenta.NombreCuenta,
+                    cuenta.NivelCuenta.ToString(),
+                    cuenta.ColBalanceTexto,
+                    cuenta.MonedaTexto,
+                    cuenta.TipoCambioTexto,
+                    cuenta.DiferenciaCambioTexto,
+                    cuenta.AceptaMovimiento ? "Sí" : "No",
+                    cuenta.RequiereCentroCosto ? "Sí" : "No",
+                    cuenta.Estado ? "Activo" : "Inactivo"
+                }).ToArray(), Horizontal: true));
+        }
+
         var totalEmpresa = string.IsNullOrWhiteSpace(textoBusqueda) && !nivelCuentaTrabajo.HasValue
             ? cuentas.TotalRecords
             : (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, null, null, 1, 1, false, false, cancellationToken)).TotalRecords;
-        var model = ConstruirViewModel(cuentas.Items, null, null);
         model.TextoBusqueda = textoBusqueda?.Trim() ?? string.Empty;
         model.NivelCuentaFiltro = nivelCuentaTrabajo;
         model.TotalCuentas = cuentas.TotalRecords;

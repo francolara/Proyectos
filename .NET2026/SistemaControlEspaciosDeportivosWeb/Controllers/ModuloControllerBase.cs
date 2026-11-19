@@ -22,6 +22,7 @@ public abstract class ModuloControllerBase(IModuloPermisoService moduloPermisoSe
                 NegocioId = negocioId,
                 ModuloCodigo = moduloCodigo,
                 Mensaje = contexto.Mensaje,
+                BloqueadoPorSuscripcion = contexto.BloqueadoPorSuscripcion,
                 BloqueadoPorPlanBasico = contexto.BloqueadoPorPlanBasico
             };
         }

@@ -30,7 +30,7 @@ public class VentaController(
     private const decimal TasaIgv = 0.18m;
 
     [HttpGet]
-    public async Task<IActionResult> Index(short? anio = null, byte? mes = null, string? textoBusqueda = null, string? tipoComprobante = null, int pagina = 1, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(short? anio = null, byte? mes = null, string? textoBusqueda = null, string? tipoComprobante = null, int pagina = 1, CancellationToken cancellationToken = default, bool vistaImpresion = false)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
         {
@@ -42,6 +42,33 @@ public class VentaController(
         var empresaId = currentCompanyAccessor.EmpresaId.Value;
         var (anioTrabajo, mesTrabajo) = NormalizarPeriodo(anio, mes);
         var periodoTrabajo = $"{anioTrabajo:0000}{mesTrabajo:00}";
+        var tipoComprobanteFiltro = string.IsNullOrWhiteSpace(tipoComprobante) ? null : tipoComprobante.Trim().ToUpperInvariant();
+        var ventas = await ventaRepository.ListarPaginadoPorEmpresaAsync(empresaId, anioTrabajo, mesTrabajo, textoBusqueda, tipoComprobanteFiltro, vistaImpresion ? 1 : pagina, vistaImpresion ? 0 : TamanoPagina, cancellationToken);
+
+        if (vistaImpresion)
+        {
+            var filas = ventas.Items.Select(x => new string[]
+            {
+                x.FechaEmision.ToString("dd/MM/yyyy"), $"{x.TipoComprobante} {x.Serie}-{x.Numero}",
+                x.NombreCliente, x.CodigoMoneda, x.BaseImponible.ToString("N2"), x.Igv.ToString("N2"),
+                x.ImporteTotal.ToString("N2")
+            }).ToArray();
+            var totales = ventas.Items.GroupBy(x => x.CodigoMoneda)
+                .OrderBy(grupo => grupo.Key)
+                .Select(grupo => new string[]
+                {
+                    "Total", "", "", grupo.Key, grupo.Sum(x => x.BaseImponible).ToString("N2"),
+                    grupo.Sum(x => x.Igv).ToString("N2"), grupo.Sum(x => x.ImporteTotal).ToString("N2")
+                }).ToArray();
+
+            return View("ListadoImpresion", new ListadoImpresionViewModel(
+                "Ventas", currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
+                [("Período", $"{mesTrabajo:00}/{anioTrabajo:0000}"), ("Comprobante", tipoComprobanteFiltro),
+                    ("Búsqueda", textoBusqueda?.Trim())],
+                ["Fecha", "Comprobante", "Cliente", "Moneda", "Base imponible", "IGV", "Total"],
+                filas, totales, PrimeraColumnaImporte: 4, Horizontal: true));
+        }
+
         var clientes = (await clienteRepository.ListarActivosPorEmpresaAsync(empresaId, cancellationToken))
             .OrderBy(x => x.NombreCompleto)
             .ToList();
@@ -71,8 +98,6 @@ public class VentaController(
         var tiposAfectacionIgv = (await tipoAfectacionIgvRepository.ListarActivosAsync(cancellationToken))
             .OrderBy(x => x.CodigoSunat)
             .ToList();
-        var tipoComprobanteFiltro = string.IsNullOrWhiteSpace(tipoComprobante) ? null : tipoComprobante.Trim().ToUpperInvariant();
-        var ventas = await ventaRepository.ListarPaginadoPorEmpresaAsync(empresaId, anioTrabajo, mesTrabajo, textoBusqueda, tipoComprobanteFiltro, pagina, TamanoPagina, cancellationToken);
 
         var model = ConstruirViewModel(
             empresaId,

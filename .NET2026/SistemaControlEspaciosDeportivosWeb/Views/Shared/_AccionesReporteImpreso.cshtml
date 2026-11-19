@@ -1,0 +1,10 @@
+@model bool
+@* Firma: FRANCO LARA - 19/11/2026 | Comparte la barra de acciones verde de los reportes HTML. *@
+
+<nav class="listado-acciones" aria-label="Acciones del documento">
+    <button type="button" data-listado-imprimir>Imprimir / Guardar PDF</button>
+    @if (Model)
+    {
+        <button type="button" data-listado-csv>Exportar CSV</button>
+    }
+</nav>

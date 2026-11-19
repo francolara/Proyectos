@@ -14,4 +14,27 @@ public sealed class PlanCuentaItemViewModel
     public bool GeneraDiferenciaPorAnalisis { get; init; }
     public bool RequiereCentroCosto { get; init; }
     public bool Estado { get; init; }
+
+    public string ColBalanceTexto => ColBalance switch
+    {
+        "S" => "S - Saldo",
+        "I" => "I - Inventario",
+        "N" => "N - Naturaleza",
+        "F" => "F - Funcion",
+        "R" => "R - Resultado",
+        _ => "-"
+    };
+
+    public string MonedaTexto => string.IsNullOrWhiteSpace(IdMoneda) ? "-" : IdMoneda;
+
+    public string TipoCambioTexto => TipoCambio switch
+    {
+        "V" => "Venta",
+        "C" => "Compra",
+        _ => "-"
+    };
+
+    public string DiferenciaCambioTexto => IdMoneda == "USD"
+        ? (GeneraDiferenciaPorAnalisis ? "Analisis" : "Saldo")
+        : "-";
 }

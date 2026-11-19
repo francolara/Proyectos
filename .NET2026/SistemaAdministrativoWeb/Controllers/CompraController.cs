@@ -46,7 +46,7 @@ public class CompraController(
     };
 
     [HttpGet]
-    public async Task<IActionResult> Index(short? anio = null, byte? mes = null, string? textoBusqueda = null, string? tipoComprobante = null, int pagina = 1, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(short? anio = null, byte? mes = null, string? textoBusqueda = null, string? tipoComprobante = null, int pagina = 1, CancellationToken cancellationToken = default, bool vistaImpresion = false)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
         {
@@ -58,6 +58,33 @@ public class CompraController(
         var empresaId = currentCompanyAccessor.EmpresaId.Value;
         var (anioTrabajo, mesTrabajo) = NormalizarPeriodo(anio, mes);
         var periodoTrabajo = $"{anioTrabajo:0000}{mesTrabajo:00}";
+        var tipoComprobanteFiltro = string.IsNullOrWhiteSpace(tipoComprobante) ? null : tipoComprobante.Trim().ToUpperInvariant();
+        var compras = await compraRepository.ListarPaginadoPorEmpresaAsync(empresaId, anioTrabajo, mesTrabajo, textoBusqueda, tipoComprobanteFiltro, vistaImpresion ? 1 : pagina, vistaImpresion ? 0 : TamanoPagina, cancellationToken);
+
+        if (vistaImpresion)
+        {
+            var filas = compras.Items.Select(x => new string[]
+            {
+                x.FechaEmision.ToString("dd/MM/yyyy"), $"{x.TipoComprobante} {x.Serie}-{x.Numero}",
+                x.NombreProveedor, x.CodigoMoneda, x.BaseImponible.ToString("N2"), x.Igv.ToString("N2"),
+                x.ImporteTotal.ToString("N2")
+            }).ToArray();
+            var totales = compras.Items.GroupBy(x => x.CodigoMoneda)
+                .OrderBy(grupo => grupo.Key)
+                .Select(grupo => new string[]
+                {
+                    "Total", "", "", grupo.Key, grupo.Sum(x => x.BaseImponible).ToString("N2"),
+                    grupo.Sum(x => x.Igv).ToString("N2"), grupo.Sum(x => x.ImporteTotal).ToString("N2")
+                }).ToArray();
+
+            return View("ListadoImpresion", new ListadoImpresionViewModel(
+                "Compras", currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
+                [("Período", $"{mesTrabajo:00}/{anioTrabajo:0000}"), ("Comprobante", tipoComprobanteFiltro),
+                    ("Búsqueda", textoBusqueda?.Trim())],
+                ["Fecha", "Comprobante", "Proveedor", "Moneda", "Base imponible", "IGV", "Total"],
+                filas, totales, PrimeraColumnaImporte: 4, Horizontal: true));
+        }
+
         var proveedores = (await proveedorRepository.ListarActivosPorEmpresaAsync(empresaId, cancellationToken))
             .OrderBy(x => x.NombreCompleto)
             .ToList();
@@ -94,8 +121,6 @@ public class CompraController(
             .OrderBy(x => x.Codigo)
             .ToList();
         var porcentajeRetencionRenta4ta = await ObtenerPorcentajeRetencionRenta4taAsync(empresaId, cancellationToken);
-        var tipoComprobanteFiltro = string.IsNullOrWhiteSpace(tipoComprobante) ? null : tipoComprobante.Trim().ToUpperInvariant();
-        var compras = await compraRepository.ListarPaginadoPorEmpresaAsync(empresaId, anioTrabajo, mesTrabajo, textoBusqueda, tipoComprobanteFiltro, pagina, TamanoPagina, cancellationToken);
 
         var model = ConstruirViewModel(
             empresaId,

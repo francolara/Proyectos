@@ -1,4 +1,5 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.VoucherContableViewModel
+@* Firma: FRANCO LARA - 19/11/2026 | Presenta los datos de cabecera en minitarjetas y el título en una tarjeta con barra lateral. *@
 @* Firma: FRANCO LARA - 18/11/2026 | Aplica el diseño común de reportes y abre la impresión y exportación CSV en una pestaña independiente. *@
 
 @* Firma: FRANCO LARA - 07/11/2026 | Unifica el estilo HTML e impreso del reporte con linea verde, tarjeta con filtros aplicados y rotulos de tabla en negro. Mejora el contraste de Imprimir en modo oscuro. *@
@@ -57,17 +58,38 @@
         <article class="balance-document accounting-document" aria-labelledby="balance-document-title">
             @await Component.InvokeAsync("ReporteEmpresa", new { empresaNombre = Model.EmpresaNombre, rucEmpresa = Model.RucEmpresa })
 
-            <section class="balance-document-filters">
+            <section class="accounting-document-heading" aria-labelledby="balance-document-title">
                 <h1 id="balance-document-title">Comprobante de contabilidad</h1>
-                <div class="balance-document-context">
-                    <span>Voucher: @numeroVoucher</span>
-                    <span>Origen: @Model.CodigoOrigen - @Model.NombreOrigen</span>
-                    <span>Fecha emision: @Model.FechaEmision.ToString("dd/MM/yyyy")</span>
-                    <span>Moneda: @Model.Moneda</span>
-                    <span>Tipo de cambio: @Model.TipoCambio.ToString("N3")</span>
-                    <span>Referencia externa: @(string.IsNullOrWhiteSpace(Model.ReferenciaExterna) ? "-" : Model.ReferenciaExterna)</span>
-                    <span>Lineas: @Model.Detalles.Count</span>
-                </div>
+                <dl class="accounting-document-cards" data-report-csv-context>
+                    <div class="accounting-document-card">
+                        <dt>Voucher</dt>
+                        <dd>@numeroVoucher</dd>
+                    </div>
+                    <div class="accounting-document-card">
+                        <dt>Origen</dt>
+                        <dd>@Model.CodigoOrigen - @Model.NombreOrigen</dd>
+                    </div>
+                    <div class="accounting-document-card">
+                        <dt>Fecha de emisión</dt>
+                        <dd>@Model.FechaEmision.ToString("dd/MM/yyyy")</dd>
+                    </div>
+                    <div class="accounting-document-card">
+                        <dt>Moneda</dt>
+                        <dd>@Model.Moneda</dd>
+                    </div>
+                    <div class="accounting-document-card">
+                        <dt>Tipo de cambio</dt>
+                        <dd>@Model.TipoCambio.ToString("N3")</dd>
+                    </div>
+                    <div class="accounting-document-card">
+                        <dt>Referencia externa</dt>
+                        <dd>@(string.IsNullOrWhiteSpace(Model.ReferenciaExterna) ? "-" : Model.ReferenciaExterna)</dd>
+                    </div>
+                    <div class="accounting-document-card">
+                        <dt>Líneas</dt>
+                        <dd>@Model.Detalles.Count</dd>
+                    </div>
+                </dl>
             </section>
 
             <section class="voucher-glosa" data-report-csv-context>

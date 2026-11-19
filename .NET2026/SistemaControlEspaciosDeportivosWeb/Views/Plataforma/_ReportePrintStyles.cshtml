@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 19/11/2026 | Retira estilos duplicados de la barra de impresión de Plataforma. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Estilos compartidos para reportes HTML imprimibles del Super Admin. *@
 <style>
     :root {
@@ -14,9 +15,6 @@
 
     * { box-sizing: border-box; }
     html, body { margin: 0; background: #e8edf4; color: var(--report-ink); font-family: "Segoe UI", Tahoma, sans-serif; font-size: 12px; }
-    .print-toolbar { position: sticky; top: 0; z-index: 20; display: flex; justify-content: flex-end; gap: 10px; padding: 12px 24px; background: #101d31; box-shadow: 0 8px 24px rgba(16, 29, 49, .2); }
-    .print-toolbar button { border: 0; border-radius: 7px; padding: 9px 16px; background: var(--report-blue); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
-    .print-toolbar button.secondary { background: #fff; color: #243654; }
     .report-document { width: min(1180px, calc(100% - 32px)); margin: 24px auto; background: #fff; box-shadow: 0 18px 54px rgba(28, 42, 66, .18); }
     .report-page { padding: 14mm; }
     .report-header { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: start; padding-bottom: 14px; border-bottom: 3px solid var(--report-navy); }
@@ -71,7 +69,6 @@
     }
     @@media print {
         html, body { background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-        .print-toolbar { display: none !important; }
         .report-document { width: auto; margin: 0; box-shadow: none; }
         .report-page { padding: 0; }
         .metric, .info-grid, .info-item { break-inside: avoid; page-break-inside: avoid; }

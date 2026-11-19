@@ -1,0 +1,12 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservasIndexViewModel
+@* Firma: FRANCO LARA - 19/11/2026 | Conserva los filtros aplicados al abrir el listado imprimible y alinea el botón con las acciones de Reportes. *@
+
+<a class="btn btn-success mt-2" asp-action="Index"
+   asp-route-negocioId="@Model.NegocioId" asp-route-imprimirListado="true"
+   asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")"
+   asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")"
+   asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId"
+   asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)"
+   target="_blank" rel="noopener">
+    <i class="bi bi-printer me-1" aria-hidden="true"></i> Imprimir
+</a>

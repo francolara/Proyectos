@@ -1,88 +1,161 @@
+@* Firma: FRANCO LARA - 19/11/2026 | Distingue los avisos de suscripción, plan y permisos, incorpora el contacto de soporte y mejora su presentación en ambos temas. *@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ModuloBaseViewModel
 
 @{
-    ViewData["Title"] = "Sin acceso";
+    var titulo = Model.BloqueadoPorSuscripcion ? "Suscripción inactiva"
+        : Model.BloqueadoPorPlanBasico ? "Disponible en el plan Full" : "Acceso restringido";
+    ViewData["Title"] = titulo;
 }
 
-<section class="content-card sc-noaccess-card">
-    <div class="sc-noaccess-head">
-        <span class="sc-noaccess-icon"><i class="bi bi-shield-lock"></i></span>
+<section class="sc-access" aria-labelledby="sc-access-title">
+    <header class="sc-access-head">
+        <span class="sc-access-icon" aria-hidden="true">
+            <i class="bi @(Model.BloqueadoPorPlanBasico ? "bi-card-checklist" : "bi-shield-lock")"></i>
+        </span>
         <div>
-            <h1 class="sc-noaccess-title">Acceso denegado</h1>
-            <p class="sc-noaccess-copy mb-0">@(Model.Mensaje ?? "No cuentas con permiso para este modulo.")</p>
+            <h1 id="sc-access-title">@titulo</h1>
+            <p class="sc-access-copy">@(string.IsNullOrWhiteSpace(Model.Mensaje) || Model.Mensaje is "Acceso denegado." or "No autorizado."
+                ? "Tu cuenta no tiene permiso para realizar esta acción. Si necesitas acceso, consulta al administrador de tu complejo."
+                : Model.Mensaje)</p>
         </div>
-    </div>
+    </header>
 
-    <div class="sc-noaccess-actions">
-        <a class="btn btn-cancelar sc-noaccess-btn" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
-            <i class="bi bi-arrow-left-circle me-1"></i>Volver al panel
-        </a>
-        @if (Model.BloqueadoPorPlanBasico)
+    <div class="sc-access-actions">
+        @if (Model.BloqueadoPorSuscripcion || Model.BloqueadoPorPlanBasico)
         {
-            <a class="btn btn-grabar sc-noaccess-btn" asp-controller="MiSuscripcion" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
-                <i class="bi bi-rocket-takeoff me-1"></i>Migrar plan
+            <a class="sc-access-action sc-access-action-primary" asp-controller="MiSuscripcion" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
+                <i class="bi bi-card-checklist" aria-hidden="true"></i>
+                @(Model.BloqueadoPorSuscripcion ? "Ver mi suscripción" : "Ver opciones de plan")
             </a>
         }
+        @if (Model.BloqueadoPorSuscripcion)
+        {
+            <a class="sc-access-action" asp-controller="Home" asp-action="Index">
+                <i class="bi bi-house" aria-hidden="true"></i>Ir al inicio
+            </a>
+        }
+        else
+        {
+            <a class="sc-access-action" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
+                <i class="bi bi-arrow-left" aria-hidden="true"></i>Volver al panel
+            </a>
+        }
+    </div>
+
+    <div class="sc-access-support">
+        <i class="bi bi-headset" aria-hidden="true"></i>
+        <partial name="_ContactoSoporteAcceso" />
     </div>
 </section>
 
 <style>
-    .sc-noaccess-card {
-        max-width: 760px;
-        margin: 1.25rem auto 0;
-        padding: 1.5rem;
-        border: 1px solid rgba(220, 53, 69, 0.18);
-        background:
-            linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(247, 251, 255, 0.96)),
-            radial-gradient(circle at top left, rgba(220, 53, 69, 0.08), transparent 42%);
-        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
-    }
-
-    .sc-noaccess-head {
-        display: flex;
-        gap: 1rem;
-        align-items: flex-start;
-    }
-
-    .sc-noaccess-icon {
-        width: 3.25rem;
-        height: 3.25rem;
+    .sc-access {
+        --access-surface: #fff;
+        --access-tint: #f0f8f4;
+        --access-border: #cdded5;
+        --access-text: #152d24;
+        --access-muted: #455e53;
+        --access-accent: #17684c;
+        display: grid;
+        gap: 1.25rem;
+        max-width: 46rem;
+        margin: clamp(1rem, 5vh, 3rem) auto;
+        padding: clamp(1.25rem, 4vw, 2rem);
+        border: 1px solid var(--access-border);
+        border-top: 4px solid var(--access-accent);
         border-radius: 1rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: linear-gradient(135deg, #fee2e2, #fecaca);
-        color: #b91c1c;
-        font-size: 1.35rem;
-        flex-shrink: 0;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+        background: var(--access-surface);
+        color: var(--access-text);
+        box-shadow: 0 16px 40px rgba(15, 45, 33, .08);
     }
 
-    .sc-noaccess-title {
-        margin: 0 0 .45rem;
-        font-size: 1.3rem;
-        font-weight: 800;
-        color: #0f172a;
+    html[data-theme="dark"] .sc-access {
+        --access-surface: #14241e;
+        --access-tint: #1a3027;
+        --access-border: #365448;
+        --access-text: #eff8f3;
+        --access-muted: #b5cec2;
+        --access-accent: #8de3b9;
     }
 
-    .sc-noaccess-copy {
-        color: #475569;
-        line-height: 1.6;
-        max-width: 58ch;
+    .sc-access-head {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: start;
+        gap: 1rem;
     }
 
-    .sc-noaccess-actions {
+    .sc-access-icon {
+        display: grid;
+        place-items: center;
+        width: 3rem;
+        height: 3rem;
+        border: 1px solid var(--access-border);
+        border-radius: .75rem;
+        background: var(--access-tint);
+        color: var(--access-accent);
+        font-size: 1.25rem;
+    }
+
+    .sc-access h1 {
+        margin: 0 0 .4rem;
+        color: var(--access-text);
+        font-size: clamp(1.3rem, 3vw, 1.85rem);
+        font-weight: 750;
+        line-height: 1.2;
+    }
+
+    .sc-access-copy {
+        margin: 0;
+        color: var(--access-muted);
+        line-height: 1.55;
+        overflow-wrap: anywhere;
+    }
+
+    .sc-access-actions {
         display: flex;
         flex-wrap: wrap;
-        gap: .75rem;
-        margin-top: 1.35rem;
+        gap: .625rem;
     }
 
-    .sc-noaccess-btn {
-        min-width: 180px;
-        justify-content: center;
+    .sc-access-action {
         display: inline-flex;
         align-items: center;
-        border-radius: .95rem;
+        justify-content: center;
+        gap: .5rem;
+        min-height: 44px;
+        padding: .55rem .9rem;
+        border: 1px solid var(--access-border);
+        border-radius: .65rem;
+        color: var(--access-text);
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .sc-access-action:hover { background: var(--access-tint); color: var(--access-text); }
+    .sc-access-action-primary { background: #17684c; border-color: #17684c; color: #fff; }
+    .sc-access-action-primary:hover { background: #11543d; border-color: #11543d; color: #fff; }
+    .sc-access :is(a, button):focus-visible { outline: 2px solid var(--access-accent); outline-offset: 3px; }
+
+    .sc-access-support {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: start;
+        gap: .75rem;
+        padding: .9rem 1rem;
+        border: 1px solid var(--access-border);
+        border-radius: .75rem;
+        background: var(--access-tint);
+        font-size: .9rem;
+    }
+
+    .sc-access-support > i { color: var(--access-accent); }
+    .sc-access-support > div { margin: 0 !important; }
+    .sc-access-support a { color: var(--access-accent); overflow-wrap: anywhere; }
+    .sc-access-support small.text-muted { color: var(--access-muted) !important; }
+
+    @@media (max-width: 480px) {
+        .sc-access-head { grid-template-columns: 1fr; gap: .75rem; }
+        .sc-access-actions > a { flex: 1 1 100%; }
     }
 </style>

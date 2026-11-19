@@ -26,7 +26,7 @@ public class ModuloPermisoService(IConfiguration configuration) : IModuloPermiso
         var exentoPorSuscripcion = moduloNormalizado is "DASHBOARD" or "SUSCRIPCION";
         if (!exentoPorSuscripcion && await DebeBloquearPorSuscripcionAsync(negocioId))
         {
-            return ModuloPermisoContexto.SinAcceso("Tu suscripcion no esta activa. Solo puedes acceder a Dashboard y Mi suscripcion.");
+            return ModuloPermisoContexto.SinAccesoPorSuscripcion();
         }
 
         if (await DebeBloquearPorPlanBasicoAsync(negocioId, moduloNormalizado))
@@ -53,7 +53,11 @@ public class ModuloPermisoService(IConfiguration configuration) : IModuloPermiso
         var autorizado = dr.GetBoolean(0);
         if (!autorizado)
         {
-            return ModuloPermisoContexto.SinAcceso(dr.IsDBNull(10) ? "No autorizado." : dr.GetString(10));
+            var mensaje = dr.IsDBNull(10) ? "No autorizado." : dr.GetString(10);
+            // El procedimiento también verifica la vigencia al abrir el Dashboard.
+            return mensaje == "La vigencia de tu negocio se encuentra vencida. Regulariza tu suscripcion para reactivar todos los modulos."
+                ? ModuloPermisoContexto.SinAccesoPorSuscripcion()
+                : ModuloPermisoContexto.SinAcceso(mensaje);
         }
 
         return new ModuloPermisoContexto
@@ -143,12 +147,19 @@ public class ModuloPermisoContexto
     public bool PuedeCrear { get; set; }
     public bool PuedeEditar { get; set; }
     public bool PuedeEliminar { get; set; }
+    public bool BloqueadoPorSuscripcion { get; set; }
     public bool BloqueadoPorPlanBasico { get; set; }
 
     public static ModuloPermisoContexto SinAcceso(string mensaje) => new()
     {
         Autorizado = false,
         Mensaje = mensaje
+    };
+
+    public static ModuloPermisoContexto SinAccesoPorSuscripcion() => new()
+    {
+        BloqueadoPorSuscripcion = true,
+        Mensaje = "La suscripción de tu complejo necesita atención. Revisa su vigencia en Mi suscripción o contacta a nuestro equipo para continuar."
     };
 
     public static ModuloPermisoContexto SinAccesoPorPlanBasico(string mensaje) => new()

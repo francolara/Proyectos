@@ -16,4 +16,8 @@
   <ItemGroup>
     <PackageReference Include="AWSSDK.S3" Version="3.7.415" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="OperationalMaps/*.html" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

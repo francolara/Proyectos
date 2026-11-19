@@ -1,0 +1,96 @@
+.hyt-operational-map header p {
+    margin: 0 0 16px;
+}
+
+.hyt-map-tabs, .hyt-map-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-block: 12px;
+}
+
+.hyt-map-tabs a, .hyt-map-actions a {
+    text-decoration: none;
+}
+
+.hyt-map-tabs [aria-current="page"] {
+    color: white;
+    background: var(--hyt-red-hover);
+    border-color: var(--hyt-red-hover);
+}
+
+.hyt-map-viewer iframe {
+    display: block;
+    width: 100%;
+    height: clamp(480px, 85dvh, 1000px);
+    border: 0;
+    background: var(--hyt-surface);
+}
+
+.hyt-map-detail {
+    width: min(43rem, calc(100% - 2rem));
+}
+
+.hyt-map-detail[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+.hyt-map-detail > .hyt-modal-header {
+    flex-shrink: 0;
+}
+
+.hyt-map-detail-body {
+    min-height: 0;
+    max-height: min(68dvh, 38rem);
+    overflow-y: auto;
+    line-height: 1.55;
+}
+
+.hyt-map-detail-body h3 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.hyt-map-detail-body p, .hyt-map-detail-body ul {
+    margin: 8px 0 0;
+}
+
+.hyt-map-detail-body ul {
+    padding-inline-start: 20px;
+}
+
+.hyt-map-detail-body > section, .hyt-map-validation {
+    margin-block-start: 16px;
+}
+
+.hyt-map-conditions, .hyt-map-validation {
+    padding: 12px 16px;
+    border: 1px solid var(--hyt-border);
+    border-radius: 8px;
+    background: var(--hyt-surface-alt);
+}
+
+.hyt-map-validation {
+    padding-block: 0;
+}
+
+.hyt-map-validation summary {
+    min-height: 44px;
+    padding-block: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.hyt-map-validation summary:focus-visible {
+    outline: 2px solid var(--hyt-link, var(--hyt-red));
+    outline-offset: 2px;
+}
+
+.hyt-map-validation p {
+    margin: 0 0 12px;
+}
+
+.hyt-map-detail li + li {
+    margin-top: 8px;
+}

@@ -1,3 +1,4 @@
+// Firma: FRANCO LARA - 19/11/2026 | Muestra el modo activo en la tarjeta Apariencia.
 // Firma: FRANCO LARA - 05/11/2026 | Tema persistente, preferencia del sistema y sincronización de ventanas del mismo origen.
 (() => {
     const key = 'hyt.theme';
@@ -6,9 +7,11 @@
     try { const saved = localStorage.getItem(key); if (saved === 'dark' || saved === 'light') choice = saved; } catch { }
     function apply(theme) {
         document.documentElement.dataset.hytTheme = theme;
+        document.querySelectorAll('[data-hyt-theme-label]').forEach(label => {
+            label.textContent = theme === 'dark' ? 'Modo oscuro' : 'Modo claro';
+        });
         document.querySelectorAll('[data-hyt-theme-toggle]').forEach(button => {
             button.setAttribute('aria-pressed', String(theme === 'dark'));
-            button.querySelector('[data-hyt-theme-label]').textContent = theme === 'dark' ? 'Modo claro' : 'Modo oscuro';
             button.title = theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
         });
         document.querySelectorAll('iframe').forEach(frame => {

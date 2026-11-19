@@ -16,7 +16,7 @@ public class OrigenController(
     private const int TamanoPagina = 20;
 
     [HttpGet]
-    public async Task<IActionResult> Index(string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default, bool vistaImpresion = false)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
         {
@@ -25,7 +25,20 @@ public class OrigenController(
 
         ViewData["AdminShell"] = true;
 
-        var origenes = await origenRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, textoBusqueda, pagina, TamanoPagina, false, cancellationToken);
+        var origenes = await origenRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, textoBusqueda, vistaImpresion ? 1 : pagina, vistaImpresion ? 0 : TamanoPagina, false, cancellationToken);
+
+        if (vistaImpresion)
+        {
+            return View("ListadoImpresion", new ListadoImpresionViewModel(
+                "Orígenes", currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
+                [("Búsqueda", textoBusqueda?.Trim())],
+                ["Código", "Descripción", "Estado"],
+                origenes.Items.Select(x => new string[]
+                {
+                    x.CodigoOrigen, x.NombreOrigen, x.Estado ? "Activo" : "Inactivo"
+                }).ToArray()));
+        }
+
         var totalEmpresa = string.IsNullOrWhiteSpace(textoBusqueda)
             ? origenes.TotalRecords
             : (await origenRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, null, 1, 1, false, cancellationToken)).TotalRecords;

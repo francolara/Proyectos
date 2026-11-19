@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 19/11/2026 | Conserva la marca y la impresión manual. Presenta el título con barra verde y los datos del recibo en minitarjetas. *@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteVisualizacionViewModel
 @* Firma: Codex - 01/10/2026 | Imprime el correlativo visible de la reserva por negocio. *@
 @* Firma: FRANCO LARA - 09/10/2026 | Ordena el detalle de reserva por espacio, fecha y horario y evita repetir el total del recibo interno. *@
@@ -42,30 +43,6 @@
             font-size: 12px;
         }
 
-        .print-toolbar {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            padding: 12px 24px;
-            background: #101d31;
-            box-shadow: 0 8px 24px rgba(16, 29, 49, .2);
-        }
-
-        .print-toolbar button {
-            border: 0;
-            border-radius: 7px;
-            padding: 9px 16px;
-            background: var(--blue);
-            color: #fff;
-            font: inherit;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .print-toolbar button.secondary { background: #fff; color: #243654; }
 
         .receipt {
             width: min(820px, calc(100% - 32px));
@@ -77,35 +54,22 @@
         }
 
         .receipt-header {
-            display: grid;
-            grid-template-columns: 1fr 230px;
-            gap: 24px;
-            align-items: start;
-            padding-bottom: 15px;
-            border-bottom: 3px solid var(--navy);
+            padding: 10px 14px;
+            border-left: 6px solid var(--green);
+            border-radius: 6px;
+            background: #f2f5f3;
         }
 
-        .eyebrow, .label {
+        .label {
             display: block;
             color: var(--muted);
             font-size: 9px;
             font-weight: 800;
-            letter-spacing: .1em;
+            letter-spacing: .08em;
             text-transform: uppercase;
         }
 
-        .eyebrow { margin-bottom: 5px; color: var(--blue); }
-        h1 { margin: 0; color: var(--navy); font-size: 25px; line-height: 1.1; }
-        .receipt-header p { margin: 6px 0 0; color: var(--muted); }
-
-        .document-box {
-            padding: 13px 15px;
-            border: 2px solid var(--navy);
-            text-align: center;
-        }
-
-        .document-box span { display: block; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-        .document-box strong { display: block; margin-top: 6px; color: var(--navy); font-size: 18px; }
+        h1 { margin: 0; color: var(--ink); font-size: 23px; line-height: 1.2; }
 
         .summary {
             display: grid;
@@ -114,7 +78,8 @@
             margin: 15px 0;
         }
 
-        .summary-item { min-height: 72px; padding: 10px; border: 1px solid var(--line); background: var(--soft); }
+        .summary-item { min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--soft); overflow-wrap: anywhere; }
+        .summary-item dd { margin: 0; }
         .summary-item strong { display: block; margin-top: 6px; color: var(--navy); font-size: 14px; }
         .summary-item small { display: block; margin-top: 3px; color: var(--muted); font-size: 9px; }
         .summary-item.total { border-top: 3px solid var(--green); background: #f1faf6; }
@@ -152,43 +117,35 @@
 
         @@media print {
             html, body { background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-            .print-toolbar { display: none !important; }
+
             .receipt { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; }
-            .section, .summary-item { break-inside: avoid; page-break-inside: avoid; }
+            .receipt-header, .section, .summary-item { break-inside: avoid; page-break-inside: avoid; }
         }
 
-        @@media (max-width: 680px) {
-            .receipt-header, .parties { grid-template-columns: 1fr; }
+        @@media screen and (max-width: 680px) {
+            .parties { grid-template-columns: 1fr; }
             .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .party + .party { border-left: 0; border-top: 1px solid var(--line); }
         }
     </style>
+    <link rel="stylesheet" href="~/css/listado-reporte.css" asp-append-version="true" />
+    <script src="~/js/listado-reporte.js" asp-append-version="true" defer></script>
 </head>
-<body>
-    <nav class="print-toolbar" aria-label="Acciones del recibo interno">
-        <button type="button" onclick="window.print()">Imprimir documento</button>
-        <button type="button" class="secondary" onclick="window.close()">Cerrar</button>
-    </nav>
+<body class="sc-impreso">
+    <partial name="_AccionesReporteImpreso" model="false" />
 
     <main class="receipt">
+        <partial name="_MarcaReporteImpreso" model="@Model.NegocioNombre" />
         <header class="receipt-header">
-            <div>
-                <div class="eyebrow">Comprobante de operacion</div>
-                <h1>@Model.NegocioNombre</h1>
-                <p>@direccionNegocio</p>
-            </div>
-            <div class="document-box">
-                <span>Recibo interno</span>
-                <strong>@numeroComprobante</strong>
-            </div>
+            <h1>Recibo interno</h1>
         </header>
 
-        <section class="summary" aria-label="Resumen del comprobante">
-            <article class="summary-item"><span class="label">Documento</span><strong>@numeroComprobante</strong><small>Recibo Interno</small></article>
-            <article class="summary-item"><span class="label">Fecha emision</span><strong>@Model.FechaEmision.ToString("dd/MM/yyyy")</strong><small>Comprobante emitido</small></article>
-            <article class="summary-item"><span class="label">Reserva</span><strong>@Model.CodigoReserva</strong><small>@Model.SedeNombre | @Model.EspacioNombre</small></article>
-            <article class="summary-item total"><span class="label">Total</span><strong>@Model.MonedaSimbolo @Model.Total.ToString("N2")</strong><small>Moneda de emision</small></article>
-        </section>
+        <dl class="summary" aria-label="Datos del comprobante">
+            <div class="summary-item"><dt class="label">N.º de recibo</dt><dd><strong>@numeroComprobante</strong></dd></div>
+            <div class="summary-item"><dt class="label">Fecha de emisión</dt><dd><strong>@Model.FechaEmision.ToString("dd/MM/yyyy")</strong></dd></div>
+            <div class="summary-item"><dt class="label">Reserva</dt><dd><strong>@Model.CodigoReserva</strong><small>@Model.SedeNombre | @Model.EspacioNombre</small></dd></div>
+            <div class="summary-item total"><dt class="label">Total</dt><dd><strong>@Model.MonedaSimbolo @Model.Total.ToString("N2")</strong></dd></div>
+        </dl>
 
         <section class="section">
             <header class="section-header"><span class="label">Identificacion</span><h2>Datos del emisor y cliente</h2></header>
@@ -232,11 +189,5 @@
             <span>Reserva @Model.CodigoReserva</span>
         </footer>
     </main>
-
-    <script>
-        window.addEventListener('load', function () {
-            window.setTimeout(function () { window.print(); }, 250);
-        });
-    </script>
 </body>
 </html>

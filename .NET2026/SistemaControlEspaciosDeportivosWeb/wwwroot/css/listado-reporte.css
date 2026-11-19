@@ -1,0 +1,120 @@
+/* Firma: FRANCO LARA - 19/11/2026 | Define la cabecera verde y el listado imprimible sin divisiones verticales. Comparte el tema con los reportes y el recibo interno. */
+:root {
+    --listado-verde: #076149;
+    --listado-suave: #e5f4ed;
+    --listado-borde: #d3e1da;
+    color-scheme: light;
+}
+
+body.listado-documento { margin: 0; background: #edf1ef; color: #172820; font: 14px/1.4 Arial, sans-serif; }
+
+.listado-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px clamp(12px, 3vw, 32px);
+    background: var(--listado-suave);
+}
+
+.listado-acciones button {
+    padding: 10px 15px;
+    border: 1px solid var(--listado-verde);
+    border-radius: 6px;
+    background: var(--listado-verde);
+    color: #fff;
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.listado-acciones button:hover { background: #054837; }
+:focus-visible { outline: 2px solid var(--listado-verde); outline-offset: 3px; }
+
+.listado-hoja {
+    max-width: 1500px;
+    margin: 20px auto;
+    padding: clamp(12px, 2.5vw, 28px);
+    border: 1px solid var(--listado-borde);
+    background: #fff;
+}
+
+.listado-cabecera {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+    border-bottom: 2px solid var(--listado-verde);
+}
+
+.listado-negocio {
+    border: 1px solid var(--listado-borde);
+    border-left: 5px solid var(--listado-verde);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 16px;
+    overflow-wrap: anywhere;
+}
+
+.listado-marca { display: flex; align-items: center; gap: 8px; margin-left: auto; font-size: 12px; }
+.listado-marca img { object-fit: contain; }
+.listado-filtros { background: #f2f5f3; border-left: 6px solid var(--listado-verde); padding: 12px 15px; margin-bottom: 14px; }
+.listado-filtros h1 { font-size: clamp(18px, 2vw, 23px); margin: 0 0 6px; }
+.listado-filtros dl { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; font-size: 12px; }
+.listado-filtros dl div { display: flex; gap: 5px; }
+.listado-filtros dt { font-weight: bold; }
+.listado-filtros dd { margin: 0; }
+.listado-filtros .listado-resumen { margin-top: 8px; }
+.listado-tabla-wrap { overflow-x: auto; }
+.listado-documento table { width: 100%; min-width: 810px; border-collapse: collapse; font-size: 12px; }
+.listado-documento :is(th, td) { padding: 7px 6px; border-bottom: 1px solid var(--listado-borde); text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+.listado-documento thead th { background: var(--listado-suave); color: #104531; }
+.listado-importe { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+main tfoot :is(th, td) { background: #d5ebde; font-weight: bold; }
+
+@page listado-horizontal { size: A4 landscape; margin: 10mm; }
+
+@media print {
+    body.listado-documento { page: listado-horizontal; background: #fff; print-color-adjust: exact; }
+    .listado-acciones { display: none; }
+    .listado-hoja { max-width: none; margin: 0; padding: 0; border: 0; }
+    .listado-tabla-wrap { overflow: visible; }
+    .listado-documento table { min-width: 0; font-size: 9pt; }
+    .listado-documento :is(th, td) { padding: 4px; }
+    .listado-documento thead { display: table-header-group; }
+    .listado-documento tfoot { display: table-row-group; }
+    tr, .listado-cabecera, .listado-filtros { break-inside: avoid; }
+}
+
+html:has(> body.sc-impreso), body.sc-impreso { background: #edf1ef; }
+
+.sc-impreso {
+    --line: var(--listado-borde);
+    --report-line: var(--listado-borde);
+    --soft: #f2f5f3;
+    --report-soft: #f2f5f3;
+    --blue: #076149;
+    --navy: #164a39;
+    --report-blue: #076149;
+    --report-navy: #164a39;
+}
+
+.sc-impreso :is(.report-header, .document-header, .receipt-header).listado-filtros {
+    border-bottom: 0;
+    padding: 12px 15px;
+}
+
+.sc-impreso .listado-filtros h1 { color: #172820; }
+.sc-impreso .section-heading { border-bottom-color: var(--listado-borde); }
+.sc-impreso .metric:not(.amber) { border-top-color: var(--listado-verde); }
+.sc-impreso main thead th { background: var(--listado-suave); color: #104531; }
+.sc-impreso main :is(th, td) { border-inline: 0; border-bottom-color: var(--listado-borde); }
+.sc-impreso main tbody tr:nth-child(even) { background: #fff; }
+
+@media print {
+    html:has(> body.sc-impreso), body.sc-impreso { background: #fff; }
+    .sc-impreso { print-color-adjust: exact; }
+    .sc-impreso .listado-cabecera, .sc-impreso .listado-filtros { break-inside: avoid; }
+}

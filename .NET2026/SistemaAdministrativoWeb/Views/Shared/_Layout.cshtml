@@ -6,6 +6,7 @@
 @inject IModulePermissionService ModulePermissionService
 @inject UserManager<IdentityUser> UserManager
 @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@* Firma: FRANCO LARA - 19/11/2026 | Quita el texto auxiliar de la tarjeta Apariencia en ambos menús laterales. *@
 @* Firma: FRANCO LARA - 07/07/2026 | Agrega y reordena el bloque Reportes del menu administrativo con Balance de comprobacion, Analisis de cuentas, Libro Diario, Libro Mayor, Registro de ventas, Registro de compras y Libros Electronicos. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Reemplaza la tarjeta redundante del panel por un selector persistente de modo oscuro, agrega Mi suscripcion y Ayuda al menu General e incorpora acceso contextual de ayuda por modulo. *@
 @* Firma: FRANCO LARA - 10/07/2026 | Ajusta el branding publico para alinear portada, login y registro con la nueva presentacion comercial de FralseCont, separa Fralse y Cont en dos colores, agrega soporte para metadatos basicos, enlaces legales en el footer y la burbuja publica de WhatsApp, e incorpora Usuarios y Configuracion al bloque General del menu administrativo. *@
@@ -235,7 +236,6 @@
                     <div class="app-sidebar-theme-copy">
                         <span>Apariencia</span>
                         <strong class="app-theme-label" data-theme-label aria-live="polite"></strong>
-                        <small>Cambia el tema del sistema y conserva la preferencia.</small>
                     </div>
                     <button type="button" class="app-theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Alternar modo oscuro">
                         <span class="app-theme-toggle-track">
@@ -459,7 +459,6 @@
                     <div class="app-sidebar-theme-copy">
                         <span>Apariencia</span>
                         <strong class="app-theme-label" data-theme-label aria-live="polite"></strong>
-                        <small>Cambia el tema del sistema y conserva la preferencia.</small>
                     </div>
                     <button type="button" class="app-theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Alternar modo oscuro">
                         <span class="app-theme-toggle-track">

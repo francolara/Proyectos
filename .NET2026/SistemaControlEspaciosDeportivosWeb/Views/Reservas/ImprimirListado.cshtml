@@ -1,0 +1,92 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservasListadoImpresionViewModel
+@using System.Globalization
+@* Firma: FRANCO LARA - 19/11/2026 | Presenta el resumen filtrado de reservas con impresión y CSV. Muestra el nombre del estado en ambas salidas. Reutiliza la cabecera y acciones en los reportes imprimibles. *@
+
+@{
+    Layout = null;
+    var cultura = CultureInfo.GetCultureInfo("es-PE");
+    var importes = Model.Reservas.GroupBy(reserva => reserva.CodigoMoneda)
+        .Select(grupo => new { Moneda = grupo.Key, Total = grupo.Sum(reserva => reserva.Total) });
+}
+
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reservas registradas | La Zona Deportiva</title>
+    <link rel="stylesheet" href="~/css/listado-reporte.css" asp-append-version="true" />
+    <script src="~/js/listado-reporte.js" asp-append-version="true" defer></script>
+</head>
+<body class="listado-documento">
+    <partial name="_AccionesReporteImpreso" model="true" />
+    <main class="listado-hoja">
+        <partial name="_MarcaReporteImpreso" model="@Model.NegocioNombre" />
+        <section class="listado-filtros">
+            <h1>Reservas registradas</h1>
+            <dl>
+                <div><dt>Período</dt><dd>@Model.FechaDesde.ToString("dd/MM/yyyy") al @Model.FechaHasta.ToString("dd/MM/yyyy")</dd></div>
+                <div><dt>Sede</dt><dd>@Model.Sede</dd></div>
+                <div><dt>Espacio</dt><dd>@Model.Espacio</dd></div>
+                <div><dt>Estados</dt><dd>@Model.Estados</dd></div>
+            </dl>
+            <dl class="listado-resumen">
+                <div><dt>Registros</dt><dd>@Model.Reservas.Count</dd></div>
+                <div><dt>Activas</dt><dd>@Model.Resumen.TotalReservasActivas</dd></div>
+                <div><dt>Pendientes</dt><dd>@Model.Resumen.TotalPendientes</dd></div>
+                <div><dt>Pagadas</dt><dd>@Model.Resumen.TotalPagadas</dd></div>
+            </dl>
+        </section>
+        <div class="listado-tabla-wrap" tabindex="0" role="region" aria-label="Listado de reservas">
+            <table data-listado-tabla="reservas-registradas">
+                <thead>
+                    <tr>
+                        <th scope="col">Reserva</th>
+                        <th scope="col">Fecha</th>
+                        <th scope="col">Horario</th>
+                        <th scope="col">Cliente</th>
+                        <th scope="col">Sede</th>
+                        <th scope="col">Espacio</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col">Moneda</th>
+                        <th scope="col" class="listado-importe">Total</th>
+                        <th scope="col" class="listado-importe">Saldo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Reservas.Count == 0)
+                    {
+                        <tr data-listado-vacio><td colspan="10">No hay reservas para los filtros aplicados.</td></tr>
+                    }
+                    @foreach (var reserva in Model.Reservas)
+                    {
+                        <tr>
+                            <td>@reserva.CodigoVisible</td>
+                            <td>@reserva.Fecha.ToString("dd/MM/yyyy")</td>
+                            <td>@reserva.HoraInicio.ToString("HH:mm") – @reserva.HoraFin.ToString("HH:mm")</td>
+                            <td>@reserva.Cliente</td>
+                            <td>@reserva.Sede</td>
+                            <td>@reserva.Espacio</td>
+                            <td>@reserva.EstadoNombre</td>
+                            <td>@reserva.CodigoMoneda</td>
+                            <td class="listado-importe">@reserva.Total.ToString("F2", cultura)</td>
+                            <td class="listado-importe">@reserva.SaldoPendiente.ToString("F2", cultura)</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    @foreach (var moneda in importes)
+                    {
+                        <tr>
+                            <th scope="row" colspan="7">Total de las reservas listadas</th>
+                            <td>@moneda.Moneda</td>
+                            <td class="listado-importe">@moneda.Total.ToString("F2", cultura)</td>
+                            <td></td>
+                        </tr>
+                    }
+                </tfoot>
+            </table>
+        </div>
+    </main>
+</body>
+</html>
