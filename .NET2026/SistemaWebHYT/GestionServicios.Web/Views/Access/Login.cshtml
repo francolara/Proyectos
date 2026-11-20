@@ -1,3 +1,4 @@
+@* Firma: FRANCO LARA - 19/11/2026 | Informa la espera de Turnstile al enviar el acceso. *@
 @* Firma: FRANCO LARA - 06/11/2026 | Captcha manual solo ante fallo o falta de carga de Turnstile, sin selector alternativo. *@
 @* Firma: FRANCO LARA - 07/11/2026 | Icono común para alternar la visibilidad de la contraseña. *@
 @model AccessViewModel
@@ -24,6 +25,7 @@
                 {
                     <input asp-for="UseManualCaptcha" type="hidden" />
                     <input asp-for="CaptchaId" type="hidden" />
+                    <p data-turnstile-status role="status" hidden></p>
                     @if(!string.IsNullOrWhiteSpace(siteKey))
                     {<div class="hyt-turnstile" data-turnstile-container hidden="@Model.UseManualCaptcha"><div class="cf-turnstile" data-sitekey="@siteKey" data-action="login" data-theme="light" data-language="es" data-size="flexible" data-callback="hytTurnstileSuccess" data-before-interactive-callback="hytTurnstileReady" data-unsupported-callback="hytTurnstileFallback" data-error-callback="hytTurnstileFallback" data-timeout-callback="hytTurnstileFallback"></div></div>}
                     <section class="hyt-captcha" data-manual-captcha hidden="@(!Model.UseManualCaptcha)" aria-labelledby="captcha-title">

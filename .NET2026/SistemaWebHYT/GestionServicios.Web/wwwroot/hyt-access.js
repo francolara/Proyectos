@@ -1,3 +1,4 @@
+// Firma: FRANCO LARA - 19/11/2026 | Espera el token de Turnstile antes de enviar el acceso solicitado.
 // Firma: FRANCO LARA - 06/11/2026 | Respaldo manual automático solo por error o falta de carga; respeta Turnstile interactivo y su recuperación.
 // Firma: FRANCO LARA - 07/11/2026 | La visibilidad de contraseña se gestiona en el control compartido.
 const errors = document.querySelector(".validation-summary-errors");
@@ -9,10 +10,33 @@ if (errors) errors.focus();
     const mode=document.querySelector('#UseManualCaptcha'),answer=document.querySelector('#CaptchaAnswer'),id=document.querySelector('#CaptchaId'),image=box.querySelector('[data-captcha-image]'),status=box.querySelector('[data-captcha-status]'),refresh=box.querySelector('[data-captcha-refresh]');
     let imageEnd,startupTimer;
     let healthy=false;
+    const form = box.closest('form');
+    const turnstileStatus = form.querySelector('[data-turnstile-status]');
+    let pendingSubmit = false;
+
+    function hasTurnstileToken() {
+        return Boolean(form.querySelector('[name=cf-turnstile-response]')?.value);
+    }
+
+    function clearPendingSubmit() {
+        pendingSubmit = false;
+        turnstileStatus.hidden = true;
+        turnstileStatus.textContent = '';
+    }
+
+    form.addEventListener('submit', event => {
+        if (mode.value.toLowerCase() === 'true' || hasTurnstileToken()) return;
+        event.preventDefault();
+        pendingSubmit = true;
+        turnstileStatus.hidden = false;
+        turnstileStatus.textContent = 'Verificando el acceso…';
+    }, { capture: true });
     function watchImage(){if(box.hidden||image.complete)return;if(!imageEnd)imageEnd=globalThis.hytLoading?.begin('Cargando código…');}
     function imageFinished(){imageEnd?.();imageEnd=null;}
     image.addEventListener('load',imageFinished);
     function activate(focus=false){
+        focus ||= pendingSubmit;
+        clearPendingSubmit();
         mode.value='true';box.hidden=false;answer.disabled=false;answer.required=true;
         const widget=document.querySelector('[data-turnstile-container]');if(widget)widget.hidden=true;
         image.loading='eager';watchImage();if(focus)answer.focus();
@@ -22,7 +46,14 @@ if (errors) errors.focus();
         const widget=document.querySelector('[data-turnstile-container]');if(widget)widget.hidden=false;
     }
     globalThis.hytTurnstileReady=automatic;
-    globalThis.hytTurnstileSuccess=automatic;
+    globalThis.hytTurnstileSuccess=()=>{
+        automatic();
+        queueMicrotask(() => {
+            if (!pendingSubmit || !hasTurnstileToken()) return;
+            clearPendingSubmit();
+            form.requestSubmit();
+        });
+    };
     globalThis.hytTurnstileFallback=()=>{healthy=false;clearTimeout(startupTimer);activate();return true;};
     document.querySelector('#hyt-turnstile-script')?.addEventListener('error',()=>activate());
     if(mode.value.toLowerCase()!=='true')startupTimer=setTimeout(()=>{if(!healthy&&!document.querySelector('[name=cf-turnstile-response]')?.value)activate();},12000);
